@@ -19,7 +19,7 @@ import {
   type WarrenState,
 } from './warren.ts';
 
-export const GAME_VERSION = '0.1.0';
+export const GAME_VERSION = '0.2.0';
 
 export type Input =
   | { at: number; verb: 'chalk'; cells: number[]; on: boolean }

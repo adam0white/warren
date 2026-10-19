@@ -9,7 +9,7 @@ import {
   type Person,
   readBody,
 } from '@adam0white/human-framework';
-import { DAY, dateWords, HOUR, hourWords } from '../sim/calendar.ts';
+import { DAY, dateWords, doyOf, HOUR, hourWords, seasonOf, yearOf } from '../sim/calendar.ts';
 import {
   act,
   advance,
@@ -21,7 +21,7 @@ import {
   type Saved,
   save,
 } from '../sim/game.ts';
-import { AIR_REACH, H, idx, K, neighbours, SURF, USE, W, xOf, yOf } from '../sim/grid.ts';
+import { AIR_REACH, H, idx, K, neighbours, SURF, THEIR_X, USE, W, xOf, yOf } from '../sim/grid.ts';
 import { BELL } from '../sim/people.ts';
 import {
   activeRaid,
@@ -36,6 +36,7 @@ import {
   waterWords,
 } from '../sim/warren.ts';
 import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from './draw.ts';
+import { lab } from './lab.ts';
 import * as store from './store.ts';
 
 type Tool = 'look' | 'chalk' | 'erase' | 'store' | 'beds' | 'lamp' | 'door';
@@ -66,6 +67,9 @@ let lagging = false;
 let wake: { release(): Promise<void> } | null = null;
 const seenHint = new Set<string>();
 let lastRaidStage = '';
+let labScreen = '';
+const labGoals = new Set<string>();
+let labBase = { arrivals: 0, gone: 0, died: 0 };
 /** The speed the player had chosen before a raid slowed the days (-1: none). */
 let speedBefore = -1;
 
@@ -112,6 +116,7 @@ export async function start() {
 }
 
 function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
+  lab.screen('title');
   const compatible = sv && sv.game.split('.')[0] === GAME_VERSION.split('.')[0];
   app().innerHTML = `
   <div class="page">
@@ -173,6 +178,14 @@ function catchUp(savedAt: number) {
 
 function enter() {
   if (!g) return;
+  // Milestones count what happens in this sitting, not what a resumed notebook already holds.
+  labGoals.clear();
+  for (const id of Object.keys(g.s.goals)) labGoals.add(id);
+  labBase = {
+    arrivals: g.s.arrivals,
+    gone: g.s.raids.filter((x) => x.stage === 'gone').length,
+    died: g.s.stats.died,
+  };
   app().innerHTML = `
   <div class="game">
     <div class="top">
@@ -346,8 +359,25 @@ function chrome() {
   const goal = document.getElementById('goal');
   const cg = currentGoal(s);
   if (goal) goal.textContent = cg ? `→ ${cg.text}` : '';
+  const r0 = activeRaid(s);
+  const reading0 = !(document.getElementById('drawer')?.hidden ?? true);
   const lag = document.getElementById('lag');
   if (lag) lag.hidden = !lagging || speedIx < 2;
+  // The lab: where the player is (the last screen before leaving is the quit point) and what they reached.
+  const day = Math.floor(s.minute / DAY);
+  const chapter = `${seasonOf(doyOf(day))} y${yearOf(day)}${r0 ? `: ${r0.stage}` : ''}${reading0 ? ': notebook' : ''}`;
+  if (chapter !== labScreen) {
+    labScreen = chapter;
+    lab.screen(chapter);
+  }
+  for (const id of Object.keys(s.goals))
+    if (!labGoals.has(id)) {
+      labGoals.add(id);
+      lab.milestone(`goal ${id}`);
+    }
+  if (s.arrivals > labBase.arrivals) lab.milestone('a family arrived');
+  if (s.raids.filter((x) => x.stage === 'gone').length > labBase.gone) lab.milestone('riders came and went');
+  if (s.stats.died > labBase.died) lab.milestone('a death');
   // Raids slow the world down rather than stop it.
   const r = activeRaid(s);
   const stage = r ? `${r.smoke}:${r.stage}` : '';
@@ -594,6 +624,23 @@ function addPaint(px: number, py: number, fresh = false) {
   lastPaint = { x: px, y: py };
 }
 
+/** Whether the chalk just laid joins open ground through other chalk (so a digger can work toward it). */
+function reachable(cells: number[]): boolean {
+  if (!g) return true;
+  const h = g.s.hill;
+  const open = (j: number) => h.kind[j] === K.open || yOf(j) === SURF - 1;
+  const seen = new Set<number>();
+  const q = cells.filter((c) => h.chalk[c] && neighbours(c).some(open));
+  for (const c of q) seen.add(c);
+  for (let i = 0; i < q.length; i++)
+    for (const j of neighbours(q[i] ?? 0))
+      if (!seen.has(j) && h.chalk[j]) {
+        seen.add(j);
+        q.push(j);
+      }
+  return cells.every((c) => !h.chalk[c] || seen.has(c));
+}
+
 function commitPaint() {
   if (!g) return;
   const cells = [...paint.preview];
@@ -603,8 +650,23 @@ function commitPaint() {
   if (!cells.length || !kind) return;
   const h = g.s.hill;
   if (kind === 'chalk') {
-    if (!order({ verb: 'chalk', cells, on: true }) && cells.length === 1 && h.chalk[cells[0] ?? 0])
-      order({ verb: 'chalk', cells, on: false });
+    if (order({ verb: 'chalk', cells, on: true })) {
+      if (!reachable(cells))
+        flash(
+          'Nobody can get at that stone yet. Chalk a way to it from open ground, and they will dig toward it.',
+        );
+      return;
+    }
+    if (cells.length === 1 && h.chalk[cells[0] ?? 0]) order({ verb: 'chalk', cells, on: false });
+    // Every refusal says why, in the village's words.
+    else if (cells.some((c) => xOf(c) >= THEIR_X))
+      flash(
+        '“That is the neighbours’ ground, Usta. Only a passage that reaches it would show what is in it.”',
+      );
+    else if (cells.every((c) => h.kind[c] === K.open)) flash('That is open already. Chalk goes on stone.');
+    else if (cells.some((c) => h.kind[c] === K.bedrock))
+      flash('“Nothing cuts that, Usta. It is the old grey rock.”');
+    else flash('Chalk goes on stone the picks can reach.');
   } else if (kind === 'erase') {
     order({ verb: 'chalk', cells, on: false });
     order({ verb: 'use', cells, use: 'none' });
@@ -624,14 +686,21 @@ function tap(px: number, py: number) {
     if (s.hill.lamp[c] || s.hill.lampsWanted.includes(c)) order({ verb: 'unlamp', cell: c });
     else if (order({ verb: 'lamp', cell: c })) {
       if (s.hill.lampsWanted.includes(c))
-        hint('ghost', 'No lamp in hand. Someone will shape one at the hearth, if they will.');
+        flash(
+          'No lamp in hand: the dashed ring marks where it will hang. Someone will shape one at the hearth, if they will.',
+        );
+      else flash('Lamp hung.');
     } else flash('A lamp hangs in open ground, below the surface.');
     return;
   }
   if (tool === 'door') {
     if (c < 0) return;
-    if (!order({ verb: 'door', cell: c }))
-      flash('A door fits a narrow passage: open on two opposite sides only. Three at most.');
+    if (order({ verb: 'door', cell: c }))
+      flash('A door marked. They will carve the rolling stone when someone has the time and a light.');
+    else if (s.hill.use[c] === USE.door) flash('A door is marked here already.');
+    else if (s.hill.use.filter((u) => u === USE.door).length >= 3)
+      flash('“Three doors are all we can keep rolled, Usta.”');
+    else flash('A door fits a narrow passage: open on two opposite sides only.');
     return;
   }
   const who = personAt(s, view, px, py, paint.t);
@@ -743,6 +812,7 @@ function openBook() {
         <p>${done.map((x) => `✓ ${esc(x.text)}`).join('<br/>') || '<span class="soft">Nothing ticked off yet.</span>'}</p>
         <div class="actions">
           <button id="savenow">Close the notebook for now</button>
+          <button id="send">Send this run to the notebook</button>
           <button id="export">Export this run (seed, inputs, state)</button>
           <button id="restart">Begin a new hill</button>
         </div>
@@ -776,6 +846,9 @@ function openBook() {
     flash('The notebook is put away with the hill as it is. It keeps going while you are gone, a little.');
   });
   document.getElementById('export')?.addEventListener('click', download);
+  document.getElementById('send')?.addEventListener('click', () => {
+    if (g) lab.openSendDialog({ getRun: () => runOf() });
+  });
   document.getElementById('restart')?.addEventListener('click', async () => {
     if (!confirm('Begin a new hill? This one will be put away for good.')) return;
     await store.drop(SAVE_KEY);
@@ -792,9 +865,13 @@ async function writeSave(): Promise<void> {
   await store.put(SAVE_KEY, { ...save(g), savedAt: Date.now() });
 }
 
+function runOf() {
+  return g ? { ...save(g), exportedAt: new Date().toISOString() } : null;
+}
+
 function download() {
   if (!g) return;
-  const blob = new Blob([JSON.stringify({ ...save(g), exportedAt: new Date().toISOString() })], {
+  const blob = new Blob([JSON.stringify(runOf())], {
     type: 'application/json',
   });
   const a = document.createElement('a');

@@ -1673,14 +1673,25 @@ function captureAnswer(s: WarrenState, p: Person, offer: Affordance, record: Dec
   s.answers.push({ at: p.now, who: p.id, verdict: res.verdict, says: res.says });
   if (s.answers.length > 200) s.answers.splice(0, s.answers.length - 200);
   s.stats.bell[res.verdict] = (s.stats.bell[res.verdict] ?? 0) + 1;
-  if (res.verdict === 'refused' || res.verdict === 'deferred')
-    note(s, {
-      kind: 'answer',
-      who: p.id,
-      text: `${p.name}: “${res.says}”`,
-      weight: 1.2,
-      cell: s.pos[p.id] ?? 0,
-    });
+  if (res.verdict !== 'refused' && res.verdict !== 'deferred') return;
+  // Someone who has stopped believing the bell says so at a real raid: the cost of crying wolf, in the journal.
+  const trust = p.will.voices.find((v) => v.voiceId === BELL)?.trust ?? 0.5;
+  const doubting = s.bell.real && (s.flags.falseBells ?? 0) > 0 && trust < 0.4;
+  const text = doubting
+    ? `${p.name} heard the bell and kept on with ${offer.label.replace(/^(the|a) /, 'the ')}. ${p.life.sex === 'female' ? 'She' : 'He'} had heard it before.`
+    : `${p.name}: “${res.says}”`;
+  // One stock answer once per ringing: the second person to say "After I pray" joins the first line.
+  const bellAt = s.bell.at;
+  if (!doubting) {
+    const same = s.notes.findLast(
+      (n) => n.kind === 'answer' && n.at >= bellAt && n.text.endsWith(`“${res.says}”`),
+    );
+    if (same) {
+      if (!same.text.includes(' and others')) same.text = same.text.replace(/:/, ' and others:');
+      return;
+    }
+  }
+  note(s, { kind: 'answer', who: p.id, text, weight: doubting ? 2 : 1.2, cell: s.pos[p.id] ?? 0 });
 }
 
 // ---------- the HF world ----------
@@ -2073,8 +2084,31 @@ function endOfDay(s: WarrenState, day: number) {
   }
   // Word, and families who come because they heard.
   wordStep(s, day);
+  stallStep(s);
   refreshKnown(h);
   s.stats.peak = Math.max(s.stats.peak, s.people.filter((p) => p.body.alive).length);
+}
+
+/** When every chalked face is dark or airless for a day, the journal says the picks have stopped, and why. */
+function stallStep(s: WarrenState) {
+  const fs = faces(s.hill);
+  if (!fs.length) return;
+  const { lit, air } = airAndLight(s);
+  const st = fs.map((f) => faceState(s, f.face, f.stand, lit, air));
+  if (!st.every((x) => x === 'dark' || x === 'stale')) {
+    delete s.flags.stallSince;
+    return;
+  }
+  s.flags.stallSince ??= s.minute;
+  if (s.minute - s.flags.stallSince < DAY || s.minute - (s.flags.stallTold ?? -99 * DAY) < 6 * DAY) return;
+  s.flags.stallTold = s.minute;
+  note(s, {
+    kind: 'story',
+    text: st.every((x) => x === 'stale')
+      ? 'The picks have stopped. At every chalked face the air is stale and the lamps gutter. A shaft to the sky would bring air down.'
+      : 'The picks have stopped. Every chalked face is in the dark. A lamp hung beside one would start them again.',
+    weight: 2,
+  });
 }
 
 function wordStep(s: WarrenState, day: number) {
@@ -2093,13 +2127,25 @@ function wordStep(s: WarrenState, day: number) {
   s.word += (target - s.word) * 0.1;
   const season = seasonOf(doyOf(day));
   const free = bedsBelow(s) + s.houses.length * 2 - alive.length;
-  if (day < 4 || alive.length >= 60 || free < 2) return;
+  if (day < 4 || alive.length >= 60) return;
   const chance =
-    (season === 'winter' ? 0.03 : 0.12) *
+    (season === 'winter' ? 0.04 : 0.18) *
     (alive.length > 30 ? 0.5 : 1) *
     s.word *
     (s.heldAt >= 0 && s.minute - s.heldAt < 15 * DAY ? 2 : 1);
   if (hashUnit(s.seed, DRAW.arrival, day) >= chance) return;
+  if (free < 2) {
+    // Word brought them, but there was nowhere to sleep: growth waits on beds, and the journal says so.
+    if (s.minute - (s.flags.turnedAway ?? -99 * DAY) < 12 * DAY) return;
+    s.flags.turnedAway = s.minute;
+    note(s, {
+      kind: 'arrival',
+      text: 'A family stopped at the spring and asked about room below. There were no beds to spare; they watered the donkey and went on.',
+      weight: 1.5,
+      cell: springCell(s),
+    });
+    return;
+  }
   const used = new Set(s.usedNames);
   const xs = [8, 6, 20, 4, 22, 3, 7, 5, 9, 11, 13, 15, 19, 23];
   const taken = new Set(s.houses.map((x) => x.x));
@@ -2162,7 +2208,7 @@ export const GOALS: Goal[] = [
   },
   {
     id: 'raid',
-    text: 'When the smoke comes, everyone below.',
+    text: 'Live through the first riders.',
     done: (s) => s.raids[0]?.stage === 'gone',
     shown: (s) => s.raids[0]?.stage !== 'coming',
   },

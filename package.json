@@ -1,6 +1,6 @@
 {
   "name": "warren",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "The Warren: a village digs a refuge into soft stone. Nobody obeys; everyone follows the worn path.",
@@ -21,7 +21,8 @@
     "deploy": "npm run check && npm run build && wrangler deploy"
   },
   "dependencies": {
-    "@adam0white/human-framework": "2.8.0"
+    "@adam0white/human-framework": "2.8.0",
+    "@adam0white/lab-client": "https://github.com/adam0white/human-framework/releases/download/lab-client-v0.1.0/adam0white-lab-client-0.1.0.tgz"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",
