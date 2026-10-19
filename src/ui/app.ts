@@ -381,6 +381,7 @@ function hint(key: string, text: string) {
   seenHint.add(key);
   const goal = document.getElementById('goal');
   if (!goal) return;
+  document.querySelector('.hint')?.remove();
   const el = document.createElement('div');
   el.className = 'hint hand';
   el.textContent = text;
@@ -764,6 +765,10 @@ async function requestWake() {
     if (nav.wakeLock && !wake) wake = await nav.wakeLock.request('screen');
   } catch {}
 }
+
+addEventListener('pagehide', () => {
+  if (g) void writeSave();
+});
 
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
