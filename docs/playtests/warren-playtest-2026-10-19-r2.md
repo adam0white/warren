@@ -186,3 +186,15 @@ the-warren-0.1.0 6ed1783, seeds 1,2
 ```
 
 The false bell is now answered every time (100%). The first raid still frustrates every persona. Chalk toward the neighbours still shows as mostly silent in the harness; the game now flashes a reason on screen, which the adapter does not count as an answer (an adapter limit, assumed, not measured).
+
+## Round 3 check, cut short (build 30ecc16)
+
+One colony-sim veteran (Opus) played about 15 commands before the coordinator's soft stop, with no raid seen. Provisional 6/10. Verbatim excerpts:
+
+> **Best, 25th day of harvest:** a family was turned away because "There were no beds to spare". It came from a real gap in my warren and gave me my next goal.
+
+> **Worst, 19th day of harvest:** the camera moved between my look and my drag, so my first chalk drag landed on empty stone.
+
+> Store needs a drag, but a tap fails with no feedback.
+
+Open from this check: the camera follows a selected person between inputs, and a tap with a drag-only tool is silent (both dated 2026-10-26 in the design doc).

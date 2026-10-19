@@ -65,4 +65,5 @@ At gallop a sim-day is 1.25 real seconds, so 60 people is about 40–50% of one 
 - Lab client from npm instead of the release tarball, once the owner publishes `@adam0white/lab-client` (check 2026-10-26).
 - Goals judged on outcomes (beds slept in, people below when riders came), food that can run short, and slowing the days for big finds such as water (2026-10-26; round 2 veteran).
 - Mid-game events between raids (cave-ins on loose stone, quarrels) and a "while you were away" growth record for idle players (2026-11-02; rounds 1 and 2 idle testers).
+- The camera stays where the player put it, and a tap with a drag-only tool says so (2026-10-26; round 3 check).
 - The dig drawn as it happens (chips, a face that visibly gives) for younger players (2026-11-02; round 2 wildcard).
