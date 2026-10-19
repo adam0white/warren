@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <title>The Warren</title>
+  <rect width="512" height="512" rx="96" fill="#F3ECDD"/>
+  <path d="M40 170 Q140 164 236 172 L236 172" fill="none" stroke="#23201B" stroke-width="14" stroke-linecap="round"/>
+  <path d="M292 172 Q380 166 472 170" fill="none" stroke="#23201B" stroke-width="14" stroke-linecap="round"/>
+  <path d="M236 172 L236 262 L150 262 L150 330 L360 330 L360 262 L292 262 L292 172" fill="#F3ECDD" stroke="#23201B" stroke-width="14" stroke-linejoin="round"/>
+  <path d="M206 330 L206 402 L318 402 L318 330" fill="none" stroke="#23201B" stroke-width="14" stroke-linejoin="round"/>
+  <path d="M170 290 L196 316 M196 290 L170 316" stroke="#C2412D" stroke-width="12" stroke-linecap="round"/>
+  <path d="M110 120 l40 -40 l40 40 z M330 120 l40 -40 l40 40 z" fill="none" stroke="#23201B" stroke-width="12" stroke-linejoin="round"/>
+  <path d="M120 120 h60 v50 h-60 z M340 120 h60 v50 h-60 z" fill="none" stroke="#23201B" stroke-width="12"/>
+  <circle cx="300" cy="300" r="10" fill="#C2412D"/>
+</svg>
