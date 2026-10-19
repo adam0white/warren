@@ -53,7 +53,8 @@ if (a0 === 'serve') {
       await page.mouse.move(x1, y1);
       await page.mouse.down();
       const steps = Math.max(4, Math.ceil(Math.hypot(x2 - x1, y2 - y1) / 6));
-      for (let k = 1; k <= steps; k++) await page.mouse.move(x1 + ((x2 - x1) * k) / steps, y1 + ((y2 - y1) * k) / steps);
+      for (let k = 1; k <= steps; k++)
+        await page.mouse.move(x1 + ((x2 - x1) * k) / steps, y1 + ((y2 - y1) * k) / steps);
       await page.mouse.up();
       await page.clock.runFor(300);
       return snap();
@@ -141,15 +142,20 @@ async function look(page: Page, path: string): Promise<string> {
     else if (document.querySelector('.game')) {
       out.push(`[top] ${t('.top')}`);
       if (t('#goal')) out.push(`[margin] ${t('#goal')}`);
-      for (const h of document.querySelectorAll<HTMLElement>('.hint')) out.push(`[note in the margin] ${h.innerText.trim()}`);
+      for (const h of document.querySelectorAll<HTMLElement>('.hint'))
+        out.push(`[note in the margin] ${h.innerText.trim()}`);
       if (t('#ticker')) out.push(`[journal line] ${t('#ticker')}`);
       if (vis('#card')) out.push(`[card] ${t('#card')}`);
       const on = (sel: string) =>
-        [...document.querySelectorAll<HTMLElement>(sel)].find((b) => b.classList.contains('on'))?.getAttribute('aria-label') ?? '';
+        [...document.querySelectorAll<HTMLElement>(sel)]
+          .find((b) => b.classList.contains('on'))
+          ?.getAttribute('aria-label') ?? '';
       out.push(`[tool] ${on('[data-tool]')}   [speed] ${on('[data-speed]')} (of slow, walk, trot, gallop)`);
       out.push('[picture] the cross-section is a picture: look at the screenshot');
     } else out.push(t('.page') || document.body.innerText.trim());
-    const buttons = [...document.querySelectorAll<HTMLButtonElement>('button')].filter((b) => b.offsetParent !== null);
+    const buttons = [...document.querySelectorAll<HTMLButtonElement>('button')].filter(
+      (b) => b.offsetParent !== null,
+    );
     out.push(
       `[buttons] ${buttons.map((b, i) => `${i + 1}. ${(b.getAttribute('aria-label') ?? b.innerText).replace(/\s+/g, ' ').trim()}${b.disabled ? ' (greyed)' : ''}`).join(' | ')}`,
     );
@@ -161,8 +167,11 @@ async function look(page: Page, path: string): Promise<string> {
 async function tap(page: Page, arg: string): Promise<string | null> {
   const found = await page.evaluate((arg) => {
     for (const b of document.querySelectorAll('[data-drive]')) b.removeAttribute('data-drive');
-    const all = [...document.querySelectorAll<HTMLButtonElement>('button')].filter((x) => x.offsetParent !== null);
-    const label = (x: HTMLButtonElement) => (x.getAttribute('aria-label') ?? x.innerText).replace(/\s+/g, ' ').trim();
+    const all = [...document.querySelectorAll<HTMLButtonElement>('button')].filter(
+      (x) => x.offsetParent !== null,
+    );
+    const label = (x: HTMLButtonElement) =>
+      (x.getAttribute('aria-label') ?? x.innerText).replace(/\s+/g, ' ').trim();
     const n = Number(arg);
     const b =
       Number.isInteger(n) && n > 0
