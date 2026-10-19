@@ -14,7 +14,8 @@ export type Season = 'spring' | 'summer' | 'harvest' | 'autumn' | 'winter';
 export const dayOfMinute = (m: number) => Math.floor(m / DAY);
 export const minuteOfDay = (m: number) => ((m % DAY) + DAY) % DAY;
 export const doyOf = (day: number) => (START_DOY + day) % YEAR_DAYS;
-export const yearOf = (day: number) => 1 + Math.floor((START_DOY + day) / YEAR_DAYS);
+/** Years under the hill: the first year runs from the first day of play. */
+export const yearOf = (day: number) => 1 + Math.floor(day / YEAR_DAYS);
 
 export function seasonOf(doy: number): Season {
   if (doy >= 60 && doy < 152) return 'spring';

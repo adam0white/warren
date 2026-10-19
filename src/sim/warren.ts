@@ -1006,6 +1006,8 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
           placeId: wells.length ? 'well' : 'spring',
           duration: 0,
           effort: 0.45,
+          // Household work, paid in the household's water: it has to beat a rest, like any chore.
+          material: dry ? 1.2 : 0.5,
           advertises: { water: dry ? 0.2 : 0.04, belonging: 0.08, esteem: 0.04 },
           tags: ['work'],
           ...(wells.length || !outside ? {} : { risk: outside }),
@@ -1049,6 +1051,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
         effort: 0.75,
         skill: { id: 'digging', difficulty: 0.5 },
         advances: ['refuge'],
+        material: 1.5,
         advertises: { competence: 0.08, safety: 0.12, esteem: 0.05 },
         tags: ['work'],
       },
@@ -1638,6 +1641,24 @@ function beginTrip(s: WarrenState, p: Person, offer: Affordance) {
   for (const c of pl.cells) if (yOf(c) >= SURF) w[c] = (w[c] ?? 0) + 1;
 }
 
+/** A bell with no riders: the hill answers it, a little more drily each time. Trust itself moves in HF. */
+function falseAlarm(s: WarrenState, at: number) {
+  const k = (s.flags.falseBells ?? 0) + 1;
+  s.flags.falseBells = k;
+  const came = s.answers.filter((a) => a.at >= at && (a.verdict === 'assented' || a.verdict === 'complied'));
+  const one = personOf(s, came[0]?.who ?? '');
+  const name = one?.name.split(' ')[0];
+  const text =
+    k === 1
+      ? 'No riders came. They climbed back up blinking and looked at the bell, and then at you.'
+      : k === 2
+        ? `No riders again. ${name ? `${name} hung a wet shawl on the bell rope to dry.` : 'Someone hung a wet shawl on the bell rope to dry.'}`
+        : came.length
+          ? `No riders. ${came.length === 1 ? 'Only one' : `Only ${came.length}`} went down this time, and came up quickly.`
+          : 'No riders. Nobody went down. The children ring the bell now, for fun.';
+  note(s, { kind: 'answer', ...(one ? { who: one.id } : {}), text, weight: 1.5 });
+}
+
 // ---------- the bell's answers ----------
 
 function captureAnswer(s: WarrenState, p: Person, offer: Affordance, record: DecisionRecord) {
@@ -1764,7 +1785,10 @@ function afterQuantum(s: WarrenState, ev: SimEvent[]) {
     });
   }
   raidStep(s);
-  if (s.bell && s.bell.until <= s.minute) s.bell = null;
+  if (s.bell && s.bell.until <= s.minute) {
+    if (!s.bell.real) falseAlarm(s, s.bell.at);
+    s.bell = null;
+  }
   goalsStep(s);
 }
 
@@ -2187,8 +2211,21 @@ export function deepest(s: WarrenState): number {
   return d;
 }
 
+/** What Yusuf Usta says when a goal first shows: where to look, in the fiction. */
+const TOLD: Record<string, string> = {
+  water:
+    'Yusuf Usta said his father struck water once, under the fields to the west, a good way below the hard band. Damp stone shows first.',
+  deep: 'Below here the stone turns hard and slow. Yusuf Usta says it softens again further down.',
+  lamp: 'Where the daylight stops, the picks stop. A lamp hung beside a face lets them work it.',
+};
+
 function goalsStep(s: WarrenState) {
   for (const g of GOALS) {
+    const told = TOLD[g.id];
+    if (told && !s.flags[`told:${g.id}`] && s.goals[g.id] === undefined && g.shown(s)) {
+      s.flags[`told:${g.id}`] = s.minute;
+      note(s, { kind: 'story', who: USTA_ID, text: told, weight: 1 });
+    }
     if (s.goals[g.id] !== undefined) continue;
     if (g.shown(s) && g.done(s)) {
       s.goals[g.id] = s.minute;
@@ -2212,6 +2249,15 @@ export function setChalk(s: WarrenState, cells: number[], on: boolean): number {
     if (h.chalk[c] === (on ? 1 : 0)) continue;
     h.chalk[c] = on ? 1 : 0;
     n++;
+  }
+  if (n && on && !s.flags.ridgeChalk && cells.some((c) => h.chalk[c] && xOf(c) >= RIDGE)) {
+    s.flags.ridgeChalk = s.minute;
+    note(s, {
+      kind: 'story',
+      who: USTA_ID,
+      text: 'Chalk under the ridge. Past it the stone is the neighbours’. Yusuf Usta looked at the mark a long time and said only that sound carries in stone.',
+      weight: 1.5,
+    });
   }
   if (n && on) {
     s.stats.firstChalk ??= s.minute;

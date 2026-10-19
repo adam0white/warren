@@ -21,10 +21,11 @@ import {
   type Saved,
   save,
 } from '../sim/game.ts';
-import { H, idx, K, SURF, USE, W, xOf, yOf } from '../sim/grid.ts';
+import { AIR_REACH, H, idx, K, neighbours, SURF, USE, W, xOf, yOf } from '../sim/grid.ts';
 import { BELL } from '../sim/people.ts';
 import {
   activeRaid,
+  airAndLight,
   currentGoal,
   GOALS,
   houseOf,
@@ -65,6 +66,8 @@ let lagging = false;
 let wake: { release(): Promise<void> } | null = null;
 const seenHint = new Set<string>();
 let lastRaidStage = '';
+/** The speed the player had chosen before a raid slowed the days (-1: none). */
+let speedBefore = -1;
 
 const app = () => document.getElementById('app') as HTMLElement;
 const esc = (x: string) =>
@@ -212,6 +215,7 @@ function enter() {
   for (const b of document.querySelectorAll<HTMLButtonElement>('[data-speed]'))
     b.addEventListener('click', () => {
       speedIx = Number(b.dataset.speed);
+      speedBefore = -1;
       syncButtons();
       requestWake();
     });
@@ -220,6 +224,14 @@ function enter() {
       hint('bell', 'They hear it from the fields and the faces. What they do is theirs.');
   });
   document.getElementById('book')?.addEventListener('click', () => openBook());
+  // The card is redrawn as the person moves; listen on the card itself so the × works between redraws.
+  document.getElementById('card')?.addEventListener('pointerdown', (e) => {
+    if (!(e.target as HTMLElement).closest('#cardx')) return;
+    e.preventDefault();
+    paint.selected = null;
+    const el = document.getElementById('card');
+    if (el) el.hidden = true;
+  });
   document.getElementById('ticker')?.addEventListener('click', () => openBook());
   resize();
   const s = g.s;
@@ -254,7 +266,7 @@ function setTool(t: Tool) {
     store: 'Drag over open ground to make it a store. Grain goes where the jars are.',
     beds: 'Drag over open ground for sleeping places below.',
     lamp: 'Tap open ground to hang a lamp. Tap it again to take it down.',
-    door: 'Tap a narrow passage. They carve a rolling stone there, in time.',
+    door: 'Tap a passage one cell wide, open on two opposite sides only. They carve a rolling stone there if it is lit. Three doors at most.',
   };
   const h = hints[t];
   if (h) hint(`tool:${t}`, h);
@@ -305,7 +317,10 @@ function frame(now: number) {
   const dt = Math.min(250, now - last);
   last = now;
   const s = g.s;
-  disp += (dt * (SPEEDS[speedIx] ?? 1)) / MS_PER_MIN;
+  // The notebook open slows the days to 'slow' rather than stopping them.
+  const reading = !(document.getElementById('drawer')?.hidden ?? true);
+  const sp = SPEEDS[speedIx] ?? 1;
+  disp += (dt * (reading ? Math.min(sp, SPEEDS[0]) : sp)) / MS_PER_MIN;
   const t0 = performance.now();
   while (s.minute + QUANTUM <= disp && performance.now() - t0 < 10) {
     advance(g, s.minute + QUANTUM);
@@ -338,8 +353,15 @@ function chrome() {
   const stage = r ? `${r.smoke}:${r.stage}` : '';
   if (stage !== lastRaidStage) {
     lastRaidStage = stage;
-    if (r && speedIx > 1) {
-      speedIx = 1;
+    // Smoke slows the days to 'slow' so the bell can be rung; riders pass at 'walk'; afterwards the old speed returns.
+    const want = r?.stage === 'smoke' ? 0 : r ? 1 : -1;
+    if (want >= 0 && speedIx > want) {
+      if (speedBefore < 0) speedBefore = speedIx;
+      speedIx = want;
+      syncButtons();
+    } else if (!r && speedBefore >= 0) {
+      speedIx = speedBefore;
+      speedBefore = -1;
       syncButtons();
     }
     if (r?.stage === 'smoke') hint('smoke', 'Smoke. The bell is yours to ring.');
@@ -348,7 +370,9 @@ function chrome() {
   for (; seenNotes < s.notes.length; seenNotes++) {
     const n = s.notes[seenNotes];
     if (!n) continue;
-    if (n.weight >= 1 && (!ticker || n.weight >= ticker.weight || performance.now() > tickerUntil)) {
+    // Light notes fill a quiet ticker; heavy ones push in.
+    const quiet = performance.now() > tickerUntil;
+    if ((n.weight >= 1 && (!ticker || n.weight >= ticker.weight)) || quiet) {
       ticker = n;
       tickerUntil = performance.now() + 5000 + n.weight * 2000;
     }
@@ -405,6 +429,12 @@ function bodyWords(p: Person): string {
   return w.length ? w.join(', ') : 'well enough';
 }
 
+/** How they seem, from HF's own description: the feeling, if any, said plainly. */
+function feeling(p: Person): string {
+  const f = /feeling ([^.;]+)/.exec(describePerson(p))?.[1];
+  return f ? `${p.name.split(' ')[0]} seems to be feeling ${f}.` : '';
+}
+
 function trustWords(p: Person): string {
   const v = p.will.voices.find((x) => x.voiceId === BELL);
   if (!v) return '';
@@ -434,7 +464,7 @@ function card() {
   const html = `
     <div class="who"><b>${esc(p.name)}</b> <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'come from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
     <div>${walking ? 'on the way to ' : ''}${esc(doing)}<span class="soft"> · ${esc(bodyWords(p))}</span></div>
-    <div class="soft">${esc(describePerson(p).replace(/^[^:]+:\s*[^;]*;\s*/, ''))}</div>
+    ${feeling(p) ? `<div class="soft">${esc(feeling(p))}</div>` : ''}
     ${habit ? '<div class="hand">Goes down to the faces every morning now. Nobody asks.</div>' : ''}
     ${trustWords(p) ? `<div class="soft">${esc(p.name)} ${trustWords(p)}.</div>` : ''}
     ${said ? `<div class="hand">“${esc(said.says)}”</div>` : ''}
@@ -442,10 +472,6 @@ function card() {
   if (el.dataset.html !== html) {
     el.dataset.html = html;
     el.innerHTML = html;
-    document.getElementById('cardx')?.addEventListener('click', () => {
-      paint.selected = null;
-      el.hidden = true;
-    });
   }
   el.hidden = false;
 }
@@ -618,6 +644,22 @@ function tap(px: number, py: number) {
   }
 }
 
+function lightAt(c: number): boolean {
+  if (!g) return false;
+  const { lit } = airAndLight(g.s);
+  return !!lit[c] || neighbours(c).some((j) => !!lit[j]);
+}
+
+/** Air and light at an open cell, in words, with what changes them. */
+function airWords(c: number): string {
+  if (!g) return '';
+  const { lit, air } = airAndLight(g.s);
+  if (yOf(c) >= SURF && (air[c] ?? 32000) > AIR_REACH)
+    return ' The air is stale: no lamp burns and nobody will cut here. Air comes down an opening to the sky; it carries a long way straight down a shaft, not far sideways.';
+  if (!lit[c]) return ' Dark. A lamp hung here would let them work.';
+  return '';
+}
+
 function describeCell(c: number) {
   if (!g) return;
   const h = g.s.hill;
@@ -633,20 +675,23 @@ function describeCell(c: number) {
           ? 'A store. Jars of barley.'
           : 'A store, empty.'
         : u === USE.beds
-          ? 'Sleeping places.'
+          ? 'Sleeping places, three to a mark.'
           : u === USE.hearth
             ? 'The hearth. Yusuf Usta sits here.'
             : u === USE.well
               ? 'The well. Cold water from the seam.'
               : u === USE.door
                 ? h.doorWork[c]
-                  ? 'A door being carved.'
+                  ? lightAt(c)
+                    ? 'A door being carved. They cut the stone as they find the time.'
+                    : 'A door marked, in the dark. Nobody can carve it without a lamp near.'
                   : h.shut[c]
                     ? 'The stone door, rolled shut.'
                     : 'The stone door, rolled back.'
                 : (h.wear[c] ?? 0) > 6
                   ? 'Worn smooth. They walk this way.'
                   : 'Open ground.';
+    text += airWords(c);
   } else if (!known) text = 'Stone. Nobody has seen what is in it.';
   else
     text =
@@ -657,6 +702,10 @@ function describeCell(c: number) {
           : k === K.seam
             ? 'Damp stone. Water seeps here.'
             : 'Soft stone. It cuts like cheese when it is fresh.';
+  if (k !== K.open && h.chalk[c]) {
+    const stand = neighbours(c).find((j) => h.kind[j] === K.open && yOf(j) >= SURF);
+    if (stand !== undefined) text += airWords(stand);
+  }
   flash(text);
   void xOf;
   void idx;

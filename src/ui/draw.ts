@@ -304,12 +304,12 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
   const raid = activeRaid(s);
   const recent = new Map<string, string>();
   for (const a of s.answers) if (a.at > t - 2 * HOUR && a.at <= t + 30 && a.says) recent.set(a.who, a.says);
+  const where = layout(s, t);
   for (const p of s.people) {
     if (!p.body.alive) continue;
-    const [fx, fy] = drawPosition(s, p.id, t);
+    const [fx, fy] = where.get(p.id) ?? drawPosition(s, p.id, t);
     if (fx < x0 - 2 || fx > x1 + 1 || fy < y0 - 2 || fy > y1 + 1) continue;
-    const off = ((strHash(p.id) >>> 0) % 7) / 7 - 0.43;
-    figure(c, p, s, (fx + 0.5 + off * 0.55) * cs, (fy + 0.95) * cs, cs, ink, t, paint.selected === p.id);
+    figure(c, p, s, (fx + 0.5) * cs, (fy + 0.95) * cs, cs, ink, t, paint.selected === p.id);
     const said = recent.get(p.id);
     if (said && (paint.selected === p.id || recent.size <= 4))
       bubble(c, said, (fx + 0.5) * cs, (fy - 0.15) * cs, cs, ink);
@@ -334,6 +334,56 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
   if (raid?.stage === 'smoke') smoke(c, cs, t, ink);
   if (raid?.stage === 'riders') riders(c, s, cs, t, ink);
   c.restore();
+}
+
+/**
+ * Where each living person is drawn: their sim position, but people resting in a crowded cell spill into the open
+ * cells nearby (three to a cell), so forty at the hearth read as a crowd around it rather than one blot.
+ */
+export function layout(s: WarrenState, t: number): Map<string, [number, number]> {
+  const out = new Map<string, [number, number]>();
+  const byCell = new Map<number, string[]>();
+  for (const p of s.people) {
+    if (!p.body.alive) continue;
+    const [fx, fy] = drawPosition(s, p.id, t);
+    const off = ((strHash(p.id) >>> 0) % 7) / 7 - 0.43;
+    out.set(p.id, [fx + off * 0.55, fy]);
+    if (Number.isInteger(fx) && Number.isInteger(fy) && fy >= SURF) {
+      const c = fy * W + fx;
+      const list = byCell.get(c) ?? [];
+      list.push(p.id);
+      byCell.set(c, list);
+    }
+  }
+  const taken = new Map<number, number>();
+  for (const [c, ids] of byCell) taken.set(c, Math.min(3, ids.length));
+  for (const [c, ids] of byCell) {
+    if (ids.length <= 3) continue;
+    const rest = [...ids].sort().slice(3);
+    const seen = new Set([c]);
+    const q = [c];
+    let k = 0;
+    for (let qi = 0; qi < q.length && k < rest.length; qi++) {
+      const cur = q[qi] ?? c;
+      if (cur !== c) {
+        let n = taken.get(cur) ?? 0;
+        while (n < 3 && k < rest.length) {
+          const id = rest[k++] ?? '';
+          const off = ((n + 0.5) / 3 - 0.5) * 0.8;
+          out.set(id, [(cur % W) + off, Math.floor(cur / W)]);
+          n++;
+        }
+        taken.set(cur, n);
+      }
+      for (const d of [-1, 1, -W, W]) {
+        const j = cur + d;
+        if (seen.has(j) || j < 0 || j >= s.hill.kind.length || Math.abs((j % W) - (cur % W)) > 1) continue;
+        seen.add(j);
+        if (s.hill.kind[j] === K.open && Math.floor(j / W) >= SURF) q.push(j);
+      }
+    }
+  }
+  return out;
 }
 
 function isOpen(s: WarrenState, i: number): boolean {
@@ -775,11 +825,11 @@ export function personAt(s: WarrenState, v: View, px: number, py: number, t: num
   const wy = v.y + py / v.cs;
   let best: string | null = null;
   let bd = 0.9;
+  const where = layout(s, t);
   for (const p of s.people) {
     if (!p.body.alive) continue;
-    const [fx, fy] = drawPosition(s, p.id, t);
-    const off = ((strHash(p.id) >>> 0) % 7) / 7 - 0.43;
-    const d = Math.hypot(fx + 0.5 + off * 0.55 - wx, fy + 0.6 - wy);
+    const [fx, fy] = where.get(p.id) ?? drawPosition(s, p.id, t);
+    const d = Math.hypot(fx + 0.5 - wx, fy + 0.6 - wy);
     if (d < bd) {
       bd = d;
       best = p.id;
