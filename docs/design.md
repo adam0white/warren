@@ -32,7 +32,7 @@ Research: [research-hooks.md](research-hooks.md) ([S] sourced, [I] inference). E
 1. Chalk stone beside open ground. Someone who sees it may take up a pick (within the hour in daylight).
 2. The dug space opens; spoil piles up and is carried to the heap; feet wear the path.
 3. Mark rooms (store, beds); grain and sleepers move below. Hang lamps where the dark stops the picks; sink a shaft where the air goes stale.
-4. Smoke comes. Ring the bell, or not. People shelter, shut doors, hide, or keep reaping.
+4. Smoke comes. Ring the bell, or not. Riders come down every opening to the sky, so each shaft dug for air is also a way in; a door below closes it. People shelter, shut doors, hide, or keep reaping.
 5. The hill holds or it does not. Word spreads; families come; the warren must grow.
 
 ## How HF is used
@@ -62,4 +62,7 @@ At gallop a sim-day is 1.25 real seconds, so 60 people is about 40–50% of one 
 
 - Web Worker sim if phones lag at gallop (decide 2026-10-26).
 - Collapsing infrastructure as the expendable part of "sacrifice without guilt" (2026-11-02).
-- Lab telemetry client, when `@adam0white/lab-client` is published (check 2026-10-26).
+- Lab client from npm instead of the release tarball, once the owner publishes `@adam0white/lab-client` (check 2026-10-26).
+- Goals judged on outcomes (beds slept in, people below when riders came), food that can run short, and slowing the days for big finds such as water (2026-10-26; round 2 veteran).
+- Mid-game events between raids (cave-ins on loose stone, quarrels) and a "while you were away" growth record for idle players (2026-11-02; rounds 1 and 2 idle testers).
+- The dig drawn as it happens (chips, a face that visibly gives) for younger players (2026-11-02; round 2 wildcard).
