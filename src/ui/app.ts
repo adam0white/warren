@@ -196,10 +196,10 @@ function enter() {
       <canvas id="cv"></canvas>
       <div class="goal hand" id="goal"></div>
       <div class="lag soft" id="lag" hidden>the days pass as fast as they can</div>
+      <div class="card" id="card" hidden></div>
     </div>
     <div class="panel">
       <button class="ticker" id="ticker" aria-label="Open the notebook"></button>
-      <div class="card" id="card" hidden></div>
       <div class="tools" role="toolbar" aria-label="Tools">
         ${toolBtn('look', 'look', '◎')}
         ${toolBtn('chalk', 'chalk', '✕')}
@@ -489,6 +489,7 @@ function card() {
   const tr = s.trips[p.id];
   const walking = tr && paint.t < tr.workFrom && tr.cells.length > 1;
   const said = s.answers.findLast((a) => a.who === p.id && a.says);
+  const why = walking ? undefined : s.why?.[p.id];
   const about = s.notes.filter((n) => n.who === p.id).slice(-2);
   const habit = p.habits.some((h) => h.action === 'dig' && h.strength > 0.25);
   const html = `
@@ -497,7 +498,7 @@ function card() {
     ${feeling(p) ? `<div class="soft">${esc(feeling(p))}</div>` : ''}
     ${habit ? '<div class="hand">Goes down to the faces every morning now. Nobody asks.</div>' : ''}
     ${trustWords(p) ? `<div class="soft">${esc(p.name)} ${trustWords(p)}.</div>` : ''}
-    ${said ? `<div class="hand">“${esc(said.says)}”</div>` : ''}
+    ${said ? `<div class="hand">“${esc(said.says)}”</div>` : why ? `<div class="hand">“${esc(why)}”</div>` : ''}
     ${about.map((n) => `<div class="soft small">${esc(n.text)}</div>`).join('')}`;
   if (el.dataset.html !== html) {
     el.dataset.html = html;

@@ -7,7 +7,7 @@ Build: commit 3dc00d6 (0.1.0, HF 2.8.0), live at https://warren.adamwhite.work, 
 | Colony-sim veteran | Opus | spring 23rd, year 2; 40+ souls | 5/10 |
 | Idle/incremental addict | Sonnet | autumn 25th, year 2; 9 souls | 3/10 |
 | Wildcard: retired history teacher from Nevşehir, 67 | Haiku | night of the 38th of harvest, year 1; 9 souls | 5/10 |
-| Mischief edge-pusher | Opus | see round 1b below | |
+| Mischief edge-pusher | Opus | 48th of spring, year 2; some 20 souls | 6/10 |
 
 ## What changed in response (commit 6ed1783)
 
@@ -148,6 +148,66 @@ Designer's note (confirmed from the export): the idle player made two inputs in 
 > - The margin says "the water jars are dry" for about 18 days with no change.
 > - The dashed door outline in the shaft did not carve by the 38th.
 > - Driver errors: "tap Close" and "tap 2" timed out on `[data-drive]` / the card's × a few times. I retried and the second try worked.
+
+## Mischief edge-pusher (Opus)
+
+Played build 3dc00d6; report received after 6ed1783 was deployed. Changes it led to are in 9eaf251 (round 2).
+
+> ## 1. Verdict
+> The bell is the best thing in it. The village notices my lies and stops believing me, person by person, in a way that is believable and a little funny. Everything else I tried to abuse was either refused in silence or let through without anyone noticing. **6/10.**
+>
+> ## 2. The first minute
+> The intro hands me the bell and says "Ring the bell when there is smoke." Of course I rang it before doing anything else. The journal said "You rang the bell, though no one had seen smoke." Hasan replied: "Not now. After I drink from the jar." The game had caught me in a lie in the first ten seconds, and that hooked me. The chalk tutorial ("Choose chalk, then drag across the stone beside it") was clear.
+>
+> ## 3. What I understood, and what confused me
+> **Understood:**
+> - I chalk where to dig, mark rooms, hang lamps and ring the bell.
+> - People do the work when they feel like it ("After I eat at the hearth, then I will.").
+> - Each person's card shows what they are doing, how they feel, and whether they trust the bell.
+>
+> **Confused:**
+> - **Invisible walls for chalk.** Chalk east toward the neighbours' houses stopped dead at a faint seam in the stone, twice (22nd of harvest, 15th of winter). Chalk up toward a house floor stopped one row under the grass (48th of spring, year two). No message and no voice. I couldn't tell whether that was the neighbours' land, a rule, or a bug.
+> - **"dark" was the only sign the digging had stopped.** From the 23rd to the 39th of autumn nothing happened. The only clue was a red "dark" label about 6 pixels high at each dig face.
+> - **Lamp taps that did nothing.** Tapping the dark grey squares did nothing, and so did tapping a lamp onto the open sky. Neither gave a message. Lamps work only on the lit floor next to the dark, and I worked that out by guessing.
+> - **The notebook doesn't pause time.** Reading nine people's cards cost a week of game time (12th to 19th of autumn).
+>
+> ## 4. Best and worst moments
+> **Best: the 21st of harvest and the 12th of autumn.** I read the cards after four false rings. Most people now said "is not sure about the bell any more." Three still "listen for the bell":
+> - Zehra, who is 12
+> - Yusuf Usta, who is 74
+> - Selim, from the Uçar house, which arrived after my lies
+>
+> The child, the old man and the new guy. Later Yusuf gave up on me too. İsmail of the newly arrived Polat house doubted me after a single false ring (48th of winter, year two). That is the world answering my mischief.
+>
+> **Worst: the 31st of harvest.** I was fiddling with room marks and missed the riders. "Hatice / Zehra / Yusuf Usta / Meryem was caught above ground and struck." "They rode off north with much of our grain, and 4 of us were hurt." Right after that the page gave me "✓ When the smoke comes, everyone below." It felt like a gold star for a raid I slept through.
+>
+> ## 5. Where I got bored and quit
+> I spent about 200 days making the bell worthless. I wanted to see a raid where I ring honestly and nobody comes. Then I watched from the 49th of winter to the 47th of spring in year two, about 80 days, with my finger on the bell. No smoke came. The only journal entry was the Doğan house arriving, and the faces went "dark" again, so even the digging stopped.
+>
+> The last chalk refused in silence on the 48th of spring, year two, and I quit there. I never found out whether my false alarms changed how a raid went; the screen never showed it either way.
+>
+> ## 6. Three changes that would bring me back
+> 1. **Make the bell's lost credit cost something at a real raid, and say it in the journal.** For example: "Hasan heard the bell and kept reaping. He'd heard it before." I set that up for 200 days and the game never answered it.
+> 2. **Have someone say why when the chalk refuses.** For example: "That's the Aydın ground, Usta." or "You'll come up in Musa's kitchen." Silent invisible walls are the least fun kind of no.
+> 3. **Make "dark stopped the picks" loud.** Put it in the journal or as a voice line, not as a 6-pixel label. Weeks of nothing happening read as a broken game.
+>
+> ## 7. Bugs and wrong-looking text
+> - **The journal showed old entries after a raid.** On the 34th of harvest, the newest entry was from the 22nd, although the raid had ended on the 31st. After I closed it and reopened it at slow speed, the 29th–31st raid entries appeared.
+> - **A late honest ring counted as a lie.** On the 21st of autumn the journal said "Smoke again in the south." On the 23rd, after the riders had left, I rang and got "You rang the bell, though no one had seen smoke." It's defensible because the smoke was gone, but it reads wrong.
+> - **The objective tick right after four people were hurt**, quoted under Worst.
+> - **Beds in a corridor were accepted.** "✓ Beds below for everyone before the frost." was ticked, but nobody slept below even in winter. I got away with it, and nobody remarked on it.
+> - **A confusing date jump.** The journal goes from "the 25th day of winter, first year" straight to "the 48th day of winter, second year" with nothing between. Hatice aged from 58 to 59, so the year probably turns mid-winter rather than a whole year passing silently, but I couldn't tell which.
+> - **No message for failed actions.** Lamp taps on the dark squares and on the sky did nothing. Chalk past the seams did nothing.
+> - **The door accepted message is the refusal text.** Placing a valid door in the entrance shaft still showed the refusal rule: "A door fits a narrow passage: open on two opposite sides only. Three at most."
+> - **Clipped text.** A journal line ("Hatice: 'After I pray, then I will.'") showed half-hidden behind the bottom toolbar.
+> - **Repetitive lines.** Six identical "After I pray, then I will." lines in a row at dusk on the 23rd of autumn.
+> - **The journal wouldn't scroll by drag; the drag selected text instead.** This may be the test driver rather than the game.
+>
+> ## 8. How far I got
+> - **Reached:** the 48th day of spring, second year (export reports day 242).
+> - **Population:** the top bar says "some 20 souls": the original nine plus the Uçar house (4), the Polat house (2) and the Doğan house (5).
+> - **Raids:** two, on the 29th–31st of harvest and the 21st–23rd of autumn. Each hurt 4 people and took grain.
+> - **Water:** "the water jars are dry" for almost the whole game.
 
 ## HF-character harness (packages/playtester, adapter `adapters/warren.ts`)
 

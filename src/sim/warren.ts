@@ -190,6 +190,8 @@ export interface WarrenState {
   thefts: { at: number; who: string; noticed: boolean }[];
   queued: Record<string, Percept[]>;
   notes: Note[];
+  /** Each person's last account of why they chose what they are doing (HF narration). */
+  why?: Record<string, string>;
   goals: Record<string, number>;
   flags: Record<string, number>;
   stats: {
@@ -367,11 +369,17 @@ function sleepersAt(s: WarrenState, cell: number): number {
 /** Cells reachable from the entrance within the riders' reach, not past a shut door. */
 export function riderCells(s: WarrenState): Map<number, number> {
   const h = s.hill;
-  const start = idx(h.surface.entrance, SURF);
   const out = new Map<number, number>();
-  if (h.kind[start] !== K.open) return out;
-  const d = new Map<number, number>([[start, 0]]);
-  const q = [start];
+  // Every opening to the sky is a way down: the entrance and any shaft dug up through the top row.
+  const d = new Map<number, number>();
+  const q: number[] = [];
+  for (let x = 0; x < W; x++) {
+    const c = idx(x, SURF);
+    if (h.kind[c] === K.open && xOf(c) < RIDGE) {
+      d.set(c, 0);
+      q.push(c);
+    }
+  }
   for (let qi = 0; qi < q.length; qi++) {
     const i = q[qi] ?? 0;
     const di = d.get(i) ?? 0;
@@ -384,7 +392,6 @@ export function riderCells(s: WarrenState): Map<number, number> {
       q.push(j);
     }
   }
-  // Every other opening to the sky lets them in too (a shaft is a way down).
   return out;
 }
 
@@ -1515,6 +1522,16 @@ function openCell(s: WarrenState, p: Person, face: number, stand: number): Parti
   h.kind[face] = K.open;
   h.dig[face] = 0;
   h.chalk[face] = 0;
+  if (yOf(face) === SURF && xOf(face) !== h.surface.entrance && !s.flags[`sky:${xOf(face)}`]) {
+    s.flags[`sky:${xOf(face)}`] = s.minute;
+    note(s, {
+      kind: 'dig',
+      who: p.id,
+      cell: face,
+      text: `${p.name} came up under the open sky. Air will come down this shaft now, and so could riders. A door below would close it.`,
+      weight: 2,
+    });
+  }
   h.spoil[stand] = (h.spoil[stand] ?? 0) + (k === K.hard ? 3 : 2);
   s.stats.dug++;
   if (s.stats.dug === 1)
@@ -1641,6 +1658,50 @@ function beginTrip(s: WarrenState, p: Person, offer: Affordance) {
   for (const c of pl.cells) if (yOf(c) >= SURF) w[c] = (w[c] ?? 0) + 1;
 }
 
+/**
+ * HF narrates `material` as money ("It pays."). Here material is the household's keep, not a wage, so those lines
+ * become the work's own reason (see docs/hf-requests.md, item 6).
+ */
+const WORK_WHY: Record<string, string> = {
+  dig: 'The hill needs room before the frost.',
+  'carry-spoil': 'Somebody has to clear it, or nobody digs.',
+  'fetch-water': 'The jars at the hearth were low.',
+  reap: 'The barley will not wait.',
+  sow: 'Next year’s bread goes in now.',
+  'carve-door': 'A door, before they come again.',
+  'make-lamp': 'They need light down there.',
+  forage: 'There is food in the hills if you know where.',
+  'carry-grain': 'Better below than above when they come.',
+};
+function whyLine(narration: string, action: string): string {
+  if (!/money|pays|paid|wage|coin/i.test(narration)) return narration;
+  return WORK_WHY[action] ?? 'It needs doing.';
+}
+
+/** Why a raid went as it did, in a sentence the keeper would write: where people were caught, what the door did. */
+function raidWhy(s: WarrenState, r: Raid): string {
+  const lines = s.notes.filter((n) => n.at >= r.riders && n.kind === 'raid' && / was caught /.test(n.text));
+  const above = lines.filter((n) => /above ground/.test(n.text)).length;
+  const entrance = lines.length - above;
+  const doors = cellsWithUse(s.hill, USE.door).filter((d) => !s.hill.doorWork[d]);
+  const why: string[] = [];
+  if (above)
+    why.push(
+      above === 1 ? 'One was still above ground.' : `${NUMW[above] ?? above} were still above ground.`,
+    );
+  if (entrance)
+    why.push(
+      doors.length
+        ? 'The rest were caught on the near side of the door, where the riders could still reach.'
+        : 'Below, they were caught within reach of the entrance; nothing stood between.',
+    );
+  if (lost(r) > 3 && !doors.length && grainBelow(s.hill) > 0)
+    why.push('The near jars were found; the far ones were not.');
+  return why.length ? ` ${why.join(' ')}` : '';
+}
+const lost = (r: Raid) => r.took;
+const NUMW = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten'];
+
 /** A bell with no riders: the hill answers it, a little more drily each time. Trust itself moves in HF. */
 function falseAlarm(s: WarrenState, at: number) {
   const k = (s.flags.falseBells ?? 0) + 1;
@@ -1719,6 +1780,11 @@ export function makeWorld(s: WarrenState): World {
       return Math.max(0, Math.min(1, 1 - have / Math.max(1, need)));
     },
     beginOptions: (p, offer, record) => {
+      // The person's own account of the choice (HF narration), shown on their card as the why.
+      if (!record.review && record.narration) {
+        s.why ??= {};
+        s.why[p.id] = whyLine(record.narration, offer.action);
+      }
       beginTrip(s, p, offer);
       captureAnswer(s, p, offer, record);
       return undefined;
@@ -1931,7 +1997,7 @@ function raidStep(s: WarrenState) {
           kind: 'raid',
           text: held
             ? `They rode off north. They found ${lost > 1 ? 'a little' : 'nothing'} above ground and nothing below. The hill held.`
-            : `They rode off north with ${lost > 0.5 * (lost + grainBelow(s.hill)) ? 'much of our grain' : lost > 3 ? 'some of our grain' : 'little'}${r.hurt.length ? `, and ${r.hurt.length === 1 ? 'one of us was' : `${r.hurt.length} of us were`} hurt` : ''}.`,
+            : `They rode off north with ${lost > 0.5 * (lost + grainBelow(s.hill)) ? 'much of our grain' : lost > 3 ? 'some of our grain' : 'little'}${r.hurt.length ? `, and ${r.hurt.length === 1 ? 'one of us was' : `${r.hurt.length} of us were`} hurt` : ''}.${raidWhy(s, r)}`,
           weight: 3,
         });
         everyone(

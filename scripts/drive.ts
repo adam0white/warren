@@ -15,7 +15,7 @@
  */
 import { mkdirSync } from 'node:fs';
 import { createServer } from 'node:http';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { chromium, type Page } from 'playwright-core';
 
 const [a0, a1, a2, a3] = process.argv.slice(2);
@@ -124,7 +124,10 @@ if (a0 === 'serve') {
 } else {
   const res = await fetch(`http://127.0.0.1:${a0}/`, {
     method: 'POST',
-    body: JSON.stringify({ cmd: a1, args: process.argv.slice(4) }),
+    body: JSON.stringify({
+      cmd: a1,
+      args: a1 === 'export' ? [resolve(process.argv.slice(4).join(' '))] : process.argv.slice(4),
+    }),
   });
   console.log(await res.text());
 }

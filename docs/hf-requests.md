@@ -11,3 +11,5 @@ Found while building, 2026-10-19. Each says what is confirmed (measured or read 
 4. **Community cache footgun.** Confirmed (a test caught it): `createCommunity(people, prior)` holds state that must be written back with `communityState` before a host switches to another state object or resets caches; otherwise the saved `community` is stale and a replay differs. Request: say so in the `createCommunity` doc comment, or make `snapshot`/`stepCommunity` keep the prior in sync.
 
 5. **No notion of place or reach.** Assumed limitation, not a bug: `alongside` names companions but HF has no space, so a host computes paths, positions and "who can see this chalk". Fine for The Warren; noted for a future spatial helper (who perceives what within N steps).
+
+6. **Narration reads `material` as money.** Confirmed by sampling `record.narration`: work chosen mainly on `material` is narrated "It pays." or "There is money in it." In The Warren `material` stands for the household's keep, not a wage, so the host rewrites those lines into the work's own reason. Request: let a host name what `material` means for an offer (keep, wage, food), or narrate it neutrally.
