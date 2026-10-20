@@ -2,13 +2,8 @@
  * The page around the hill: a title, the cross-section, the keeper's tools, the bell, the speed, a person card
  * and the Game menu (journal, people, saves, download). Time runs continuously; nothing pauses, it only slows.
  */
-import {
-  ageYears,
-  describePerson,
-  FRAMEWORK_VERSION,
-  type Person,
-  readBody,
-} from '@adam0white/human-framework';
+import { ageYears, describePerson, FRAMEWORK_VERSION, type Person } from '@adam0white/human-framework';
+import { type PhoneStage, phoneStage } from '@adam0white/lab-kit';
 import { DAY, HOUR, hourWords } from '../sim/calendar.ts';
 import {
   act,
@@ -30,17 +25,19 @@ import {
   houseOf,
   type Note,
   personOf,
+  positionAt,
   QUANTUM,
   storesWords,
   waterWords,
 } from '../sim/warren.ts';
 import { baseView, easeView } from './camera.ts';
 import { hillDate } from './date.ts';
-import { doorWords } from './door-help.ts';
+import { doorDetailWords, doorWords } from './door-help.ts';
 import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from './draw.ts';
 import { exposureWords } from './exposure.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
+import { personHelpWords } from './person-help.ts';
 import { planSafety } from './plan-safety.ts';
 import { bellShelterWords, bellStateWords } from './room-safety.ts';
 import { compactShelterWords, sleepingCapacityWords, sleepingRoomWords } from './shelter.ts';
@@ -65,7 +62,19 @@ const view: View = { cs: 20, x: 6, y: 2, w: 360, h: 400 };
 let canvas: HTMLCanvasElement | null = null;
 let ctx: CanvasRenderingContext2D | null = null;
 let sceneObserver: ResizeObserver | null = null;
+let stage: PhoneStage | null = null;
 let manualView = false;
+let focusCell: number | null = null;
+let sceneTop = 0;
+let resizeQueued = false;
+function queueResize() {
+  if (resizeQueued) return;
+  resizeQueued = true;
+  requestAnimationFrame(() => {
+    resizeQueued = false;
+    resize();
+  });
+}
 let pointing = false;
 const paint: Paint = { preview: new Set(), previewKind: null, selected: null, t: 0 };
 let lastSaved = 0;
@@ -216,25 +225,27 @@ function enter() {
     if (g.inputs.some((input) => input.verb === 'bell' && input.at >= raid.smoke && input.at <= raid.leave))
       answeredRaids.add(raid.smoke);
   app().innerHTML = `
-  <div class="game">
-    <div class="top">
+  <div class="game lk-stage" data-sheet="fit"><span id="font-probe" aria-hidden="true"></span>
+    <div class="top lk-strip">
       <div class="when"><span id="when"></span><span class="soft" id="stock"></span></div>
       <div class="goal-slot"><div class="goal" id="goal"></div>
       <div class="goal" id="raid-warning" hidden></div></div>
+      <div id="shelter-brief"><button id="shelter-check" aria-label="Check shelter summary"><span id="bell-meaning"></span></button></div>
     </div>
-    <div class="scene" id="scene">
+    <div class="scene lk-scene" id="scene">
       <canvas id="cv" tabindex="0" aria-label="The hill"></canvas>
-      <div class="view-controls" role="group" aria-label="Hill view"><button id="zoom-in" aria-label="Zoom in">Zoom +</button><button id="zoom-out" aria-label="Zoom out">Zoom −</button><button id="fit-hill">Fit hill</button></div>
+      <div class="view-controls" role="group" aria-label="Hill view"><button id="zoom-in" aria-label="Zoom in">Zoom +</button><button id="zoom-out" aria-label="Zoom out">Zoom −</button><button id="fit-hill">Fit hill</button><button id="people" aria-label="People">People</button></div>
       <div class="lag soft" id="lag" hidden>the days pass as fast as they can</div>
-      <div class="card" id="card" hidden></div>
     </div>
-    <div class="panel">
-      <div class="reading-slot">
-      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Stone door</b><span id="reading-more" hidden>Scroll ↓</span><button class="x" id="cellx" aria-label="Close room or door inspection">×</button></div><p id="cell-words" tabindex="0" role="region" aria-label="Full reading"></p></div>
-      <button id="shelter-brief" aria-label="Check shelter summary"><span id="bell-meaning"></span></button>
-      <div class="reading-actions"><button class="ticker" id="ticker" aria-label="Open journal"></button><button id="last-reading" disabled>Last reading</button></div>
+    <div class="panel lk-sheet" aria-label="Hill actions">
+      <div class="lk-sheet-body" id="inspection-body">
+      <div class="card" id="card" hidden></div>
+      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Reading</b><button class="x" id="cellx" aria-label="Close room or door inspection">×</button></div><p id="cell-words" role="region" aria-label="Full reading"></p><details id="reading-context" hidden><summary>More about this door</summary><p id="door-context"></p></details></div>
+      <div class="drawer" id="drawer" hidden></div>
+      <div class="reading-actions"><button class="ticker" id="ticker" aria-label="Open journal">Open journal</button><button id="last-reading" disabled>Last reading</button></div>
       </div>
-      <div class="clock-status"><span id="clock-rate"></span><span class="raid-controls"><button id="watch-raid">Keep watching</button><button id="shelter-check">Check shelter</button></span></div>
+      <div class="lk-commit" id="hill-controls">
+      <div class="clock-status"><span id="clock-rate"></span><span class="raid-controls"><button id="watch-raid">Keep watching</button></span></div>
       <div class="tools" role="toolbar" aria-label="Tools">
         ${toolBtn('look', 'look', '◎')}
         ${toolBtn('chalk', 'chalk', '□')}
@@ -252,8 +263,15 @@ function enter() {
         <button id="book" aria-label="Game menu">Game menu</button>
       </div>
     </div>
-    <div class="drawer" id="drawer" hidden></div>
+    </div>
   </div>`;
+  stage?.destroy();
+  const stageRoot = document.querySelector<HTMLElement>('.lk-stage');
+  if (!stageRoot) return;
+  stage = phoneStage(stageRoot, {
+    observeOnly: true,
+    onSceneRect: queueResize,
+  });
   lastReading = null;
   bellReading = false;
   planCell = null;
@@ -286,8 +304,8 @@ function enter() {
     if (raid) answeredRaids.add(raid.smoke);
     chrome();
   });
+  document.getElementById('people')?.addEventListener('click', () => openBook('p'));
   document.getElementById('book')?.addEventListener('click', () => openBook());
-  document.getElementById('shelter-check')?.addEventListener('click', () => openBook('p'));
   document.getElementById('shelter-brief')?.addEventListener('click', () => openBook('p'));
   document.getElementById('zoom-in')?.addEventListener('click', () => zoomView(1.6));
   document.getElementById('zoom-out')?.addEventListener('click', () => zoomView(1 / 1.6));
@@ -298,6 +316,9 @@ function enter() {
     clampView();
   });
   document.getElementById('cellx')?.addEventListener('click', () => closeCell());
+  document.getElementById('reading-context')?.addEventListener('toggle', (e) => {
+    if (!(e.target as HTMLDetailsElement).open) document.getElementById('inspection-body')?.scrollTo(0, 0);
+  });
   // Close on pointerdown before a live redraw can replace the tapped control.
   document.getElementById('card')?.addEventListener('pointerdown', (e) => {
     if (!(e.target as HTMLElement).closest('#cardx')) return;
@@ -324,14 +345,18 @@ function enter() {
   resize();
   const s = g.s;
   manualView = false;
+  focusCell = null;
   pointing = false;
   Object.assign(view, baseView(s, view.w, view.h));
   clampView();
   bindPointer(canvas);
   sceneObserver?.disconnect();
-  sceneObserver = new ResizeObserver(resize);
+  sceneObserver = new ResizeObserver(queueResize);
   const scene = document.getElementById('scene');
   if (scene) sceneObserver.observe(scene);
+  if (stageRoot) sceneObserver.observe(stageRoot);
+  const fontProbe = document.getElementById('font-probe');
+  if (fontProbe) sceneObserver.observe(fontProbe);
   syncButtons();
   chrome();
   last = performance.now();
@@ -346,6 +371,8 @@ function toolBtn(t: Tool, label: string, glyph: string) {
 
 function setTool(t: Tool) {
   closeCell(false);
+  closeBook();
+  closeCard();
   if (t !== 'look') manualView = true;
   tool = t;
   syncButtons();
@@ -371,10 +398,37 @@ function syncButtons() {
 function resize() {
   const sc = document.getElementById('scene');
   if (!sc || !canvas) return;
-  const r = sc.getBoundingClientRect();
+  const root = document.querySelector<HTMLElement>('.game');
+  if (root) {
+    root.dataset.reflow = String(parseFloat(getComputedStyle(root).fontSize) > 24 || innerHeight < 600);
+    root.style.setProperty('--warren-height', `${root.clientHeight}px`);
+    root.style.setProperty(
+      '--warren-commit-height',
+      `${document.getElementById('hill-controls')?.getBoundingClientRect().height ?? 0}px`,
+    );
+    root.style.setProperty(
+      '--warren-strip-height',
+      `${root.querySelector('.top')?.getBoundingClientRect().height ?? 0}px`,
+    );
+  }
+  const sceneBounds = sc.getBoundingClientRect();
+  const controlsHeight = sc.querySelector('.view-controls')?.getBoundingClientRect().height ?? 0;
+  const r = {
+    width: sceneBounds.width,
+    height: Math.max(1, sceneBounds.height - controlsHeight),
+    top: sceneBounds.top + controlsHeight,
+  };
+  if (canvas.width && sceneTop) view.y += (r.top - sceneTop) / view.cs;
+  sceneTop = r.top;
+  if (focusCell !== null) {
+    const y = (yOf(focusCell) + 0.5 - view.y) * view.cs;
+    if (y < 60 || y > r.height - 12) view.y = yOf(focusCell) + 0.5 - (r.height + 48) / (2 * view.cs);
+  }
   const dpr = Math.min(3, devicePixelRatio || 1);
-  canvas.width = Math.round(r.width * dpr);
-  canvas.height = Math.round(r.height * dpr);
+  const width = Math.round(r.width * dpr);
+  const height = Math.round(r.height * dpr);
+  if (canvas.width !== width) canvas.width = width;
+  if (canvas.height !== height) canvas.height = height;
   canvas.style.width = `${r.width}px`;
   canvas.style.height = `${r.height}px`;
   view.w = r.width;
@@ -395,7 +449,7 @@ function clampView() {
 function zoomView(factor: number) {
   manualView = true;
   const cx = view.x + view.w / view.cs / 2;
-  const cy = view.y + view.h / view.cs / 2;
+  const cy = Math.max(SURF + 3, view.y + view.h / view.cs / 2);
   view.cs = Math.max(10, Math.min(72, view.cs * factor));
   view.x = cx - view.w / view.cs / 2;
   view.y = cy - view.h / view.cs / 2;
@@ -428,7 +482,7 @@ function frame(now: number) {
   last = now;
   const s = g.s;
   // The notebook open slows the days to 'slow' rather than stopping them.
-  const reading = !(document.getElementById('drawer')?.hidden ?? true);
+  const reading = isReading();
   disp += (dt * clockRate(reading)) / MS_PER_MIN;
   const t0 = performance.now();
   while (s.minute + QUANTUM <= disp && performance.now() - t0 < 10) {
@@ -469,7 +523,7 @@ function chrome() {
   const lag = document.getElementById('lag');
   if (lag) lag.hidden = !lagging || speedIx < 2;
   // The lab: where the player is (the last screen before leaving is the quit point) and what they reached.
-  const reading0 = !(document.getElementById('drawer')?.hidden ?? true);
+  const reading0 = isReading();
   const chapter = reading0 ? 'notebook' : r0 ? 'raid' : 'play';
   if (chapter !== labScreen) {
     labScreen = chapter;
@@ -490,11 +544,11 @@ function chrome() {
     warning.hidden = !pending;
     warning.textContent = !pending
       ? ''
-      : `${pending.stage === 'smoke' ? 'Smoke on the ridge.' : 'Riders are at the hill.'} ${bellStateWords(s)} Check shelter or keep watching.`;
+      : `${pending.stage === 'smoke' ? 'Smoke on the ridge.' : 'Riders are at the hill.'} Ring the bell once, or keep watching. People choose whether to come.`;
   }
   const watch = document.getElementById('watch-raid') as HTMLButtonElement | null;
   const shelter = document.getElementById('shelter-check') as HTMLButtonElement | null;
-  if (shelter) shelter.hidden = !!pending;
+  if (shelter) shelter.hidden = false;
   if (watch) {
     watch.hidden = !pending;
     watch.style.visibility = pending ? 'visible' : 'hidden';
@@ -523,7 +577,8 @@ function chrome() {
     const text = ticker ? ticker.text : '';
     if (tk.dataset.text !== text) {
       tk.dataset.text = text;
-      tk.innerHTML = `<span class="journal-action">Open journal →</span><span class="journal-preview ${ticker && ticker.weight >= 2 ? 'heavy' : ''}">${ticker ? esc(text) : 'No new entries.'}</span>`;
+      tk.textContent = 'Open journal';
+      tk.title = text;
       tk.classList.remove('ink-in');
       void tk.offsetWidth;
       tk.classList.add('ink-in');
@@ -543,7 +598,11 @@ function showReading(title: string, words: string, remember = true, preserveScro
   const heading = document.getElementById('cell-title');
   const text = document.getElementById('cell-words');
   if (!detail || !heading || !text) return;
+  hideOtherSheets('cell-detail');
+  const context = document.getElementById('reading-context');
+  if (context) context.hidden = true;
   const sameReading = preserveScroll && !detail.hidden && heading.textContent === title;
+  if (!sameReading) document.getElementById('inspection-body')?.scrollTo(0, 0);
   heading.textContent = title;
   if (text.textContent !== words) {
     const scroll = sameReading ? text.scrollTop : 0;
@@ -551,8 +610,7 @@ function showReading(title: string, words: string, remember = true, preserveScro
     text.scrollTop = scroll;
   }
   detail.hidden = false;
-  const more = document.getElementById('reading-more');
-  if (more) more.hidden = text.scrollHeight <= text.clientHeight;
+  void preserveScroll;
   if (remember) {
     lastReading = { title, words };
     const reopen = document.getElementById('last-reading') as HTMLButtonElement | null;
@@ -574,21 +632,35 @@ function hint(key: string, text: string) {
   flash(text);
 }
 
-// ---------- the person card ----------
-
-function bodyWords(p: Person): string {
-  const b = readBody(p).perceived;
-  const w: string[] = [];
-  if (b.hunger > 0.75) w.push('very hungry');
-  else if (b.hunger > 0.5) w.push('hungry');
-  if (b.thirst > 0.6) w.push('thirsty');
-  if (b.sleepiness > 0.75) w.push('dead on their feet');
-  else if (b.fatigue > 0.65) w.push('worn out');
-  else if (b.fatigue > 0.45) w.push('tired');
-  if (b.pain > 0.5) w.push('in pain');
-  else if (p.body.injuries.length) w.push('nursing a hurt');
-  return w.length ? w.join(', ') : 'well enough';
+function isReading() {
+  return ['drawer', 'card', 'cell-detail'].some((id) => !document.getElementById(id)?.hidden);
 }
+
+function hideOtherSheets(keep: string) {
+  for (const id of ['drawer', 'card', 'cell-detail']) {
+    if (id === keep) continue;
+    const el = document.getElementById(id);
+    if (el) el.hidden = true;
+  }
+  if (keep !== 'card') paint.selected = null;
+  const actions = document.querySelector<HTMLElement>('.reading-actions');
+  if (actions) actions.hidden = true;
+  const controls = document.getElementById('hill-controls');
+  if (controls) controls.dataset.compact = String(keep === 'drawer' || keep === 'card');
+}
+
+function restoreActions() {
+  const actions = document.querySelector<HTMLElement>('.reading-actions');
+  if (actions) actions.hidden = isReading();
+  const controls = document.getElementById('hill-controls');
+  if (controls)
+    controls.dataset.compact = String(
+      !(document.getElementById('drawer')?.hidden ?? true) ||
+        !(document.getElementById('card')?.hidden ?? true),
+    );
+}
+
+// ---------- the person card ----------
 
 /** How they seem, from HF's own description: the feeling, if any, said plainly. */
 function feeling(p: Person): string {
@@ -614,6 +686,14 @@ function card() {
     return;
   }
   const s = g.s;
+  const cell = positionAt(s, p.id, paint.t);
+  focusCell = cell;
+  const margin = Math.min(32, view.h / 4);
+  const px = (xOf(cell) + 0.5 - view.x) * view.cs;
+  const py = (yOf(cell) + 0.5 - view.y) * view.cs;
+  if (px < margin || px > view.w - margin) view.x = xOf(cell) + 0.5 - view.w / view.cs / 2;
+  if (py < margin || py > view.h - margin) view.y = yOf(cell) + 0.5 - view.h / view.cs / 2;
+  clampView();
   const house = houseOf(s, p.id);
   const doing = p.activity?.affordance.label ?? 'deciding what to do';
   const tr = s.trips[p.id];
@@ -623,19 +703,25 @@ function card() {
   const habit = p.habits.some((h) => h.action === 'dig' && h.strength > 0.25);
   const html = `
     <div class="who"><b>${esc(p.name)}</b> <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'come from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
+    <p id="person-help">${esc(personHelpWords(s, p))}</p>
+    <div>${walking ? 'on the way to ' : ''}${esc(doing)}</div>
+    <details id="person-context"><summary id="person-context-toggle">Activity and words</summary>
     <div class="shelter-person">${esc(exposureWords(s, p))}</div>
-    <div>${walking ? 'on the way to ' : ''}${esc(doing)}<span class="soft"> · ${esc(bodyWords(p))}</span></div>
     ${feeling(p) ? `<div class="soft">${esc(feeling(p))}</div>` : ''}
     ${habit ? '<div class="hand">Goes down to the faces every morning now. Nobody asks.</div>' : ''}
     ${trustWords(p) ? `<div class="soft">${esc(p.name)} ${trustWords(p)}.</div>` : ''}
     ${why ? `<div class="hand">“${esc(why)}”</div>` : ''}
-    ${about.map((n) => `<div class="soft small">${esc(n.text)}</div>`).join('')}`;
+    ${about.map((n) => `<div class="soft small">${esc(n.text)}</div>`).join('')}</details>`;
   if (el.dataset.html !== html) {
-    const closing = document.activeElement?.id === 'cardx';
+    const focused = document.activeElement?.id;
+    const expanded = el.querySelector('details')?.open ?? false;
     el.dataset.html = html;
     el.innerHTML = html;
-    if (closing) document.getElementById('cardx')?.focus();
+    const details = el.querySelector('details');
+    if (details) details.open = expanded;
+    if (focused) el.querySelector<HTMLElement>(`#${focused}`)?.focus();
   }
+  hideOtherSheets('card');
   el.hidden = false;
 }
 
@@ -793,6 +879,7 @@ function reachable(cells: number[]): boolean {
 function commitPaint() {
   if (!g) return;
   const cells = [...paint.preview];
+  focusCell = cells[0] ?? null;
   const kind = paint.previewKind;
   paint.preview.clear();
   paint.previewKind = null;
@@ -825,8 +912,11 @@ function commitPaint() {
     const ok = order({ verb: 'use', cells, use: kind });
     if (kind === 'beds' && cells.some((c) => h.kind[c] === K.open && h.use[c] === USE.beds)) {
       const cell = cells.find((c) => h.kind[c] === K.open && h.use[c] === USE.beds);
-      if (cell !== undefined) flash(`${sleepingRoomWords(g.s, cell)} ${sleepingCapacityWords(g.s)}`);
+      if (cell !== undefined) flash(sleepingRoomWords(g.s, cell));
     }
+    if (kind === 'store' && ok) flash('Store marked. People can bring grain to these jars.');
+    else if (kind === 'store' && cells.some((c) => h.kind[c] === K.open && h.use[c] === USE.store))
+      flash('This ground is already marked as a store.');
     if (!ok && cells.every((c) => h.kind[c] !== K.open))
       flash('Rooms are marked on open ground. Chalk the stone first.');
   }
@@ -837,6 +927,7 @@ function tap(px: number, py: number) {
   closeCell(false);
   const s = g.s;
   const c = cellAt(view, px, py);
+  focusCell = c >= 0 ? c : null;
   if (tool === 'lamp') {
     if (c < 0) return;
     if (s.hill.lamp[c] || s.hill.lampsWanted.includes(c)) order({ verb: 'unlamp', cell: c });
@@ -950,6 +1041,7 @@ function closeCell(focus = true) {
   const detail = document.getElementById('cell-detail');
   if (!detail || detail.hidden) return;
   detail.hidden = true;
+  restoreActions();
   if (focus) canvas?.focus();
 }
 
@@ -977,6 +1069,21 @@ function updateDoor() {
     text.textContent = words;
     lastReading = { title: g.s.hill.use[doorCell] === USE.beds ? 'Sleeping room' : 'Stone door', words };
   }
+  updateDoorContext(doorCell);
+}
+
+function updateDoorContext(cell: number) {
+  if (!g) return;
+  const context = document.getElementById('reading-context');
+  const text = document.getElementById('door-context');
+  const words = g.s.hill.use[cell] === USE.door ? doorDetailWords(g.s, cell) : '';
+  const label = context?.querySelector('summary');
+  if (label) {
+    label.textContent = 'More';
+    label.setAttribute('aria-label', 'More about this door');
+  }
+  if (context) context.hidden = !words;
+  if (text) text.textContent = words;
 }
 
 function showPlan(cell: number) {
@@ -1000,6 +1107,7 @@ function showDoor(cell: number) {
   flash(words);
   doorCell = cell;
   showReading(beds ? 'Sleeping room' : 'Stone door', words);
+  updateDoorContext(cell);
   const detail = document.getElementById('cell-detail');
   const text = document.getElementById('cell-words');
   if (detail && text) {
@@ -1019,23 +1127,30 @@ function showBellReading() {
     (p) => p.body.alive && at !== undefined && s.answers.some((a) => a.who === p.id && a.at >= at),
   );
   const call = bellStateWords(s);
-  const shelter = bellShelterWords(s).replace(call, '').trim();
-  showReading(
-    'Bell call',
-    `${call}\n\n${shelter}${replies.length ? `\n\n${replies.map((p) => `${p.name}: ${exposureWords(s, p)}`).join('\n\n')}` : ' No replies recorded yet.'}`,
-    true,
-    true,
-  );
+  showReading('Bell call', call, true, true);
+  const context = document.getElementById('reading-context');
+  const label = context?.querySelector('summary');
+  const text = document.getElementById('door-context');
+  if (context) context.hidden = false;
+  if (label) {
+    label.textContent = 'Replies';
+    label.setAttribute('aria-label', 'Replies to the bell');
+  }
+  if (text)
+    text.textContent = replies.length
+      ? replies.map((p) => `${p.name}: ${exposureWords(s, p)}`).join('\n\n')
+      : 'No replies recorded yet.';
 }
 
 function updateShelter() {
   if (!g) return;
   const brief = document.getElementById('shelter-brief');
-  if (brief) brief.title = compactShelterWords(g.s);
+  if (brief) brief.title = 'Check shelter and choose a person';
   const meaning = document.getElementById('bell-meaning');
-  if (meaning) meaning.textContent = `Sleeping places · ${compactShelterWords(g.s)}. ${bellStateWords(g.s)}`;
+  if (meaning)
+    meaning.textContent = `Sleeping places · ${compactShelterWords(g.s).replace('Sleeping room', 'Room')}. ${g.s.bell && g.s.minute < g.s.bell.until ? 'Bell call active.' : 'Bell quiet; false alarms can weaken trust.'}`;
   const summary = document.getElementById('shelter-summary');
-  if (summary) summary.textContent = `${sleepingCapacityWords(g.s)} ${bellShelterWords(g.s)}`;
+  if (summary) summary.textContent = bellShelterWords(g.s).replace(bellStateWords(g.s), '').trim();
   for (const row of document.querySelectorAll<HTMLElement>('[data-shelter-person]')) {
     const person = personOf(g.s, row.dataset.shelterPerson ?? '');
     const words = person?.body.alive ? exposureWords(g.s, person) : 'No longer living; see the journal.';
@@ -1054,17 +1169,20 @@ function closeCard() {
     personOpener.focus();
   } else canvas?.focus();
   personOpener = null;
+  restoreActions();
 }
 
 function closeBook() {
   const d = document.getElementById('drawer');
   if (!d || d.hidden) return;
   d.hidden = true;
+  restoreActions();
   menuOpener?.focus();
 }
 
 function openBook(tab = 's') {
   closeCell(false);
+  bellReading = false;
   const d = document.getElementById('drawer');
   if (!d || !g) return;
   menuOpener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -1081,12 +1199,12 @@ function openBook(tab = 's') {
   const done = GOALS.filter((x) => s.goals[x.id] !== undefined);
   d.innerHTML = `
     <div class="sheet">
-      <div class="who"><b>Game menu</b><button class="x" id="bookx" aria-label="Close">×</button></div>
+      <div class="who"><b>${tab === 'p' ? 'People · shelter check' : 'Game menu'}</b><button class="x" id="bookx" aria-label="Close">×</button></div>
       <div class="tabs">
         <button data-tab="s">Save and run</button><button data-tab="j">journal</button><button data-tab="p">people</button>
       </div>
       <div id="sheet-body" tabindex="0" role="region" aria-label="Game menu contents"><div class="tab" data-pane="j">${notes.map((n) => `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br/>${esc(n.text)}</p>`).join('')}</div>
-      <div class="tab" data-pane="p" hidden><b>Shelter check · now</b><p id="shelter-summary"></p><p class="soft small">The bell calls people below. Beds make sleeping space; depth and shut doors put stone between people and riders. Open shafts give riders another way in.</p>${s.houses
+      <div class="tab" data-pane="p" hidden><b>Shelter check · now</b><p id="shelter-summary"></p>${s.houses
         .map((hs) => {
           const ms = hs.members.map((m) => personOf(s, m)).filter((p): p is Person => !!p && p.body.alive);
           if (!ms.length) return '';
@@ -1108,6 +1226,7 @@ function openBook(tab = 's') {
       </div>
       ${footer}</div>
     </div>`;
+  hideOtherSheets('drawer');
   d.hidden = false;
   updateShelter();
   document.getElementById('bookx')?.addEventListener('click', closeBook);
@@ -1122,7 +1241,9 @@ function openBook(tab = 's') {
       personOpener = b;
       paint.selected = b.dataset.who ?? null;
       d.hidden = true;
-      const [x, y] = [xOf(g?.s.pos[paint.selected ?? ''] ?? 0), yOf(g?.s.pos[paint.selected ?? ''] ?? 0)];
+      const cell = g ? positionAt(g.s, paint.selected ?? '', paint.t) : 0;
+      focusCell = cell;
+      const [x, y] = [xOf(cell), yOf(cell)];
       manualView = true;
       view.x = x - view.w / view.cs / 2;
       view.y = y - view.h / view.cs / 2;

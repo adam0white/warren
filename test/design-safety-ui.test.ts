@@ -12,7 +12,7 @@ let browser: Browser;
 let url: string;
 const shots =
   process.platform === 'darwin'
-    ? '/Users/abdul/code/.lab-scratch/design-round/warren-shots'
+    ? '/Users/abdul/code/.lab-scratch/patterns/warren-shots/regression'
     : join(tmpdir(), 'warren-design-shots');
 beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
@@ -32,13 +32,16 @@ describe('safety before calling people below', () => {
     [1280, 800],
   ] as const) {
     for (const theme of ['light', 'dark'] as const) {
-      it(`keeps the inspected room visible and previews off the map at ${width} in ${theme}`, async () => {
+      it(`keeps the inspected room visible and previews off the map at ${width} in ${theme}`, {
+        timeout: 20000,
+      }, async () => {
         const page = await browser.newPage({
           viewport: { width, height },
           colorScheme: theme,
           hasTouch: true,
           isMobile: width === 360,
         });
+        page.setDefaultTimeout(20000);
         try {
           await page.addInitScript(`(() => {
           window.drawnWords = [];
@@ -65,7 +68,8 @@ describe('safety before calling people below', () => {
           expect(await page.locator('#bell-meaning').innerText()).toContain('Bell quiet');
           const suffix = theme === 'light' ? '' : '-dark';
           await page.clock.runFor(1000);
-          expect(await page.locator('#ticker').innerText()).toContain('Riders had burned');
+          expect(await page.locator('#ticker').innerText()).toBe('Open journal');
+          expect(await page.locator('#ticker').getAttribute('title')).toContain('Riders had burned');
           expect(await page.locator('#scene').innerText()).not.toContain('Riders had burned');
           expect(
             await page.evaluate<boolean>(
@@ -73,24 +77,27 @@ describe('safety before calling people below', () => {
             ),
           ).toBe(false);
           await page.screenshot({ animations: 'disabled', path: `${shots}/after-${width}${suffix}-b.png` });
-          const mapBefore = await page.locator('#cv').boundingBox();
-          const toolsBefore = await page.locator('.tools').boundingBox();
           const point = await page.evaluate<{ x: number; y: number }>(
             `(() => { const v=window.__warren.view; const b=document.querySelector('#cv').getBoundingClientRect(); return {x:b.x+(18.5-v.x)*v.cs,y:b.y+(${SURF}+3.5-v.y)*v.cs}; })()`,
           );
           await page.touchscreen.tap(point.x, point.y);
           await page.clock.runFor(100);
           expect(await page.locator('#cell-title').innerText()).toBe('Sleeping room');
-          expect(await page.locator('#cell-words').innerText()).toContain('riders');
+          expect(await page.locator('#cell-words').innerText()).toMatch(/riders/i);
           expect(await page.locator('#card').isVisible()).toBe(false);
           const close = await page.locator('#cellx').boundingBox();
           expect((close?.y ?? height) + (close?.height ?? height)).toBeLessThan(height);
           const map = await page.locator('#cv').boundingBox();
           const detail = await page.locator('#cell-detail').boundingBox();
-          if (!map || !detail || !mapBefore) throw new Error('Missing room or map');
-          expect(map).toEqual(mapBefore);
+          if (!map || !detail) throw new Error('Missing room or map');
           expect(detail.y >= map.y + map.height || detail.x >= map.x + map.width).toBe(true);
-          expect(await page.locator('.tools').boundingBox()).toEqual(toolsBefore);
+          const tools = await page.locator('.tools').boundingBox();
+          if (!tools) throw new Error('Missing tools');
+          expect(tools.y).toBeGreaterThanOrEqual(detail.y + detail.height);
+          expect(tools.y + tools.height).toBeLessThanOrEqual(height);
+          expect(await page.locator('#cell-words').evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(
+            true,
+          );
           expect(await page.locator('#clock-rate').isVisible()).toBe(true);
           const roomPoint = await page.evaluate<{ x: number; y: number }>(
             `(() => {const v=window.__warren.view;const b=document.querySelector('#cv').getBoundingClientRect();return {x:b.x+(18.5-v.x)*v.cs,y:b.y+(${SURF}+3.5-v.y)*v.cs};})()`,
@@ -139,15 +146,14 @@ describe('safety before calling people below', () => {
           await page.touchscreen.tap(doorPoint.x, doorPoint.y);
           await page.clock.runFor(100);
           const words = page.locator('#cell-words');
-          expect(await words.innerText()).toContain('Nearby adults:');
-          expect(await words.innerText()).toContain('Hasan:');
-          if (width === 360) {
-            expect(await words.evaluate((e) => e.scrollHeight > e.clientHeight)).toBe(true);
-            await words.evaluate((e) => {
-              e.scrollTop = e.scrollHeight;
-            });
-            expect(await words.evaluate((e) => e.scrollTop)).toBeGreaterThan(0);
-          }
+          expect(await words.innerText()).toContain('Ring the bell');
+          expect(await words.innerText()).toContain('false alarms');
+          expect(await words.innerText()).not.toContain('Nearby adults:');
+          expect(await words.evaluate((e) => e.scrollHeight <= e.clientHeight)).toBe(true);
+          await page.locator('#reading-context summary').click();
+          expect(await page.locator('#door-context').innerText()).toContain('Nearby adults:');
+          expect(await page.locator('#door-context').innerText()).toContain('Hasan:');
+          await page.locator('#reading-context summary').click();
           await page.screenshot({
             animations: 'disabled',
             path: `${shots}/after-${width}-door${suffix}-b.png`,
@@ -174,13 +180,16 @@ describe('safety before calling people below', () => {
           await page.close();
         }
       });
-      it(`renders entrance, shaft and protected room at ${width} in ${theme}`, async () => {
+      it(`renders entrance, shaft and protected room at ${width} in ${theme}`, {
+        timeout: 20000,
+      }, async () => {
         const page = await browser.newPage({
           viewport: { width, height },
           colorScheme: theme,
           hasTouch: true,
           isMobile: width === 360,
         });
+        page.setDefaultTimeout(20000);
         try {
           await page.clock.install();
           await page.goto(url);

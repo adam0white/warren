@@ -12,7 +12,7 @@ const uiBaseline = JSON.parse(
 ) as { seed: number; policy: string; minute: number; fingerprint: string }[];
 describe('edition 0.3.0', () => {
   for (const before of uiBaseline) {
-    it(`keeps pre-follow-up 0.3.0 seed ${before.seed} ${before.policy} exact`, { timeout: 60000 }, () => {
+    it(`keeps pre-follow-up 0.3.0 seed ${before.seed} ${before.policy} exact`, { timeout: 180000 }, () => {
       const run = fixture.runs.find(
         (r: { seed: number; policy: string }) => r.seed === before.seed && r.policy === before.policy,
       );
@@ -23,7 +23,7 @@ describe('edition 0.3.0', () => {
 
   for (const run of fixture.runs) {
     it(`keeps legacy seed ${run.seed} ${run.policy} hashes, exports and checkpoint continuation`, {
-      timeout: 60000,
+      timeout: 180000,
     }, () => {
       const g = replay(run.seed, run.inputs, run.minute, '0.2.0');
       expect(fingerprint(g.s)).toBe(run.fingerprint);

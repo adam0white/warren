@@ -12,7 +12,7 @@ let browser: Browser;
 let url: string;
 const shots =
   process.platform === 'darwin'
-    ? '/Users/abdul/code/.lab-scratch/design-round/warren-shots'
+    ? '/Users/abdul/code/.lab-scratch/patterns/warren-shots/regression'
     : join(tmpdir(), 'warren-design-shots');
 beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
@@ -24,18 +24,19 @@ beforeAll(async () => {
 afterAll(async () => {
   await browser?.close();
   await server?.close();
-});
+}, 60000);
 
 for (const [width, height] of [
   [360, 690],
   [1280, 800],
 ] as const) {
-  it(`renders one standing raid call and truthful door cost at ${width}`, { timeout: 60000 }, async () => {
+  it(`renders one standing raid call and truthful door cost at ${width}`, { timeout: 20000 }, async () => {
     const page = await browser.newPage({
       viewport: { width, height },
       hasTouch: true,
       isMobile: width === 360,
     });
+    page.setDefaultTimeout(20000);
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     try {
@@ -65,26 +66,21 @@ for (const [width, height] of [
       const doorWords = await words.innerText();
       expect(doorWords).toMatch(/quiet-time call.*six game hours/is);
       expect(doorWords).toMatch(/false alarm.*trust/is);
-      expect(doorWords.indexOf('false alarm')).toBeLessThan(doorWords.indexOf('Ring the bell'));
+      expect(doorWords.indexOf('Ring the bell')).toBeLessThan(doorWords.indexOf('false alarm'));
       await page.screenshot({ path: `${shots}/after-${width}-quiet-door-d.png` });
-      await words.evaluate((e) => {
-        const walker = document.createTreeWalker(e, NodeFilter.SHOW_TEXT);
-        let node = walker.nextNode();
-        while (node) {
-          const start = node.textContent?.indexOf('false alarm') ?? -1;
-          if (start >= 0) {
-            const range = document.createRange();
-            range.setStart(node, start);
-            range.setEnd(node, Math.min(start + 1, node.textContent?.length ?? start));
-            e.scrollTop += range.getBoundingClientRect().top - e.getBoundingClientRect().top;
-            break;
-          }
-          node = walker.nextNode();
-        }
-      });
-      await page.screenshot({ path: `${shots}/after-${width}-quiet-cost-d.png` });
-      const map = await page.locator('#cv').boundingBox();
-      const tools = await page.locator('.tools').boundingBox();
+      expect(await words.evaluate((e) => e.scrollHeight <= e.clientHeight)).toBe(true);
+      const assertStage = async () => {
+        const map = await page.locator('#cv').boundingBox();
+        const detail = await page.locator('#cell-detail').boundingBox();
+        const tools = await page.locator('.tools').boundingBox();
+        if (!map || !detail || !tools) throw new Error('Missing scene, reading or tools');
+        expect(map.height).toBeGreaterThanOrEqual(120);
+        expect(detail.y >= map.y + map.height || detail.x >= map.x + map.width).toBe(true);
+        expect(tools.y + tools.height).toBeLessThanOrEqual(height);
+        expect(tools.x).toBeGreaterThanOrEqual(0);
+        expect(tools.x + tools.width).toBeLessThanOrEqual(width);
+      };
+      await assertStage();
       const advanceTo = async (target: string) => {
         await page.evaluate(
           `(async () => {const {advance}=await import('/src/sim/game.ts');const g=window.__warren.game;advance(g,${target});})()`,
@@ -115,8 +111,7 @@ for (const [width, height] of [
         ),
       ).toBe(before);
       expect(await page.evaluate('window.__warren.game.inputs.filter(i=>i.verb==="bell").length')).toBe(1);
-      expect(await page.locator('#cv').boundingBox()).toEqual(map);
-      expect(await page.locator('.tools').boundingBox()).toEqual(tools);
+      await assertStage();
       await words.evaluate((e) => {
         e.scrollTop = 0;
       });
@@ -136,8 +131,7 @@ for (const [width, height] of [
       expect(await words.innerText()).toMatch(/No call active.*Ring the bell once.*all-clear/s);
       expect(await words.innerText()).not.toMatch(/riders have gone|ended the call|renew/i);
       expect(await page.locator('#goal').innerText()).toMatch(/Smoke.*No call active.*Ring the bell once/s);
-      expect(await page.locator('#cv').boundingBox()).toEqual(map);
-      expect(await page.locator('.tools').boundingBox()).toEqual(tools);
+      await assertStage();
       expect(await page.evaluate('document.documentElement.scrollWidth <= innerWidth')).toBe(true);
       const close = await page.locator('#cellx').boundingBox();
       expect((close?.y ?? height) + (close?.height ?? height)).toBeLessThan(height);

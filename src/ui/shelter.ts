@@ -45,7 +45,7 @@ export function sleepingRoomWords(s: WarrenState, cell: number): string {
   if (s.hill.use[cell] !== USE.beds || s.hill.kind[cell] !== K.open) return '';
   const places = roomOf(s.hill, cell).length * BEDS_PER_CELL;
   const { people } = sleepingCapacity(s);
-  return `${roomSafetyWords(s, cell)} Room for about ${numberWords(places)} people. ${places >= people ? 'Enough sleeping space for the village.' : 'This room cannot hold the whole village.'}`;
+  return `${roomSafetyWords(s, cell)} Room for about ${numberWords(places)} people. ${places >= people ? 'Enough sleeping space for the village.' : 'More sleeping places needed.'}`;
 }
 
 export function sleepingCapacityWords(s: WarrenState): string {

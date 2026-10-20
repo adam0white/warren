@@ -69,10 +69,10 @@ export function roomSafetyWords(s: WarrenState, cell: number): string {
   if (door && exposed.every((i) => !closed.has(i))) {
     const location = doorLocation(s, room);
     return location.startsWith('stone doors')
-      ? `${partly}Several stone doors leave routes into these sleeping places open. Every open route needs a shut door; shutting just one may leave another way in.`
-      : `${partly}The ${location} is rolled back: riders could walk into these sleeping places. Shutting it would block their route.`;
+      ? `Every open route needs a shut stone door. Shutting one may leave another way in. ${partly}Riders can reach these beds.`
+      : `Ring the bell; a nearby adult can choose to shut the open ${location}, blocking riders. ${partly}${activeRaid(s) ? '' : 'False alarms can weaken trust.'}`.trim();
   }
-  return `${partly}${shaft ? 'An open shaft gives riders a short way into these sleeping places.' : 'Not far enough along the passage from the entrance: riders could reach these sleeping places.'}${door ? ' The rolled-back door leaves another route open.' : ''} Dig farther along a protected passage or close the open route with a stone door.`;
+  return `Dig deeper along a protected passage, or shut a stone door on each open route. ${partly}${shaft ? 'An open shaft reaches these beds.' : 'Riders reach these beds from the entrance.'}${door ? ' An open door leaves another route.' : ''}`;
 }
 
 export function bedSafety(s: WarrenState): { safe: number; exposed: number } {

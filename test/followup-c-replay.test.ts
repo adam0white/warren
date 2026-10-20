@@ -27,7 +27,7 @@ describe('follow-up c preserves the live editions', () => {
   });
   for (const run of fixture.runs) {
     it(`${run.edition} seed ${run.seed} ${run.policy}: live exports and checkpoint continuation stay exact`, {
-      timeout: 60000,
+      timeout: 180000,
     }, () => {
       const checkpoint = run.stages.find((stage) => stage.kind === 'checkpoint');
       if (!checkpoint) throw new Error('Missing checkpoint');

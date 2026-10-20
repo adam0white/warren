@@ -29,12 +29,20 @@ describe('sleeping capacity words', () => {
     expect(sleepingRoomWords(s, idx(19, SURF + 3))).toBe('');
   });
 
+  it('puts the bed remedy before capacity in a short phone response', () => {
+    const s = withBeds([18]);
+    const words = sleepingRoomWords(s, idx(18, SURF + 3));
+    expect(words.startsWith('Dig deeper along a protected passage')).toBe(true);
+    expect(words.indexOf('shut a stone door')).toBeLessThan(words.indexOf('Room for about'));
+    expect(words.split(/\s+/).length).toBeLessThanOrEqual(50);
+  });
+
   it('compares all open sleeping marks with the people still alive', () => {
     const s = withBeds([16]);
     s.people = s.people.slice(0, 4);
     expect(sleepingCapacity(s)).toEqual({ places: 3, people: 4, enough: false });
     expect(sleepingCapacityWords(s)).toMatch(/more sleeping places/);
-    expect(sleepingRoomWords(s, idx(16, SURF + 3))).toMatch(/cannot hold the whole village/);
+    expect(sleepingRoomWords(s, idx(16, SURF + 3))).toMatch(/More sleeping places needed/);
     const person = s.people[0];
     if (!person) throw new Error('Missing villager');
     person.body.alive = false;

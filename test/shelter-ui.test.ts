@@ -23,6 +23,7 @@ async function enter(width: number, height: number) {
     hasTouch: true,
     isMobile: width === 360,
   });
+  page.setDefaultTimeout(20000);
   await page.clock.install();
   await page.goto(url);
   await page.locator('#new').waitFor();
@@ -50,7 +51,9 @@ describe('round four shelter clarity', () => {
     [360, 690],
     [1280, 800],
   ] as const) {
-    it(`opens a live shelter check and returns to its person at ${width}×${height}`, async () => {
+    it(`opens a live shelter check and returns to its person at ${width}×${height}`, {
+      timeout: 20000,
+    }, async () => {
       const page = await enter(width, height);
       try {
         const check = page.locator('#shelter-check');
@@ -60,7 +63,7 @@ describe('round four shelter clarity', () => {
         expect(box?.height).toBeGreaterThanOrEqual(44);
         expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(height);
         await check.click();
-        expect(await page.locator('#shelter-summary').innerText()).toContain('room for about six');
+        expect(await page.locator('#shelter-summary').innerText()).toContain('6 exposed');
         const rows = page.locator('[data-shelter-person]');
         expect(await rows.count()).toBe(9);
         expect(await rows.allTextContents()).toEqual(
@@ -69,7 +72,9 @@ describe('round four shelter clarity', () => {
         );
         const person = page.locator('[data-who]').first();
         await person.click();
-        expect(await page.locator('#card').innerText()).toMatch(/Exposed|Beyond|Hiding/);
+        expect(await page.locator('#person-help').isVisible()).toBe(true);
+        await page.locator('#card details summary').click();
+        expect(await page.locator('#card .shelter-person').innerText()).toMatch(/Exposed|Beyond|Hiding/);
         await page.locator('#cardx').click();
         expect(await page.locator('#drawer').isVisible()).toBe(true);
         expect(await person.evaluate((el) => el === document.activeElement)).toBe(true);
@@ -85,7 +90,9 @@ describe('round four shelter clarity', () => {
       }
     });
   }
-  it('keeps raid guidance above capacity and does not present an older bell answer as current', async () => {
+  it('keeps raid guidance above capacity and does not present an older bell answer as current', {
+    timeout: 20000,
+  }, async () => {
     const page = await enter(360, 690);
     try {
       await page.evaluate(`(() => {
@@ -106,7 +113,9 @@ describe('round four shelter clarity', () => {
       await page.close();
     }
   });
-  it('acknowledges bed marking with approximate room and village capacity, and chalk as a planned dig', async () => {
+  it('acknowledges bed marking with approximate room and village capacity, and chalk as a planned dig', {
+    timeout: 20000,
+  }, async () => {
     const page = await enter(360, 690);
     try {
       await page.locator('[data-tool="beds"]').click();
@@ -114,7 +123,7 @@ describe('round four shelter clarity', () => {
       await page.mouse.click(bed.x, bed.y);
       await page.clock.runFor(300);
       expect(await page.locator('#cell-words').innerText()).toContain('Room for about six');
-      expect(await page.locator('#cell-words').innerText()).toContain('needs more sleeping places');
+      expect(await page.locator('#cell-words').innerText()).toContain('More sleeping places needed');
       await page.locator('[data-tool="chalk"]').click();
       const chalk = await point(page, 20, SURF + 3);
       await page.mouse.click(chalk.x, chalk.y);

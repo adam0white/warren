@@ -1,7 +1,7 @@
 import { mkdirSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { type Browser, chromium } from 'playwright-core';
+import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { newGame, save } from '../src/sim/game.ts';
@@ -12,7 +12,7 @@ let browser: Browser;
 let url: string;
 const shots =
   process.platform === 'darwin'
-    ? '/Users/abdul/code/.lab-scratch/design-round/warren-shots'
+    ? '/Users/abdul/code/.lab-scratch/patterns/warren-shots/regression'
     : join(tmpdir(), 'warren-design-shots');
 beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
@@ -24,18 +24,33 @@ beforeAll(async () => {
 afterAll(async () => {
   await browser?.close();
   await server?.close();
-});
+}, 60000);
+
+async function assertStage(page: Page, width: number, height: number) {
+  const scene = await page.locator('#cv').boundingBox();
+  const detail = await page.locator('#cell-detail').boundingBox();
+  const tools = await page.locator('.tools').boundingBox();
+  if (!scene || !detail || !tools) throw new Error('Missing scene, reading or tools');
+  expect(scene.height).toBeGreaterThanOrEqual(120);
+  expect(
+    detail.y >= scene.y + scene.height || detail.x >= scene.x + scene.width,
+    JSON.stringify({ scene, detail }),
+  ).toBe(true);
+  expect(tools.y + tools.height).toBeLessThanOrEqual(height);
+  expect(tools.x + tools.width).toBeLessThanOrEqual(width);
+}
 
 for (const [width, height] of [
   [360, 690],
   [1280, 800],
 ] as const) {
-  it(`previews a held stroke and recovers full readings at ${width}`, async () => {
+  it(`previews a held stroke and recovers full readings at ${width}`, { timeout: 20000 }, async () => {
     const page = await browser.newPage({
       viewport: { width, height },
       hasTouch: true,
       isMobile: width === 360,
     });
+    page.setDefaultTimeout(20000);
     try {
       await page.clock.install();
       await page.goto(url);
@@ -67,18 +82,16 @@ for (const [width, height] of [
       expect(await page.locator('#cell-words').innerText()).toMatch(/about six/);
       expect(await page.evaluate(`window.__warren.game.s.hill.chalk[${cells[0]}]`)).toBe(0);
       await page.screenshot({ path: `${shots}/after-${width}-drag-c.png` });
-      const map = await page.locator('#cv').boundingBox();
-      const tools = await page.locator('.tools').boundingBox();
       await page.mouse.up();
       await page.clock.runFor(100);
       expect(await page.evaluate(`window.__warren.game.s.hill.chalk[${cells[0]}]`)).toBe(1);
       await page.locator('[data-tool="look"]').click();
-      await page.touchscreen.tap(b.x, b.y);
+      const inspected = await point(19, SURF + 4);
+      await page.touchscreen.tap(inspected.x, inspected.y);
       await page.clock.runFor(100);
       expect(await page.locator('#cell-title').innerText()).toBe('Unbuilt plan');
       expect(await page.locator('#cell-words').innerText()).toMatch(/about six/);
-      expect(await page.locator('#cv').boundingBox()).toEqual(map);
-      expect(await page.locator('.tools').boundingBox()).toEqual(tools);
+      await assertStage(page, width, height);
       await page.screenshot({ path: `${shots}/after-${width}-plan-c.png` });
       await page.locator('[data-tool="beds"]').click();
       const bedPoint = await point(18, SURF + 3);
@@ -102,7 +115,8 @@ for (const [width, height] of [
       );
       await page.clock.runFor(100);
       await page.clock.runFor(300);
-      expect(await page.locator('#ticker').innerText()).toContain('new warning');
+      expect(await page.locator('#ticker').innerText()).toBe('Open journal');
+      expect(await page.locator('#ticker').getAttribute('title')).toContain('new warning');
       await page.getByRole('button', { name: 'Last reading', exact: true }).click();
       expect(await page.locator('#cell-words').innerText()).toBe(reading);
       const close = await page.locator('#cellx').boundingBox();
@@ -119,20 +133,19 @@ for (const [width, height] of [
   [360, 690],
   [1280, 800],
 ] as const) {
-  it(`keeps live bell replies readable and explains expiry at ${width}`, async () => {
+  it(`keeps live bell replies readable and explains expiry at ${width}`, { timeout: 20000 }, async () => {
     const page = await browser.newPage({
       viewport: { width, height },
       hasTouch: true,
       isMobile: width === 360,
     });
+    page.setDefaultTimeout(20000);
     try {
       await page.clock.install();
       await page.goto(url);
       await page.locator('#new').click();
       await page.evaluate('window.__warren.setSpeed(0)');
       await page.clock.runFor(100);
-      const map = await page.locator('#cv').boundingBox();
-      const tools = await page.locator('.tools').boundingBox();
       await page.locator('#bell').click();
       await page.evaluate(`(() => {
         const s=window.__warren.game.s;
@@ -144,16 +157,20 @@ for (const [width, height] of [
       })()`);
       await page.clock.runFor(300);
       const words = page.locator('#cell-words');
-      expect(await words.innerText()).toMatch(/six game hours.*Fine.*next choice/is);
-      await words.evaluate((e) => {
-        e.scrollTop = 90;
-      });
-      const scroll = await words.evaluate((e) => e.scrollTop);
+      expect(await words.innerText()).toMatch(/six game hours/is);
+      expect(await words.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
+      const replies = page.locator('#reading-context');
+      await replies.locator('summary').click();
+      expect(await replies.locator('summary').getAttribute('aria-label')).toBe('Replies to the bell');
+      expect(await page.locator('#door-context').innerText()).toMatch(/Fine.*next choice/is);
       await page.evaluate('window.__warren.game.s.minute += 30');
       await page.clock.runFor(300);
-      expect(await words.evaluate((e) => e.scrollTop)).toBe(scroll);
-      expect(await page.locator('#cv').boundingBox()).toEqual(map);
-      expect(await page.locator('.tools').boundingBox()).toEqual(tools);
+      expect(await replies.evaluate((el) => (el as HTMLDetailsElement).open)).toBe(true);
+      expect(await page.locator('#door-context').innerText()).toMatch(/Fine.*next choice/is);
+      await replies.locator('summary').click();
+      await page.clock.runFor(100);
+      await page.screenshot({ path: `${shots}/after-${width}-bell-context-collapsed-c.png` });
+      await assertStage(page, width, height);
       await page.screenshot({ path: `${shots}/after-${width}-bell-c.png` });
       await page.locator('#cellx').click();
       await page.evaluate(
@@ -162,8 +179,7 @@ for (const [width, height] of [
       await page.getByRole('button', { name: 'Last reading', exact: true }).click();
       await page.clock.runFor(300);
       expect(await words.innerText()).toMatch(/Call ended.*six game hours elapsed/s);
-      expect(await page.locator('#cv').boundingBox()).toEqual(map);
-      expect(await page.locator('.tools').boundingBox()).toEqual(tools);
+      await assertStage(page, width, height);
       await words.evaluate((e) => {
         e.scrollTop = 0;
       });

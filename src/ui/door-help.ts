@@ -10,8 +10,18 @@ export function doorWords(s: WarrenState, cell: number, lit: boolean): string {
       : 'A door marked, in the dark. Hang a lamp near so people can choose to carve it. The stone must be finished before anyone can roll it shut.';
   if (s.hill.shut[cell])
     return 'The stone door, rolled shut. When there is no smoke, no riders and no sounding bell, an adult can choose to roll it back.';
+  const raid = activeRaid(s);
+  const ringing = !!s.bell && s.bell.until > s.minute;
+  if (raid || ringing)
+    return `A nearby adult who can reach this door can choose to roll it shut. It is rolled back. ${raid ? 'Smoke or riders make this a choice.' : 'The bell is sounding.'}`;
+  return 'Ring the bell. A nearby adult who can reach this door can choose to shut it. It is rolled back. Quiet-time false alarms can weaken trust in the bell. Quiet-time calls last six game hours.';
+}
+
+/** Live task details stay available without hiding the immediate door choice. */
+export function doorDetailWords(s: WarrenState, cell: number): string {
+  if (s.hill.doorWork[cell] || s.hill.shut[cell]) return '';
   const candidates = doorCandidates(s, cell);
-  const workers = candidates.length
+  return candidates.length
     ? `Nearby adults: ${candidates
         .map((p) => {
           const trip = s.trips[p.id];
@@ -20,11 +30,6 @@ export function doorWords(s: WarrenState, cell: number, lit: boolean): string {
         })
         .join('; ')}. The choice is theirs.`
     : 'No living adult nearby can reach this door now.';
-  const raid = activeRaid(s);
-  const ringing = !!s.bell && s.bell.until > s.minute;
-  if (raid || ringing)
-    return `The stone door, rolled back. ${raid ? 'With smoke or riders at the hill' : 'While the bell is sounding'}, an adult with the door nearby and reachable can choose to roll it shut. ${workers}`;
-  return `The stone door, rolled back. A quiet-time false alarm can weaken trust in the bell. Ring the bell so an adult nearby and reachable can choose to shut it. Quiet-time calls last six game hours. Smoke or riders also make shutting it a choice. ${workers}`;
 }
 
 /** Same age, current sim origin and weighted distance gate as the shut-door offer. */

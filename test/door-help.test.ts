@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/sim/game.ts';
 import { idx, K, SURF, USE } from '../src/sim/grid.ts';
 import { offersFor } from '../src/sim/warren.ts';
-import { doorWords } from '../src/ui/door-help.ts';
+import { doorDetailWords, doorWords } from '../src/ui/door-help.ts';
 
 const door = idx(17, SURF + 2);
 function state() {
@@ -53,9 +53,12 @@ describe('door responses', () => {
     expect(words).toContain('rolled back');
     expect(words).toContain('Ring the bell');
     expect(words).toContain('adult');
-    expect(words).toContain('reachable');
+    expect(words).toContain('can reach');
     expect(words).toContain('choose');
-    expect(words.indexOf('false alarm')).toBeLessThan(words.indexOf('Ring the bell'));
+    expect(words.startsWith('Ring the bell.')).toBe(true);
+    expect(words.indexOf('Ring the bell')).toBeLessThan(words.indexOf('false alarm'));
+    expect(words).toContain('Quiet-time calls last six game hours');
+    expect(words).not.toContain('Nearby adults:');
     expect(words).not.toMatch(/will shut|tap.*shut/i);
   });
 
@@ -87,7 +90,7 @@ describe('door responses', () => {
     expect(doorWords(s, door, true)).not.toContain('Ring the bell');
   });
 
-  it('keeps the door explanation within sixty words before the live adult list', () => {
+  it('keeps the door explanation within forty words, with live adult tasks kept in details', () => {
     const s = state();
     const variants = [doorWords(s, door, true)];
     s.bell = { at: s.minute, until: s.minute + 60, real: false };
@@ -100,8 +103,13 @@ describe('door responses', () => {
     variants.push(doorWords(s, door, true));
     s.hill.doorWork[door] = 14;
     variants.push(doorWords(s, door, true), doorWords(s, door, false));
-    for (const words of variants)
-      expect((words.split('Nearby adults:')[0] ?? '').split(/\s+/).length).toBeLessThanOrEqual(60);
+    for (const words of variants) expect(words.split(/\s+/).length).toBeLessThanOrEqual(40);
+  });
+
+  it('keeps an unavailable nearby adult explicit in the details', () => {
+    const s = state();
+    for (const p of s.people) p.body.alive = false;
+    expect(doorDetailWords(s, door)).toBe('No living adult nearby can reach this door now.');
   });
 
   it('reads the same state without changing it', () => {

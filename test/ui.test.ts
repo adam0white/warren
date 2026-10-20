@@ -1,4 +1,6 @@
 import { mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -8,7 +10,10 @@ type Debug = typeof import('../src/ui/app.ts')['_debug'];
 let server: ViteDevServer;
 let browser: Browser;
 let url: string;
-const shots = 'scratch/owner-2026-10-20';
+const shots =
+  process.platform === 'darwin'
+    ? '/Users/abdul/code/.lab-scratch/patterns/warren-shots/regression/owner'
+    : join(tmpdir(), 'warren-owner-shots');
 
 beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });

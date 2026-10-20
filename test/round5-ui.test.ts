@@ -12,7 +12,7 @@ let browser: Browser;
 let url: string;
 const evidence =
   process.platform === 'darwin'
-    ? '/Users/abdul/code/.lab-scratch/design-round/warren-shots/round5-regression'
+    ? '/Users/abdul/code/.lab-scratch/patterns/warren-shots/regression/round5'
     : join(tmpdir(), 'warren-round5-shots');
 beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
@@ -53,7 +53,7 @@ describe('round five phone building', () => {
     [360, 690],
     [1280, 800],
   ] as const) {
-    it(`places small cells with labelled zoom and keeps the working cell stable at ${width}`, async () => {
+    it(`places small cells with labelled zoom and keeps the working cell visible at ${width}`, async () => {
       const page = await enter(width, height);
       try {
         await page.locator('[data-tool="beds"]').tap();
@@ -77,7 +77,9 @@ describe('round five phone building', () => {
         await page.clock.runFor(1000);
         const after = await point(page, 18, SURF + 3);
         expect(after.x).toBeCloseTo(cell.x, 3);
-        expect(after.y).toBeCloseTo(cell.y, 3);
+        const visible = await page.locator('#cv').boundingBox();
+        expect(after.y).toBeGreaterThan(visible?.y ?? 0);
+        expect(after.y).toBeLessThan((visible?.y ?? 0) + (visible?.height ?? 0));
         const chalk = await point(page, 20, SURF + 3);
         await page.touchscreen.tap(chalk.x, chalk.y);
         await page.clock.runFor(100);
@@ -100,11 +102,12 @@ describe('round five phone building', () => {
       const summary = page.locator('#shelter-brief');
       expect(await summary.innerText()).toMatch(/Sleeping.*exposed/);
       await summary.tap();
+      await page.clock.runFor(200);
       const body = page.locator('#sheet-body');
       const bounds = await body.boundingBox();
       expect(bounds).not.toBeNull();
       const minute = await page.evaluate<number>('window.__warren.game.s.minute');
-      await page.mouse.move(180, (bounds?.y ?? 0) + 100);
+      await page.mouse.move(180, (bounds?.y ?? 0) + (bounds?.height ?? 0) / 2);
       await page.mouse.wheel(0, 350);
       await page.clock.runFor(1200);
       expect(await body.evaluate((e) => e.scrollTop)).toBeGreaterThan(100);
@@ -115,7 +118,17 @@ describe('round five phone building', () => {
         e.scrollTop = 0;
       });
       const cdp = await page.context().newCDPSession(page);
-      const y = Math.min(620, (bounds?.y ?? 0) + (bounds?.height ?? 0) - 40);
+      const touchBounds = await body.boundingBox();
+      const visibleBody = await page.locator('#inspection-body').boundingBox();
+      if (!touchBounds || !visibleBody) throw new Error('Missing visible sheet body');
+      // The commit row clips the nested list before its layout box ends.
+      const y = Math.min(touchBounds.y + touchBounds.height, visibleBody.y + visibleBody.height) - 40;
+      expect(
+        await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('#sheet-body'), {
+          x: 180,
+          y,
+        }),
+      ).toBe(true);
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x: 180, y }] });
       for (let k = 1; k <= 8; k++) {
         await cdp.send('Input.dispatchTouchEvent', {

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/sim/game.ts';
 import { idx, K, SURF, USE } from '../src/sim/grid.ts';
 import { offersFor } from '../src/sim/warren.ts';
-import { doorCandidates, doorWords } from '../src/ui/door-help.ts';
+import { doorCandidates, doorDetailWords } from '../src/ui/door-help.ts';
 import {
   bedSafety,
   bellShelterWords,
@@ -26,14 +26,16 @@ function layout() {
 describe('room safety from the actual rider layout', () => {
   it('separates shallow beds from deep beds and changes only the door flags in its counterfactual', () => {
     const { s, x, near, deep } = layout();
-    expect(roomSafetyWords(s, near)).toContain('Not far enough');
+    expect(roomSafetyWords(s, near)).toMatch(
+      /^Dig deeper along a protected passage, or shut a stone door on each open route\./,
+    );
     expect(roomSafetyWords(s, deep)).toContain('Deep enough');
     expect(bedSafety(s)).toEqual({ safe: 3, exposed: 3 });
     const door = idx(x, SURF + 2);
     s.hill.use[door] = USE.door;
     s.hill.doorWork[door] = 0;
     const before = JSON.stringify(s);
-    expect(roomSafetyWords(s, near)).toContain('rolled back');
+    expect(roomSafetyWords(s, near)).toContain('open stone door');
     expect(JSON.stringify(s)).toBe(before);
     s.hill.shut[door] = 1;
     expect(roomSafetyWords(s, near)).toContain('while it stays shut');
@@ -58,9 +60,9 @@ describe('room safety from the actual rider layout', () => {
     s.hill.doorWork[first] = s.hill.doorWork[second] = 0;
     const words = roomSafetyWords(s, near);
     expect(words).toContain('Every open route');
-    expect(words).not.toContain('Shutting it would block');
+    expect(words).not.toMatch(/open stone door.*blocking riders/);
     s.hill.shut[first] = 1;
-    expect(roomSafetyWords(s, near)).toContain('Shutting it would block');
+    expect(roomSafetyWords(s, near)).toMatch(/open stone door.*blocking riders/);
     expect(bedSafety(s).exposed).toBeGreaterThan(0);
     s.hill.shut[second] = 1;
     expect(bedSafety(s).exposed).toBe(0);
@@ -78,7 +80,7 @@ describe('room safety from the actual rider layout', () => {
       s.hill.use[idx(x, SURF + 5)] = USE.beds;
     }
     expect(roomSafetyWords(s, idx(3, SURF + 5))).toContain('Every open route');
-    expect(roomSafetyWords(s, idx(3, SURF + 5))).not.toContain('Shutting it would block');
+    expect(roomSafetyWords(s, idx(3, SURF + 5))).not.toMatch(/open stone door.*blocking riders/);
     for (const x of [3, 17]) s.hill.shut[idx(x, SURF + 2)] = 1;
     expect(roomSafetyWords(s, idx(3, SURF + 5))).toContain('while they stay shut');
   });
@@ -118,7 +120,7 @@ describe('room safety from the actual rider layout', () => {
     expect(doorCandidates(s, cell).map((p) => p.id)).toEqual(
       s.people.filter((p) => offersFor(s, p).some((a) => a.action === 'shut-door')).map((p) => p.id),
     );
-    const words = doorWords(s, cell, true);
+    const words = doorDetailWords(s, cell);
     for (const p of doorCandidates(s, cell)) expect(words).toContain(`${p.name}:`);
     expect(words).not.toContain('Zehra:');
   });
