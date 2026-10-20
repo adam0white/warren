@@ -105,6 +105,7 @@ const markLink = '<a class="mark" href="https://human.adamwhite.work">◇ human 
 // ---------- start ----------
 
 export async function start() {
+  mountLabControls();
   if ('serviceWorker' in navigator && location.hostname !== 'localhost')
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   ink = readInk();
@@ -178,6 +179,7 @@ function catchUp(savedAt: number) {
 
 function enter() {
   if (!g) return;
+  lab.milestone('run started');
   // Milestones count what happens in this sitting, not what a resumed notebook already holds.
   labGoals.clear();
   for (const id of Object.keys(g.s.goals)) labGoals.add(id);
@@ -360,12 +362,11 @@ function chrome() {
   const cg = currentGoal(s);
   if (goal) goal.textContent = cg ? `→ ${cg.text}` : '';
   const r0 = activeRaid(s);
-  const reading0 = !(document.getElementById('drawer')?.hidden ?? true);
   const lag = document.getElementById('lag');
   if (lag) lag.hidden = !lagging || speedIx < 2;
   // The lab: where the player is (the last screen before leaving is the quit point) and what they reached.
-  const day = Math.floor(s.minute / DAY);
-  const chapter = `${seasonOf(doyOf(day))} y${yearOf(day)}${r0 ? `: ${r0.stage}` : ''}${reading0 ? ': notebook' : ''}`;
+  const reading0 = !(document.getElementById('drawer')?.hidden ?? true);
+  const chapter = reading0 ? 'notebook' : r0 ? 'raid' : 'play';
   if (chapter !== labScreen) {
     labScreen = chapter;
     lab.screen(chapter);
@@ -919,3 +920,25 @@ export const _debug = {
   },
   order,
 };
+
+/** Available on the title page too, before regular play events begin. */
+function mountLabControls() {
+  const controls = document.createElement('details');
+  controls.style.cssText = 'margin:1rem auto;padding:0.6rem;max-width:45rem;font:inherit';
+  controls.innerHTML = `<summary>Playtest privacy</summary><label><input type="checkbox"> Anonymous play events</label> <a href="https://human.adamwhite.work/lab/privacy/">Privacy</a>`;
+  const toggle = controls.querySelector('input');
+  if (toggle) {
+    toggle.checked = lab.eventsOn;
+    const sync = () => {
+      toggle.checked = lab.eventsOn;
+    };
+    window.addEventListener('storage', sync);
+    window.addEventListener('focus', sync);
+    document.addEventListener('change', sync);
+    toggle.addEventListener('change', () => {
+      lab.setEventsOff(!toggle.checked);
+      toggle.checked = lab.eventsOn;
+    });
+  }
+  document.body.append(controls);
+}
