@@ -124,7 +124,7 @@ describe('safety before calling people below', () => {
           await page.locator('[data-tool="door"]').tap();
           await page.clock.runFor(1000);
           expect(await page.locator('#scene .hint').count()).toBe(0);
-          expect(await page.locator('#ticker').innerText()).toContain('Three doors at most');
+          expect(await page.locator('#cell-words').innerText()).toContain('Three doors at most');
           await page.evaluate(`(() => {
           const s=window.__warren.game.s;
           s.hill.use[${idx(18, SURF + 2)}]=${USE.door};
@@ -155,7 +155,7 @@ describe('safety before calling people below', () => {
           await page.locator('#cellx').click();
           await page.locator('#bell').click();
           await page.clock.runFor(100);
-          expect(await page.locator('#bell-meaning').innerText()).toContain('Call active');
+          expect(await page.locator('#cell-words').innerText()).toContain('Call active');
           await page.screenshot({
             animations: 'disabled',
             path: `${shots}/after-${width}-bell${suffix}-b.png`,

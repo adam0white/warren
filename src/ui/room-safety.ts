@@ -1,5 +1,6 @@
+import { HOUR } from '../sim/calendar.ts';
 import { BEDS_PER_CELL, idx, K, neighbours, roomOf, SURF, USE, xOf, yOf } from '../sim/grid.ts';
-import { activeRaid, riderCells, type WarrenState } from '../sim/warren.ts';
+import { activeRaid, riderCells, V, type WarrenState } from '../sim/warren.ts';
 
 /** Counterfactual readings use copied door flags, never change the hill. */
 function doorReach(s: WarrenState, shut: boolean) {
@@ -95,21 +96,38 @@ export function hadBellCall(s: WarrenState): boolean {
   );
 }
 
+/** Time in the hill, independent of the player's playback speed. */
+export function gameTimeWords(minutes: number): string {
+  const total = Math.max(0, Math.ceil(minutes));
+  const hours = Math.floor(total / HOUR);
+  const rest = total % HOUR;
+  return hours
+    ? `${hours} game ${hours === 1 ? 'hour' : 'hours'}${rest ? ` ${rest} minutes` : ''}`
+    : `${total} game ${total === 1 ? 'minute' : 'minutes'}`;
+}
+
 export function bellStateWords(s: WarrenState): string {
-  if (s.bell && s.bell.until > s.minute) return 'Call active; people are still choosing how to answer.';
+  if (s.bell && s.bell.until > s.minute)
+    return `Call active for six game hours; ${gameTimeWords(s.bell.until - s.minute)} left. People choose whether to come below.`;
   if (hadBellCall(s)) {
     const travelling = s.people.some(
       (p) => p.body.alive && s.trips[p.id]?.action === 'shelter' && (s.trips[p.id]?.workFrom ?? 0) > s.minute,
     );
     const sheltering = s.people.some((p) => p.body.alive && p.activity?.action === 'shelter');
+    const bellAt = s.notes.findLast((n) => /^You rang the bell[.,]/.test(n.text))?.at;
+    const deadline = s.bell?.until ?? (bellAt === undefined ? undefined : bellAt + V.bellHours * HOUR);
+    const reason =
+      deadline !== undefined && s.minute >= deadline ? ' The call’s six game hours elapsed.' : '';
     const ended = travelling
       ? 'Call ended; some are still on the way below.'
       : sheltering
         ? 'Call ended; some are still sheltering below.'
         : 'Call ended.';
-    return `${ended}${activeRaid(s) ? ' Ring to renew.' : ''}`;
+    return `${ended}${reason}${activeRaid(s) ? ' Ring to renew.' : ''}`;
   }
-  return activeRaid(s) ? 'No call active. Ring to renew the call below.' : 'Bell quiet.';
+  return activeRaid(s)
+    ? 'No call active. Ring the bell to call people below for six game hours.'
+    : 'Bell quiet. Each call lasts six game hours. People choose whether to come below.';
 }
 
 export function bellShelterWords(s: WarrenState): string {

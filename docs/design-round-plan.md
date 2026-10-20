@@ -30,3 +30,16 @@ Spec: lead designer review in `brief-warren-b.md`. Implementation and independen
 Shipping procedure: run `npm run check`, commit with Codex trailer, push main, deploy, and verify live release and green CI. The external report records the final outcome and commit. Two reviewers found no blocking defect; both requested regression coverage (direct room-to-shelter replacement and retained historical tracks), which was added. The full check also caught a 320px map-height regression from excess reserved status space and a stale `.hint` test selector. The reserved space now uses its natural 120px minimum; the first-minute test reads guidance in the journal control.
 
 Ruling: reuse the status area for inspection rather than shrink the map when the card opens. The clock remains visible below it. This preserves the tapped room and building controls; longer explanations scroll inside the reading.
+
+## Follow-up c — live retest, UI only
+
+Acceptance: Adam and the lead designer. Shipping status and receipts are maintained in the external round report. Done means the three requested UI changes, regression checks, real phone/desktop renders, exact legacy/current replay, a signed pushed commit with Codex trailer, deployed HEAD/clean release and green CI. Adam and the lead designer accept the experience; fresh source-unread play remains separate.
+
+- [x] Read fresh Kofi retest and common rules. No fun-warren.md existed at task start.
+- [x] Render held chalk/bed safety and rough capacity; inspect committed unbuilt plans without changing the simulation.
+- [x] Show six-game-hour call duration and lapse reason, plus named observed travel or next-choice timing. Preserve autonomy and quiet faith.
+- [x] Put immediate feedback in the dock and retain Last reading. Keep map/tools stable, full text scrollable, live readings recoverable and scroll position stable.
+- [x] Freeze actual live 0.2.0/0.3.0 downloads, including mid-run continuations; verify exact replay after UI changes. All 36 live state hashes matched; the regression suite repeats the comparisons.
+Shipping procedure: complete final checks and independent reviews, retain phone/desktop renders, commit/push/deploy, then record live/CI receipts in the external report. The two reviews found and resolved live bell scroll reset and stale reopened bell state.
+
+No simulation or dependency changes. Revert the follow-up UI commit's UI/test edits to restore prior behavior. Retain frozen baseline receipts.

@@ -41,7 +41,8 @@ import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from
 import { exposureWords } from './exposure.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
-import { bellShelterWords, hadBellCall } from './room-safety.ts';
+import { planSafety } from './plan-safety.ts';
+import { bellShelterWords, bellStateWords } from './room-safety.ts';
 import { compactShelterWords, sleepingCapacityWords, sleepingRoomWords } from './shelter.ts';
 import * as store from './store.ts';
 
@@ -84,6 +85,9 @@ const RAID_SPEED = MS_PER_MIN / 1000;
 let menuOpener: HTMLElement | null = null;
 let personOpener: HTMLElement | null = null;
 let doorCell: number | null = null;
+let bellReading = false;
+let planCell: number | null = null;
+let lastReading: { title: string; words: string } | null = null;
 
 const app = () => document.getElementById('app') as HTMLElement;
 const esc = (x: string) =>
@@ -226,9 +230,9 @@ function enter() {
     </div>
     <div class="panel">
       <div class="reading-slot">
-      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Stone door</b><button class="x" id="cellx" aria-label="Close room or door inspection">×</button></div><p id="cell-words"></p></div>
+      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Stone door</b><span id="reading-more" hidden>Scroll ↓</span><button class="x" id="cellx" aria-label="Close room or door inspection">×</button></div><p id="cell-words" tabindex="0" role="region" aria-label="Full reading"></p></div>
       <button id="shelter-brief" aria-label="Check shelter summary"><span id="bell-meaning"></span></button>
-      <button class="ticker" id="ticker" aria-label="Open journal"></button>
+      <div class="reading-actions"><button class="ticker" id="ticker" aria-label="Open journal"></button><button id="last-reading" disabled>Last reading</button></div>
       </div>
       <div class="clock-status"><span id="clock-rate"></span><span class="raid-controls"><button id="watch-raid">Keep watching</button><button id="shelter-check">Check shelter</button></span></div>
       <div class="tools" role="toolbar" aria-label="Tools">
@@ -250,6 +254,10 @@ function enter() {
     </div>
     <div class="drawer" id="drawer" hidden></div>
   </div>`;
+  lastReading = null;
+  bellReading = false;
+  planCell = null;
+  doorCell = null;
   canvas = document.getElementById('cv') as HTMLCanvasElement;
   ctx = canvas.getContext('2d');
   disp = g.s.minute;
@@ -269,7 +277,8 @@ function enter() {
       const raid = g && activeRaid(g.s);
       if (raid) answeredRaids.add(raid.smoke);
       chrome();
-      hint('bell', 'They hear it from the fields and the faces. What they do is theirs.');
+      bellReading = true;
+      showBellReading();
     }
   });
   document.getElementById('watch-raid')?.addEventListener('click', () => {
@@ -300,6 +309,12 @@ function enter() {
     if ((e.target as HTMLElement).closest('#cardx')) closeCard();
   });
   document.getElementById('ticker')?.addEventListener('click', () => openBook('j'));
+  document.getElementById('last-reading')?.addEventListener('click', () => {
+    if (lastReading?.title === 'Bell call') {
+      bellReading = true;
+      showBellReading();
+    } else if (lastReading) showReading(lastReading.title, lastReading.words);
+  });
   document.querySelector('.game')?.addEventListener('keydown', (e) => {
     if ((e as KeyboardEvent).key !== 'Escape') return;
     if (!document.getElementById('cell-detail')?.hidden) closeCell();
@@ -430,7 +445,7 @@ function frame(now: number) {
   lagging = disp > s.minute + 2 * QUANTUM;
   if (lagging) disp = s.minute + QUANTUM;
   paint.t = Math.min(disp, s.minute + QUANTUM);
-  if (!manualView && !pointing && doorCell === null) {
+  if (!manualView && !pointing && doorCell === null && document.getElementById('cell-detail')?.hidden) {
     Object.assign(view, easeView(view, baseView(s, view.w, view.h), dt));
     clampView();
   }
@@ -475,9 +490,7 @@ function chrome() {
     warning.hidden = !pending;
     warning.textContent = !pending
       ? ''
-      : pending.stage === 'smoke'
-        ? `Smoke on the ridge. ${s.bell && s.bell.until > s.minute ? 'The bell call is still active. Check shelter or keep watching.' : hadBellCall(s) ? 'The earlier call ended. Ring to renew, or keep watching.' : 'Ring the bell to call people below, or keep watching.'}`
-        : `Riders are at the hill. ${s.bell && s.bell.until > s.minute ? 'The bell call is still active. Check shelter or keep watching.' : hadBellCall(s) ? 'The earlier call ended. Ring to renew, or keep watching.' : 'Ring the bell to call people below, or keep watching.'}`;
+      : `${pending.stage === 'smoke' ? 'Smoke on the ridge.' : 'Riders are at the hill.'} ${bellStateWords(s)} Check shelter or keep watching.`;
   }
   const watch = document.getElementById('watch-raid') as HTMLButtonElement | null;
   const shelter = document.getElementById('shelter-check') as HTMLButtonElement | null;
@@ -520,10 +533,37 @@ function chrome() {
   if (bell) bell.classList.toggle('ringing', !!s.bell && s.minute < s.bell.until);
   updateShelter();
   updateDoor();
+  updatePlanPreview();
+  if (bellReading) showBellReading();
   if (paint.selected) card();
 }
 
+function showReading(title: string, words: string, remember = true, preserveScroll = false) {
+  const detail = document.getElementById('cell-detail');
+  const heading = document.getElementById('cell-title');
+  const text = document.getElementById('cell-words');
+  if (!detail || !heading || !text) return;
+  const sameReading = preserveScroll && !detail.hidden && heading.textContent === title;
+  heading.textContent = title;
+  if (text.textContent !== words) {
+    const scroll = sameReading ? text.scrollTop : 0;
+    text.textContent = words;
+    text.scrollTop = scroll;
+  }
+  detail.hidden = false;
+  const more = document.getElementById('reading-more');
+  if (more) more.hidden = text.scrollHeight <= text.clientHeight;
+  if (remember) {
+    lastReading = { title, words };
+    const reopen = document.getElementById('last-reading') as HTMLButtonElement | null;
+    if (reopen) reopen.disabled = false;
+  }
+}
+
 function flash(text: string) {
+  bellReading = false;
+  doorCell = null;
+  showReading('Reading', text);
   ticker = { at: g?.s.minute ?? 0, kind: 'story', text, weight: 2 };
   tickerUntil = performance.now() + 9000;
 }
@@ -630,6 +670,7 @@ function bindPointer(cv: HTMLCanvasElement) {
       mode = 'pinch';
       paint.preview.clear();
       paint.previewKind = null;
+      closeCell(false);
     } else if (e.button === 2 || e.button === 1 || !painting()) mode = 'pan';
     else {
       mode = 'paint';
@@ -685,6 +726,7 @@ function bindPointer(cv: HTMLCanvasElement) {
     pointing = pts.size > 0;
     paint.preview.clear();
     paint.previewKind = null;
+    closeCell(false);
     mode = 'none';
   });
   cv.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -721,6 +763,14 @@ function addPaint(px: number, py: number, fresh = false) {
     if (c >= 0 && yOf(c) >= SURF) paint.preview.add(c);
   }
   lastPaint = { x: px, y: py };
+  updatePlanPreview();
+}
+
+function updatePlanPreview() {
+  if (!g || (paint.previewKind !== 'chalk' && paint.previewKind !== 'beds') || !paint.preview.size) return;
+  bellReading = false;
+  doorCell = null;
+  showReading('Plan preview', planSafety(g.s, paint.preview, paint.previewKind).words, false);
 }
 
 /** Whether the chalk just laid joins open ground through other chalk (so a digger can work toward it). */
@@ -751,7 +801,7 @@ function commitPaint() {
   if (kind === 'chalk') {
     if (order({ verb: 'chalk', cells, on: true })) {
       if (reachable(cells))
-        flash('Dig planned. The dashed outlines show stone to cut. People choose when to dig.');
+        flash(`Dig planned. ${planSafety(g.s, cells, 'chalk').words} People choose when to dig.`);
       else
         flash(
           'Nobody can get at that stone yet. Chalk a way to it from open ground, and they will dig toward it.',
@@ -809,7 +859,11 @@ function tap(px: number, py: number) {
     else flash('A door fits a narrow passage: open on two opposite sides only.');
     return;
   }
-  // A sleeping mark is a room inspection even when someone stands on it.
+  // Plans and sleeping marks take priority over people standing on them.
+  if (c >= 0 && s.hill.chalk[c] && s.hill.kind[c] !== K.open) {
+    showPlan(c);
+    return;
+  }
   if (c >= 0 && s.hill.use[c] === USE.beds) {
     showDoor(c);
     return;
@@ -890,6 +944,8 @@ function describeCell(c: number) {
 }
 
 function closeCell(focus = true) {
+  bellReading = false;
+  planCell = null;
   doorCell = null;
   const detail = document.getElementById('cell-detail');
   if (!detail || detail.hidden) return;
@@ -899,12 +955,38 @@ function closeCell(focus = true) {
 
 function updateDoor() {
   if (!g || doorCell === null) return;
+  if (g.s.hill.chalk[doorCell] && g.s.hill.kind[doorCell] !== K.open) {
+    showReading('Unbuilt plan', planSafety(g.s, [doorCell], 'chalk').words, true, true);
+    return;
+  }
+  if (planCell !== null) {
+    showReading(
+      'Excavated plan',
+      `${planSafety(g.s, [doorCell], 'beds').words} This ground is open now; beds still need marking.`,
+    );
+    doorCell = null;
+    planCell = null;
+    return;
+  }
   const text = document.getElementById('cell-words');
   const words =
     g.s.hill.use[doorCell] === USE.beds
       ? sleepingRoomWords(g.s, doorCell)
       : doorWords(g.s, doorCell, lightAt(doorCell));
-  if (text && text.textContent !== words) text.textContent = words;
+  if (text && text.textContent !== words) {
+    text.textContent = words;
+    lastReading = { title: g.s.hill.use[doorCell] === USE.beds ? 'Sleeping room' : 'Stone door', words };
+  }
+}
+
+function showPlan(cell: number) {
+  if (!g) return;
+  closeCard();
+  bellReading = false;
+  planCell = cell;
+  doorCell = cell;
+  showReading('Unbuilt plan', planSafety(g.s, [cell], 'chalk').words);
+  document.getElementById('cellx')?.focus();
 }
 
 function showDoor(cell: number) {
@@ -916,6 +998,8 @@ function showDoor(cell: number) {
   if (title) title.textContent = beds ? 'Sleeping room' : 'Stone door';
   const words = beds ? sleepingRoomWords(g.s, cell) : doorWords(g.s, cell, lightAt(cell));
   flash(words);
+  doorCell = cell;
+  showReading(beds ? 'Sleeping room' : 'Stone door', words);
   const detail = document.getElementById('cell-detail');
   const text = document.getElementById('cell-words');
   if (detail && text) {
@@ -927,14 +1011,31 @@ function showDoor(cell: number) {
 
 // ---------- Game menu ----------
 
+function showBellReading() {
+  if (!g) return;
+  const s = g.s;
+  const at = s.bell?.at ?? s.notes.findLast((n) => /^You rang the bell[.,]/.test(n.text))?.at;
+  const replies = s.people.filter(
+    (p) => p.body.alive && at !== undefined && s.answers.some((a) => a.who === p.id && a.at >= at),
+  );
+  const call = bellStateWords(s);
+  const shelter = bellShelterWords(s).replace(call, '').trim();
+  showReading(
+    'Bell call',
+    `${call}\n\n${shelter}${replies.length ? `\n\n${replies.map((p) => `${p.name}: ${exposureWords(s, p)}`).join('\n\n')}` : ' No replies recorded yet.'}`,
+    true,
+    true,
+  );
+}
+
 function updateShelter() {
   if (!g) return;
   const brief = document.getElementById('shelter-brief');
   if (brief) brief.title = compactShelterWords(g.s);
   const meaning = document.getElementById('bell-meaning');
-  if (meaning) meaning.textContent = bellShelterWords(g.s);
+  if (meaning) meaning.textContent = `Sleeping places · ${compactShelterWords(g.s)}. ${bellStateWords(g.s)}`;
   const summary = document.getElementById('shelter-summary');
-  if (summary) summary.textContent = sleepingCapacityWords(g.s);
+  if (summary) summary.textContent = `${sleepingCapacityWords(g.s)} ${bellShelterWords(g.s)}`;
   for (const row of document.querySelectorAll<HTMLElement>('[data-shelter-person]')) {
     const person = personOf(g.s, row.dataset.shelterPerson ?? '');
     const words = person?.body.alive ? exposureWords(g.s, person) : 'No longer living; see the journal.';

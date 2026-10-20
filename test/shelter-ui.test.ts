@@ -113,13 +113,13 @@ describe('round four shelter clarity', () => {
       const bed = await point(page, 18, SURF + 3);
       await page.mouse.click(bed.x, bed.y);
       await page.clock.runFor(300);
-      expect(await page.locator('#ticker').innerText()).toContain('Room for about six');
-      expect(await page.locator('#ticker').innerText()).toContain('needs more sleeping places');
+      expect(await page.locator('#cell-words').innerText()).toContain('Room for about six');
+      expect(await page.locator('#cell-words').innerText()).toContain('needs more sleeping places');
       await page.locator('[data-tool="chalk"]').click();
       const chalk = await point(page, 20, SURF + 3);
       await page.mouse.click(chalk.x, chalk.y);
       await page.clock.runFor(300);
-      expect(await page.locator('#ticker').innerText()).toContain('Dig planned');
+      expect(await page.locator('#cell-words').innerText()).toContain('Dig planned');
       expect(await page.locator('[data-tool="chalk"] .g').innerText()).not.toBe('✕');
     } finally {
       await page.close();

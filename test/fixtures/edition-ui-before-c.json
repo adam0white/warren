@@ -1,0 +1,4830 @@
+{
+  "capturedAt": "2026-10-20T12:30:34.919Z",
+  "release": {
+    "app": "0.3.0",
+    "framework": "2.8.0",
+    "commit": "96e84baf97952412987d11e7d9618238c6867e95",
+    "dirty": false
+  },
+  "asset": "/assets/index-Coemp0Lt.js",
+  "sha256": "3ca08574962b3a4cdf21f230fb9591e6d83147b2b70cc314814efb0ca9a0730e",
+  "method": "Exact live bundle with append-only bridge; seeds 1/7/19 with fixed plain-bot/watch input logs from edition-legacy.json, reused on both editions. Real Download this run exports for day-20 checkpoint, live load+2-day continuation and day-65 end; local replay/load verified against every live export.",
+  "runs": [
+    {
+      "edition": "0.2.0",
+      "seed": 1,
+      "policy": "plain",
+      "stages": [
+        {
+          "kind": "checkpoint",
+          "minute": 29100,
+          "fingerprint": "3fcea2ff",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 4740
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 4800
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 4800
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 5280
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 5340
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 7920
+            },
+            {
+              "verb": "lamp",
+              "cell": 528,
+              "at": 8220
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                559,
+                560,
+                561,
+                562,
+                563
+              ],
+              "use": "beds",
+              "at": 10560
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 10560
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 10620
+            },
+            {
+              "verb": "lamp",
+              "cell": 558,
+              "at": 11040
+            },
+            {
+              "verb": "lamp",
+              "cell": 520,
+              "at": 16860
+            },
+            {
+              "verb": "bell",
+              "at": 18060
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556
+              ],
+              "use": "beds",
+              "at": 23640
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 23700
+            },
+            {
+              "verb": "lamp",
+              "cell": 327,
+              "at": 25620
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 28560
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-1-plain-checkpoint.json"
+        },
+        {
+          "kind": "continuation",
+          "minute": 31980,
+          "fingerprint": "966a7a5e",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 4740
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 4800
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 4800
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 5280
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 5340
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 7920
+            },
+            {
+              "verb": "lamp",
+              "cell": 528,
+              "at": 8220
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                559,
+                560,
+                561,
+                562,
+                563
+              ],
+              "use": "beds",
+              "at": 10560
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 10560
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 10620
+            },
+            {
+              "verb": "lamp",
+              "cell": 558,
+              "at": 11040
+            },
+            {
+              "verb": "lamp",
+              "cell": 520,
+              "at": 16860
+            },
+            {
+              "verb": "bell",
+              "at": 18060
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556
+              ],
+              "use": "beds",
+              "at": 23640
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 23700
+            },
+            {
+              "verb": "lamp",
+              "cell": 327,
+              "at": 25620
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 28560
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-1-plain-continuation.json"
+        },
+        {
+          "kind": "end",
+          "minute": 93900,
+          "fingerprint": "394dd9ea",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 4740
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 4800
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 4800
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 5280
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 5340
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 7920
+            },
+            {
+              "verb": "lamp",
+              "cell": 528,
+              "at": 8220
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                559,
+                560,
+                561,
+                562,
+                563
+              ],
+              "use": "beds",
+              "at": 10560
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 10560
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 10620
+            },
+            {
+              "verb": "lamp",
+              "cell": 558,
+              "at": 11040
+            },
+            {
+              "verb": "lamp",
+              "cell": 520,
+              "at": 16860
+            },
+            {
+              "verb": "bell",
+              "at": 18060
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556
+              ],
+              "use": "beds",
+              "at": 23640
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 23700
+            },
+            {
+              "verb": "lamp",
+              "cell": 327,
+              "at": 25620
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 28560
+            },
+            {
+              "verb": "lamp",
+              "cell": 620,
+              "at": 29940
+            },
+            {
+              "verb": "lamp",
+              "cell": 757,
+              "at": 37020
+            },
+            {
+              "verb": "lamp",
+              "cell": 892,
+              "at": 43980
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                1024,
+                1025,
+                1026,
+                1027,
+                1058,
+                1059,
+                1060,
+                1061,
+                1092,
+                1093,
+                1094,
+                1095
+              ],
+              "on": true,
+              "at": 49920
+            },
+            {
+              "verb": "lamp",
+              "cell": 1029,
+              "at": 52200
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                278,
+                312,
+                346,
+                380,
+                414,
+                448,
+                482,
+                516,
+                550,
+                652,
+                686,
+                720,
+                754,
+                788,
+                822,
+                856,
+                890,
+                924,
+                958,
+                992
+              ],
+              "on": true,
+              "at": 52500
+            },
+            {
+              "verb": "lamp",
+              "cell": 312,
+              "at": 54420
+            },
+            {
+              "verb": "lamp",
+              "cell": 482,
+              "at": 58320
+            },
+            {
+              "verb": "lamp",
+              "cell": 1024,
+              "at": 64500
+            },
+            {
+              "verb": "use",
+              "cells": [
+                1024,
+                1025,
+                1026,
+                1027,
+                1058,
+                1059,
+                1060,
+                1061,
+                1094,
+                1095
+              ],
+              "use": "beds",
+              "at": 67380
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                1030,
+                1031,
+                1032,
+                1033,
+                1034,
+                1064,
+                1065,
+                1066,
+                1067,
+                1068
+              ],
+              "on": true,
+              "at": 67440
+            },
+            {
+              "verb": "lamp",
+              "cell": 1067,
+              "at": 74100
+            },
+            {
+              "verb": "use",
+              "cells": [
+                1030,
+                1031,
+                1032,
+                1033,
+                1064,
+                1065,
+                1066,
+                1067
+              ],
+              "use": "store",
+              "at": 74460
+            },
+            {
+              "verb": "lamp",
+              "cell": 720,
+              "at": 74460
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                599,
+                600,
+                601,
+                602,
+                603
+              ],
+              "on": true,
+              "at": 74520
+            },
+            {
+              "verb": "bell",
+              "at": 80460
+            },
+            {
+              "verb": "lamp",
+              "cell": 890,
+              "at": 85860
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-1-plain-end.json"
+        }
+      ]
+    },
+    {
+      "edition": "0.2.0",
+      "seed": 1,
+      "policy": "watch",
+      "stages": [
+        {
+          "kind": "checkpoint",
+          "minute": 29100,
+          "fingerprint": "753d1fc6",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-1-watch-checkpoint.json"
+        },
+        {
+          "kind": "continuation",
+          "minute": 31980,
+          "fingerprint": "4439d3b4",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-1-watch-continuation.json"
+        },
+        {
+          "kind": "end",
+          "minute": 93900,
+          "fingerprint": "ba50019f",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-1-watch-end.json"
+        }
+      ]
+    },
+    {
+      "edition": "0.2.0",
+      "seed": 7,
+      "policy": "plain",
+      "stages": [
+        {
+          "kind": "checkpoint",
+          "minute": 29100,
+          "fingerprint": "450c399d",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 5160
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 5220
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 5220
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 6360
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 6420
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 9060
+            },
+            {
+              "verb": "lamp",
+              "cell": 526,
+              "at": 9420
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                559,
+                560,
+                561,
+                562,
+                563
+              ],
+              "use": "beds",
+              "at": 11040
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 11040
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 11100
+            },
+            {
+              "verb": "lamp",
+              "cell": 556,
+              "at": 13560
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                556,
+                557
+              ],
+              "use": "beds",
+              "at": 16380
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 16440
+            },
+            {
+              "verb": "lamp",
+              "cell": 327,
+              "at": 18420
+            },
+            {
+              "verb": "bell",
+              "at": 20940
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 25500
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-7-plain-checkpoint.json"
+        },
+        {
+          "kind": "continuation",
+          "minute": 31980,
+          "fingerprint": "f601a76c",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 5160
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 5220
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 5220
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 6360
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 6420
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 9060
+            },
+            {
+              "verb": "lamp",
+              "cell": 526,
+              "at": 9420
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                559,
+                560,
+                561,
+                562,
+                563
+              ],
+              "use": "beds",
+              "at": 11040
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 11040
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 11100
+            },
+            {
+              "verb": "lamp",
+              "cell": 556,
+              "at": 13560
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                556,
+                557
+              ],
+              "use": "beds",
+              "at": 16380
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 16440
+            },
+            {
+              "verb": "lamp",
+              "cell": 327,
+              "at": 18420
+            },
+            {
+              "verb": "bell",
+              "at": 20940
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 25500
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-7-plain-continuation.json"
+        },
+        {
+          "kind": "end",
+          "minute": 93900,
+          "fingerprint": "67082895",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 5160
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 5220
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 5220
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 6360
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 6420
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 9060
+            },
+            {
+              "verb": "lamp",
+              "cell": 526,
+              "at": 9420
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                559,
+                560,
+                561,
+                562,
+                563
+              ],
+              "use": "beds",
+              "at": 11040
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 11040
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 11100
+            },
+            {
+              "verb": "lamp",
+              "cell": 556,
+              "at": 13560
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                556,
+                557
+              ],
+              "use": "beds",
+              "at": 16380
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 16440
+            },
+            {
+              "verb": "lamp",
+              "cell": 327,
+              "at": 18420
+            },
+            {
+              "verb": "bell",
+              "at": 20940
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 25500
+            },
+            {
+              "verb": "lamp",
+              "cell": 586,
+              "at": 29400
+            },
+            {
+              "verb": "lamp",
+              "cell": 723,
+              "at": 44100
+            },
+            {
+              "verb": "lamp",
+              "cell": 858,
+              "at": 59820
+            },
+            {
+              "verb": "lamp",
+              "cell": 995,
+              "at": 67080
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                1024,
+                1025,
+                1026,
+                1027,
+                1058,
+                1059,
+                1060,
+                1061,
+                1092,
+                1093,
+                1094,
+                1095
+              ],
+              "on": true,
+              "at": 67140
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                278,
+                312,
+                346,
+                380,
+                414,
+                448,
+                482,
+                516,
+                550,
+                584,
+                618,
+                652,
+                686,
+                720,
+                754,
+                788,
+                822,
+                856,
+                890,
+                924,
+                958,
+                992
+              ],
+              "on": true,
+              "at": 69600
+            },
+            {
+              "verb": "bell",
+              "at": 70380
+            },
+            {
+              "verb": "lamp",
+              "cell": 463,
+              "at": 70980
+            },
+            {
+              "verb": "lamp",
+              "cell": 312,
+              "at": 78840
+            },
+            {
+              "verb": "lamp",
+              "cell": 550,
+              "at": 83100
+            },
+            {
+              "verb": "lamp",
+              "cell": 720,
+              "at": 87360
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-7-plain-end.json"
+        }
+      ]
+    },
+    {
+      "edition": "0.2.0",
+      "seed": 7,
+      "policy": "watch",
+      "stages": [
+        {
+          "kind": "checkpoint",
+          "minute": 29100,
+          "fingerprint": "a203cc20",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-7-watch-checkpoint.json"
+        },
+        {
+          "kind": "continuation",
+          "minute": 31980,
+          "fingerprint": "99b81dd2",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-7-watch-continuation.json"
+        },
+        {
+          "kind": "end",
+          "minute": 93900,
+          "fingerprint": "6aeb245e",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-7-watch-end.json"
+        }
+      ]
+    },
+    {
+      "edition": "0.2.0",
+      "seed": 19,
+      "policy": "plain",
+      "stages": [
+        {
+          "kind": "checkpoint",
+          "minute": 29100,
+          "fingerprint": "88fe8d02",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 6300
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 6360
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 6360
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 6840
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 6900
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 9480
+            },
+            {
+              "verb": "lamp",
+              "cell": 526,
+              "at": 9780
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562
+              ],
+              "use": "beds",
+              "at": 12120
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 12120
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 12180
+            },
+            {
+              "verb": "lamp",
+              "cell": 556,
+              "at": 14040
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                555,
+                556,
+                557
+              ],
+              "use": "beds",
+              "at": 16620
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 16680
+            },
+            {
+              "verb": "lamp",
+              "cell": 293,
+              "at": 18420
+            },
+            {
+              "verb": "bell",
+              "at": 20820
+            },
+            {
+              "verb": "lamp",
+              "cell": 429,
+              "at": 21360
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 23940
+            },
+            {
+              "verb": "lamp",
+              "cell": 620,
+              "at": 25440
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-19-plain-checkpoint.json"
+        },
+        {
+          "kind": "continuation",
+          "minute": 31980,
+          "fingerprint": "851d497c",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 6300
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 6360
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 6360
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 6840
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 6900
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 9480
+            },
+            {
+              "verb": "lamp",
+              "cell": 526,
+              "at": 9780
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562
+              ],
+              "use": "beds",
+              "at": 12120
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 12120
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 12180
+            },
+            {
+              "verb": "lamp",
+              "cell": 556,
+              "at": 14040
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                555,
+                556,
+                557
+              ],
+              "use": "beds",
+              "at": 16620
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 16680
+            },
+            {
+              "verb": "lamp",
+              "cell": 293,
+              "at": 18420
+            },
+            {
+              "verb": "bell",
+              "at": 20820
+            },
+            {
+              "verb": "lamp",
+              "cell": 429,
+              "at": 21360
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 23940
+            },
+            {
+              "verb": "lamp",
+              "cell": 620,
+              "at": 25440
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-19-plain-continuation.json"
+        },
+        {
+          "kind": "end",
+          "minute": 93900,
+          "fingerprint": "ed7d576e",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 6300
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 6360
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 6360
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 6840
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 6900
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 9480
+            },
+            {
+              "verb": "lamp",
+              "cell": 526,
+              "at": 9780
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562
+              ],
+              "use": "beds",
+              "at": 12120
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 12120
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 12180
+            },
+            {
+              "verb": "lamp",
+              "cell": 556,
+              "at": 14040
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                555,
+                556,
+                557
+              ],
+              "use": "beds",
+              "at": 16620
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 16680
+            },
+            {
+              "verb": "lamp",
+              "cell": 293,
+              "at": 18420
+            },
+            {
+              "verb": "bell",
+              "at": 20820
+            },
+            {
+              "verb": "lamp",
+              "cell": 429,
+              "at": 21360
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 23940
+            },
+            {
+              "verb": "lamp",
+              "cell": 620,
+              "at": 25440
+            },
+            {
+              "verb": "lamp",
+              "cell": 757,
+              "at": 32160
+            },
+            {
+              "verb": "lamp",
+              "cell": 892,
+              "at": 53880
+            },
+            {
+              "verb": "bell",
+              "at": 81780
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                1024,
+                1025,
+                1026,
+                1027,
+                1058,
+                1059,
+                1060,
+                1061,
+                1092,
+                1093,
+                1094,
+                1095
+              ],
+              "on": true,
+              "at": 88980
+            },
+            {
+              "verb": "lamp",
+              "cell": 1029,
+              "at": 90240
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                278,
+                312,
+                346,
+                380,
+                414,
+                448,
+                482,
+                516,
+                550,
+                652,
+                686,
+                720,
+                754,
+                788,
+                822,
+                856,
+                890,
+                924,
+                958,
+                992
+              ],
+              "on": true,
+              "at": 91500
+            },
+            {
+              "verb": "lamp",
+              "cell": 278,
+              "at": 93240
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-19-plain-end.json"
+        }
+      ]
+    },
+    {
+      "edition": "0.2.0",
+      "seed": 19,
+      "policy": "watch",
+      "stages": [
+        {
+          "kind": "checkpoint",
+          "minute": 29100,
+          "fingerprint": "81941d87",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-19-watch-checkpoint.json"
+        },
+        {
+          "kind": "continuation",
+          "minute": 31980,
+          "fingerprint": "cffade74",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-19-watch-continuation.json"
+        },
+        {
+          "kind": "end",
+          "minute": 93900,
+          "fingerprint": "5d983abc",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.2.0-19-watch-end.json"
+        }
+      ]
+    },
+    {
+      "edition": "0.3.0",
+      "seed": 1,
+      "policy": "plain",
+      "stages": [
+        {
+          "kind": "checkpoint",
+          "minute": 29100,
+          "fingerprint": "72720313",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 4740
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 4800
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 4800
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 5280
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 5340
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 7920
+            },
+            {
+              "verb": "lamp",
+              "cell": 528,
+              "at": 8220
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                559,
+                560,
+                561,
+                562,
+                563
+              ],
+              "use": "beds",
+              "at": 10560
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 10560
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 10620
+            },
+            {
+              "verb": "lamp",
+              "cell": 558,
+              "at": 11040
+            },
+            {
+              "verb": "lamp",
+              "cell": 520,
+              "at": 16860
+            },
+            {
+              "verb": "bell",
+              "at": 18060
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556
+              ],
+              "use": "beds",
+              "at": 23640
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 23700
+            },
+            {
+              "verb": "lamp",
+              "cell": 327,
+              "at": 25620
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 28560
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-1-plain-checkpoint.json"
+        },
+        {
+          "kind": "continuation",
+          "minute": 31980,
+          "fingerprint": "45a420f9",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 4740
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 4800
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 4800
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 5280
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 5340
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 7920
+            },
+            {
+              "verb": "lamp",
+              "cell": 528,
+              "at": 8220
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                559,
+                560,
+                561,
+                562,
+                563
+              ],
+              "use": "beds",
+              "at": 10560
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 10560
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 10620
+            },
+            {
+              "verb": "lamp",
+              "cell": 558,
+              "at": 11040
+            },
+            {
+              "verb": "lamp",
+              "cell": 520,
+              "at": 16860
+            },
+            {
+              "verb": "bell",
+              "at": 18060
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556
+              ],
+              "use": "beds",
+              "at": 23640
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 23700
+            },
+            {
+              "verb": "lamp",
+              "cell": 327,
+              "at": 25620
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 28560
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-1-plain-continuation.json"
+        },
+        {
+          "kind": "end",
+          "minute": 93900,
+          "fingerprint": "d4837dad",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 4740
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 4800
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 4800
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 5280
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 5340
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 7920
+            },
+            {
+              "verb": "lamp",
+              "cell": 528,
+              "at": 8220
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                559,
+                560,
+                561,
+                562,
+                563
+              ],
+              "use": "beds",
+              "at": 10560
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 10560
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 10620
+            },
+            {
+              "verb": "lamp",
+              "cell": 558,
+              "at": 11040
+            },
+            {
+              "verb": "lamp",
+              "cell": 520,
+              "at": 16860
+            },
+            {
+              "verb": "bell",
+              "at": 18060
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556
+              ],
+              "use": "beds",
+              "at": 23640
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 23700
+            },
+            {
+              "verb": "lamp",
+              "cell": 327,
+              "at": 25620
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 28560
+            },
+            {
+              "verb": "lamp",
+              "cell": 620,
+              "at": 29940
+            },
+            {
+              "verb": "lamp",
+              "cell": 757,
+              "at": 37020
+            },
+            {
+              "verb": "lamp",
+              "cell": 892,
+              "at": 43980
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                1024,
+                1025,
+                1026,
+                1027,
+                1058,
+                1059,
+                1060,
+                1061,
+                1092,
+                1093,
+                1094,
+                1095
+              ],
+              "on": true,
+              "at": 49920
+            },
+            {
+              "verb": "lamp",
+              "cell": 1029,
+              "at": 52200
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                278,
+                312,
+                346,
+                380,
+                414,
+                448,
+                482,
+                516,
+                550,
+                652,
+                686,
+                720,
+                754,
+                788,
+                822,
+                856,
+                890,
+                924,
+                958,
+                992
+              ],
+              "on": true,
+              "at": 52500
+            },
+            {
+              "verb": "lamp",
+              "cell": 312,
+              "at": 54420
+            },
+            {
+              "verb": "lamp",
+              "cell": 482,
+              "at": 58320
+            },
+            {
+              "verb": "lamp",
+              "cell": 1024,
+              "at": 64500
+            },
+            {
+              "verb": "use",
+              "cells": [
+                1024,
+                1025,
+                1026,
+                1027,
+                1058,
+                1059,
+                1060,
+                1061,
+                1094,
+                1095
+              ],
+              "use": "beds",
+              "at": 67380
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                1030,
+                1031,
+                1032,
+                1033,
+                1034,
+                1064,
+                1065,
+                1066,
+                1067,
+                1068
+              ],
+              "on": true,
+              "at": 67440
+            },
+            {
+              "verb": "lamp",
+              "cell": 1067,
+              "at": 74100
+            },
+            {
+              "verb": "use",
+              "cells": [
+                1030,
+                1031,
+                1032,
+                1033,
+                1064,
+                1065,
+                1066,
+                1067
+              ],
+              "use": "store",
+              "at": 74460
+            },
+            {
+              "verb": "lamp",
+              "cell": 720,
+              "at": 74460
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                599,
+                600,
+                601,
+                602,
+                603
+              ],
+              "on": true,
+              "at": 74520
+            },
+            {
+              "verb": "bell",
+              "at": 80460
+            },
+            {
+              "verb": "lamp",
+              "cell": 890,
+              "at": 85860
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-1-plain-end.json"
+        }
+      ]
+    },
+    {
+      "edition": "0.3.0",
+      "seed": 1,
+      "policy": "watch",
+      "stages": [
+        {
+          "kind": "checkpoint",
+          "minute": 29100,
+          "fingerprint": "9d647d4e",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-1-watch-checkpoint.json"
+        },
+        {
+          "kind": "continuation",
+          "minute": 31980,
+          "fingerprint": "4141974d",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-1-watch-continuation.json"
+        },
+        {
+          "kind": "end",
+          "minute": 93900,
+          "fingerprint": "2bf6f010",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-1-watch-end.json"
+        }
+      ]
+    },
+    {
+      "edition": "0.3.0",
+      "seed": 7,
+      "policy": "plain",
+      "stages": [
+        {
+          "kind": "checkpoint",
+          "minute": 29100,
+          "fingerprint": "92bfdf60",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 5160
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 5220
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 5220
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 6360
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 6420
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 9060
+            },
+            {
+              "verb": "lamp",
+              "cell": 526,
+              "at": 9420
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                559,
+                560,
+                561,
+                562,
+                563
+              ],
+              "use": "beds",
+              "at": 11040
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 11040
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 11100
+            },
+            {
+              "verb": "lamp",
+              "cell": 556,
+              "at": 13560
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                556,
+                557
+              ],
+              "use": "beds",
+              "at": 16380
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 16440
+            },
+            {
+              "verb": "lamp",
+              "cell": 327,
+              "at": 18420
+            },
+            {
+              "verb": "bell",
+              "at": 20940
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 25500
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-7-plain-checkpoint.json"
+        },
+        {
+          "kind": "continuation",
+          "minute": 31980,
+          "fingerprint": "a28adb77",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 5160
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 5220
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 5220
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 6360
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 6420
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 9060
+            },
+            {
+              "verb": "lamp",
+              "cell": 526,
+              "at": 9420
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                559,
+                560,
+                561,
+                562,
+                563
+              ],
+              "use": "beds",
+              "at": 11040
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 11040
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 11100
+            },
+            {
+              "verb": "lamp",
+              "cell": 556,
+              "at": 13560
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                556,
+                557
+              ],
+              "use": "beds",
+              "at": 16380
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 16440
+            },
+            {
+              "verb": "lamp",
+              "cell": 327,
+              "at": 18420
+            },
+            {
+              "verb": "bell",
+              "at": 20940
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 25500
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-7-plain-continuation.json"
+        },
+        {
+          "kind": "end",
+          "minute": 93900,
+          "fingerprint": "f2cb9067",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 5160
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 5220
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 5220
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 6360
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 6420
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 9060
+            },
+            {
+              "verb": "lamp",
+              "cell": 526,
+              "at": 9420
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                559,
+                560,
+                561,
+                562,
+                563
+              ],
+              "use": "beds",
+              "at": 11040
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 11040
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 11100
+            },
+            {
+              "verb": "lamp",
+              "cell": 556,
+              "at": 13560
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                556,
+                557
+              ],
+              "use": "beds",
+              "at": 16380
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 16440
+            },
+            {
+              "verb": "lamp",
+              "cell": 327,
+              "at": 18420
+            },
+            {
+              "verb": "bell",
+              "at": 20940
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 25500
+            },
+            {
+              "verb": "lamp",
+              "cell": 586,
+              "at": 29400
+            },
+            {
+              "verb": "lamp",
+              "cell": 723,
+              "at": 44100
+            },
+            {
+              "verb": "lamp",
+              "cell": 858,
+              "at": 59820
+            },
+            {
+              "verb": "lamp",
+              "cell": 995,
+              "at": 67080
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                1024,
+                1025,
+                1026,
+                1027,
+                1058,
+                1059,
+                1060,
+                1061,
+                1092,
+                1093,
+                1094,
+                1095
+              ],
+              "on": true,
+              "at": 67140
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                278,
+                312,
+                346,
+                380,
+                414,
+                448,
+                482,
+                516,
+                550,
+                584,
+                618,
+                652,
+                686,
+                720,
+                754,
+                788,
+                822,
+                856,
+                890,
+                924,
+                958,
+                992
+              ],
+              "on": true,
+              "at": 69600
+            },
+            {
+              "verb": "bell",
+              "at": 70380
+            },
+            {
+              "verb": "lamp",
+              "cell": 463,
+              "at": 70980
+            },
+            {
+              "verb": "lamp",
+              "cell": 312,
+              "at": 78840
+            },
+            {
+              "verb": "lamp",
+              "cell": 550,
+              "at": 83100
+            },
+            {
+              "verb": "lamp",
+              "cell": 720,
+              "at": 87360
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-7-plain-end.json"
+        }
+      ]
+    },
+    {
+      "edition": "0.3.0",
+      "seed": 7,
+      "policy": "watch",
+      "stages": [
+        {
+          "kind": "checkpoint",
+          "minute": 29100,
+          "fingerprint": "a2dfc01d",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-7-watch-checkpoint.json"
+        },
+        {
+          "kind": "continuation",
+          "minute": 31980,
+          "fingerprint": "519d636c",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-7-watch-continuation.json"
+        },
+        {
+          "kind": "end",
+          "minute": 93900,
+          "fingerprint": "a74b20f9",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-7-watch-end.json"
+        }
+      ]
+    },
+    {
+      "edition": "0.3.0",
+      "seed": 19,
+      "policy": "plain",
+      "stages": [
+        {
+          "kind": "checkpoint",
+          "minute": 29100,
+          "fingerprint": "0fca64d7",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 6300
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 6360
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 6360
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 6840
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 6900
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 9480
+            },
+            {
+              "verb": "lamp",
+              "cell": 526,
+              "at": 9780
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562
+              ],
+              "use": "beds",
+              "at": 12120
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 12120
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 12180
+            },
+            {
+              "verb": "lamp",
+              "cell": 556,
+              "at": 14040
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                555,
+                556,
+                557
+              ],
+              "use": "beds",
+              "at": 16620
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 16680
+            },
+            {
+              "verb": "lamp",
+              "cell": 293,
+              "at": 18420
+            },
+            {
+              "verb": "bell",
+              "at": 20820
+            },
+            {
+              "verb": "lamp",
+              "cell": 429,
+              "at": 21360
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 23940
+            },
+            {
+              "verb": "lamp",
+              "cell": 620,
+              "at": 25440
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-19-plain-checkpoint.json"
+        },
+        {
+          "kind": "continuation",
+          "minute": 31980,
+          "fingerprint": "523e6f9d",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 6300
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 6360
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 6360
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 6840
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 6900
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 9480
+            },
+            {
+              "verb": "lamp",
+              "cell": 526,
+              "at": 9780
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562
+              ],
+              "use": "beds",
+              "at": 12120
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 12120
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 12180
+            },
+            {
+              "verb": "lamp",
+              "cell": 556,
+              "at": 14040
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                555,
+                556,
+                557
+              ],
+              "use": "beds",
+              "at": 16620
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 16680
+            },
+            {
+              "verb": "lamp",
+              "cell": 293,
+              "at": 18420
+            },
+            {
+              "verb": "bell",
+              "at": 20820
+            },
+            {
+              "verb": "lamp",
+              "cell": 429,
+              "at": 21360
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 23940
+            },
+            {
+              "verb": "lamp",
+              "cell": 620,
+              "at": 25440
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-19-plain-continuation.json"
+        },
+        {
+          "kind": "end",
+          "minute": 93900,
+          "fingerprint": "a3f577a7",
+          "inputs": [
+            {
+              "verb": "chalk",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "on": true,
+              "at": 300
+            },
+            {
+              "verb": "use",
+              "cells": [
+                386,
+                387,
+                388,
+                389
+              ],
+              "use": "store",
+              "at": 6300
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "on": true,
+              "at": 6360
+            },
+            {
+              "verb": "lamp",
+              "cell": 386,
+              "at": 6360
+            },
+            {
+              "verb": "use",
+              "cells": [
+                420,
+                421,
+                422,
+                423
+              ],
+              "use": "store",
+              "at": 6840
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                425,
+                459,
+                493,
+                527
+              ],
+              "on": true,
+              "at": 6900
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                524,
+                525,
+                526,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562,
+                563,
+                564
+              ],
+              "on": true,
+              "at": 9480
+            },
+            {
+              "verb": "lamp",
+              "cell": 526,
+              "at": 9780
+            },
+            {
+              "verb": "use",
+              "cells": [
+                524,
+                525,
+                526,
+                527,
+                528,
+                529,
+                530,
+                558,
+                559,
+                560,
+                561,
+                562
+              ],
+              "use": "beds",
+              "at": 12120
+            },
+            {
+              "verb": "door",
+              "cell": 459,
+              "at": 12120
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                554,
+                555,
+                556,
+                557
+              ],
+              "on": true,
+              "at": 12180
+            },
+            {
+              "verb": "lamp",
+              "cell": 556,
+              "at": 14040
+            },
+            {
+              "verb": "use",
+              "cells": [
+                520,
+                521,
+                522,
+                523,
+                555,
+                556,
+                557
+              ],
+              "use": "beds",
+              "at": 16620
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                293,
+                327,
+                361,
+                395,
+                429,
+                463,
+                497
+              ],
+              "on": true,
+              "at": 16680
+            },
+            {
+              "verb": "lamp",
+              "cell": 293,
+              "at": 18420
+            },
+            {
+              "verb": "bell",
+              "at": 20820
+            },
+            {
+              "verb": "lamp",
+              "cell": 429,
+              "at": 21360
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                552,
+                553,
+                586,
+                587,
+                620,
+                621,
+                654,
+                655,
+                688,
+                689,
+                722,
+                723,
+                756,
+                757,
+                790,
+                791,
+                824,
+                825,
+                858,
+                859,
+                892,
+                893,
+                926,
+                927,
+                960,
+                961,
+                994,
+                995,
+                1028,
+                1029,
+                1062,
+                1063,
+                1096,
+                1097
+              ],
+              "on": true,
+              "at": 23940
+            },
+            {
+              "verb": "lamp",
+              "cell": 620,
+              "at": 25440
+            },
+            {
+              "verb": "lamp",
+              "cell": 757,
+              "at": 32160
+            },
+            {
+              "verb": "lamp",
+              "cell": 892,
+              "at": 53880
+            },
+            {
+              "verb": "bell",
+              "at": 81780
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                1024,
+                1025,
+                1026,
+                1027,
+                1058,
+                1059,
+                1060,
+                1061,
+                1092,
+                1093,
+                1094,
+                1095
+              ],
+              "on": true,
+              "at": 88980
+            },
+            {
+              "verb": "lamp",
+              "cell": 1029,
+              "at": 90240
+            },
+            {
+              "verb": "chalk",
+              "cells": [
+                278,
+                312,
+                346,
+                380,
+                414,
+                448,
+                482,
+                516,
+                550,
+                652,
+                686,
+                720,
+                754,
+                788,
+                822,
+                856,
+                890,
+                924,
+                958,
+                992
+              ],
+              "on": true,
+              "at": 91500
+            },
+            {
+              "verb": "lamp",
+              "cell": 278,
+              "at": 93240
+            }
+          ],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-19-plain-end.json"
+        }
+      ]
+    },
+    {
+      "edition": "0.3.0",
+      "seed": 19,
+      "policy": "watch",
+      "stages": [
+        {
+          "kind": "checkpoint",
+          "minute": 29100,
+          "fingerprint": "f53fb76f",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-19-watch-checkpoint.json"
+        },
+        {
+          "kind": "continuation",
+          "minute": 31980,
+          "fingerprint": "9929fde1",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-19-watch-continuation.json"
+        },
+        {
+          "kind": "end",
+          "minute": 93900,
+          "fingerprint": "0d497914",
+          "inputs": [],
+          "exportFile": "/Users/abdul/code/.lab-scratch/design-round/warren-c/0.3.0-19-watch-end.json"
+        }
+      ]
+    }
+  ]
+}

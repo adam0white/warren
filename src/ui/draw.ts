@@ -19,6 +19,7 @@ import {
   type WarrenState,
 } from '../sim/warren.ts';
 
+import { planGeometry } from './plan-safety.ts';
 import { scoutedCells } from './room-safety.ts';
 
 export interface Ink {
@@ -102,6 +103,11 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
   const linked = s.linked;
   const exposure = riderCells(s);
   const scouted = scoutedCells(s);
+  // One hypothetical rider search per frame, shared by every planned cell.
+  const plan =
+    h.chalk.some(Boolean) || paint.previewKind === 'chalk'
+      ? planGeometry(s, paint.preview, paint.previewKind === 'chalk' ? 'chalk' : 'beds')
+      : null;
   // Pale exposed floors need dark marks in the night-paper theme too.
   const draughtInk = ink.dark ? { ...ink, ink: '#30281e', soft: '#685b45', sky: '#395e6f' } : ink;
 
@@ -325,6 +331,7 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
     const x = xOf(i);
     const y = yOf(i);
     if (x < x0 - 1 || x > x1 || y < y0 - 1 || y > y1) continue;
+    planWash(c, x * cs, y * cs, cs, ink, plan?.exposure.get(i));
     chalkMark(c, x * cs, y * cs, cs, ink.rope);
   }
   const fs = faces(h);
@@ -346,8 +353,13 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
     for (const i of paint.preview) {
       const px = xOf(i) * cs;
       const py = yOf(i) * cs;
-      if (paint.previewKind === 'chalk') chalkMark(c, px, py, cs, ink.rope);
-      else {
+      if (paint.previewKind === 'chalk') {
+        if (h.chalk[i] || !plan?.planned.has(i)) continue;
+        planWash(c, px, py, cs, ink, plan.exposure.get(i));
+        chalkMark(c, px, py, cs, ink.rope);
+      } else {
+        if (paint.previewKind === 'beds' && h.kind[i] === K.open)
+          planWash(c, px, py, cs, ink, (plan?.exposure ?? exposure).get(i));
         c.globalAlpha = 0.25;
         c.fillStyle = paint.previewKind === 'erase' ? ink.soft : ink.rope;
         c.fillRect(px + 1, py + 1, cs - 2, cs - 2);
@@ -456,6 +468,28 @@ export function layout(s: WarrenState, t: number): Map<string, [number, number]>
 function isOpen(s: WarrenState, i: number): boolean {
   const k = s.hill.kind[i];
   return k === K.open || (k === K.theirs && (s.linked || !!s.hill.known[i]));
+}
+
+/** The hypothetical wash stays inside the dashed cell: the rock is still unbuilt. */
+function planWash(
+  c: CanvasRenderingContext2D,
+  px: number,
+  py: number,
+  cs: number,
+  ink: Ink,
+  depth: number | undefined,
+) {
+  c.save();
+  if (depth === undefined) {
+    c.globalAlpha = ink.dark ? 0.52 : 0.22;
+    c.fillStyle = ink.dark ? '#000' : ink.ink;
+  } else {
+    const strength = 1 - depth / (V.riderReach + 1);
+    c.globalAlpha = ink.dark ? 0.62 + strength * 0.28 : 0.32 + strength * 0.58;
+    c.fillStyle = '#fff4d8';
+  }
+  c.fillRect(px + cs * 0.14, py + cs * 0.14, cs * 0.72, cs * 0.72);
+  c.restore();
 }
 
 /** Dashed room outline and pick: a planned excavation, distinct from a refusal cross. */

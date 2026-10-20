@@ -33,7 +33,7 @@ const small = [
 ];
 const tens = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
 
-function numberWords(n: number): string {
+export function numberWords(n: number): string {
   if (n < 20) return small[n] ?? 'zero';
   if (n < 100) return `${tens[Math.floor(n / 10)]}${n % 10 ? `-${small[n % 10]}` : ''}`;
   const unit = n < 1000 ? 100 : 1000;

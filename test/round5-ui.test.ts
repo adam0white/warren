@@ -157,7 +157,8 @@ describe('round five phone building', () => {
         // Native tap on the uncovered canvas edge starts another inspection.
         await page.touchscreen.tap(scene.x + 4, scene.y + scene.height - 4);
         await page.clock.runFor(300);
-        expect(await page.locator('#cell-detail').isVisible()).toBe(false);
+        expect(await page.locator('#cell-title').innerText()).not.toBe('Stone door');
+        expect(await page.locator('#cell-words').innerText()).not.toContain('Nearby adults:');
       }
     } finally {
       await page.close();

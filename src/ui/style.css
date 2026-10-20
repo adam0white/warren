@@ -162,7 +162,7 @@ button:disabled {
   min-height: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr) auto;
-  overflow: hidden;
+  overflow: clip;
 }
 .top {
   padding: calc(6px + var(--safe-t)) 12px 4px;
@@ -541,7 +541,7 @@ button.link {
 .reading-slot {
   position: relative;
   display: grid;
-  grid-template-rows: minmax(64px, auto) 52px;
+  grid-template-rows: 64px 52px;
   gap: 4px;
   min-height: 120px;
 }
@@ -560,4 +560,40 @@ button.link {
   margin: 0;
   overflow: auto;
   touch-action: pan-y;
+}
+
+/* Immediate readings keep full sentences in the dock; journal excerpts remain optional. */
+.reading-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 96px;
+  gap: 4px;
+  height: 52px;
+}
+.reading-actions .ticker {
+  min-width: 0;
+}
+#last-reading {
+  font-size: 13px;
+  padding: 3px;
+}
+.cell-detail p {
+  min-height: 0;
+  flex: 1;
+  display: block;
+  -webkit-line-clamp: unset;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+}
+
+#shelter-brief {
+  overflow: auto;
+}
+/* Focus stays in the game viewport; nested reading areas own their scrolling. */
+#app:has(> .game) {
+  overflow: clip;
+}
+
+#reading-more {
+  font-size: 12px;
+  white-space: nowrap;
 }

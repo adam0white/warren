@@ -46,7 +46,7 @@ describe('F-213 first-minute clarity', () => {
       const play = await page.locator('.purpose, .goal').allTextContents();
       await page.locator('[data-tool="chalk"]').click();
       await page.clock.runFor(300);
-      const hint = await page.locator('#ticker .journal-preview').innerText();
+      const hint = await page.locator('#cell-words').innerText();
       expect(hint).toContain('Dashed outlines plan a dig');
       expect(words([title, ...play, hint].join(' '))).toBeLessThanOrEqual(40);
       const chalk = await page.locator('[data-tool="chalk"]').boundingBox();
@@ -151,7 +151,7 @@ describe('F-213 first-minute clarity', () => {
       await page.clock.runFor(300);
       await page.locator('#cv').waitFor();
       expect(await page.locator('#when').innerText()).toContain('2 September');
-      expect(await page.locator('#ticker').innerText()).toContain('a day passed under the hill');
+      expect(await page.locator('#cell-words').innerText()).toContain('a day passed under the hill');
     } finally {
       await page.close();
     }

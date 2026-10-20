@@ -1,6 +1,7 @@
 import type { Person } from '@adam0white/human-framework';
 import { SURF, yOf } from '../sim/grid.ts';
 import { positionAt, riderCells, type WarrenState } from '../sim/warren.ts';
+import { gameTimeWords } from './room-safety.ts';
 
 /** Visible whereabouts and recorded words, never an inferred motive or a promise of safety. */
 export function exposureWords(s: WarrenState, p: Person): string {
@@ -31,5 +32,26 @@ export function exposureWords(s: WarrenState, p: Person): string {
   const bellAt = s.bell?.at ?? s.notes.findLast((n) => /^You rang the bell[.,]/.test(n.text))?.at;
   const answer =
     bellAt === undefined ? undefined : s.answers.findLast((a) => a.who === p.id && a.at >= bellAt && a.says);
-  return `${where} ${doing}${answer ? ` At the bell: “${answer.says}”` : ''}`;
+  let response = '';
+  if (
+    answer?.verdict === 'assented' &&
+    !(walking && trip.action === 'shelter') &&
+    p.activity?.action !== 'shelter'
+  ) {
+    const current = p.activity;
+    response = current
+      ? current.startedAt > answer.at
+        ? ' Since that reply, chose a different task.'
+        : ' Still on the current task; no journey below recorded.'
+      : ' No journey below recorded; no current task recorded.';
+    // Faith stays a quiet activity, never a countdown.
+    if (current && current.action !== 'pray') {
+      const due = Math.min(current.reviewAt, current.endsAt);
+      response +=
+        due <= s.minute
+          ? ' Next choice due now.'
+          : ` Next choice due in ${gameTimeWords(due - s.minute)}; they may choose again sooner.`;
+    }
+  }
+  return `${where} ${doing}${answer ? ` At the bell: “${answer.says}”` : ''}${response}`;
 }
