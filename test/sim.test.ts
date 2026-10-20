@@ -24,7 +24,7 @@ describe('the warren', () => {
 
   it('replays a run from seed and input log', () => {
     const a = run(3, 5);
-    const r = replay(3, a.inputs, a.s.minute);
+    const r = replay(3, a.inputs, a.s.minute, a.s.edition);
     expect(fingerprint(r.s)).toBe(fingerprint(a.s));
   });
 

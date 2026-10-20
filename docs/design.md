@@ -74,6 +74,18 @@ The compact shelter button remains available during building and raid warnings. 
 
 Look and Door show the full door explanation in a closable inspection card. Unfinished doors name the light and carving prerequisites. Rolled-back doors explain that the bell, smoke or riders make shutting it a choice for an adult nearby who can reach it. The keeper cannot roll it directly or guarantee that choice. The explanation updates while open. Inspecting another target closes it. These are UI changes; simulation sources, HF pin and export format remain unchanged.
 
+## Design change 2026-10-20 (owner may veto)
+
+Bao said, “I did not become bored. I became frustrated after the raid” and wanted to judge whether people were sheltered (F-246). Tunde could not discover how to close the door (F-254). Mirela said, “I do not know how to make this shelter safe enough before I call them in. I would not spend the rest of my break repeating the bell” (F-259).
+
+The plan now shows draught hatching along the routes riders can search. Marked sleeping places can be inspected before anyone goes below. Their words distinguish shallow space, an open route, and a rolled-back door in the actual layout. The bell describes the sleeping places before calling people and distinguishes a standing call, continuing journeys and an ended call. A door names the reachable adults who could shut it and their current activity; nobody is ordered to do it.
+
+New runs use **edition 0.3.0**. Their first raid is a scouting visit: no strikes, looting, trampled grain or extinguished lamps. The journal records actual searched places and names the exposed people who would have been caught. Those searched cells remain visible as pale tracks afterwards. Later raids keep the existing strike and theft rules. Existing HF healing is unchanged; injured people describe easing pain and a mended injury as it happens. These words do not award recovery or promise an adult's choice. Saves and exports retain their edition. Missing state edition means 0.2.0. Three-argument replay keeps its legacy contract; pass the export's `game` as the fourth argument to replay a versioned export.
+
+Costs and risks: the first raid offers less material danger and can bring the existing successful-refuge consequences sooner. Hatching adds texture to a small plan; room words and the bell reading must stay legible on phones. Current exposure and historical scouting tracks differ when a door shuts or a new shaft opens. Plain-policy runs (seeds 1, 7, 19; 70 days) changed first-raid injuries from 1/8/6 to zero and second-raid injuries from 7/9/7 to 10/15/15, alongside larger populations. No retention or per-capita improvement is claimed. Headless runs measure injuries and village survival; they cannot establish whether a person would quit. Adam accepts by playing; a fresh source-unread retest is still needed.
+
+Revert: new runs start on the previous edition by setting `DEFAULT_EDITION` in `src/sim/game.ts` to `'0.2.0'`. Keep both rulesets to continue existing 0.3.0 runs. Revert the UI changes in `src/ui/room-safety.ts`, `draw.ts`, `app.ts`, `shelter.ts`, `door-help.ts` and `guidance.ts` separately if the read-only cues are vetoed. Pre-change full-state hashes and checkpoint continuations are in `test/fixtures/edition-legacy.json`, captured from `172c384` before changing simulation sources.
+
 ## Clarity exceptions
 
 - DL-27: the hill continues during an absence, up to one day. This is the idle design in the hooks map. Saving says “It keeps going while you are gone, a little”; returning reports how much time passed. This exception preserves the existing simulation and replay rules.

@@ -64,7 +64,8 @@ describe('round four shelter clarity', () => {
         const rows = page.locator('[data-shelter-person]');
         expect(await rows.count()).toBe(9);
         expect(await rows.allTextContents()).toEqual(
-          expect.arrayContaining([expect.stringContaining('Exposed above ground')]),
+          // People can reach the shallow beds while this live sheet opens.
+          expect.arrayContaining([expect.stringMatching(/Exposed (above ground|near an entrance)/)]),
         );
         const person = page.locator('[data-who]').first();
         await person.click();

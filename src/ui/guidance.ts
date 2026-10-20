@@ -7,6 +7,7 @@ import {
   faceState,
   type WarrenState,
 } from '../sim/warren.ts';
+import { hadBellCall } from './room-safety.ts';
 import { sleepingCapacityWords } from './shelter.ts';
 
 export const PURPOSE = 'Dig a refuge where the village can outlast the riders.';
@@ -16,14 +17,17 @@ export const FIRST_CHALK = 'Choose chalk, then drag across stone beside the cell
 export function colonyWords(s: WarrenState): string {
   const raid = activeRaid(s);
   const ringing = s.bell && s.bell.until > s.minute;
+  const renew = hadBellCall(s)
+    ? 'The earlier call ended. Ring the bell to renew it.'
+    : 'Ring the bell to call the village below.';
   if (raid?.stage === 'riders')
     return ringing
       ? 'Riders are at the hill. The bell is sounding. Check shelter to see who is still exposed.'
-      : 'Riders are at the hill. Ring the bell to call the village below.';
+      : `Riders are at the hill. ${renew}`;
   if (raid?.stage === 'smoke')
     return ringing
       ? 'Smoke rises in the south. The bell is sounding. Check shelter to see who is still exposed.'
-      : 'Smoke rises in the south. Ring the bell to call the village below.';
+      : `Smoke rises in the south. ${renew}`;
 
   const fs = faces(s.hill);
   if (fs.length) {

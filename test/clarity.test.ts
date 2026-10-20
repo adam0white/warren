@@ -125,7 +125,7 @@ describe('F-213 first-minute clarity', () => {
       // Time keeps moving while the player reaches Download. Check the actual export boundary.
       expect(restored.minute).toBeGreaterThanOrEqual(saved.minute);
       expect(restored.inputs).toEqual(saved.inputs);
-      expect(fingerprint(replay(restored.seed, restored.inputs, restored.minute).s)).toBe(
+      expect(fingerprint(replay(restored.seed, restored.inputs, restored.minute, restored.game).s)).toBe(
         restored.fingerprint,
       );
     } finally {

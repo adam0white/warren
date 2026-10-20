@@ -14,8 +14,11 @@ import {
   carrying,
   drawPosition,
   faceState,
+  riderCells,
   type WarrenState,
 } from '../sim/warren.ts';
+
+import { scoutedCells } from './room-safety.ts';
 
 export interface Ink {
   paper: string;
@@ -96,6 +99,8 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
   const x1 = Math.min(W, Math.ceil(v.x + v.w / cs) + 1);
   const y1 = Math.min(H, Math.ceil(v.y + v.h / cs) + 1);
   const linked = s.linked;
+  const exposure = riderCells(s);
+  const scouted = scoutedCells(s);
 
   // Sky: night is a wash of --sky.
   if (!light) {
@@ -155,6 +160,23 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
           }
           c.stroke();
           c.globalAlpha = 1;
+        }
+        // Draught hatching follows the exact open routes riders search.
+        if (!theirs && (exposure.has(i) || scouted.has(i))) {
+          c.save();
+          c.globalAlpha = exposure.has(i) ? 0.18 : 0.11;
+          c.fillStyle = ink.sky;
+          c.fillRect(px, py, cs, cs);
+          c.strokeStyle = ink.sky;
+          c.globalAlpha = exposure.has(i) ? 0.5 : 0.3;
+          c.lineWidth = 1;
+          c.beginPath();
+          for (let q = 0; q < 3; q++) {
+            c.moveTo(px + cs * (0.1 + q * 0.3), py + cs * 0.18);
+            c.lineTo(px + cs * (0.3 + q * 0.3), py + cs * 0.5);
+          }
+          c.stroke();
+          c.restore();
         }
         drawUse(c, s, i, px, py, cs, ink, lit[i] === 1);
         const sp = h.spoil[i] ?? 0;

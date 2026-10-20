@@ -86,7 +86,7 @@ describe('door responses', () => {
     expect(doorWords(s, door, true)).not.toContain('Ring the bell');
   });
 
-  it('keeps every door answer within sixty words', () => {
+  it('keeps the door explanation within sixty words before the live adult list', () => {
     const s = state();
     const variants = [doorWords(s, door, true)];
     s.bell = { at: s.minute, until: s.minute + 60, real: false };
@@ -99,7 +99,8 @@ describe('door responses', () => {
     variants.push(doorWords(s, door, true));
     s.hill.doorWork[door] = 14;
     variants.push(doorWords(s, door, true), doorWords(s, door, false));
-    for (const words of variants) expect(words.split(/\s+/).length).toBeLessThanOrEqual(60);
+    for (const words of variants)
+      expect((words.split('Nearby adults:')[0] ?? '').split(/\s+/).length).toBeLessThanOrEqual(60);
   });
 
   it('reads the same state without changing it', () => {

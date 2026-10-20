@@ -1,4 +1,6 @@
 import { mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -8,7 +10,10 @@ import { idx, K, SURF, USE } from '../src/sim/grid.ts';
 let server: ViteDevServer;
 let browser: Browser;
 let url: string;
-const evidence = '/Users/abdul/code/human-framework/scratch/followups/warren';
+const evidence =
+  process.platform === 'darwin'
+    ? '/Users/abdul/code/.lab-scratch/design-round/warren-shots/round5-regression'
+    : join(tmpdir(), 'warren-round5-shots');
 beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
   await server.listen();

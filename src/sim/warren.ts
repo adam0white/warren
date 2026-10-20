@@ -154,6 +154,9 @@ export interface Raid {
   /** What they took (kile) and who was hurt, for the note. */
   took: number;
   hurt: string[];
+  /** New edition only: places searched and people who would have been caught during the scare. */
+  scouted?: number[];
+  wouldCatch?: string[];
 }
 
 export interface Answer {
@@ -164,6 +167,9 @@ export interface Answer {
 }
 
 export interface WarrenState {
+  /** Absent in legacy saves; never added when continuing them. */
+  edition?: '0.3.0';
+  recoveries?: { who: string; injury: string; part: string; severity: number }[];
   seed: number;
   minute: number;
   hill: Hill;
@@ -1862,6 +1868,7 @@ function afterQuantum(s: WarrenState, ev: SimEvent[]) {
     });
   }
   raidStep(s);
+  if (s.edition === '0.3.0') recoveryWords(s);
   if (s.bell && s.bell.until <= s.minute) {
     if (!s.bell.real) falseAlarm(s, s.bell.at);
     s.bell = null;
@@ -1879,6 +1886,7 @@ function everyone(s: WarrenState, pc: Omit<Percept, 'at'>, interrupt: boolean) {
 
 function raidStep(s: WarrenState) {
   for (const r of s.raids) {
+    const scare = s.edition === '0.3.0' && r === s.raids[0];
     if (r.stage === 'coming' && s.minute >= r.smoke) {
       r.stage = 'smoke';
       const first = s.raids.indexOf(r) === 0;
@@ -1905,32 +1913,37 @@ function raidStep(s: WarrenState) {
     }
     if (r.stage === 'smoke' && s.minute >= r.riders) {
       r.stage = 'riders';
-      // The surface: what lies out is taken.
-      let took = s.fields.floor;
-      s.fields.floor = 0;
-      for (const h of s.houses) {
-        took += h.jars;
-        h.jars = 0;
-      }
-      const trampled = s.fields.standing * 0.35 * r.force;
-      s.fields.standing -= trampled;
-      // Below: whatever their torches reach.
-      const reach = riderCells(s);
-      for (const [c, di] of reach) {
-        // Near the entrance they take it all; deeper in the dark they take what they stumble on.
-        const frac = Math.max(0, 1 - di / (V.riderReach + 1)) * (s.hill.lamp[c] ? 1 : 0.6);
-        const g = (s.hill.grain[c] ?? 0) * frac;
-        took += g;
-        s.hill.grain[c] = (s.hill.grain[c] ?? 0) - g;
-        if (s.hill.lamp[c] && c !== hearthCell(s)) {
-          s.hill.lamp[c] = 0;
-          touch(s);
+      if (scare) scout(s, r);
+      else {
+        // The surface: what lies out is taken.
+        let took = s.fields.floor;
+        s.fields.floor = 0;
+        for (const h of s.houses) {
+          took += h.jars;
+          h.jars = 0;
         }
+        const trampled = s.fields.standing * 0.35 * r.force;
+        s.fields.standing -= trampled;
+        // Below: whatever their torches reach.
+        const reach = riderCells(s);
+        for (const [c, di] of reach) {
+          // Near the entrance they take it all; deeper in the dark they take what they stumble on.
+          const frac = Math.max(0, 1 - di / (V.riderReach + 1)) * (s.hill.lamp[c] ? 1 : 0.6);
+          const g = (s.hill.grain[c] ?? 0) * frac;
+          took += g;
+          s.hill.grain[c] = (s.hill.grain[c] ?? 0) - g;
+          if (s.hill.lamp[c] && c !== hearthCell(s)) {
+            s.hill.lamp[c] = 0;
+            touch(s);
+          }
+        }
+        r.took = Math.round(took);
       }
-      r.took = Math.round(took);
       note(s, {
         kind: 'raid',
-        text: 'Riders on the hill. Hooves over our heads, voices at the entrance.',
+        text: scare
+          ? 'Riders searched the entrances and looked in. They were scouting; no one was struck. They may return in force.'
+          : 'Riders on the hill. Hooves over our heads, voices at the entrance.',
         weight: 3,
       });
       everyone(
@@ -1949,7 +1962,8 @@ function raidStep(s: WarrenState) {
     }
     if (r.stage === 'riders') {
       // Each hour, anyone they can reach may be hurt.
-      if (s.minute % HOUR === 0) {
+      if (scare) scout(s, r);
+      if (!scare && s.minute % HOUR === 0) {
         const reach = riderCells(s);
         for (const p of s.people) {
           if (!p.body.alive) continue;
@@ -1995,9 +2009,11 @@ function raidStep(s: WarrenState) {
         } else s.word = Math.max(0, s.word - 0.1);
         note(s, {
           kind: 'raid',
-          text: held
-            ? `They rode off north. They found ${lost > 1 ? 'a little' : 'nothing'} above ground and nothing below. The hill held.`
-            : `They rode off north with ${lost > 0.5 * (lost + grainBelow(s.hill)) ? 'much of our grain' : lost > 3 ? 'some of our grain' : 'little'}${r.hurt.length ? `, and ${r.hurt.length === 1 ? 'one of us was' : `${r.hurt.length} of us were`} hurt` : ''}.${raidWhy(s, r)}`,
+          text: scare
+            ? 'The scouts rode off north. No one was struck and nothing was taken. The pale tracks show where they searched. Next time they may strike.'
+            : held
+              ? `They rode off north. They found ${lost > 1 ? 'a little' : 'nothing'} above ground and nothing below. The hill held.`
+              : `They rode off north with ${lost > 0.5 * (lost + grainBelow(s.hill)) ? 'much of our grain' : lost > 3 ? 'some of our grain' : 'little'}${r.hurt.length ? `, and ${r.hurt.length === 1 ? 'one of us was' : `${r.hurt.length} of us were`} hurt` : ''}.${raidWhy(s, r)}`,
           weight: 3,
         });
         everyone(
@@ -2013,6 +2029,80 @@ function raidStep(s: WarrenState) {
           true,
         );
       }
+    }
+  }
+}
+
+/** Stable place names use the visible layout, rather than pretending rooms have authored names. */
+function scoutPlace(s: WarrenState, cell: number): string {
+  if (yOf(cell) < SURF) return 'the ground above the hill';
+  const dx = xOf(cell) - s.hill.surface.entrance;
+  const side =
+    dx === 0 ? 'under the entrance' : `${Math.abs(dx)} paces ${dx < 0 ? 'west' : 'east'} of the entrance`;
+  const place = s.hill.use[cell] === USE.beds ? 'sleeping place' : 'passage';
+  return `the ${place} ${side}, ${yOf(cell) - SURF} levels down`;
+}
+
+function scout(s: WarrenState, r: Raid) {
+  r.scouted ??= [];
+  r.wouldCatch ??= [];
+  const reach = riderCells(s);
+  for (const c of reach.keys()) {
+    if (r.scouted.includes(c)) continue;
+    r.scouted.push(c);
+    note(s, { kind: 'raid', cell: c, text: `They looked into ${scoutPlace(s, c)}.`, weight: 1.5 });
+  }
+  for (const p of s.people) {
+    if (!p.body.alive || p.activity?.action === 'hide' || r.wouldCatch.includes(p.id)) continue;
+    const c = positionAt(s, p.id, s.minute);
+    if (yOf(c) >= SURF && !reach.has(c)) continue;
+    r.wouldCatch.push(p.id);
+    const doing = p.activity?.mode === 'sleep' ? 'sleeping' : 'still in view';
+    note(s, {
+      kind: 'raid',
+      cell: c,
+      who: p.id,
+      text: `They looked into ${scoutPlace(s, c)}, where ${p.name} was ${doing}. ${p.name} would have been caught. No one was struck.`,
+      weight: 3,
+    });
+  }
+}
+
+/** HF owns healing. These words report observed changes, without changing an injury or a choice. */
+function recoveryWords(s: WarrenState) {
+  for (const tracked of s.recoveries ?? []) {
+    const p = personOf(s, tracked.who);
+    if (!p?.body.alive) continue;
+    const injury = p.body.injuries.find((i) => i.id === tracked.injury);
+    if (!injury || tracked.severity - injury.severity >= 0.1) {
+      note(s, {
+        kind: 'hurt',
+        who: p.id,
+        text: injury
+          ? `${p.name}: “The wound on my ${tracked.part} is easier today. It still aches.”`
+          : `${p.name}: “The wound on my ${tracked.part} has mended.”`,
+        weight: 1.5,
+      });
+      if (injury) tracked.severity = injury.severity;
+    }
+  }
+  if (s.recoveries)
+    s.recoveries = s.recoveries.filter(
+      (t) =>
+        personOf(s, t.who)?.body.alive && personOf(s, t.who)?.body.injuries.some((i) => i.id === t.injury),
+    );
+  for (const p of s.people) {
+    if (!p.body.alive) continue;
+    for (const injury of p.body.injuries) {
+      if (s.recoveries?.some((t) => t.who === p.id && t.injury === injury.id)) continue;
+      s.recoveries ??= [];
+      s.recoveries.push({ who: p.id, injury: injury.id, part: injury.part, severity: injury.severity });
+      note(s, {
+        kind: 'hurt',
+        who: p.id,
+        text: `${p.name}: “My ${injury.part} hurts. It will take days.”`,
+        weight: 1.5,
+      });
     }
   }
 }

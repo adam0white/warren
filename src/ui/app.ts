@@ -41,6 +41,7 @@ import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from
 import { exposureWords } from './exposure.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
+import { bellShelterWords, hadBellCall } from './room-safety.ts';
 import { compactShelterWords, sleepingCapacityWords, sleepingRoomWords } from './shelter.ts';
 import * as store from './store.ts';
 
@@ -220,12 +221,12 @@ function enter() {
     <div class="scene" id="scene">
       <canvas id="cv" tabindex="0" aria-label="The hill"></canvas>
       <div class="view-controls" role="group" aria-label="Hill view"><button id="zoom-in" aria-label="Zoom in">Zoom +</button><button id="zoom-out" aria-label="Zoom out">Zoom −</button><button id="fit-hill">Fit hill</button></div>
-      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b>Stone door</b><button class="x" id="cellx" aria-label="Close door inspection">×</button></div><p id="cell-words"></p></div>
+      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Stone door</b><button class="x" id="cellx" aria-label="Close room or door inspection">×</button></div><p id="cell-words"></p></div>
       <div class="lag soft" id="lag" hidden>the days pass as fast as they can</div>
       <div class="card" id="card" hidden></div>
     </div>
     <div class="panel">
-      <button id="shelter-brief" aria-label="Check shelter summary"></button>
+      <button id="shelter-brief" aria-label="Check shelter summary"><span id="bell-meaning"></span></button>
       <div class="clock-status"><span id="clock-rate"></span><span class="raid-controls"><button id="watch-raid">Keep watching</button><button id="shelter-check">Check shelter</button></span></div>
       <button class="ticker" id="ticker" aria-label="Open journal"></button>
       <div class="tools" role="toolbar" aria-label="Tools">
@@ -241,7 +242,7 @@ function enter() {
         <div class="speed" role="group" aria-label="Speed">
           ${SPEEDS.map((_, k) => `<button data-speed="${k}" aria-label="${SPEED_NAMES[k]}">${'›'.repeat(k + 1).replace('››››', '»»')}</button>`).join('')}
         </div>
-        <button class="bell" id="bell" aria-label="Ring the bell">bell</button>
+        <button class="bell" id="bell" aria-label="Ring the bell" aria-describedby="bell-meaning">bell</button>
         <button id="book" aria-label="Game menu">Game menu</button>
       </div>
     </div>
@@ -473,8 +474,8 @@ function chrome() {
     warning.textContent = !pending
       ? ''
       : pending.stage === 'smoke'
-        ? 'Smoke on the ridge. Ring the bell to call people below, or keep watching.'
-        : 'Riders are at the hill. Ring the bell to call people below, or keep watching.';
+        ? `Smoke on the ridge. ${s.bell && s.bell.until > s.minute ? 'The bell call is still active. Check shelter or keep watching.' : hadBellCall(s) ? 'The earlier call ended. Ring to renew, or keep watching.' : 'Ring the bell to call people below, or keep watching.'}`
+        : `Riders are at the hill. ${s.bell && s.bell.until > s.minute ? 'The bell call is still active. Check shelter or keep watching.' : hadBellCall(s) ? 'The earlier call ended. Ring to renew, or keep watching.' : 'Ring the bell to call people below, or keep watching.'}`;
   }
   const watch = document.getElementById('watch-raid') as HTMLButtonElement | null;
   const shelter = document.getElementById('shelter-check') as HTMLButtonElement | null;
@@ -813,6 +814,11 @@ function tap(px: number, py: number) {
     else flash('A door fits a narrow passage: open on two opposite sides only.');
     return;
   }
+  // A sleeping mark is a room inspection even when someone stands on it.
+  if (c >= 0 && s.hill.use[c] === USE.beds) {
+    showDoor(c);
+    return;
+  }
   const who = personAt(s, view, px, py, paint.t);
   personOpener = null;
   paint.selected = who;
@@ -882,7 +888,7 @@ function describeCell(c: number) {
     const stand = neighbours(c).find((j) => h.kind[j] === K.open && yOf(j) >= SURF);
     if (stand !== undefined) text += airWords(stand);
   }
-  if (h.use[c] === USE.door) showDoor(c);
+  if (h.use[c] === USE.door || h.use[c] === USE.beds) showDoor(c);
   else flash(text);
   void xOf;
   void idx;
@@ -899,7 +905,10 @@ function closeCell(focus = true) {
 function updateDoor() {
   if (!g || doorCell === null) return;
   const text = document.getElementById('cell-words');
-  const words = doorWords(g.s, doorCell, lightAt(doorCell));
+  const words =
+    g.s.hill.use[doorCell] === USE.beds
+      ? sleepingRoomWords(g.s, doorCell)
+      : doorWords(g.s, doorCell, lightAt(doorCell));
   if (text && text.textContent !== words) text.textContent = words;
 }
 
@@ -907,7 +916,10 @@ function showDoor(cell: number) {
   if (!g) return;
   closeCard();
   doorCell = cell;
-  const words = doorWords(g.s, cell, lightAt(cell));
+  const beds = g.s.hill.use[cell] === USE.beds;
+  const title = document.getElementById('cell-title');
+  if (title) title.textContent = beds ? 'Sleeping room' : 'Stone door';
+  const words = beds ? sleepingRoomWords(g.s, cell) : doorWords(g.s, cell, lightAt(cell));
   flash(words);
   const detail = document.getElementById('cell-detail');
   const text = document.getElementById('cell-words');
@@ -923,7 +935,9 @@ function showDoor(cell: number) {
 function updateShelter() {
   if (!g) return;
   const brief = document.getElementById('shelter-brief');
-  if (brief) brief.textContent = compactShelterWords(g.s);
+  if (brief) brief.title = compactShelterWords(g.s);
+  const meaning = document.getElementById('bell-meaning');
+  if (meaning) meaning.textContent = bellShelterWords(g.s);
   const summary = document.getElementById('shelter-summary');
   if (summary) summary.textContent = sleepingCapacityWords(g.s);
   for (const row of document.querySelectorAll<HTMLElement>('[data-shelter-person]')) {

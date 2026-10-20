@@ -19,7 +19,15 @@ import {
   type WarrenState,
 } from './warren.ts';
 
-export const GAME_VERSION = '0.2.0';
+export const GAME_VERSION = '0.3.0';
+export const DEFAULT_EDITION = GAME_VERSION;
+export type Edition = '0.2.0' | '0.3.0';
+
+export function editionOf(version: string): Edition {
+  if (/^0\.2\.\d+$/.test(version)) return '0.2.0';
+  if (version === '0.3.0') return version;
+  throw new Error(`Unsupported Warren edition: ${version}`);
+}
 
 export type Input =
   | { at: number; verb: 'chalk'; cells: number[]; on: boolean }
@@ -36,9 +44,11 @@ export interface Game {
   inputs: Input[];
 }
 
-export function newGame(seed: number): Game {
+export function newGame(seed: number, edition: string = DEFAULT_EDITION): Game {
   resetCaches();
-  return { s: newWarren(seed), inputs: [] };
+  const s = newWarren(seed);
+  if (editionOf(edition) === '0.3.0') s.edition = '0.3.0';
+  return { s, inputs: [] };
 }
 
 /** Apply an input now and log it. Inputs wait for the next quantum boundary (the UI steps in quanta). */
@@ -129,7 +139,7 @@ export function fingerprint(s: WarrenState): string {
 
 export function save(g: Game): Saved {
   return {
-    game: GAME_VERSION,
+    game: g.s.edition ?? '0.2.0',
     framework: FRAMEWORK_VERSION,
     seed: g.s.seed,
     minute: g.s.minute,
@@ -140,12 +150,19 @@ export function save(g: Game): Saved {
 }
 
 export function load(saved: Saved): Game {
+  const edition = editionOf(saved.game);
+  if ((saved.state.edition ?? '0.2.0') !== edition) throw new Error('Save edition does not match its state');
   return { s: restoreState(saved.state), inputs: structuredClone(saved.inputs) };
 }
 
-/** Replay a run from its seed and inputs to `minute`. */
-export function replay(seed: number, inputs: readonly Input[], minute: number): Game {
-  const g = newGame(seed);
+/** Replay on the recorded edition. Unversioned calls retain the legacy 0.2.x contract. */
+export function replay(
+  seed: number,
+  inputs: readonly Input[],
+  minute: number,
+  edition: string = '0.2.0',
+): Game {
+  const g = newGame(seed, edition);
   for (const i of inputs) {
     advance(g, i.at);
     apply(g.s, i);

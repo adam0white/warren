@@ -12,7 +12,7 @@ const [file, url = 'http://127.0.0.1:5173', shots = 'scratch/owner-2026-10-20/re
 if (!file) throw new Error('Pass the private replay path; it will not be copied or printed.');
 const saved = JSON.parse(readFileSync(file, 'utf8')) as Saved;
 assert.equal(fingerprint(load(saved).s), saved.fingerprint);
-const replayed = replay(saved.seed, saved.inputs, saved.minute);
+const replayed = replay(saved.seed, saved.inputs, saved.minute, saved.game);
 assert.equal(fingerprint(replayed.s), saved.fingerprint);
 console.log(`Replay matched ${saved.fingerprint} at minute ${saved.minute}.`);
 mkdirSync(shots, { recursive: true });

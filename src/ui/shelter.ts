@@ -1,5 +1,6 @@
 import { BEDS_PER_CELL, K, roomOf, SURF, USE, yOf } from '../sim/grid.ts';
 import { bedsBelow, positionAt, riderCells, type WarrenState } from '../sim/warren.ts';
+import { roomSafetyWords } from './room-safety.ts';
 
 /** Marked space, not a promise that people can reach it or survive there. */
 export function sleepingCapacity(s: WarrenState): { places: number; people: number; enough: boolean } {
@@ -44,7 +45,7 @@ export function sleepingRoomWords(s: WarrenState, cell: number): string {
   if (s.hill.use[cell] !== USE.beds || s.hill.kind[cell] !== K.open) return '';
   const places = roomOf(s.hill, cell).length * BEDS_PER_CELL;
   const { people } = sleepingCapacity(s);
-  return `Room for about ${numberWords(places)} people. ${places >= people ? 'Enough sleeping space for the village.' : 'This room cannot hold the whole village.'}`;
+  return `${roomSafetyWords(s, cell)} Room for about ${numberWords(places)} people. ${places >= people ? 'Enough sleeping space for the village.' : 'This room cannot hold the whole village.'}`;
 }
 
 export function sleepingCapacityWords(s: WarrenState): string {

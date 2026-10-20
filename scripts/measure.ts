@@ -86,6 +86,6 @@ console.log(
 );
 if (process.argv.includes('--replay')) {
   const fp = fingerprint(g.s);
-  const r = replay(seed, g.inputs, g.s.minute);
+  const r = replay(seed, g.inputs, g.s.minute, g.s.edition);
   console.log('replay', fp === fingerprint(r.s) ? 'MATCH' : 'DIFFERS', fp);
 }
