@@ -280,7 +280,7 @@ button:disabled {
   flex-direction: column;
   align-items: stretch;
   gap: 4px;
-  padding: 4px 10px 8px;
+  padding: 4px 10px 4px;
 }
 .clock-status {
   display: flex;
@@ -290,6 +290,7 @@ button:disabled {
   font-size: 14px;
 }
 .clock-status button {
+  min-height: 44px;
   padding: 4px 6px;
   font-size: 14px;
 }
@@ -355,7 +356,7 @@ button:disabled {
   padding: 4px 6px;
 }
 .sheet {
-  padding: 4px 10px 8px;
+  padding: 4px 10px 4px;
 }
 .sheet p {
   margin: 8px 0;
@@ -540,4 +541,54 @@ button.link {
 #hill-controls[data-compact="true"] .tools,
 #hill-controls[data-compact="true"] .row {
   display: none;
+}
+
+/* Reserve the same working scene while tools, readings and journal replace one another. */
+@media (min-width: 341px) and (max-width: 899px) and (min-height: 600px) {
+  .game:not([data-reflow="true"]) {
+    grid-template-rows: 156px minmax(170px, 1fr) 320px;
+  }
+  .game:not([data-reflow="true"]) .panel {
+    block-size: 320px;
+    max-block-size: 320px;
+  }
+  .game:not([data-reflow="true"]) #drawer .sheet {
+    max-height: calc(320px - var(--warren-commit-height, 33px));
+  }
+}
+#event-sentence {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+#event-sentence:empty {
+  display: none;
+}
+#entrance-choice {
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
+#entrance-choice button {
+  min-height: 44px;
+  padding: 4px 8px;
+  font-size: 14px;
+}
+#drawer details > summary {
+  min-height: 44px;
+  padding: 10px 0;
+  cursor: pointer;
+}
+
+#entrance-choice[hidden] {
+  display: none;
+}
+
+@media (min-width: 341px) and (max-width: 899px) and (min-height: 600px) {
+  .game:not([data-reflow="true"]) .top,
+  .game:not([data-reflow="true"]) #shelter-brief button {
+    font-size: 13px;
+    line-height: 1.25;
+  }
 }

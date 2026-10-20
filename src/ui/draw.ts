@@ -65,6 +65,8 @@ export interface Paint {
   preview: Set<number>;
   previewKind: 'chalk' | 'erase' | 'store' | 'beds' | null;
   selected: string | null;
+  /** Current pointer target, outlined before release for every tool. */
+  target?: number | null;
   /** Display minute (between quanta). */
   t: number;
 }
@@ -353,6 +355,9 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
     for (const i of paint.preview) {
       const px = xOf(i) * cs;
       const py = yOf(i) * cs;
+      c.strokeStyle = ink.rope;
+      c.lineWidth = 2;
+      c.strokeRect(px + 1, py + 1, cs - 2, cs - 2);
       if (paint.previewKind === 'chalk') {
         if (h.chalk[i] || !plan?.planned.has(i)) continue;
         planWash(c, px, py, cs, ink, plan.exposure.get(i));
@@ -366,6 +371,12 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
         c.globalAlpha = 1;
       }
     }
+  }
+
+  if (paint.target !== undefined && paint.target !== null && paint.target >= 0) {
+    c.strokeStyle = ink.rope;
+    c.lineWidth = 2;
+    c.strokeRect(xOf(paint.target) * cs + 1, yOf(paint.target) * cs + 1, cs - 2, cs - 2);
   }
 
   // People.

@@ -58,21 +58,21 @@ export function roomSafetyWords(s: WarrenState, cell: number): string {
     const open = doorReach(s, false);
     if (room.some((i) => open.has(i))) {
       const location = doorLocation(s, room);
-      return `Closed off by the ${location}. Beyond the riders’ search while ${location.startsWith('stone doors') ? 'they stay' : 'it stays'} shut.`;
+      return `Beyond riders’ reach while the ${location} ${location.startsWith('stone doors') ? 'stay' : 'stays'} shut.`;
     }
-    return 'Deep enough along the open routes. Beyond the passages riders search.';
+    return 'Deep enough: beyond riders’ reach along open routes.';
   }
   const closed = doorReach(s, true);
   const door = exposed.some((i) => !closed.has(i));
   const shaft = exposed.some((i) => routeSource(s, i) !== s.hill.surface.entrance);
-  const partly = exposed.length < room.length ? 'Part of this room is exposed. ' : '';
+  const partly = exposed.length < room.length ? 'Partly exposed. ' : '';
   if (door && exposed.every((i) => !closed.has(i))) {
     const location = doorLocation(s, room);
     return location.startsWith('stone doors')
-      ? `Every open route needs a shut stone door. Shutting one may leave another way in. ${partly}Riders can reach these beds.`
-      : `Ring the bell; a nearby adult can choose to shut the open ${location}, blocking riders. ${partly}${activeRaid(s) ? '' : 'False alarms can weaken trust.'}`.trim();
+      ? `Every open route needs a shut stone door; one may not suffice. ${partly}Riders can reach these beds.`
+      : `Ring the bell; a nearby adult may shut the open ${location}, blocking riders. ${partly}${activeRaid(s) ? '' : 'False alarms can weaken trust.'}`.trim();
   }
-  return `Dig deeper along a protected passage, or shut a stone door on each open route. ${partly}${shaft ? 'An open shaft reaches these beds.' : 'Riders reach these beds from the entrance.'}${door ? ' An open door leaves another route.' : ''}`;
+  return `Dig deeper, or shut stone doors on every open route. ${partly}${shaft ? 'An open shaft reaches these beds.' : 'Riders reach these beds from the entrance.'}${door ? ' An open door leaves another route.' : ''}`;
 }
 
 export function bedSafety(s: WarrenState): { safe: number; exposed: number } {

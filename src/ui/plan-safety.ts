@@ -35,6 +35,7 @@ export function planGeometry(s: WarrenState, cells: Iterable<number> = [], kind:
 
 export interface PlanSafety {
   words: string;
+  context?: string;
   capacity: number;
   protectedCapacity: number;
   exposedCapacity: number;
@@ -101,14 +102,12 @@ export function planSafety(s: WarrenState, cells: Iterable<number>, kind: PlanKi
   const exposedCapacity = exposed * BEDS_PER_CELL;
   const protectedCapacity = protectedCells * BEDS_PER_CELL;
   const unreachableCapacity = unreachable * BEDS_PER_CELL;
-  const prefix = kind === 'chalk' ? 'If dug,' : planned.size ? 'If chalk is dug,' : 'With these beds,';
+  const prefix = kind === 'chalk' ? 'If dug:' : planned.size ? 'If chalk is dug:' : 'With these beds:';
   let words = capacity
-    ? unreachable
-      ? `${prefix} room for about ${numberWords(capacity)} sleepers.`
-      : `${prefix} about ${numberWords(capacity)} can sleep here.`
+    ? `${prefix} about ${numberWords(capacity)} sleeping places.`
     : 'No sleeping space in this selection.';
   if (exposed && protectedCells)
-    words += ` Mixed protection: about ${numberWords(protectedCapacity)} beyond riders’ reach, ${numberWords(exposedCapacity)} exposed.`;
+    words += ` ${numberWords(protectedCapacity).replace(/^./, (c) => c.toUpperCase())} beyond riders’ reach; ${numberWords(exposedCapacity)} exposed.`;
   if (exposed) {
     // Trace decreasing rider distances to a real sky entry. No invented shaft direction.
     const trace = [...room].filter((i) => exposure.has(i));
@@ -123,8 +122,8 @@ export function planSafety(s: WarrenState, cells: Iterable<number>, kind: PlanKi
           trace.push(j);
         }
     }
-    const cause = shaft ? 'an open shaft lets riders in' : 'riders reach it from the entrance';
-    words = `${words.slice(0, -1)}; ${cause}.`;
+    const cause = shaft ? 'An open shaft admits riders.' : 'The entrance admits riders.';
+    words += ` ${cause}`;
     const shut = [...state.hill.shut];
     let openDoor = false;
     for (let i = 0; i < shut.length; i++)
@@ -135,9 +134,11 @@ export function planSafety(s: WarrenState, cells: Iterable<number>, kind: PlanKi
     if (openDoor) {
       const closedReach = riderCells({ ...state, hill: { ...state.hill, shut } });
       if ([...room].some((i) => exposure.has(i) && !closedReach.has(i)))
-        words += ' An open stone door leaves a route open.';
+        words += ' Shut open stone doors; check other routes.';
     }
   }
+  if (exposed && !words.includes('Shut open stone doors'))
+    words += ' Dig deeper, or shut doors on every open route.';
   let doorProtected = false;
   if (protectedCells) {
     const shut = [...state.hill.shut];
@@ -151,16 +152,26 @@ export function planSafety(s: WarrenState, cells: Iterable<number>, kind: PlanKi
       const openReach = riderCells({ ...state, hill: { ...state.hill, shut } });
       if ([...room].some((i) => !exposure.has(i) && openReach.has(i))) {
         doorProtected = true;
-        words = `${words.slice(0, -1)}; protection depends on shut stone doors.`;
+        words = `${words.slice(0, -1)}; keep protective stone doors shut.`;
       }
     }
   }
   if (protectedCells && !exposed && !doorProtected)
-    words = `Deep enough along the open routes; ${words.charAt(0).toLowerCase()}${words.slice(1)}`;
-  if (unreachable)
-    words += ` About ${numberWords(unreachableCapacity)} places are unreachable: no connected passage.`;
+    words = `Beyond riders’ reach; ${words.charAt(0).toLowerCase()}${words.slice(1)}`;
+  if (unreachable) words += ` ${numberWords(unreachableCapacity)} unreachable: connect a passage.`;
+  if (kind === 'chalk') words += ' People choose when to dig.';
+  let context: string | undefined;
+  if ((exposed && doorProtected) || (unreachable && (exposed || protectedCells))) {
+    context = words;
+    words = `${prefix} about ${capacity} places. ${protectedCapacity} protected; ${exposedCapacity} exposed; ${unreachableCapacity} unreachable.`;
+    if (exposed) words += ' Dig deeper or shut route doors.';
+    if (doorProtected) words += ' Keep protective doors shut.';
+    if (unreachable) words += ' Connect unreachable space.';
+    if (kind === 'chalk') words += ' People choose when to dig.';
+  }
   return {
     words,
+    context,
     capacity,
     protectedCapacity,
     exposedCapacity,

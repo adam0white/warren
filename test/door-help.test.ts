@@ -56,7 +56,7 @@ describe('door responses', () => {
     expect(words).toContain('can reach');
     expect(words).toContain('choose');
     expect(words.startsWith('Ring the bell.')).toBe(true);
-    expect(words.indexOf('Ring the bell')).toBeLessThan(words.indexOf('false alarm'));
+    expect(words.indexOf('Ring the bell')).toBeLessThan(words.indexOf('False alarm'));
     expect(words).toContain('Quiet-time calls last six game hours');
     expect(words).not.toContain('Nearby adults:');
     expect(words).not.toMatch(/will shut|tap.*shut/i);
@@ -90,7 +90,7 @@ describe('door responses', () => {
     expect(doorWords(s, door, true)).not.toContain('Ring the bell');
   });
 
-  it('keeps the door explanation within forty words, with live adult tasks kept in details', () => {
+  it('keeps the door explanation within thirty-two words, with live adult tasks kept in details', () => {
     const s = state();
     const variants = [doorWords(s, door, true)];
     s.bell = { at: s.minute, until: s.minute + 60, real: false };
@@ -103,7 +103,7 @@ describe('door responses', () => {
     variants.push(doorWords(s, door, true));
     s.hill.doorWork[door] = 14;
     variants.push(doorWords(s, door, true), doorWords(s, door, false));
-    for (const words of variants) expect(words.split(/\s+/).length).toBeLessThanOrEqual(40);
+    for (const words of variants) expect(words.split(/\s+/).length).toBeLessThanOrEqual(32);
   });
 
   it('keeps an unavailable nearby adult explicit in the details', () => {

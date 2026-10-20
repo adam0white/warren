@@ -23,7 +23,7 @@ describe('sleeping capacity words', () => {
   it('describes only the connected sleeping room under the pointer', () => {
     const s = withBeds([16, 17, 20]);
     const words = sleepingRoomWords(s, idx(16, SURF + 3));
-    expect(words).toMatch(/room for about six people/i);
+    expect(words).toMatch(/room for about six/i);
     expect(words).not.toMatch(/nine|\d/);
     expect(sleepingRoomWords(s, idx(20, SURF + 3))).toMatch(/about three/);
     expect(sleepingRoomWords(s, idx(19, SURF + 3))).toBe('');
@@ -32,8 +32,8 @@ describe('sleeping capacity words', () => {
   it('puts the bed remedy before capacity in a short phone response', () => {
     const s = withBeds([18]);
     const words = sleepingRoomWords(s, idx(18, SURF + 3));
-    expect(words.startsWith('Dig deeper along a protected passage')).toBe(true);
-    expect(words.indexOf('shut a stone door')).toBeLessThan(words.indexOf('Room for about'));
+    expect(words.startsWith('Dig deeper, or shut stone doors')).toBe(true);
+    expect(words.indexOf('shut stone doors')).toBeLessThan(words.indexOf('Room for about'));
     expect(words.split(/\s+/).length).toBeLessThanOrEqual(50);
   });
 
@@ -48,7 +48,7 @@ describe('sleeping capacity words', () => {
     person.body.alive = false;
     expect(sleepingCapacity(s)).toEqual({ places: 3, people: 3, enough: true });
     expect(sleepingCapacityWords(s)).toMatch(/enough.*village/i);
-    expect(sleepingRoomWords(s, idx(16, SURF + 3))).toMatch(/Enough sleeping space for the village/);
+    expect(sleepingRoomWords(s, idx(16, SURF + 3))).toMatch(/Enough for the village/);
   });
 
   it('does not count beds marked on unopened ground or other room uses', () => {

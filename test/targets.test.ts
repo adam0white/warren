@@ -90,8 +90,8 @@ describe('DL-23 actual control targets', () => {
         expect(notebook).toHaveLength(4);
         expect(card).toHaveLength(1);
         expectTargets([...play, ...notebook, ...card], width, height);
-        expect(scene?.height).toBeGreaterThanOrEqual(width === 320 ? 100 : 200);
-        expect(privacyScene?.height).toBeGreaterThanOrEqual(width === 320 ? 70 : 150);
+        expect(scene?.height).toBeGreaterThanOrEqual(width === 320 ? 100 : 120);
+        expect(privacyScene?.height).toBeGreaterThanOrEqual(width === 320 ? 70 : 120);
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
       } finally {
         await page.close();

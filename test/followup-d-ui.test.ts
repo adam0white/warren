@@ -66,7 +66,7 @@ for (const [width, height] of [
       const doorWords = await words.innerText();
       expect(doorWords).toMatch(/quiet-time call.*six game hours/is);
       expect(doorWords).toMatch(/false alarm.*trust/is);
-      expect(doorWords.indexOf('Ring the bell')).toBeLessThan(doorWords.indexOf('false alarm'));
+      expect(doorWords.indexOf('Ring the bell')).toBeLessThan(doorWords.toLowerCase().indexOf('false alarm'));
       await page.screenshot({ path: `${shots}/after-${width}-quiet-door-d.png` });
       expect(await words.evaluate((e) => e.scrollHeight <= e.clientHeight)).toBe(true);
       const assertStage = async () => {

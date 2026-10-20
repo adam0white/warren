@@ -16,7 +16,7 @@ import {
   type Saved,
   save,
 } from '../sim/game.ts';
-import { AIR_REACH, H, idx, K, neighbours, SURF, THEIR_X, USE, W, xOf, yOf } from '../sim/grid.ts';
+import { AIR_REACH, diggable, H, idx, K, neighbours, SURF, THEIR_X, USE, W, xOf, yOf } from '../sim/grid.ts';
 import { BELL } from '../sim/people.ts';
 import {
   activeRaid,
@@ -30,7 +30,7 @@ import {
   storesWords,
   waterWords,
 } from '../sim/warren.ts';
-import { baseView, easeView } from './camera.ts';
+import { baseView } from './camera.ts';
 import { hillDate } from './date.ts';
 import { doorDetailWords, doorWords } from './door-help.ts';
 import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from './draw.ts';
@@ -38,7 +38,7 @@ import { exposureWords } from './exposure.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
 import { personHelpWords } from './person-help.ts';
-import { planSafety } from './plan-safety.ts';
+import { type PlanSafety, planSafety } from './plan-safety.ts';
 import { bellShelterWords, bellStateWords } from './room-safety.ts';
 import { compactShelterWords, sleepingCapacityWords, sleepingRoomWords } from './shelter.ts';
 import * as store from './store.ts';
@@ -63,7 +63,6 @@ let canvas: HTMLCanvasElement | null = null;
 let ctx: CanvasRenderingContext2D | null = null;
 let sceneObserver: ResizeObserver | null = null;
 let stage: PhoneStage | null = null;
-let manualView = false;
 let focusCell: number | null = null;
 let sceneTop = 0;
 let resizeQueued = false;
@@ -75,7 +74,6 @@ function queueResize() {
     resize();
   });
 }
-let pointing = false;
 const paint: Paint = { preview: new Set(), previewKind: null, selected: null, t: 0 };
 let lastSaved = 0;
 let dirty = false;
@@ -96,7 +94,8 @@ let personOpener: HTMLElement | null = null;
 let doorCell: number | null = null;
 let bellReading = false;
 let planCell: number | null = null;
-let lastReading: { title: string; words: string } | null = null;
+let lastReading: { title: string; words: string; context?: string } | null = null;
+let pendingEntrance: number[] | null = null;
 
 const app = () => document.getElementById('app') as HTMLElement;
 const esc = (x: string) =>
@@ -240,9 +239,9 @@ function enter() {
     <div class="panel lk-sheet" aria-label="Hill actions">
       <div class="lk-sheet-body" id="inspection-body">
       <div class="card" id="card" hidden></div>
-      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Reading</b><button class="x" id="cellx" aria-label="Close room or door inspection">×</button></div><p id="cell-words" role="region" aria-label="Full reading"></p><details id="reading-context" hidden><summary>More about this door</summary><p id="door-context"></p></details></div>
+      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Reading</b><button class="x" id="cellx" aria-label="Close room or door inspection">×</button></div><p id="cell-words" role="region" aria-label="Full reading"></p><div id="entrance-choice" hidden><button id="confirm-entrance">Plan this entrance</button><button id="cancel-entrance">Cancel</button></div><details id="reading-context" hidden><summary>More about this door</summary><p id="door-context"></p></details></div>
       <div class="drawer" id="drawer" hidden></div>
-      <div class="reading-actions"><button class="ticker" id="ticker" aria-label="Open journal">Open journal</button><button id="last-reading" disabled>Last reading</button></div>
+      <div class="reading-actions"><p id="event-sentence" aria-live="polite"></p><button class="ticker" id="ticker" aria-label="Open journal">Open journal</button><button id="last-reading" disabled>Last reading</button></div>
       </div>
       <div class="lk-commit" id="hill-controls">
       <div class="clock-status"><span id="clock-rate"></span><span class="raid-controls"><button id="watch-raid">Keep watching</button></span></div>
@@ -273,6 +272,7 @@ function enter() {
     onSceneRect: queueResize,
   });
   lastReading = null;
+  pendingEntrance = null;
   bellReading = false;
   planCell = null;
   doorCell = null;
@@ -307,15 +307,26 @@ function enter() {
   document.getElementById('people')?.addEventListener('click', () => openBook('p'));
   document.getElementById('book')?.addEventListener('click', () => openBook());
   document.getElementById('shelter-brief')?.addEventListener('click', () => openBook('p'));
-  document.getElementById('zoom-in')?.addEventListener('click', () => zoomView(1.6));
-  document.getElementById('zoom-out')?.addEventListener('click', () => zoomView(1 / 1.6));
+  document.getElementById('zoom-in')?.addEventListener('click', () => zoomView(2.2));
+  document.getElementById('zoom-out')?.addEventListener('click', () => zoomView(1 / 2.2));
   document.getElementById('fit-hill')?.addEventListener('click', () => {
     if (!g) return;
-    manualView = true;
     Object.assign(view, baseView(g.s, view.w, view.h));
     clampView();
   });
   document.getElementById('cellx')?.addEventListener('click', () => closeCell());
+  document.getElementById('cancel-entrance')?.addEventListener('click', () => closeCell());
+  document.getElementById('confirm-entrance')?.addEventListener('click', () => {
+    const cells = pendingEntrance;
+    pendingEntrance = null;
+    const choice = document.getElementById('entrance-choice');
+    if (choice) choice.hidden = true;
+    if (cells) {
+      paint.preview = new Set(cells);
+      paint.previewKind = 'chalk';
+      commitPaint(true);
+    }
+  });
   document.getElementById('reading-context')?.addEventListener('toggle', (e) => {
     if (!(e.target as HTMLDetailsElement).open) document.getElementById('inspection-body')?.scrollTo(0, 0);
   });
@@ -334,7 +345,14 @@ function enter() {
     if (lastReading?.title === 'Bell call') {
       bellReading = true;
       showBellReading();
-    } else if (lastReading) showReading(lastReading.title, lastReading.words);
+    } else if (lastReading) {
+      const saved = lastReading;
+      showReading(saved.title, saved.words);
+      if (saved.context) {
+        readingContext(saved.context);
+        if (lastReading) lastReading.context = saved.context;
+      }
+    }
   });
   document.querySelector('.game')?.addEventListener('keydown', (e) => {
     if ((e as KeyboardEvent).key !== 'Escape') return;
@@ -344,9 +362,7 @@ function enter() {
   });
   resize();
   const s = g.s;
-  manualView = false;
   focusCell = null;
-  pointing = false;
   Object.assign(view, baseView(s, view.w, view.h));
   clampView();
   bindPointer(canvas);
@@ -355,6 +371,8 @@ function enter() {
   const scene = document.getElementById('scene');
   if (scene) sceneObserver.observe(scene);
   if (stageRoot) sceneObserver.observe(stageRoot);
+  const commitRow = document.getElementById('hill-controls');
+  if (commitRow) sceneObserver.observe(commitRow);
   const fontProbe = document.getElementById('font-probe');
   if (fontProbe) sceneObserver.observe(fontProbe);
   syncButtons();
@@ -373,7 +391,7 @@ function setTool(t: Tool) {
   closeCell(false);
   closeBook();
   closeCard();
-  if (t !== 'look') manualView = true;
+  focusCell = null;
   tool = t;
   syncButtons();
   const hints: Partial<Record<Tool, string>> = {
@@ -447,7 +465,6 @@ function clampView() {
 
 /** Keep the centre of the working view fixed; zoom never becomes a simulation input. */
 function zoomView(factor: number) {
-  manualView = true;
   const cx = view.x + view.w / view.cs / 2;
   const cy = Math.max(SURF + 3, view.y + view.h / view.cs / 2);
   view.cs = Math.max(10, Math.min(72, view.cs * factor));
@@ -499,10 +516,7 @@ function frame(now: number) {
   lagging = disp > s.minute + 2 * QUANTUM;
   if (lagging) disp = s.minute + QUANTUM;
   paint.t = Math.min(disp, s.minute + QUANTUM);
-  if (!manualView && !pointing && doorCell === null && document.getElementById('cell-detail')?.hidden) {
-    Object.assign(view, easeView(view, baseView(s, view.w, view.h), dt));
-    clampView();
-  }
+  // The working view moves only through view controls, gestures or explicit person selection.
   draw(ctx, s, view, ink, paint);
   if (Math.floor(now / 250) !== Math.floor((now - dt) / 250)) chrome();
   if (dirty && now - lastSaved > 30000) writeSave();
@@ -584,6 +598,16 @@ function chrome() {
       tk.classList.add('ink-in');
     }
   }
+  const event = document.getElementById('event-sentence');
+  const work = [...s.notes]
+    .reverse()
+    .find((n) => (n.kind === 'dig' && n.who) || n.kind === 'arrival' || n.kind === 'raid');
+  if (event) {
+    const sentences = work?.text.match(/[^.!?]+[.!?]/g) ?? [];
+    const name = work?.who ? personOf(s, work.who)?.name : undefined;
+    event.textContent =
+      (name ? sentences.find((line) => line.includes(name)) : sentences[0])?.trim() ?? work?.text ?? '';
+  }
   const bell = document.getElementById('bell') as HTMLButtonElement | null;
   if (bell) bell.classList.toggle('ringing', !!s.bell && s.minute < s.bell.until);
   updateShelter();
@@ -601,6 +625,9 @@ function showReading(title: string, words: string, remember = true, preserveScro
   hideOtherSheets('cell-detail');
   const context = document.getElementById('reading-context');
   if (context) context.hidden = true;
+  pendingEntrance = null;
+  const choice = document.getElementById('entrance-choice');
+  if (choice) choice.hidden = true;
   const sameReading = preserveScroll && !detail.hidden && heading.textContent === title;
   if (!sameReading) document.getElementById('inspection-body')?.scrollTo(0, 0);
   heading.textContent = title;
@@ -618,10 +645,32 @@ function showReading(title: string, words: string, remember = true, preserveScro
   }
 }
 
-function flash(text: string) {
+function planReading(title: string, reading: PlanSafety, remember = true, preserveScroll = false) {
+  showReading(title, reading.words, remember, preserveScroll);
+  readingContext(reading.context ?? '');
+  if (remember && lastReading) lastReading.context = reading.context;
+}
+
+function readingContext(words: string) {
+  const context = document.getElementById('reading-context');
+  const label = context?.querySelector('summary');
+  const text = document.getElementById('door-context');
+  if (context) context.hidden = !words;
+  if (label) {
+    label.textContent = 'Route details';
+    label.setAttribute('aria-label', 'More about these routes');
+  }
+  if (text) text.textContent = words;
+}
+
+function flash(text: string, contextWords = '') {
   bellReading = false;
   doorCell = null;
   showReading('Reading', text);
+  if (contextWords) {
+    readingContext(contextWords);
+    if (lastReading) lastReading.context = contextWords;
+  }
   ticker = { at: g?.s.minute ?? 0, kind: 'story', text, weight: 2 };
   tickerUntil = performance.now() + 9000;
 }
@@ -738,9 +787,11 @@ function bindPointer(cv: HTMLCanvasElement) {
   };
   const painting = () => tool === 'chalk' || tool === 'erase' || tool === 'store' || tool === 'beds';
   cv.addEventListener('pointerdown', (e) => {
-    pointing = true;
+    if (pendingEntrance) closeCell(false);
     cv.setPointerCapture(e.pointerId);
     const p = local(e);
+    paint.target = cellAt(view, p.x, p.y);
+    if (ctx && g) draw(ctx, g.s, view, ink, paint);
     pts.set(e.pointerId, { ...p, x0: p.x, y0: p.y });
     moved = false;
     if (pts.size === 2) {
@@ -752,7 +803,6 @@ function bindPointer(cv: HTMLCanvasElement) {
           cx: (a.x + b.x) / 2,
           cy: (a.y + b.y) / 2,
         };
-      manualView = true;
       mode = 'pinch';
       paint.preview.clear();
       paint.previewKind = null;
@@ -763,19 +813,20 @@ function bindPointer(cv: HTMLCanvasElement) {
       paint.preview.clear();
       paint.previewKind = tool as Paint['previewKind'];
       addPaint(p.x, p.y, true);
+      if (ctx && g) draw(ctx, g.s, view, ink, paint);
     }
   });
   cv.addEventListener('pointermove', (e) => {
     const q = pts.get(e.pointerId);
     if (!q) return;
     const p = local(e);
+    paint.target = cellAt(view, p.x, p.y);
     const dx = p.x - q.x;
     const dy = p.y - q.y;
     q.x = p.x;
     q.y = p.y;
     if (Math.hypot(p.x - q.x0, p.y - q.y0) > 8) moved = true;
     if (mode === 'pan') {
-      if (moved) manualView = true;
       view.x -= dx / view.cs;
       view.y -= dy / view.cs;
       clampView();
@@ -795,11 +846,12 @@ function bindPointer(cv: HTMLCanvasElement) {
       pinch.cy = cy;
       clampView();
     }
+    paint.target = mode === 'pan' || mode === 'pinch' ? null : cellAt(view, p.x, p.y);
   });
   const up = (e: PointerEvent) => {
     const q = pts.get(e.pointerId);
     pts.delete(e.pointerId);
-    pointing = pts.size > 0;
+    paint.target = null;
     if (!q) return;
     if (mode === 'paint') {
       commitPaint();
@@ -809,7 +861,7 @@ function bindPointer(cv: HTMLCanvasElement) {
   cv.addEventListener('pointerup', up);
   cv.addEventListener('pointercancel', (e) => {
     pts.delete(e.pointerId);
-    pointing = pts.size > 0;
+    paint.target = null;
     paint.preview.clear();
     paint.previewKind = null;
     closeCell(false);
@@ -820,7 +872,6 @@ function bindPointer(cv: HTMLCanvasElement) {
     'wheel',
     (e) => {
       e.preventDefault();
-      manualView = true;
       if (e.ctrlKey) {
         const r = cv.getBoundingClientRect();
         const px = e.clientX - r.left;
@@ -853,10 +904,11 @@ function addPaint(px: number, py: number, fresh = false) {
 }
 
 function updatePlanPreview() {
+  if (pendingEntrance) return;
   if (!g || (paint.previewKind !== 'chalk' && paint.previewKind !== 'beds') || !paint.preview.size) return;
   bellReading = false;
   doorCell = null;
-  showReading('Plan preview', planSafety(g.s, paint.preview, paint.previewKind).words, false);
+  planReading('Plan preview', planSafety(g.s, paint.preview, paint.previewKind), false);
 }
 
 /** Whether the chalk just laid joins open ground through other chalk (so a digger can work toward it). */
@@ -876,20 +928,41 @@ function reachable(cells: number[]): boolean {
   return cells.every((c) => !h.chalk[c] || seen.has(c));
 }
 
-function commitPaint() {
+function commitPaint(entranceConfirmed = false) {
   if (!g) return;
   const cells = [...paint.preview];
-  focusCell = cells[0] ?? null;
+  focusCell = null;
   const kind = paint.previewKind;
   paint.preview.clear();
   paint.previewKind = null;
   if (!cells.length || !kind) return;
   const h = g.s.hill;
   if (kind === 'chalk') {
+    const opensEntrance = cells.some(
+      (c) =>
+        yOf(c) === SURF &&
+        xOf(c) < THEIR_X &&
+        xOf(c) !== h.surface.entrance &&
+        !h.chalk[c] &&
+        (diggable(h.kind[c] ?? K.bedrock) || h.kind[c] === K.old || h.kind[c] === K.theirs),
+    );
+    if (opensEntrance && !entranceConfirmed) {
+      showReading(
+        'New entrance?',
+        'Open a new entrance here? It brings air, but riders could enter. A door below could close it.',
+      );
+      pendingEntrance = cells;
+      paint.preview = new Set(cells);
+      paint.previewKind = 'chalk';
+      const choice = document.getElementById('entrance-choice');
+      if (choice) choice.hidden = false;
+      return;
+    }
     if (order({ verb: 'chalk', cells, on: true })) {
-      if (reachable(cells))
-        flash(`Dig planned. ${planSafety(g.s, cells, 'chalk').words} People choose when to dig.`);
-      else
+      if (reachable(cells)) {
+        const reading = planSafety(g.s, cells, 'chalk');
+        flash(`Dig planned. ${reading.words}`, reading.context);
+      } else
         flash(
           'Nobody can get at that stone yet. Chalk a way to it from open ground, and they will dig toward it.',
         );
@@ -917,6 +990,7 @@ function commitPaint() {
     if (kind === 'store' && ok) flash('Store marked. People can bring grain to these jars.');
     else if (kind === 'store' && cells.some((c) => h.kind[c] === K.open && h.use[c] === USE.store))
       flash('This ground is already marked as a store.');
+    chrome();
     if (!ok && cells.every((c) => h.kind[c] !== K.open))
       flash('Rooms are marked on open ground. Chalk the stone first.');
   }
@@ -1035,6 +1109,13 @@ function describeCell(c: number) {
 }
 
 function closeCell(focus = true) {
+  if (pendingEntrance) {
+    pendingEntrance = null;
+    paint.preview.clear();
+    paint.previewKind = null;
+  }
+  const choice = document.getElementById('entrance-choice');
+  if (choice) choice.hidden = true;
   bellReading = false;
   planCell = null;
   doorCell = null;
@@ -1048,7 +1129,7 @@ function closeCell(focus = true) {
 function updateDoor() {
   if (!g || doorCell === null) return;
   if (g.s.hill.chalk[doorCell] && g.s.hill.kind[doorCell] !== K.open) {
-    showReading('Unbuilt plan', planSafety(g.s, [doorCell], 'chalk').words, true, true);
+    planReading('Unbuilt plan', planSafety(g.s, [doorCell], 'chalk'), true, true);
     return;
   }
   if (planCell !== null) {
@@ -1092,7 +1173,7 @@ function showPlan(cell: number) {
   bellReading = false;
   planCell = cell;
   doorCell = cell;
-  showReading('Unbuilt plan', planSafety(g.s, [cell], 'chalk').words);
+  planReading('Unbuilt plan', planSafety(g.s, [cell], 'chalk'));
   document.getElementById('cellx')?.focus();
 }
 
@@ -1148,7 +1229,7 @@ function updateShelter() {
   if (brief) brief.title = 'Check shelter and choose a person';
   const meaning = document.getElementById('bell-meaning');
   if (meaning)
-    meaning.textContent = `Sleeping places · ${compactShelterWords(g.s).replace('Sleeping room', 'Room')}. ${g.s.bell && g.s.minute < g.s.bell.until ? 'Bell call active.' : 'Bell quiet; false alarms can weaken trust.'}`;
+    meaning.textContent = `${compactShelterWords(g.s).replace('Sleeping room', 'Sleeping places')}. ${g.s.bell && g.s.minute < g.s.bell.until ? 'Bell call active.' : 'Bell quiet; false alarms weaken trust.'}`;
   const summary = document.getElementById('shelter-summary');
   if (summary) summary.textContent = bellShelterWords(g.s).replace(bellStateWords(g.s), '').trim();
   for (const row of document.querySelectorAll<HTMLElement>('[data-shelter-person]')) {
@@ -1195,6 +1276,12 @@ function openBook(tab = 's') {
     .filter((n) => n.weight >= 1)
     .slice(-60)
     .reverse();
+  const newestSafety = [...s.notes]
+    .reverse()
+    .find(
+      (n) =>
+        n.kind === 'raid' || n.kind === 'hurt' || (n.kind === 'dig' && /shaft|riders|door/i.test(n.text)),
+    );
   const alive = s.people.filter((p) => p.body.alive);
   const done = GOALS.filter((x) => s.goals[x.id] !== undefined);
   d.innerHTML = `
@@ -1203,7 +1290,7 @@ function openBook(tab = 's') {
       <div class="tabs">
         <button data-tab="s">Save and run</button><button data-tab="j">journal</button><button data-tab="p">people</button>
       </div>
-      <div id="sheet-body" tabindex="0" role="region" aria-label="Game menu contents"><div class="tab" data-pane="j">${notes.map((n) => `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br/>${esc(n.text)}</p>`).join('')}</div>
+      <div id="sheet-body" tabindex="0" role="region" aria-label="Game menu contents"><div class="tab" data-pane="j">${newestSafety ? `<p id="newest-safety"><b>Latest safety entry</b><br/>${esc(newestSafety.text)}</p><details><summary>Earlier journal entries</summary>` : ''}${notes.map((n) => `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br/>${esc(n.text)}</p>`).join('')}${newestSafety ? '</details>' : ''}</div>
       <div class="tab" data-pane="p" hidden><b>Shelter check · now</b><p id="shelter-summary"></p>${s.houses
         .map((hs) => {
           const ms = hs.members.map((m) => personOf(s, m)).filter((p): p is Person => !!p && p.body.alive);
@@ -1235,6 +1322,7 @@ function openBook(tab = 's') {
       for (const x of d.querySelectorAll<HTMLButtonElement>('[data-tab]')) x.classList.toggle('on', x === b);
       for (const p of d.querySelectorAll<HTMLElement>('[data-pane]'))
         p.hidden = p.dataset.pane !== b.dataset.tab;
+      document.getElementById('sheet-body')?.scrollTo(0, 0);
     });
   for (const b of d.querySelectorAll<HTMLButtonElement>('[data-who]'))
     b.addEventListener('click', () => {
@@ -1244,7 +1332,6 @@ function openBook(tab = 's') {
       const cell = g ? positionAt(g.s, paint.selected ?? '', paint.t) : 0;
       focusCell = cell;
       const [x, y] = [xOf(cell), yOf(cell)];
-      manualView = true;
       view.x = x - view.w / view.cs / 2;
       view.y = y - view.h / view.cs / 2;
       clampView();

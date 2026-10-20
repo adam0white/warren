@@ -26,9 +26,7 @@ function layout() {
 describe('room safety from the actual rider layout', () => {
   it('separates shallow beds from deep beds and changes only the door flags in its counterfactual', () => {
     const { s, x, near, deep } = layout();
-    expect(roomSafetyWords(s, near)).toMatch(
-      /^Dig deeper along a protected passage, or shut a stone door on each open route\./,
-    );
+    expect(roomSafetyWords(s, near)).toMatch(/^Dig deeper, or shut stone doors on every open route\./);
     expect(roomSafetyWords(s, deep)).toContain('Deep enough');
     expect(bedSafety(s)).toEqual({ safe: 3, exposed: 3 });
     const door = idx(x, SURF + 2);
@@ -38,7 +36,7 @@ describe('room safety from the actual rider layout', () => {
     expect(roomSafetyWords(s, near)).toContain('open stone door');
     expect(JSON.stringify(s)).toBe(before);
     s.hill.shut[door] = 1;
-    expect(roomSafetyWords(s, near)).toContain('while it stays shut');
+    expect(roomSafetyWords(s, near)).toMatch(/while the stone door .* stays shut/);
     expect(bedSafety(s)).toEqual({ safe: 6, exposed: 0 });
   });
   it('names a shaft bypass rather than blaming a door on a different route', () => {
@@ -82,7 +80,7 @@ describe('room safety from the actual rider layout', () => {
     expect(roomSafetyWords(s, idx(3, SURF + 5))).toContain('Every open route');
     expect(roomSafetyWords(s, idx(3, SURF + 5))).not.toMatch(/open stone door.*blocking riders/);
     for (const x of [3, 17]) s.hill.shut[idx(x, SURF + 2)] = 1;
-    expect(roomSafetyWords(s, idx(3, SURF + 5))).toContain('while they stay shut');
+    expect(roomSafetyWords(s, idx(3, SURF + 5))).toMatch(/while the stone doors .* stay shut/);
   });
   it('reports legacy active, ended and renew-call states without an inferred response', () => {
     const { s } = layout();

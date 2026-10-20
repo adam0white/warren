@@ -95,5 +95,49 @@ it('names a rolled-back door without promising one door closes every route', () 
   const door = idx(x, SURF + 1);
   s.hill.use[door] = USE.door;
   s.hill.shut[door] = 0;
-  expect(planSafety(s, [idx(x, SURF + 2)], 'beds').words).toContain('open stone door');
+  expect(planSafety(s, [idx(x, SURF + 2)], 'beds').words).toContain('open stone doors');
+});
+
+it('keeps mixed protection and an open-door remedy compact without hiding capacity', () => {
+  const { s, x } = layout();
+  const door = idx(x, SURF + 1);
+  s.hill.use[door] = USE.door;
+  s.hill.doorWork[door] = 0;
+  for (let y = SURF + 3; y <= SURF + 12; y++) s.hill.chalk[idx(x, y)] = 1;
+  const p = planSafety(s, [idx(x, SURF + 3)], 'chalk');
+  expect(p.protectedCapacity).toBeGreaterThan(0);
+  expect(p.exposedCapacity).toBeGreaterThan(0);
+  expect(p.words).toContain('beyond riders’ reach');
+  expect(p.words).toContain('exposed');
+  expect(p.words).toContain('Shut open stone doors; check other routes.');
+  expect(p.words).toContain('People choose when to dig.');
+  expect(p.words.split(/\s+/).length).toBeLessThanOrEqual(51);
+});
+
+it('keeps compound route conditions and unreachable capacity essential, with full context', () => {
+  const { s, x } = layout();
+  s.hill.kind.fill(K.rock);
+  const selected: number[] = [];
+  for (const column of [x, x + 4]) {
+    for (let y = SURF; y <= SURF + 1; y++) s.hill.kind[idx(column, y)] = K.open;
+    s.hill.use[idx(column, SURF + 1)] = USE.door;
+    s.hill.doorWork[idx(column, SURF + 1)] = 0;
+    for (let y = SURF + 2; y <= SURF + 8; y++) {
+      s.hill.chalk[idx(column, y)] = 1;
+      selected.push(idx(column, y));
+    }
+  }
+  s.hill.shut[idx(x + 4, SURF + 1)] = 1;
+  const isolated = idx(5, SURF + 20);
+  s.hill.chalk[isolated] = 1;
+  selected.push(isolated);
+  const p = planSafety(s, selected, 'chalk');
+  expect(p.words).toBe(
+    'If dug: about 45 places. 21 protected; 21 exposed; 3 unreachable. Dig deeper or shut route doors. Keep protective doors shut. Connect unreachable space. People choose when to dig.',
+  );
+  expect(p.words.length).toBeLessThanOrEqual(180);
+  expect(p.context).toContain('The entrance admits riders.');
+  expect(p.context).toContain('check other routes');
+  expect(p.context).toContain('keep protective stone doors shut');
+  expect(p.context).toContain('three unreachable: connect a passage');
 });

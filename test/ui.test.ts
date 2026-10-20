@@ -81,7 +81,7 @@ describe('owner viewport regression', () => {
     });
   }
 
-  it('widens smoothly as rooms open and respects manual zoom and pan afterwards', async () => {
+  it('holds the working view as rooms open and changes it only with explicit view controls', async () => {
     const page = await browser.newPage({ viewport: { width: 360, height: 780 } });
     try {
       await enter(page);
@@ -94,11 +94,16 @@ describe('owner viewport regression', () => {
       });
       await page.clock.runFor(100);
       const mid = await page.evaluate(() => (window as unknown as { __warren: Debug }).__warren.view.cs);
-      expect(mid).toBeLessThan(early);
+      expect(mid).toBe(early);
       await page.clock.runFor(2000);
       const wide = await page.evaluate(() => (window as unknown as { __warren: Debug }).__warren.view.cs);
-      expect(wide).toBeLessThan(mid);
+      expect(wide).toBe(mid);
       await page.screenshot({ path: `${shots}/after-grown-360.png` });
+      await page.locator('#fit-hill').click();
+      expect(
+        await page.evaluate(() => (window as unknown as { __warren: Debug }).__warren.view.cs),
+      ).toBeLessThan(wide);
+
       await page.mouse.move(180, 320);
       await page.mouse.down();
       await page.mouse.move(220, 350, { steps: 4 });
@@ -121,7 +126,7 @@ describe('owner viewport regression', () => {
       const manual = await page.evaluate(() => ({
         ...(window as unknown as { __warren: Debug }).__warren.view,
       }));
-      expect(manual.cs).toBeGreaterThan(wide);
+      expect(manual.cs).toBeGreaterThan(panned.cs);
       await page.clock.runFor(1000);
       expect(
         await page.evaluate(() => ({

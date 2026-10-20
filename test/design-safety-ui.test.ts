@@ -147,7 +147,7 @@ describe('safety before calling people below', () => {
           await page.clock.runFor(100);
           const words = page.locator('#cell-words');
           expect(await words.innerText()).toContain('Ring the bell');
-          expect(await words.innerText()).toContain('false alarms');
+          expect(await words.innerText()).toMatch(/false alarms/i);
           expect(await words.innerText()).not.toContain('Nearby adults:');
           expect(await words.evaluate((e) => e.scrollHeight <= e.clientHeight)).toBe(true);
           await page.locator('#reading-context summary').click();
@@ -225,6 +225,9 @@ describe('safety before calling people below', () => {
             animations: 'disabled',
             path: `${shots}/after-${width}-exposure-open${suffix}-b.png`,
           });
+          // Fix a readable pixel-sampling scale independently of the reserved phone scene height.
+          await page.evaluate(`Object.assign(window.__warren.view, {cs:24,x:14,y:${SURF + 2}})`);
+          await page.clock.runFor(100);
           const sample = (x: number, y: number) =>
             page.evaluate<number>(
               `(() => {const v=window.__warren.view;const c=document.querySelector('#cv');const dpr=c.width/v.w;

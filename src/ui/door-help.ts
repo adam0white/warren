@@ -6,15 +6,15 @@ import { activeRaid, airAndLight, type WarrenState } from '../sim/warren.ts';
 export function doorWords(s: WarrenState, cell: number, lit: boolean): string {
   if (s.hill.doorWork[cell])
     return lit
-      ? 'A door being carved. People can choose to carve it as they find the time. The stone must be finished before anyone can roll it shut.'
-      : 'A door marked, in the dark. Hang a lamp near so people can choose to carve it. The stone must be finished before anyone can roll it shut.';
+      ? 'People choose to carve this door. It must be finished before anyone can roll it shut.'
+      : 'Hang a lamp near this dark door mark. People choose to carve it; it must be finished before anyone can shut it.';
   if (s.hill.shut[cell])
-    return 'The stone door, rolled shut. When there is no smoke, no riders and no sounding bell, an adult can choose to roll it back.';
+    return 'Door rolled shut. An adult may reopen it when smoke, riders and the bell are quiet.';
   const raid = activeRaid(s);
   const ringing = !!s.bell && s.bell.until > s.minute;
   if (raid || ringing)
-    return `A nearby adult who can reach this door can choose to roll it shut. It is rolled back. ${raid ? 'Smoke or riders make this a choice.' : 'The bell is sounding.'}`;
-  return 'Ring the bell. A nearby adult who can reach this door can choose to shut it. It is rolled back. Quiet-time false alarms can weaken trust in the bell. Quiet-time calls last six game hours.';
+    return `Door rolled back. A nearby adult who can reach it can choose to roll it shut. ${raid ? 'Smoke or riders make this a choice.' : 'The bell is sounding.'}`;
+  return 'Ring the bell. Door rolled back; a nearby adult who can reach it may choose to shut it. False alarms can weaken trust. Quiet-time calls last six game hours.';
 }
 
 /** Live task details stay available without hiding the immediate door choice. */
