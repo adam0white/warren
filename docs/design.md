@@ -67,3 +67,4 @@ At gallop a sim-day is 1.25 real seconds, so 60 people is about 40–50% of one 
 - Mid-game events between raids (cave-ins on loose stone, quarrels) and a "while you were away" growth record for idle players (2026-11-02; rounds 1 and 2 idle testers).
 - The camera stays where the player put it, and a tap with a drag-only tool says so (2026-10-26; round 3 check).
 - The dig drawn as it happens (chips, a face that visibly gives) for younger players (2026-11-02; round 2 wildcard).
+- Owner follow-up: make the wider gameplay arc clearer through lived outcomes (who actually sleeps below and returns after raids), work/refusal feedback, and pacing between raids; expand tool teaching and visible digging feedback beyond this brief guidance pass (target 2026-11-03; owner 2026-10-20).

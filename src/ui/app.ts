@@ -9,7 +9,7 @@ import {
   type Person,
   readBody,
 } from '@adam0white/human-framework';
-import { DAY, dateWords, doyOf, HOUR, hourWords, seasonOf, yearOf } from '../sim/calendar.ts';
+import { DAY, dateWords, HOUR, hourWords } from '../sim/calendar.ts';
 import {
   act,
   advance,
@@ -26,7 +26,6 @@ import { BELL } from '../sim/people.ts';
 import {
   activeRaid,
   airAndLight,
-  currentGoal,
   GOALS,
   houseOf,
   type Note,
@@ -35,7 +34,9 @@ import {
   storesWords,
   waterWords,
 } from '../sim/warren.ts';
+import { baseView, easeView } from './camera.ts';
 import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from './draw.ts';
+import { colonyWords, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
 import * as store from './store.ts';
 
@@ -57,6 +58,9 @@ let ink: Ink;
 const view: View = { cs: 20, x: 6, y: 2, w: 360, h: 400 };
 let canvas: HTMLCanvasElement | null = null;
 let ctx: CanvasRenderingContext2D | null = null;
+let sceneObserver: ResizeObserver | null = null;
+let manualView = false;
+let pointing = false;
 const paint: Paint = { preview: new Set(), previewKind: null, selected: null, t: 0 };
 let lastSaved = 0;
 let dirty = false;
@@ -123,7 +127,7 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
   <div class="page">
     ${markLink}
     <h1>The Warren</h1>
-    <p>Riders burned two villages to the south this spring. Under Yusuf Usta’s house there is a cellar cut into the soft stone, and the barley stands ripe.</p>
+    <p>Riders burned two villages to the south this spring. Under Yusuf Usta’s house there is a cellar cut into the soft stone, and the barley stands ripe. The village needs a refuge before the riders come.</p>
     <p>You keep the dig-master’s chalk and his bell. Mark the stone where a room should be. Hang a lamp where the dark stops them. Ring the bell when there is smoke.</p>
     <p class="soft">Nobody obeys. Everyone follows the worn path.</p>
     <div class="actions">
@@ -193,10 +197,11 @@ function enter() {
     <div class="top">
       ${markLink}
       <div class="when"><span id="when"></span><span class="soft" id="stock"></span></div>
+      <div class="purpose hand" id="purpose">${PURPOSE}</div>
+      <div class="goal" id="goal"></div>
     </div>
     <div class="scene" id="scene">
       <canvas id="cv"></canvas>
-      <div class="goal hand" id="goal"></div>
       <div class="lag soft" id="lag" hidden>the days pass as fast as they can</div>
       <div class="card" id="card" hidden></div>
     </div>
@@ -250,13 +255,17 @@ function enter() {
   document.getElementById('ticker')?.addEventListener('click', () => openBook());
   resize();
   const s = g.s;
-  view.cs = Math.max(22, Math.min(34, Math.floor(view.w / 15)));
-  view.x = Math.max(0, s.hill.surface.entrance + 3 - view.w / view.cs);
-  view.y = SURF - 4.2;
+  manualView = false;
+  pointing = false;
+  Object.assign(view, baseView(s, view.w, view.h));
   clampView();
   bindPointer(canvas);
-  addEventListener('resize', resize);
+  sceneObserver?.disconnect();
+  sceneObserver = new ResizeObserver(resize);
+  const scene = document.getElementById('scene');
+  if (scene) sceneObserver.observe(scene);
   syncButtons();
+  chrome();
   last = performance.now();
   cancelAnimationFrame(raf);
   raf = requestAnimationFrame(frame);
@@ -344,6 +353,10 @@ function frame(now: number) {
   lagging = disp > s.minute + 2 * QUANTUM;
   if (lagging) disp = s.minute + QUANTUM;
   paint.t = Math.min(disp, s.minute + QUANTUM);
+  if (!manualView && !pointing) {
+    Object.assign(view, easeView(view, baseView(s, view.w, view.h), dt));
+    clampView();
+  }
   draw(ctx, s, view, ink, paint);
   if (Math.floor(now / 250) !== Math.floor((now - dt) / 250)) chrome();
   if (dirty && now - lastSaved > 30000) writeSave();
@@ -359,8 +372,7 @@ function chrome() {
   const stock = document.getElementById('stock');
   if (stock) stock.textContent = `${souls(alive)} · ${storesWords(s)} · ${waterWords(s)}`;
   const goal = document.getElementById('goal');
-  const cg = currentGoal(s);
-  if (goal) goal.textContent = cg ? `→ ${cg.text}` : '';
+  if (goal) goal.textContent = colonyWords(s);
   const r0 = activeRaid(s);
   const lag = document.getElementById('lag');
   if (lag) lag.hidden = !lagging || speedIx < 2;
@@ -521,6 +533,7 @@ function bindPointer(cv: HTMLCanvasElement) {
   };
   const painting = () => tool === 'chalk' || tool === 'erase' || tool === 'store' || tool === 'beds';
   cv.addEventListener('pointerdown', (e) => {
+    pointing = true;
     cv.setPointerCapture(e.pointerId);
     const p = local(e);
     pts.set(e.pointerId, { ...p, x0: p.x, y0: p.y });
@@ -534,6 +547,7 @@ function bindPointer(cv: HTMLCanvasElement) {
           cx: (a.x + b.x) / 2,
           cy: (a.y + b.y) / 2,
         };
+      manualView = true;
       mode = 'pinch';
       paint.preview.clear();
       paint.previewKind = null;
@@ -555,6 +569,7 @@ function bindPointer(cv: HTMLCanvasElement) {
     q.y = p.y;
     if (Math.hypot(p.x - q.x0, p.y - q.y0) > 8) moved = true;
     if (mode === 'pan') {
+      if (moved) manualView = true;
       view.x -= dx / view.cs;
       view.y -= dy / view.cs;
       clampView();
@@ -578,6 +593,7 @@ function bindPointer(cv: HTMLCanvasElement) {
   const up = (e: PointerEvent) => {
     const q = pts.get(e.pointerId);
     pts.delete(e.pointerId);
+    pointing = pts.size > 0;
     if (!q) return;
     if (mode === 'paint') {
       commitPaint();
@@ -587,6 +603,7 @@ function bindPointer(cv: HTMLCanvasElement) {
   cv.addEventListener('pointerup', up);
   cv.addEventListener('pointercancel', (e) => {
     pts.delete(e.pointerId);
+    pointing = pts.size > 0;
     paint.preview.clear();
     paint.previewKind = null;
     mode = 'none';
@@ -596,6 +613,7 @@ function bindPointer(cv: HTMLCanvasElement) {
     'wheel',
     (e) => {
       e.preventDefault();
+      manualView = true;
       if (e.ctrlKey) {
         const r = cv.getBoundingClientRect();
         const px = e.clientX - r.left;
@@ -837,6 +855,7 @@ function openBook() {
       paint.selected = b.dataset.who ?? null;
       d.hidden = true;
       const [x, y] = [xOf(g?.s.pos[paint.selected ?? ''] ?? 0), yOf(g?.s.pos[paint.selected ?? ''] ?? 0)];
+      manualView = true;
       view.x = x - view.w / view.cs / 2;
       view.y = y - view.h / view.cs / 2;
       clampView();
@@ -924,7 +943,7 @@ export const _debug = {
 /** Available on the title page too, before regular play events begin. */
 function mountLabControls() {
   const controls = document.createElement('details');
-  controls.style.cssText = 'margin:1rem auto;padding:0.6rem;max-width:45rem;font:inherit';
+  controls.className = 'lab-controls';
   controls.innerHTML = `<summary>Playtest privacy</summary><label><input type="checkbox"> Anonymous play events</label> <a href="https://human.adamwhite.work/lab/privacy/">Privacy</a>`;
   const toggle = controls.querySelector('input');
   if (toggle) {
