@@ -7,7 +7,7 @@ import { colonyWords } from '../src/ui/guidance.ts';
 import { bellStateWords } from '../src/ui/room-safety.ts';
 
 function ringing() {
-  const s = newGame(7).s;
+  const s = newGame(7, '0.3.0').s;
   s.bell = { at: s.minute, until: s.minute + 360, real: true };
   s.notes.push({ at: s.minute, kind: 'story', text: 'You rang the bell.', weight: 1 });
   const p = s.people[0];
@@ -26,7 +26,7 @@ function ringing() {
 
 describe('bell duration and observed replies', () => {
   it('explains the call duration before the first ring', () => {
-    const s = newGame(7).s;
+    const s = newGame(7, '0.3.0').s;
     expect(bellStateWords(s)).toMatch(/Bell quiet.*six game hours/);
   });
 

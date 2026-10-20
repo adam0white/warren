@@ -19,13 +19,13 @@ import {
   type WarrenState,
 } from './warren.ts';
 
-export const GAME_VERSION = '0.3.0';
+export const GAME_VERSION = '0.4.0';
 export const DEFAULT_EDITION = GAME_VERSION;
-export type Edition = '0.2.0' | '0.3.0';
+export type Edition = '0.2.0' | '0.3.0' | '0.4.0';
 
 export function editionOf(version: string): Edition {
   if (/^0\.2\.\d+$/.test(version)) return '0.2.0';
-  if (version === '0.3.0') return version;
+  if (version === '0.3.0' || version === '0.4.0') return version;
   throw new Error(`Unsupported Warren edition: ${version}`);
 }
 
@@ -47,7 +47,8 @@ export interface Game {
 export function newGame(seed: number, edition: string = DEFAULT_EDITION): Game {
   resetCaches();
   const s = newWarren(seed);
-  if (editionOf(edition) === '0.3.0') s.edition = '0.3.0';
+  const rules = editionOf(edition);
+  if (rules !== '0.2.0') s.edition = rules;
   return { s, inputs: [] };
 }
 

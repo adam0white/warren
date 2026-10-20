@@ -168,7 +168,7 @@ export interface Answer {
 
 export interface WarrenState {
   /** Absent in legacy saves; never added when continuing them. */
-  edition?: '0.3.0';
+  edition?: '0.3.0' | '0.4.0';
   recoveries?: { who: string; injury: string; part: string; severity: number }[];
   seed: number;
   minute: number;
@@ -372,6 +372,32 @@ function sleepersAt(s: WarrenState, cell: number): number {
   return n;
 }
 
+/** New-edition bed reservations include shelter journeys; a person may keep their own place. */
+function bedAvailable(s: WarrenState, cell: number, who: string): boolean {
+  let n = 0;
+  for (const p of s.people) {
+    if (!p.body.alive || p.id === who) continue;
+    if (s.trips[p.id]?.end === cell && (p.activity?.mode === 'sleep' || p.activity?.action === 'shelter'))
+      n++;
+  }
+  return n < BEDS_PER_CELL;
+}
+
+/** Offer a protected bed only along a reachable route with breathable air, nearest by walking cost. */
+function protectedBed(s: WarrenState, f: Field, air: Int16Array, who: string): number {
+  const exposed = riderCells(s);
+  let best = -1;
+  let distance = Number.POSITIVE_INFINITY;
+  for (const c of cellsWithUse(s.hill, USE.beds)) {
+    const d = f.dist[c] ?? Number.POSITIVE_INFINITY;
+    if (d >= distance || exposed.has(c) || !bedAvailable(s, c, who)) continue;
+    if (route(f, c).some((i) => yOf(i) >= SURF && (air[i] ?? 32000) > AIR_REACH)) continue;
+    best = c;
+    distance = d;
+  }
+  return best;
+}
+
 /** Cells reachable from the entrance within the riders' reach, not past a shut door. */
 export function riderCells(s: WarrenState): Map<number, number> {
   const h = s.hill;
@@ -540,6 +566,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
   const { rise, set } = daylight(doy);
   const light = mod >= rise && mod < set - 20;
   const threat = underThreat(s);
+  const preferProtectedBed = s.edition === '0.4.0' && !!activeRaid(s);
   const outside = riskOutside(s);
   const house = houseOf(s, p.id);
   const sleepy = !light || p.body.sleepPressure > 0.7 || p.body.sleepDebt > 0.5 || p.body.health < 0.5;
@@ -571,7 +598,9 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
         untilDawn,
       );
     }
-    const beds = cellsWithUse(h, USE.beds).filter((c) => sleepersAt(s, c) < BEDS_PER_CELL);
+    const beds = cellsWithUse(h, USE.beds).filter((c) =>
+      s.edition === '0.4.0' ? bedAvailable(s, c, p.id) : sleepersAt(s, c) < BEDS_PER_CELL,
+    );
     let bc = -1;
     let bd = Number.POSITIVE_INFINITY;
     for (const c of beds) {
@@ -580,6 +609,10 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
         bd = d;
         bc = c;
       }
+    }
+    if (preferProtectedBed) {
+      const protectedCell = protectedBed(s, f, air, p.id);
+      if (protectedCell >= 0) bc = protectedCell;
     }
     if (bc >= 0) {
       const stale = (air[bc] ?? 0) > AIR_REACH;
@@ -777,7 +810,8 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
 
   // Shelter: smoke, riders, or the bell.
   if (threat) {
-    const deep = deepestSafe(s, f);
+    const bed = preferProtectedBed ? protectedBed(s, f, air, p.id) : -1;
+    const deep = bed >= 0 ? bed : deepestSafe(s, f, p.id);
     if (deep >= 0 && deep !== from) {
       const safety = threat === 'riders' ? 0.7 : threat === 'smoke' ? 0.5 : 0.2;
       const going = people(s, (_t, q) => q.activity?.action === 'shelter').slice(0, 4);
@@ -1199,13 +1233,18 @@ function seedAvailable(s: WarrenState): number {
 }
 
 /** The safest reachable open cell: deepest past a door if any, else the deepest reachable. */
-function deepestSafe(s: WarrenState, f: Field): number {
+function deepestSafe(s: WarrenState, f: Field, who: string): number {
   const h = s.hill;
   const exposed = riderCells(s);
   let best = -1;
   let score = -1;
   for (let i = 0; i < h.kind.length; i++) {
     if (h.kind[i] !== K.open || !Number.isFinite(f.dist[i] ?? Number.POSITIVE_INFINITY)) continue;
+    if (s.edition === '0.4.0') {
+      if (h.use[i] === USE.beds && !bedAvailable(s, i, who)) continue;
+      const { air } = airAndLight(s);
+      if (route(f, i).some((c) => yOf(c) >= SURF && (air[c] ?? 32000) > AIR_REACH)) continue;
+    }
     const sc =
       yOf(i) * 2 + (exposed.has(i) ? 0 : 40) + (h.use[i] === USE.beds || h.use[i] === USE.hearth ? 6 : 0);
     if (sc > score) {
@@ -1868,7 +1907,7 @@ function afterQuantum(s: WarrenState, ev: SimEvent[]) {
     });
   }
   raidStep(s);
-  if (s.edition === '0.3.0') recoveryWords(s);
+  if (s.edition) recoveryWords(s);
   if (s.bell && s.bell.until <= s.minute) {
     if (!s.bell.real) falseAlarm(s, s.bell.at);
     s.bell = null;
@@ -1886,7 +1925,7 @@ function everyone(s: WarrenState, pc: Omit<Percept, 'at'>, interrupt: boolean) {
 
 function raidStep(s: WarrenState) {
   for (const r of s.raids) {
-    const scare = s.edition === '0.3.0' && r === s.raids[0];
+    const scare = !!s.edition && r === s.raids[0];
     if (r.stage === 'coming' && s.minute >= r.smoke) {
       r.stage = 'smoke';
       const first = s.raids.indexOf(r) === 0;
@@ -2003,10 +2042,12 @@ function raidStep(s: WarrenState) {
         r.stage = 'gone';
         const lost = r.took;
         const held = r.hurt.length === 0 && lost < s.people.length * V.ration * 30;
-        if (held) {
-          s.heldAt = s.minute;
-          s.word = Math.min(1, s.word + 0.25);
-        } else s.word = Math.max(0, s.word - 0.1);
+        if (!(s.edition === '0.4.0' && scare)) {
+          if (held) {
+            s.heldAt = s.minute;
+            s.word = Math.min(1, s.word + 0.25);
+          } else s.word = Math.max(0, s.word - 0.1);
+        }
         note(s, {
           kind: 'raid',
           text: scare
@@ -2535,7 +2576,11 @@ export function placeDoor(s: WarrenState, cell: number): boolean {
 export function ringBell(s: WarrenState): boolean {
   if (s.bell && s.bell.until > s.minute) return false;
   const r = activeRaid(s);
-  s.bell = { at: s.minute, until: s.minute + V.bellHours * HOUR, real: !!r };
+  s.bell = {
+    at: s.minute,
+    until: s.edition === '0.4.0' && r ? r.leave : s.minute + V.bellHours * HOUR,
+    real: !!r,
+  };
   note(s, {
     kind: 'story',
     text: r ? 'You rang the bell.' : 'You rang the bell, though no one had seen smoke.',

@@ -55,6 +55,7 @@ describe('door responses', () => {
     expect(words).toContain('adult');
     expect(words).toContain('reachable');
     expect(words).toContain('choose');
+    expect(words.indexOf('false alarm')).toBeLessThan(words.indexOf('Ring the bell'));
     expect(words).not.toMatch(/will shut|tap.*shut/i);
   });
 

@@ -39,7 +39,7 @@ describe('edition 0.3.0', () => {
   }
 
   it('makes the first raid a named, drawn scare and preserves the new edition in replay and continuation', () => {
-    const g = newGame(7);
+    const g = newGame(7, '0.3.0');
     expect(g.s.edition).toBe('0.3.0');
     const first = g.s.raids[0];
     if (!first) throw new Error('Missing raid');
@@ -60,7 +60,7 @@ describe('edition 0.3.0', () => {
   });
 
   it('second and later raids still strike, and the injured speak as their injuries heal', () => {
-    const g = newGame(1);
+    const g = newGame(1, '0.3.0');
     const second = g.s.raids[1];
     if (!second) throw new Error('Missing second raid');
     advance(g, second.leave + HOUR);
@@ -82,7 +82,7 @@ describe('edition 0.3.0', () => {
   });
 
   it('reports a mended wound without claiming a still-injured arm is well', () => {
-    const g = newGame(7);
+    const g = newGame(7, '0.3.0');
     const p = g.s.people[0];
     if (!p) throw new Error('Missing person');
     injure(p, { part: 'arm', severity: 0.1, healRatePerDay: 1 });
@@ -98,7 +98,7 @@ describe('edition 0.3.0', () => {
   });
 
   it('continues healing narration exactly after loading, and gives no recovery voice to the dead', () => {
-    const g = newGame(7);
+    const g = newGame(7, '0.3.0');
     const p = g.s.people[0];
     if (!p) throw new Error('Missing person');
     injure(p, { part: 'arm', severity: 0.3, healRatePerDay: 0.1 });
@@ -119,7 +119,7 @@ describe('edition 0.3.0', () => {
   });
 
   it('replays and exports a bell input on its own edition', () => {
-    const g = newGame(19);
+    const g = newGame(19, '0.3.0');
     act(g, { verb: 'bell' });
     advance(g, g.s.minute + DAY);
     const sv = save(g);

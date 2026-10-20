@@ -17,9 +17,10 @@ export const FIRST_CHALK = 'Choose chalk, then drag across stone beside the cell
 export function colonyWords(s: WarrenState): string {
   const raid = activeRaid(s);
   const ringing = s.bell && s.bell.until > s.minute;
-  const renew = hadBellCall(s)
-    ? bellStateWords(s)
-    : 'Ring the bell to call the village below. Each call lasts six game hours.';
+  const renew =
+    hadBellCall(s) || s.edition === '0.4.0'
+      ? bellStateWords(s)
+      : 'Ring the bell to call the village below. Each call lasts six game hours.';
   if (raid?.stage === 'riders')
     return ringing
       ? `Riders are at the hill. ${bellStateWords(s)} Check shelter to see who is still exposed.`

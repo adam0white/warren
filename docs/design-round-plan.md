@@ -43,3 +43,18 @@ Acceptance: Adam and the lead designer. Shipping status and receipts are maintai
 Shipping procedure: complete final checks and independent reviews, retain phone/desktop renders, commit/push/deploy, then record live/CI receipts in the external report. The two reviews found and resolved live bell scroll reset and stale reopened bell state.
 
 No simulation or dependency changes. Revert the follow-up UI commit's UI/test edits to restore prior behavior. Retain frozen baseline receipts.
+
+## Follow-up d — edition 0.4.0
+
+Spec: `fun-warren.md`, section 5, ranked changes 1–3, explicitly authorized with main/push/deploy. Done means the three rules ship as new-run edition 0.4.0 with exact 0.2.0/0.3.0 live hashes, tests, measurements, phone/desktop renders, signed commit, clean live HEAD and green CI. Adam and the lead designer accept by playing; retention remains unmeasured.
+
+- [x] Capture the actual f9550e8 live bundle and exports for both prior editions, seeds 1/7/19, plain/watch logs, checkpoint/continuation/end before editing simulation sources.
+- [x] Write failing acceptance tests for a smoke-time call through all-clear, rejected renewal without interrupts, continued personal refusals, quiet false alarms, and door cost. Implement the edition branch and edition-aware call words.
+- [x] Write failing scouting reward and later real defence tests. Skip both reward and penalty for harmless scouting in 0.4.0; retain its exposure record.
+- [x] Write failing sleep/shelter destination tests for protected beds, nearest route, occupancy, stale air, shut doors and shafts. Prefer protected reachable breathable available beds during real danger. Keep HF choice, other offers and legacy branches intact. Avoid full/stale bed fallback for new shelter offers.
+- [x] Compare fixed policies on 0.3.0/0.4.0, measuring raid injury events, bell inputs and actual protected-bed shelter/sleep occupancy. Add a separately labeled renewing policy to measure call maintenance; retain unchanged bot and watch controls.
+- [x] Run independent correctness and acceptance reviews. Resolve verified findings. Current-raid wording now precedes a past all-clear; a real HF trace proves late-review refusal; quiet-door cost precedes the ring instruction. Render and inspect phone and desktop fixtures.
+
+Shipping protocol: `npm run check`, signed commit with Codex trailer, push main, deploy, verify release HEAD/dirty and CI, save live phone render. The external Follow-up d report owns the final check counts and shipping receipts.
+
+Revert: set `DEFAULT_EDITION` in `src/sim/game.ts` to `'0.3.0'` for new runs; keep all edition branches for existing exports. No HF dependency change. Working in the explicitly requested main checkout. The user supplied the design and shipping acceptance, so implementation proceeds without another approval gate.

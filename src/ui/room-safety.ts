@@ -107,8 +107,12 @@ export function gameTimeWords(minutes: number): string {
 }
 
 export function bellStateWords(s: WarrenState): string {
+  if (s.edition === '0.4.0' && s.bell?.real && s.bell.until > s.minute)
+    return 'Call active until the all-clear. People choose whether to come below and may refuse throughout.';
   if (s.bell && s.bell.until > s.minute)
     return `Call active for six game hours; ${gameTimeWords(s.bell.until - s.minute)} left. People choose whether to come below.`;
+  if (s.edition === '0.4.0' && activeRaid(s))
+    return 'No call active. Ring the bell once to call people below until the all-clear. People choose whether to come.';
   if (hadBellCall(s)) {
     const travelling = s.people.some(
       (p) => p.body.alive && s.trips[p.id]?.action === 'shelter' && (s.trips[p.id]?.workFrom ?? 0) > s.minute,
@@ -116,18 +120,30 @@ export function bellStateWords(s: WarrenState): string {
     const sheltering = s.people.some((p) => p.body.alive && p.activity?.action === 'shelter');
     const bellAt = s.notes.findLast((n) => /^You rang the bell[.,]/.test(n.text))?.at;
     const deadline = s.bell?.until ?? (bellAt === undefined ? undefined : bellAt + V.bellHours * HOUR);
-    const reason =
-      deadline !== undefined && s.minute >= deadline ? ' The call’s six game hours elapsed.' : '';
+    const raidCall =
+      s.edition === '0.4.0' &&
+      s.raids.some(
+        (r) => r.stage === 'gone' && bellAt !== undefined && r.smoke <= bellAt && bellAt < r.leave,
+      );
+    const reason = raidCall
+      ? ' The riders have gone; the all-clear ended the call.'
+      : deadline !== undefined && s.minute >= deadline
+        ? ' The call’s six game hours elapsed.'
+        : '';
     const ended = travelling
       ? 'Call ended; some are still on the way below.'
       : sheltering
         ? 'Call ended; some are still sheltering below.'
         : 'Call ended.';
-    return `${ended}${reason}${activeRaid(s) ? ' Ring to renew.' : ''}`;
+    return `${ended}${reason}${activeRaid(s) && s.edition !== '0.4.0' ? ' Ring to renew.' : ''}`;
   }
   return activeRaid(s)
-    ? 'No call active. Ring the bell to call people below for six game hours.'
-    : 'Bell quiet. Each call lasts six game hours. People choose whether to come below.';
+    ? s.edition === '0.4.0'
+      ? 'No call active. Ring the bell once to call people below until the all-clear. People choose whether to come.'
+      : 'No call active. Ring the bell to call people below for six game hours.'
+    : s.edition === '0.4.0'
+      ? 'Bell quiet. During a raid, one call stands until the all-clear. Quiet-time calls last six game hours; false alarms can weaken trust. People choose whether to come below.'
+      : 'Bell quiet. Each call lasts six game hours. People choose whether to come below.';
 }
 
 export function bellShelterWords(s: WarrenState): string {

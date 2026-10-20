@@ -24,7 +24,7 @@ export function doorWords(s: WarrenState, cell: number, lit: boolean): string {
   const ringing = !!s.bell && s.bell.until > s.minute;
   if (raid || ringing)
     return `The stone door, rolled back. ${raid ? 'With smoke or riders at the hill' : 'While the bell is sounding'}, an adult with the door nearby and reachable can choose to roll it shut. ${workers}`;
-  return `The stone door, rolled back. Ring the bell so an adult nearby and reachable can choose to shut it. Smoke or riders also make that choice available. ${workers}`;
+  return `The stone door, rolled back. A quiet-time false alarm can weaken trust in the bell. Ring the bell so an adult nearby and reachable can choose to shut it. Quiet-time calls last six game hours. Smoke or riders also make shutting it a choice. ${workers}`;
 }
 
 /** Same age, current sim origin and weighted distance gate as the shut-door offer. */

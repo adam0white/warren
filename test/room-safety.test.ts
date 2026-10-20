@@ -82,8 +82,9 @@ describe('room safety from the actual rider layout', () => {
     for (const x of [3, 17]) s.hill.shut[idx(x, SURF + 2)] = 1;
     expect(roomSafetyWords(s, idx(3, SURF + 5))).toContain('while they stay shut');
   });
-  it('reports active, ended and renew-call states without an inferred response', () => {
+  it('reports legacy active, ended and renew-call states without an inferred response', () => {
     const { s } = layout();
+    s.edition = '0.3.0';
     expect(bellShelterWords(s)).toContain('Sleeping places: 3');
     expect(bellStateWords(s)).toContain('Bell quiet');
     s.bell = { at: s.minute, until: s.minute + 60, real: false };
