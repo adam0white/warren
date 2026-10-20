@@ -1,6 +1,6 @@
 /**
  * The page around the hill: a title, the cross-section, the keeper's tools, the bell, the speed, a person card
- * and the notebook (journal, people, saves, export). Time runs continuously; nothing pauses, it only slows.
+ * and the Game menu (journal, people, saves, download). Time runs continuously; nothing pauses, it only slows.
  */
 import {
   ageYears,
@@ -71,12 +71,14 @@ let tickerUntil = 0;
 let lagging = false;
 let wake: { release(): Promise<void> } | null = null;
 const seenHint = new Set<string>();
-let lastRaidStage = '';
+const answeredRaids = new Set<number>();
 let labScreen = '';
 const labGoals = new Set<string>();
 let labBase = { arrivals: 0, gone: 0, died: 0 };
-/** The speed the player had chosen before a raid slowed the days (-1: none). */
-let speedBefore = -1;
+// A pending raid response runs at one sim-minute per real second. Sim quanta stay unchanged.
+const RAID_SPEED = MS_PER_MIN / 1000;
+let menuOpener: HTMLElement | null = null;
+let personOpener: HTMLElement | null = null;
 
 const app = () => document.getElementById('app') as HTMLElement;
 const esc = (x: string) =>
@@ -104,7 +106,7 @@ const souls = (n: number) =>
       : n < 40
         ? `some ${Math.round(n / 5) * 5} souls`
         : `${Math.round(n / 10) * 10} souls and more`;
-const footer = `<div class="footer"><a href="https://human.adamwhite.work/games/">◇ all notebooks</a><br/>People by the Human Framework ${FRAMEWORK_VERSION}. What they choose comes from it.</div>`;
+const footer = `<div class="footer"><a href="https://human.adamwhite.work/games/">All games</a><br/>People by the Human Framework ${FRAMEWORK_VERSION}. What they choose comes from it.</div>`;
 const markLink = '<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>';
 const aboutHill = `<details class="about-hill">
   <summary>More about the hill</summary>
@@ -200,19 +202,25 @@ function enter() {
     gone: g.s.raids.filter((x) => x.stage === 'gone').length,
     died: g.s.stats.died,
   };
+  answeredRaids.clear();
+  for (const raid of g.s.raids)
+    if (g.inputs.some((input) => input.verb === 'bell' && input.at >= raid.smoke && input.at <= raid.leave))
+      answeredRaids.add(raid.smoke);
   app().innerHTML = `
   <div class="game">
     <div class="top">
       ${markLink}
       <div class="when"><span id="when"></span><span class="soft" id="stock"></span></div>
       <div class="goal" id="goal"></div>
+      <div class="goal" id="raid-warning" hidden></div>
     </div>
     <div class="scene" id="scene">
-      <canvas id="cv"></canvas>
+      <canvas id="cv" tabindex="0" aria-label="The hill"></canvas>
       <div class="lag soft" id="lag" hidden>the days pass as fast as they can</div>
       <div class="card" id="card" hidden></div>
     </div>
     <div class="panel">
+      <div class="clock-status"><span id="clock-rate"></span><button id="watch-raid">Keep watching</button></div>
       <button class="ticker" id="ticker" aria-label="Open journal"></button>
       <div class="tools" role="toolbar" aria-label="Tools">
         ${toolBtn('look', 'look', '◎')}
@@ -228,7 +236,7 @@ function enter() {
           ${SPEEDS.map((_, k) => `<button data-speed="${k}" aria-label="${SPEED_NAMES[k]}">${'›'.repeat(k + 1).replace('››››', '»»')}</button>`).join('')}
         </div>
         <button class="bell" id="bell" aria-label="Ring the bell">bell</button>
-        <button id="book" aria-label="Notebook">notebook</button>
+        <button id="book" aria-label="Game menu">Game menu</button>
       </div>
     </div>
     <div class="drawer" id="drawer" hidden></div>
@@ -243,24 +251,40 @@ function enter() {
   for (const b of document.querySelectorAll<HTMLButtonElement>('[data-speed]'))
     b.addEventListener('click', () => {
       speedIx = Number(b.dataset.speed);
-      speedBefore = -1;
       syncButtons();
+      chrome();
       requestWake();
     });
   document.getElementById('bell')?.addEventListener('click', () => {
-    if (order({ verb: 'bell' }))
+    if (order({ verb: 'bell' })) {
+      const raid = g && activeRaid(g.s);
+      if (raid) answeredRaids.add(raid.smoke);
+      chrome();
       hint('bell', 'They hear it from the fields and the faces. What they do is theirs.');
+    }
+  });
+  document.getElementById('watch-raid')?.addEventListener('click', () => {
+    const raid = g && activeRaid(g.s);
+    if (raid) answeredRaids.add(raid.smoke);
+    chrome();
   });
   document.getElementById('book')?.addEventListener('click', () => openBook());
-  // The card is redrawn as the person moves; listen on the card itself so the × works between redraws.
+  // Close on pointerdown before a live redraw can replace the tapped control.
   document.getElementById('card')?.addEventListener('pointerdown', (e) => {
     if (!(e.target as HTMLElement).closest('#cardx')) return;
     e.preventDefault();
-    paint.selected = null;
-    const el = document.getElementById('card');
-    if (el) el.hidden = true;
+    closeCard();
   });
-  document.getElementById('ticker')?.addEventListener('click', () => openBook());
+  // Keyboard activation dispatches a click without pointerdown.
+  document.getElementById('card')?.addEventListener('click', (e) => {
+    if ((e.target as HTMLElement).closest('#cardx')) closeCard();
+  });
+  document.getElementById('ticker')?.addEventListener('click', () => openBook('j'));
+  document.querySelector('.game')?.addEventListener('keydown', (e) => {
+    if ((e as KeyboardEvent).key !== 'Escape') return;
+    if (paint.selected) closeCard();
+    else closeBook();
+  });
   resize();
   const s = g.s;
   manualView = false;
@@ -338,6 +362,16 @@ function order(o: Order): boolean {
 
 // ---------- the loop ----------
 
+function raidDecision() {
+  const raid = g && activeRaid(g.s);
+  return raid && !answeredRaids.has(raid.smoke) ? raid : null;
+}
+
+function clockRate(reading: boolean) {
+  const chosen = SPEEDS[speedIx] ?? 1;
+  return raidDecision() ? Math.min(chosen, RAID_SPEED) : reading ? Math.min(chosen, SPEEDS[0]) : chosen;
+}
+
 function frame(now: number) {
   raf = requestAnimationFrame(frame);
   if (!g || !ctx) return;
@@ -346,12 +380,18 @@ function frame(now: number) {
   const s = g.s;
   // The notebook open slows the days to 'slow' rather than stopping them.
   const reading = !(document.getElementById('drawer')?.hidden ?? true);
-  const sp = SPEEDS[speedIx] ?? 1;
-  disp += (dt * (reading ? Math.min(sp, SPEEDS[0]) : sp)) / MS_PER_MIN;
+  disp += (dt * clockRate(reading)) / MS_PER_MIN;
   const t0 = performance.now();
   while (s.minute + QUANTUM <= disp && performance.now() - t0 < 10) {
+    const pending = raidDecision();
     advance(g, s.minute + QUANTUM);
     dirty = true;
+    if (!pending && raidDecision()) {
+      // Discard only playback overshoot: never skip or alter a simulation step.
+      disp = s.minute;
+      chrome();
+      break;
+    }
   }
   lagging = disp > s.minute + 2 * QUANTUM;
   if (lagging) disp = s.minute + QUANTUM;
@@ -394,23 +434,28 @@ function chrome() {
   if (s.arrivals > labBase.arrivals) lab.milestone('a family arrived');
   if (s.raids.filter((x) => x.stage === 'gone').length > labBase.gone) lab.milestone('riders came and went');
   if (s.stats.died > labBase.died) lab.milestone('a death');
-  // Raids slow the world down rather than stop it.
-  const r = activeRaid(s);
-  const stage = r ? `${r.smoke}:${r.stage}` : '';
-  if (stage !== lastRaidStage) {
-    lastRaidStage = stage;
-    // Smoke slows the days to 'slow' so the bell can be rung; riders pass at 'walk'; afterwards the old speed returns.
-    const want = r?.stage === 'smoke' ? 0 : r ? 1 : -1;
-    if (want >= 0 && speedIx > want) {
-      if (speedBefore < 0) speedBefore = speedIx;
-      speedIx = want;
-      syncButtons();
-    } else if (!r && speedBefore >= 0) {
-      speedIx = speedBefore;
-      speedBefore = -1;
-      syncButtons();
-    }
-    if (r?.stage === 'smoke') hint('smoke', 'Smoke. The bell is yours to ring.');
+  const pending = raidDecision();
+  if (goal) goal.hidden = !!pending;
+  const warning = document.getElementById('raid-warning');
+  if (warning) {
+    warning.hidden = !pending;
+    warning.textContent = !pending
+      ? ''
+      : pending.stage === 'smoke'
+        ? 'Smoke on the ridge. Ring the bell to call people below, or keep watching.'
+        : 'Riders are at the hill. Ring the bell to call people below, or keep watching.';
+  }
+  const watch = document.getElementById('watch-raid') as HTMLButtonElement | null;
+  if (watch) {
+    watch.style.visibility = pending ? 'visible' : 'hidden';
+    watch.disabled = !pending;
+  }
+  const rate = document.getElementById('clock-rate');
+  if (rate) {
+    const actual = clockRate(reading0);
+    const name =
+      pending || reading0 ? 'Slow' : (SPEED_NAMES[speedIx] ?? 'walk').replace(/^./, (c) => c.toUpperCase());
+    rate.textContent = `${name} · ${Math.round((actual * 1000) / MS_PER_MIN)} min/s${pending ? ' · raid warning' : reading0 ? ' · reading' : ''}`;
   }
   // New notes: heavy ones take the ticker.
   for (; seenNotes < s.notes.length; seenNotes++) {
@@ -493,8 +538,7 @@ function card() {
   if (!el || !g) return;
   const p = paint.selected ? personOf(g.s, paint.selected) : undefined;
   if (!p?.body.alive) {
-    el.hidden = true;
-    paint.selected = null;
+    closeCard();
     return;
   }
   const s = g.s;
@@ -515,8 +559,10 @@ function card() {
     ${said ? `<div class="hand">“${esc(said.says)}”</div>` : why ? `<div class="hand">“${esc(why)}”</div>` : ''}
     ${about.map((n) => `<div class="soft small">${esc(n.text)}</div>`).join('')}`;
   if (el.dataset.html !== html) {
+    const closing = document.activeElement?.id === 'cardx';
     el.dataset.html = html;
     el.innerHTML = html;
+    if (closing) document.getElementById('cardx')?.focus();
   }
   el.hidden = false;
 }
@@ -725,9 +771,12 @@ function tap(px: number, py: number) {
     return;
   }
   const who = personAt(s, view, px, py, paint.t);
+  personOpener = null;
   paint.selected = who;
-  if (who) card();
-  else {
+  if (who) {
+    card();
+    document.getElementById('cardx')?.focus();
+  } else {
     const el = document.getElementById('card');
     if (el) el.hidden = true;
     if (c >= 0) describeCell(c);
@@ -801,11 +850,36 @@ function describeCell(c: number) {
   void idx;
 }
 
-// ---------- the notebook ----------
+// ---------- Game menu ----------
 
-function openBook() {
+function closeCard() {
+  if (!paint.selected) return;
+  paint.selected = null;
+  const el = document.getElementById('card');
+  if (el) el.hidden = true;
+  const d = document.getElementById('drawer');
+  if (personOpener?.isConnected && d) {
+    d.hidden = false;
+    personOpener.focus();
+  } else canvas?.focus();
+  personOpener = null;
+}
+
+function closeBook() {
+  const d = document.getElementById('drawer');
+  if (!d || d.hidden) return;
+  d.hidden = true;
+  menuOpener?.focus();
+}
+
+function openBook(tab = 's') {
   const d = document.getElementById('drawer');
   if (!d || !g) return;
+  menuOpener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  paint.selected = null;
+  personOpener = null;
+  const personCard = document.getElementById('card');
+  if (personCard) personCard.hidden = true;
   const s = g.s;
   const notes = s.notes
     .filter((n) => n.weight >= 1)
@@ -815,9 +889,9 @@ function openBook() {
   const done = GOALS.filter((x) => s.goals[x.id] !== undefined);
   d.innerHTML = `
     <div class="sheet">
-      <div class="who"><b>Notebook</b><button class="x" id="bookx" aria-label="Close">×</button></div>
+      <div class="who"><b>Game menu</b><button class="x" id="bookx" aria-label="Close">×</button></div>
       <div class="tabs">
-        <button data-tab="j" class="on">journal</button><button data-tab="p">people</button><button data-tab="s">page</button>
+        <button data-tab="s">Save and run</button><button data-tab="j">journal</button><button data-tab="p">people</button>
       </div>
       <div class="tab" data-pane="j">${notes.map((n) => `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br/>${esc(n.text)}</p>`).join('')}</div>
       <div class="tab" data-pane="p" hidden>${s.houses
@@ -833,9 +907,9 @@ function openBook() {
         ${aboutHill}
         <p>${done.map((x) => `✓ ${esc(x.text)}`).join('<br/>') || '<span class="soft">Nothing ticked off yet.</span>'}</p>
         <div class="actions">
-          <button id="savenow">Close the notebook for now</button>
+          <button id="savenow">Save this hill</button>
           <button id="send">Send this run to the notebook</button>
-          <button id="export">Export this run (seed, inputs, state)</button>
+          <button id="export">Download this run</button>
           <button id="restart">Begin a new hill</button>
         </div>
         <p class="soft small">The Warren ${GAME_VERSION} · HF ${FRAMEWORK_VERSION} · seed ${s.seed}</p>
@@ -843,9 +917,7 @@ function openBook() {
       ${footer}
     </div>`;
   d.hidden = false;
-  document.getElementById('bookx')?.addEventListener('click', () => {
-    d.hidden = true;
-  });
+  document.getElementById('bookx')?.addEventListener('click', closeBook);
   for (const b of d.querySelectorAll<HTMLButtonElement>('[data-tab]'))
     b.addEventListener('click', () => {
       for (const x of d.querySelectorAll<HTMLButtonElement>('[data-tab]')) x.classList.toggle('on', x === b);
@@ -854,6 +926,7 @@ function openBook() {
     });
   for (const b of d.querySelectorAll<HTMLButtonElement>('[data-who]'))
     b.addEventListener('click', () => {
+      personOpener = b;
       paint.selected = b.dataset.who ?? null;
       d.hidden = true;
       const [x, y] = [xOf(g?.s.pos[paint.selected ?? ''] ?? 0), yOf(g?.s.pos[paint.selected ?? ''] ?? 0)];
@@ -862,16 +935,39 @@ function openBook() {
       view.y = y - view.h / view.cs / 2;
       clampView();
       card();
+      document.getElementById('cardx')?.focus();
     });
   document.getElementById('savenow')?.addEventListener('click', async () => {
     await writeSave();
-    d.hidden = true;
-    flash('The notebook is put away with the hill as it is. It keeps going while you are gone, a little.');
+    closeBook();
+    flash('This hill is saved. It keeps going while you are gone, a little.');
   });
   document.getElementById('export')?.addEventListener('click', download);
   document.getElementById('send')?.addEventListener('click', () => {
-    if (g) lab.openSendDialog({ getRun: () => runOf() });
+    if (!g) return;
+    const send = document.getElementById('send');
+    const restore = () => {
+      if (!d.isConnected) return;
+      d.hidden = false;
+      send?.focus();
+    };
+    d.hidden = true;
+    lab.openSendDialog({ getRun: () => runOf() });
+    const veil = document.querySelector('.hflab-veil');
+    if (!veil) {
+      restore();
+      return;
+    }
+    // The pinned lab client has no dismissal callback; observe its own veil removal.
+    const dismissed = new MutationObserver(() => {
+      if (veil.isConnected) return;
+      dismissed.disconnect();
+      restore();
+    });
+    dismissed.observe(document.body, { childList: true });
   });
+  d.querySelector<HTMLButtonElement>(`[data-tab="${tab}"]`)?.click();
+  document.getElementById('bookx')?.focus();
   document.getElementById('restart')?.addEventListener('click', async () => {
     if (!confirm('Begin a new hill? This one will be put away for good.')) return;
     await store.drop(SAVE_KEY);

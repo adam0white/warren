@@ -46,7 +46,7 @@ Research: [research-hooks.md](research-hooks.md) ([S] sourced, [I] inference). E
 
 - One seed; all randomness is hashed from the seed and the event. Inputs are logged at the minute they apply (always a quantum boundary).
 - Saves: the full state as gzip in IndexedDB (a year with 60 people is several megabytes of JSON).
-- Export (notebook → page): seed, input log, state JSON and fingerprint. `replay(seed, inputs, minute)` reproduces the fingerprint (tested; a 365-day bot run matched).
+- Export (Game menu → Save and run → Download this run): seed, input log, state JSON and fingerprint. `replay(seed, inputs, minute)` reproduces the fingerprint (tested; a 365-day bot run matched).
 
 ## Performance (measured, M-series Mac, machine under heavy parallel load)
 
@@ -56,6 +56,8 @@ Research: [research-hooks.md](research-hooks.md) ([S] sourced, [I] inference). E
 | 35 | ~135 | day 120 |
 | 81 | ~810 | before the population cap; now capped at 60 |
 
+A pending raid warning runs at one sim-minute per real second until the keeper rings the bell or chooses Keep watching. The chosen speed then returns. Inspection sheets slow playback without pausing. These are UI playback changes; simulation quanta, state, inputs and exports stay unchanged. Keep watching lasts for the current sitting; resuming an unresolved raid shows its warning again.
+
 At gallop a sim-day is 1.25 real seconds, so 60 people is about 40–50% of one core on this machine. The frame loop gives the sim at most 10 ms a frame; if it cannot keep up, time slows and the page says "the days pass as fast as they can". **Decision date for moving the sim to a Web Worker: 2026-10-26**, after phone playtests.
 
 ## Clarity exceptions
@@ -64,6 +66,8 @@ At gallop a sim-day is 1.25 real seconds, so 60 people is about 40–50% of one 
 - DL-3 scene colours: chalk marks and lamp flames keep their material accent colour. Selection uses ordinary ink and a heavier ellipse; the current instruction uses the accent in the controls. Material colour does not mark selection.
 
 ## Deferred
+
+- Contain keyboard focus inside Game menu (target 2026-11-03; pre-existing issue found during F-233 review, beyond this round’s person-origin return fixes).
 
 - Web Worker sim if phones lag at gallop (decide 2026-10-26).
 - Collapsing infrastructure as the expendable part of "sacrifice without guilt" (2026-11-02).

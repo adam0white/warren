@@ -256,8 +256,25 @@ button:disabled {
   padding: 6px 10px 8px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
   background: var(--paper);
+}
+.clock-status {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  min-height: 48px;
+  font-size: 14px;
+}
+.clock-status #clock-rate {
+  max-width: 210px;
+}
+.clock-status button {
+  flex-shrink: 0;
+  padding: 4px 6px;
+  font-size: 14px;
+  min-height: 44px;
 }
 .ticker {
   text-align: left;

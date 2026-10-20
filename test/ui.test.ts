@@ -16,11 +16,11 @@ beforeAll(async () => {
   url = server.resolvedUrls?.local[0] ?? '';
   browser = await chromium.launch();
   mkdirSync(shots, { recursive: true });
-});
+}, 60000);
 afterAll(async () => {
   await browser?.close();
   await server?.close();
-});
+}, 60000);
 
 async function expectViewportFit(page: Page, height: number) {
   const size = await page.evaluate(() => ({

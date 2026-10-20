@@ -1,0 +1,11 @@
+{
+  "game": "0.2.0",
+  "framework": "2.8.0",
+  "seed": 7,
+  "minute": 20910,
+  "inputs": [],
+  "fingerprint": "94cee685",
+  "sourceCommit": "6e456f3",
+  "continuationMinute": 21000,
+  "continuationFingerprint": "6a979571"
+}

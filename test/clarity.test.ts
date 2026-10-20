@@ -2,7 +2,7 @@ import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DAY } from '../src/sim/calendar.ts';
-import { act, advance, newGame, save } from '../src/sim/game.ts';
+import { act, advance, fingerprint, newGame, replay, save } from '../src/sim/game.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -13,11 +13,11 @@ beforeAll(async () => {
   await server.listen();
   url = server.resolvedUrls?.local[0] ?? '';
   browser = await chromium.launch();
-});
+}, 60000);
 afterAll(async () => {
   await browser?.close();
   await server?.close();
-});
+}, 60000);
 
 async function fresh() {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
@@ -122,9 +122,12 @@ describe('F-213 first-minute clarity', () => {
       let json = '';
       for await (const chunk of stream) json += chunk.toString();
       const restored = JSON.parse(json);
-      expect(restored.minute).toBe(saved.minute);
+      // Time keeps moving while the player reaches Download. Check the actual export boundary.
+      expect(restored.minute).toBeGreaterThanOrEqual(saved.minute);
       expect(restored.inputs).toEqual(saved.inputs);
-      expect(restored.fingerprint).toBe(saved.fingerprint);
+      expect(fingerprint(replay(restored.seed, restored.inputs, restored.minute).s)).toBe(
+        restored.fingerprint,
+      );
     } finally {
       await page.close();
     }
