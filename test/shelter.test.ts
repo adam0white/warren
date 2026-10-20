@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/sim/game.ts';
 import { idx, K, SURF, USE } from '../src/sim/grid.ts';
-import { sleepingCapacity, sleepingCapacityWords, sleepingRoomWords } from '../src/ui/shelter.ts';
+import {
+  compactShelterWords,
+  sleepingCapacity,
+  sleepingCapacityWords,
+  sleepingRoomWords,
+} from '../src/ui/shelter.ts';
 
 function withBeds(xs: number[]) {
   const s = newGame(7).s;
@@ -54,6 +59,50 @@ describe('sleeping capacity words', () => {
     const words = `${sleepingRoomWords(s, idx(16, SURF + 3))} ${sleepingCapacityWords(s)}`;
     expect(words).toMatch(/about twenty-four/);
     expect(words).not.toMatch(/\d|safe|secure/);
+    expect(JSON.stringify(s)).toBe(before);
+  });
+});
+
+describe('compact shelter words', () => {
+  it('reports zero capacity and zero exposed people without a safety claim', () => {
+    const s = withBeds([]);
+    s.people = [];
+    expect(compactShelterWords(s)).toBe('Sleeping room for about zero · zero exposed');
+  });
+
+  it('keeps sleeping capacity separate from exposure and counts hiding separately', () => {
+    const s = withBeds([16, 17]);
+    s.people = s.people.slice(0, 4);
+    const [above, near, deep, hiding] = s.people;
+    if (!above || !near || !deep || !hiding) throw new Error('Missing people');
+    s.trips = {};
+    for (let y = SURF; y < SURF + 12; y++) s.hill.kind[idx(17, y)] = K.open;
+    s.pos[above.id] = idx(17, SURF - 1);
+    s.pos[near.id] = idx(18, SURF + 1);
+    s.pos[deep.id] = idx(17, SURF + 11);
+    s.pos[hiding.id] = idx(17, SURF - 1);
+    hiding.activity = { ...hiding.activity, action: 'hide' } as NonNullable<typeof hiding.activity>;
+    const words = compactShelterWords(s);
+    expect(words).toBe('Sleeping room for about six · two exposed · one hiding');
+    expect(words).not.toMatch(/safe|secure/);
+  });
+
+  it('uses current trip position, ignores dead people and leaves state unchanged', () => {
+    const s = withBeds([]);
+    s.people = s.people.slice(0, 2);
+    const [traveller, dead] = s.people;
+    if (!traveller || !dead) throw new Error('Missing people');
+    dead.body.alive = false;
+    s.trips[traveller.id] = {
+      action: 'shelter',
+      cells: [idx(17, SURF - 1), idx(17, SURF + 11)],
+      times: [s.minute, s.minute + 60],
+      workFrom: s.minute + 60,
+      end: idx(17, SURF + 11),
+    };
+    s.pos[traveller.id] = idx(17, SURF + 11);
+    const before = JSON.stringify(s);
+    expect(compactShelterWords(s)).toContain('one exposed');
     expect(JSON.stringify(s)).toBe(before);
   });
 });

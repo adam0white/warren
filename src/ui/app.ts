@@ -36,11 +36,12 @@ import {
 } from '../sim/warren.ts';
 import { baseView, easeView } from './camera.ts';
 import { hillDate } from './date.ts';
+import { doorWords } from './door-help.ts';
 import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from './draw.ts';
 import { exposureWords } from './exposure.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
-import { sleepingCapacityWords, sleepingRoomWords } from './shelter.ts';
+import { compactShelterWords, sleepingCapacityWords, sleepingRoomWords } from './shelter.ts';
 import * as store from './store.ts';
 
 type Tool = 'look' | 'chalk' | 'erase' | 'store' | 'beds' | 'lamp' | 'door';
@@ -81,6 +82,7 @@ let labBase = { arrivals: 0, gone: 0, died: 0 };
 const RAID_SPEED = MS_PER_MIN / 1000;
 let menuOpener: HTMLElement | null = null;
 let personOpener: HTMLElement | null = null;
+let doorCell: number | null = null;
 
 const app = () => document.getElementById('app') as HTMLElement;
 const esc = (x: string) =>
@@ -211,17 +213,19 @@ function enter() {
   app().innerHTML = `
   <div class="game">
     <div class="top">
-      ${markLink}
       <div class="when"><span id="when"></span><span class="soft" id="stock"></span></div>
-      <div class="goal" id="goal"></div>
-      <div class="goal" id="raid-warning" hidden></div>
+      <div class="goal-slot"><div class="goal" id="goal"></div>
+      <div class="goal" id="raid-warning" hidden></div></div>
     </div>
     <div class="scene" id="scene">
       <canvas id="cv" tabindex="0" aria-label="The hill"></canvas>
+      <div class="view-controls" role="group" aria-label="Hill view"><button id="zoom-in" aria-label="Zoom in">Zoom +</button><button id="zoom-out" aria-label="Zoom out">Zoom −</button><button id="fit-hill">Fit hill</button></div>
+      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b>Stone door</b><button class="x" id="cellx" aria-label="Close door inspection">×</button></div><p id="cell-words"></p></div>
       <div class="lag soft" id="lag" hidden>the days pass as fast as they can</div>
       <div class="card" id="card" hidden></div>
     </div>
     <div class="panel">
+      <button id="shelter-brief" aria-label="Check shelter summary"></button>
       <div class="clock-status"><span id="clock-rate"></span><span class="raid-controls"><button id="watch-raid">Keep watching</button><button id="shelter-check">Check shelter</button></span></div>
       <button class="ticker" id="ticker" aria-label="Open journal"></button>
       <div class="tools" role="toolbar" aria-label="Tools">
@@ -272,6 +276,16 @@ function enter() {
   });
   document.getElementById('book')?.addEventListener('click', () => openBook());
   document.getElementById('shelter-check')?.addEventListener('click', () => openBook('p'));
+  document.getElementById('shelter-brief')?.addEventListener('click', () => openBook('p'));
+  document.getElementById('zoom-in')?.addEventListener('click', () => zoomView(1.6));
+  document.getElementById('zoom-out')?.addEventListener('click', () => zoomView(1 / 1.6));
+  document.getElementById('fit-hill')?.addEventListener('click', () => {
+    if (!g) return;
+    manualView = true;
+    Object.assign(view, baseView(g.s, view.w, view.h));
+    clampView();
+  });
+  document.getElementById('cellx')?.addEventListener('click', () => closeCell());
   // Close on pointerdown before a live redraw can replace the tapped control.
   document.getElementById('card')?.addEventListener('pointerdown', (e) => {
     if (!(e.target as HTMLElement).closest('#cardx')) return;
@@ -285,7 +299,8 @@ function enter() {
   document.getElementById('ticker')?.addEventListener('click', () => openBook('j'));
   document.querySelector('.game')?.addEventListener('keydown', (e) => {
     if ((e as KeyboardEvent).key !== 'Escape') return;
-    if (paint.selected) closeCard();
+    if (!document.getElementById('cell-detail')?.hidden) closeCell();
+    else if (paint.selected) closeCard();
     else closeBook();
   });
   resize();
@@ -312,6 +327,8 @@ function toolBtn(t: Tool, label: string, glyph: string) {
 }
 
 function setTool(t: Tool) {
+  closeCell(false);
+  if (t !== 'look') manualView = true;
   tool = t;
   syncButtons();
   const hints: Partial<Record<Tool, string>> = {
@@ -354,6 +371,17 @@ function clampView() {
   view.x = Math.max(-0.5, Math.min(W + 0.5 - vw, view.x));
   view.y = Math.max(0, Math.min(H - vh, view.y));
   if (vw > W + 1) view.x = (W - vw) / 2;
+}
+
+/** Keep the centre of the working view fixed; zoom never becomes a simulation input. */
+function zoomView(factor: number) {
+  manualView = true;
+  const cx = view.x + view.w / view.cs / 2;
+  const cy = view.y + view.h / view.cs / 2;
+  view.cs = Math.max(10, Math.min(72, view.cs * factor));
+  view.x = cx - view.w / view.cs / 2;
+  view.y = cy - view.h / view.cs / 2;
+  clampView();
 }
 
 function order(o: Order): boolean {
@@ -488,6 +516,7 @@ function chrome() {
   const bell = document.getElementById('bell') as HTMLButtonElement | null;
   if (bell) bell.classList.toggle('ringing', !!s.bell && s.minute < s.bell.until);
   updateShelter();
+  updateDoor();
   if (paint.selected) card();
 }
 
@@ -636,7 +665,7 @@ function bindPointer(cv: HTMLCanvasElement) {
       const cy = (a.y + b.y) / 2;
       const wx = view.x + pinch.cx / view.cs;
       const wy = view.y + pinch.cy / view.cs;
-      view.cs = Math.max(10, Math.min(48, pinch.cs * (d / Math.max(1, pinch.d))));
+      view.cs = Math.max(10, Math.min(72, pinch.cs * (d / Math.max(1, pinch.d))));
       view.x = wx - cx / view.cs;
       view.y = wy - cy / view.cs;
       pinch.cx = cx;
@@ -674,7 +703,7 @@ function bindPointer(cv: HTMLCanvasElement) {
         const py = e.clientY - r.top;
         const wx = view.x + px / view.cs;
         const wy = view.y + py / view.cs;
-        view.cs = Math.max(10, Math.min(48, view.cs * (1 - e.deltaY * 0.01)));
+        view.cs = Math.max(10, Math.min(72, view.cs * (1 - e.deltaY * 0.01)));
         view.x = wx - px / view.cs;
         view.y = wy - py / view.cs;
       } else {
@@ -759,6 +788,7 @@ function commitPaint() {
 
 function tap(px: number, py: number) {
   if (!g) return;
+  closeCell(false);
   const s = g.s;
   const c = cellAt(view, px, py);
   if (tool === 'lamp') {
@@ -777,7 +807,7 @@ function tap(px: number, py: number) {
     if (c < 0) return;
     if (order({ verb: 'door', cell: c }))
       flash('A door marked. They will carve the rolling stone when someone has the time and a light.');
-    else if (s.hill.use[c] === USE.door) flash('A door is marked here already.');
+    else if (s.hill.use[c] === USE.door) showDoor(c);
     else if (s.hill.use.filter((u) => u === USE.door).length >= 3)
       flash('“Three doors are all we can keep rolled, Usta.”');
     else flash('A door fits a narrow passage: open on two opposite sides only.');
@@ -833,13 +863,7 @@ function describeCell(c: number) {
             : u === USE.well
               ? 'The well. Cold water from the seam.'
               : u === USE.door
-                ? h.doorWork[c]
-                  ? lightAt(c)
-                    ? 'A door being carved. They cut the stone as they find the time.'
-                    : 'A door marked, in the dark. Nobody can carve it without a lamp near.'
-                  : h.shut[c]
-                    ? 'The stone door, rolled shut.'
-                    : 'The stone door, rolled back.'
+                ? doorWords(g.s, c, lightAt(c))
                 : (h.wear[c] ?? 0) > 6
                   ? 'Worn smooth. They walk this way.'
                   : 'Open ground.';
@@ -858,20 +882,54 @@ function describeCell(c: number) {
     const stand = neighbours(c).find((j) => h.kind[j] === K.open && yOf(j) >= SURF);
     if (stand !== undefined) text += airWords(stand);
   }
-  flash(text);
+  if (h.use[c] === USE.door) showDoor(c);
+  else flash(text);
   void xOf;
   void idx;
+}
+
+function closeCell(focus = true) {
+  doorCell = null;
+  const detail = document.getElementById('cell-detail');
+  if (!detail || detail.hidden) return;
+  detail.hidden = true;
+  if (focus) canvas?.focus();
+}
+
+function updateDoor() {
+  if (!g || doorCell === null) return;
+  const text = document.getElementById('cell-words');
+  const words = doorWords(g.s, doorCell, lightAt(doorCell));
+  if (text && text.textContent !== words) text.textContent = words;
+}
+
+function showDoor(cell: number) {
+  if (!g) return;
+  closeCard();
+  doorCell = cell;
+  const words = doorWords(g.s, cell, lightAt(cell));
+  flash(words);
+  const detail = document.getElementById('cell-detail');
+  const text = document.getElementById('cell-words');
+  if (detail && text) {
+    text.textContent = words;
+    detail.hidden = false;
+    document.getElementById('cellx')?.focus();
+  }
 }
 
 // ---------- Game menu ----------
 
 function updateShelter() {
   if (!g) return;
+  const brief = document.getElementById('shelter-brief');
+  if (brief) brief.textContent = compactShelterWords(g.s);
   const summary = document.getElementById('shelter-summary');
   if (summary) summary.textContent = sleepingCapacityWords(g.s);
   for (const row of document.querySelectorAll<HTMLElement>('[data-shelter-person]')) {
     const person = personOf(g.s, row.dataset.shelterPerson ?? '');
-    row.textContent = person?.body.alive ? exposureWords(g.s, person) : 'No longer living; see the journal.';
+    const words = person?.body.alive ? exposureWords(g.s, person) : 'No longer living; see the journal.';
+    if (row.textContent !== words) row.textContent = words;
   }
 }
 
@@ -896,6 +954,7 @@ function closeBook() {
 }
 
 function openBook(tab = 's') {
+  closeCell(false);
   const d = document.getElementById('drawer');
   if (!d || !g) return;
   menuOpener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -916,7 +975,7 @@ function openBook(tab = 's') {
       <div class="tabs">
         <button data-tab="s">Save and run</button><button data-tab="j">journal</button><button data-tab="p">people</button>
       </div>
-      <div class="tab" data-pane="j">${notes.map((n) => `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br/>${esc(n.text)}</p>`).join('')}</div>
+      <div id="sheet-body" tabindex="0" role="region" aria-label="Game menu contents"><div class="tab" data-pane="j">${notes.map((n) => `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br/>${esc(n.text)}</p>`).join('')}</div>
       <div class="tab" data-pane="p" hidden><b>Shelter check · now</b><p id="shelter-summary"></p><p class="soft small">The bell calls people below. Beds make sleeping space; depth and shut doors put stone between people and riders. Open shafts give riders another way in.</p>${s.houses
         .map((hs) => {
           const ms = hs.members.map((m) => personOf(s, m)).filter((p): p is Person => !!p && p.body.alive);
@@ -937,7 +996,7 @@ function openBook(tab = 's') {
         </div>
         <p class="soft small">The Warren ${GAME_VERSION} · HF ${FRAMEWORK_VERSION} · seed ${s.seed}</p>
       </div>
-      ${footer}
+      ${footer}</div>
     </div>`;
   d.hidden = false;
   updateShelter();

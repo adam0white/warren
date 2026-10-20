@@ -1,5 +1,5 @@
-import { BEDS_PER_CELL, K, roomOf, USE } from '../sim/grid.ts';
-import { bedsBelow, type WarrenState } from '../sim/warren.ts';
+import { BEDS_PER_CELL, K, roomOf, SURF, USE, yOf } from '../sim/grid.ts';
+import { bedsBelow, positionAt, riderCells, type WarrenState } from '../sim/warren.ts';
 
 /** Marked space, not a promise that people can reach it or survive there. */
 export function sleepingCapacity(s: WarrenState): { places: number; people: number; enough: boolean } {
@@ -51,4 +51,22 @@ export function sleepingCapacityWords(s: WarrenState): string {
   const { places, enough } = sleepingCapacity(s);
   if (!places) return 'No sleeping places are marked below. The village needs sleeping places.';
   return `Sleeping places below have room for about ${numberWords(places)} people. ${enough ? 'Enough sleeping space for the village.' : 'The village needs more sleeping places.'}`;
+}
+
+/** Sleeping space and current rider exposure are independent observations. */
+export function compactShelterWords(s: WarrenState): string {
+  const { places } = sleepingCapacity(s);
+  const reached = riderCells(s);
+  let exposed = 0;
+  let hiding = 0;
+  for (const p of s.people) {
+    if (!p.body.alive) continue;
+    if (p.activity?.action === 'hide') {
+      hiding++;
+      continue;
+    }
+    const cell = positionAt(s, p.id, s.minute);
+    if (yOf(cell) < SURF || reached.has(cell)) exposed++;
+  }
+  return `Sleeping room for about ${numberWords(places)} · ${numberWords(exposed)} exposed${hiding ? ` · ${numberWords(hiding)} hiding` : ''}`;
 }

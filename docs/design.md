@@ -66,12 +66,22 @@ Check shelter opens the people sheet after the bell or during ordinary play. The
 
 Chalk uses a dashed excavation outline and a pick in previews and accepted marks. A successful mark says “Dig planned.” Sleeping marks report the connected room’s approximate capacity in words. Selecting beds and the people sheet also show the total marked capacity and whether it fits the living village. Raid guidance takes precedence. Capacity is space, not a promise of access, occupancy or protection. These are UI readings of existing state; simulation rules, HF pin, inputs and export format stay unchanged.
 
+## Phone building and door inspection (round 5)
+
+Selecting a building tool keeps the current camera fixed as the refuge grows. Prompt and warning text share reserved space, so changing tasks does not move the hill. Zoom + and Zoom − enlarge the working area around its centre, up to 72 CSS pixels per cell. Pinch zoom remains available. Fit hill explicitly reframes the excavated space. Look drags or two fingers move the view; no camera action enters the simulation input log.
+
+The compact shelter button remains available during building and raid warnings. It opens the same live people sheet. Sleeping capacity and current exposure are counted independently; hiding is listed separately and never called safe. The sheet has a scroll body for touch and wheel, with close and tabs outside it. Updates only replace changed status text.
+
+Look and Door show the full door explanation in a closable inspection card. Unfinished doors name the light and carving prerequisites. Rolled-back doors explain that the bell, smoke or riders make shutting it a choice for an adult nearby who can reach it. The keeper cannot roll it directly or guarantee that choice. The explanation updates while open. Inspecting another target closes it. These are UI changes; simulation sources, HF pin and export format remain unchanged.
+
 ## Clarity exceptions
 
 - DL-27: the hill continues during an absence, up to one day. This is the idle design in the hooks map. Saving says “It keeps going while you are gone, a little”; returning reports how much time passed. This exception preserves the existing simulation and replay rules.
 - DL-3 scene colours: chalk marks and lamp flames keep their material accent colour. Selection uses ordinary ink and a heavier ellipse; the current instruction uses the accent in the controls. Material colour does not mark selection.
 
 ## Deferred
+
+- Reflow the play panel for very short portrait and landscape screens (target 2026-11-03; review measured almost no hill space at 320×568 and 690×360; the round-5 acceptance fixtures are 360×690 and 1280×800).
 
 - Contain keyboard focus inside Game menu (target 2026-11-03; pre-existing issue found during F-233 review, beyond this round’s person-origin return fixes).
 
@@ -80,6 +90,6 @@ Chalk uses a dashed excavation outline and a pick in previews and accepted marks
 - Lab client from npm instead of the release tarball, once the owner publishes `@adam0white/lab-client` (check 2026-10-26).
 - Goals judged on outcomes (beds slept in, people below when riders came), food that can run short, and slowing the days for big finds such as water (2026-10-26; round 2 veteran).
 - Mid-game events between raids (cave-ins on loose stone, quarrels) and a "while you were away" growth record for idle players (2026-11-02; rounds 1 and 2 idle testers).
-- The camera stays where the player put it, and a tap with a drag-only tool says so (2026-10-26; round 3 check).
+- A tap with a drag-only tool says so (2026-10-26; round 3 check). Camera stability and explicit zoom addressed in round 5.
 - The dig drawn as it happens (chips, a face that visibly gives) for younger players (2026-11-02; round 2 wildcard).
 - Owner follow-up: make the wider gameplay arc clearer through lived outcomes (who actually sleeps below and returns after raids), work/refusal feedback, and pacing between raids; expand tool teaching and visible digging feedback beyond this brief guidance pass (target 2026-11-03; owner 2026-10-20).
