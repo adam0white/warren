@@ -43,9 +43,11 @@ describe('F-213 first-minute clarity', () => {
       expect(title).toContain('Dig a refuge');
       expect(title).toContain('Choose chalk');
       await begin(page);
-      const play = await page.locator('.purpose, .goal, .hint').allTextContents();
+      const play = await page.locator('.purpose, .goal').allTextContents();
       await page.locator('[data-tool="chalk"]').click();
-      const hint = await page.locator('.hint').innerText();
+      await page.clock.runFor(300);
+      const hint = await page.locator('#ticker .journal-preview').innerText();
+      expect(hint).toContain('Dashed outlines plan a dig');
       expect(words([title, ...play, hint].join(' '))).toBeLessThanOrEqual(40);
       const chalk = await page.locator('[data-tool="chalk"]').boundingBox();
       expect(chalk && chalk.y + chalk.height <= 690).toBe(true);

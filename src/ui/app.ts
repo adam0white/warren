@@ -221,14 +221,16 @@ function enter() {
     <div class="scene" id="scene">
       <canvas id="cv" tabindex="0" aria-label="The hill"></canvas>
       <div class="view-controls" role="group" aria-label="Hill view"><button id="zoom-in" aria-label="Zoom in">Zoom +</button><button id="zoom-out" aria-label="Zoom out">Zoom −</button><button id="fit-hill">Fit hill</button></div>
-      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Stone door</b><button class="x" id="cellx" aria-label="Close room or door inspection">×</button></div><p id="cell-words"></p></div>
       <div class="lag soft" id="lag" hidden>the days pass as fast as they can</div>
       <div class="card" id="card" hidden></div>
     </div>
     <div class="panel">
+      <div class="reading-slot">
+      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Stone door</b><button class="x" id="cellx" aria-label="Close room or door inspection">×</button></div><p id="cell-words"></p></div>
       <button id="shelter-brief" aria-label="Check shelter summary"><span id="bell-meaning"></span></button>
-      <div class="clock-status"><span id="clock-rate"></span><span class="raid-controls"><button id="watch-raid">Keep watching</button><button id="shelter-check">Check shelter</button></span></div>
       <button class="ticker" id="ticker" aria-label="Open journal"></button>
+      </div>
+      <div class="clock-status"><span id="clock-rate"></span><span class="raid-controls"><button id="watch-raid">Keep watching</button><button id="shelter-check">Check shelter</button></span></div>
       <div class="tools" role="toolbar" aria-label="Tools">
         ${toolBtn('look', 'look', '◎')}
         ${toolBtn('chalk', 'chalk', '□')}
@@ -428,7 +430,7 @@ function frame(now: number) {
   lagging = disp > s.minute + 2 * QUANTUM;
   if (lagging) disp = s.minute + QUANTUM;
   paint.t = Math.min(disp, s.minute + QUANTUM);
-  if (!manualView && !pointing) {
+  if (!manualView && !pointing && doorCell === null) {
     Object.assign(view, easeView(view, baseView(s, view.w, view.h), dt));
     clampView();
   }
@@ -529,14 +531,7 @@ function flash(text: string) {
 function hint(key: string, text: string) {
   if (seenHint.has(key)) return;
   seenHint.add(key);
-  const goal = document.getElementById('goal');
-  if (!goal) return;
-  document.querySelector('.hint')?.remove();
-  const el = document.createElement('div');
-  el.className = 'hint hand';
-  el.textContent = text;
-  document.getElementById('scene')?.appendChild(el);
-  setTimeout(() => el.remove(), 9000);
+  flash(text);
 }
 
 // ---------- the person card ----------

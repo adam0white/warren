@@ -105,3 +105,11 @@ Revert: new runs start on the previous edition by setting `DEFAULT_EDITION` in `
 - A tap with a drag-only tool says so (2026-10-26; round 3 check). Camera stability and explicit zoom addressed in round 5.
 - The dig drawn as it happens (chips, a face that visibly gives) for younger players (2026-11-02; round 2 wildcard).
 - Owner follow-up: make the wider gameplay arc clearer through lived outcomes (who actually sleeps below and returns after raids), work/refusal feedback, and pacing between raids; expand tool teaching and visible digging feedback beyond this brief guidance pass (target 2026-11-03; owner 2026-10-20).
+
+## Follow-up b — 2026-10-20 (owner may veto)
+
+The lead designer found the draught too faint at phone zoom, the sleeping-room reading covered its room, and faint text competed with the plan. Exposure now uses a pale continuous wash with long draught strokes, fading along the existing rider-search routes from entrances and shafts. Shut doors stop it. Protected passages stay darker and still; historical searches leave small floor tracks. Dark-theme figures and room marks use dark ink against the pale exposed floor.
+
+Room and door readings replace the status copy beside/below the map. The map and tools retain their bounds, automatic framing stays fixed during inspection, and long readings scroll below the close control. The clock stays visible. Temporary hints join previews in the journal control rather than covering the plan. Opening shelter or the Game menu replaces the reading.
+
+Cost: the compact reading requires scrolling for longer room and door explanations. The wash shows existing rider-search reach, not physical illumination, and historical tracks describe past searches. No simulation, edition, input, dependency or export rule changed. Revert this follow-up's UI hunks in `src/ui/draw.ts`, `app.ts` and `style.css`; retain the 0.3.0 ruleset. Adam's acceptance play and the lead designer's fresh source-unread retest remain acceptance work.

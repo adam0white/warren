@@ -15,6 +15,7 @@ import {
   drawPosition,
   faceState,
   riderCells,
+  V,
   type WarrenState,
 } from '../sim/warren.ts';
 
@@ -101,6 +102,8 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
   const linked = s.linked;
   const exposure = riderCells(s);
   const scouted = scoutedCells(s);
+  // Pale exposed floors need dark marks in the night-paper theme too.
+  const draughtInk = ink.dark ? { ...ink, ink: '#30281e', soft: '#685b45', sky: '#395e6f' } : ink;
 
   // Sky: night is a wash of --sky.
   if (!light) {
@@ -161,24 +164,55 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
           c.stroke();
           c.globalAlpha = 1;
         }
-        // Draught hatching follows the exact open routes riders search.
-        if (!theirs && (exposure.has(i) || scouted.has(i))) {
+        // A continuous pale wash makes the open route readable at phone scale.
+        // Its depth comes from the rider search, including every open shaft.
+        const depth = exposure.get(i);
+        if (!theirs && depth !== undefined) {
+          const strength = 1 - depth / (V.riderReach + 1);
           c.save();
-          c.globalAlpha = exposure.has(i) ? 0.18 : 0.11;
-          c.fillStyle = ink.sky;
+          c.globalAlpha = ink.dark ? 0.62 + strength * 0.28 : 0.32 + strength * 0.58;
+          c.fillStyle = '#fff4d8';
           c.fillRect(px, py, cs, cs);
-          c.strokeStyle = ink.sky;
-          c.globalAlpha = exposure.has(i) ? 0.5 : 0.3;
-          c.lineWidth = 1;
+          c.strokeStyle = '#685b45';
+          c.globalAlpha = 0.38 + strength * 0.3;
+          c.lineWidth = Math.max(1, cs * 0.045);
           c.beginPath();
-          for (let q = 0; q < 3; q++) {
-            c.moveTo(px + cs * (0.1 + q * 0.3), py + cs * 0.18);
-            c.lineTo(px + cs * (0.3 + q * 0.3), py + cs * 0.5);
+          // Long, sloping strokes remain visible in monochrome at 17px/cell.
+          for (let q = 0; q < 2; q++) {
+            const yy = py + cs * (0.3 + q * 0.3);
+            c.moveTo(px + cs * 0.08, yy + cs * 0.09);
+            c.lineTo(px + cs * 0.92, yy - cs * 0.09);
           }
           c.stroke();
           c.restore();
+        } else if (!theirs) {
+          // Still space is darker even when a lamp lights it.
+          c.globalAlpha = ink.dark ? 0.12 : 0.1;
+          c.fillStyle = ink.dark ? '#000' : ink.ink;
+          c.fillRect(px, py, cs, cs);
+          c.globalAlpha = 1;
+          if (scouted.has(i)) {
+            // Past searches leave small floor tracks, never a daylight wash.
+            c.save();
+            c.fillStyle = ink.soft;
+            c.globalAlpha = 0.5;
+            for (let q = 0; q < 2; q++) {
+              c.beginPath();
+              c.ellipse(
+                px + cs * (0.35 + q * 0.25),
+                py + cs * (0.78 + q * 0.07),
+                Math.max(0.7, cs * 0.035),
+                Math.max(1.2, cs * 0.07),
+                -0.5,
+                0,
+                Math.PI * 2,
+              );
+              c.fill();
+            }
+            c.restore();
+          }
         }
-        drawUse(c, s, i, px, py, cs, ink, lit[i] === 1);
+        drawUse(c, s, i, px, py, cs, depth !== undefined ? draughtInk : ink, lit[i] === 1);
         const sp = h.spoil[i] ?? 0;
         if (sp > 0.05) {
           c.fillStyle = ink.soft;
@@ -331,7 +365,18 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
     if (!p.body.alive) continue;
     const [fx, fy] = where.get(p.id) ?? drawPosition(s, p.id, t);
     if (fx < x0 - 2 || fx > x1 + 1 || fy < y0 - 2 || fy > y1 + 1) continue;
-    figure(c, p, s, (fx + 0.5) * cs, (fy + 0.95) * cs, cs, ink, t, paint.selected === p.id);
+    const floor = idx(Math.floor(fx + 0.5), Math.floor(fy + 0.5));
+    figure(
+      c,
+      p,
+      s,
+      (fx + 0.5) * cs,
+      (fy + 0.95) * cs,
+      cs,
+      exposure.has(floor) ? draughtInk : ink,
+      t,
+      paint.selected === p.id,
+    );
     const said = recent.get(p.id);
     if (said && (paint.selected === p.id || recent.size <= 4))
       bubble(c, said, (fx + 0.5) * cs, (fy - 0.15) * cs, cs, ink);

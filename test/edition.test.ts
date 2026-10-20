@@ -6,7 +6,21 @@ import { act, advance, fingerprint, load, newGame, replay, save } from '../src/s
 import { riderCells } from '../src/sim/warren.ts';
 
 const fixture = JSON.parse(readFileSync(new URL('./fixtures/edition-legacy.json', import.meta.url), 'utf8'));
+// Frozen at f8df124 before the UI-only follow-up, using the same six legacy input logs.
+const uiBaseline = JSON.parse(
+  readFileSync(new URL('./fixtures/edition-ui-before-b.json', import.meta.url), 'utf8'),
+) as { seed: number; policy: string; minute: number; fingerprint: string }[];
 describe('edition 0.3.0', () => {
+  for (const before of uiBaseline) {
+    it(`keeps pre-follow-up 0.3.0 seed ${before.seed} ${before.policy} exact`, { timeout: 60000 }, () => {
+      const run = fixture.runs.find(
+        (r: { seed: number; policy: string }) => r.seed === before.seed && r.policy === before.policy,
+      );
+      expect(run).toBeDefined();
+      expect(fingerprint(replay(before.seed, run.inputs, before.minute, '0.3.0').s)).toBe(before.fingerprint);
+    });
+  }
+
   for (const run of fixture.runs) {
     it(`keeps legacy seed ${run.seed} ${run.policy} hashes, exports and checkpoint continuation`, {
       timeout: 60000,

@@ -1,0 +1,38 @@
+[
+  {
+    "seed": 1,
+    "policy": "plain",
+    "minute": 93900,
+    "fingerprint": "d4837dad"
+  },
+  {
+    "seed": 1,
+    "policy": "watch",
+    "minute": 93900,
+    "fingerprint": "2bf6f010"
+  },
+  {
+    "seed": 7,
+    "policy": "plain",
+    "minute": 93900,
+    "fingerprint": "f2cb9067"
+  },
+  {
+    "seed": 7,
+    "policy": "watch",
+    "minute": 93900,
+    "fingerprint": "a74b20f9"
+  },
+  {
+    "seed": 19,
+    "policy": "plain",
+    "minute": 93900,
+    "fingerprint": "a3f577a7"
+  },
+  {
+    "seed": 19,
+    "policy": "watch",
+    "minute": 93900,
+    "fingerprint": "0d497914"
+  }
+]
