@@ -7,6 +7,7 @@ import {
   faceState,
   type WarrenState,
 } from '../sim/warren.ts';
+import { sleepingCapacityWords } from './shelter.ts';
 
 export const PURPOSE = 'Dig a refuge where the village can outlast the riders.';
 export const FIRST_CHALK = 'Choose chalk, then drag across stone beside the cellar.';
@@ -17,11 +18,11 @@ export function colonyWords(s: WarrenState): string {
   const ringing = s.bell && s.bell.until > s.minute;
   if (raid?.stage === 'riders')
     return ringing
-      ? 'Riders are at the hill. The bell is sounding; watch who comes below.'
+      ? 'Riders are at the hill. The bell is sounding. Check shelter to see who is still exposed.'
       : 'Riders are at the hill. Ring the bell to call the village below.';
   if (raid?.stage === 'smoke')
     return ringing
-      ? 'Smoke rises in the south. The bell is sounding; watch who comes below.'
+      ? 'Smoke rises in the south. The bell is sounding. Check shelter to see who is still exposed.'
       : 'Smoke rises in the south. Ring the bell to call the village below.';
 
   const fs = faces(s.hill);
@@ -41,15 +42,13 @@ export function colonyWords(s: WarrenState): string {
   }
 
   if (!s.stats.dug)
-    return s.hill.chalk.some(Boolean)
-      ? 'The chalk is laid. People choose when to take up a pick.'
-      : FIRST_CHALK;
+    return s.hill.chalk.some(Boolean) ? 'Dig planned. People choose when to take up a pick.' : FIRST_CHALK;
   if (grainBelow(s.hill) < 45)
     return cellsWithUse(s.hill, USE.store).length * STORE_CAP >= 45
       ? 'Jars stand empty below. People must bring the harvest down.'
       : 'The harvest needs more room below. Mark open ground as a store for the jars.';
   if (bedsBelow(s) < s.people.filter((p) => p.body.alive).length)
-    return 'Jars are filling the cellar. Mark beds so the village can sleep here too.';
+    return `Jars are filling the cellar. ${sleepingCapacityWords(s)}`;
   const goal = currentGoal(s);
   if (goal?.id === 'grow') return 'Make room below for families who hear of the hill.';
   if (goal && !['chalk', 'first', 'store', 'lamp', 'beds'].includes(goal.id)) return goal.text;

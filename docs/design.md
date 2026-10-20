@@ -60,6 +60,12 @@ A pending raid warning runs at one sim-minute per real second until the keeper r
 
 At gallop a sim-day is 1.25 real seconds, so 60 people is about 40–50% of one core on this machine. The frame loop gives the sim at most 10 ms a frame; if it cannot keep up, time slows and the page says "the days pass as fast as they can". **Decision date for moving the sim to a Web Worker: 2026-10-26**, after phone playtests.
 
+## Shelter and marks (round 4)
+
+Check shelter opens the people sheet after the bell or during ordinary play. The same sheet is available through Game menu → people. It updates each living person’s current location against the existing rider-search geometry, their observed activity or trip, and their recorded answer to the latest bell. An unknown reason stays unknown. Hidden people are described as out of sight for now. Depth and shut doors limit the passages riders search; beds only make sleeping space. Open shafts remain entrances. Current checks do not reconstruct motives at a past injury.
+
+Chalk uses a dashed excavation outline and a pick in previews and accepted marks. A successful mark says “Dig planned.” Sleeping marks report the connected room’s approximate capacity in words. Selecting beds and the people sheet also show the total marked capacity and whether it fits the living village. Raid guidance takes precedence. Capacity is space, not a promise of access, occupancy or protection. These are UI readings of existing state; simulation rules, HF pin, inputs and export format stay unchanged.
+
 ## Clarity exceptions
 
 - DL-27: the hill continues during an absence, up to one day. This is the idle design in the hooks map. Saving says “It keeps going while you are gone, a little”; returning reports how much time passed. This exception preserves the existing simulation and replay rules.

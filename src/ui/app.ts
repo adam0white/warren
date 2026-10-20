@@ -37,8 +37,10 @@ import {
 import { baseView, easeView } from './camera.ts';
 import { hillDate } from './date.ts';
 import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from './draw.ts';
+import { exposureWords } from './exposure.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
+import { sleepingCapacityWords, sleepingRoomWords } from './shelter.ts';
 import * as store from './store.ts';
 
 type Tool = 'look' | 'chalk' | 'erase' | 'store' | 'beds' | 'lamp' | 'door';
@@ -220,11 +222,11 @@ function enter() {
       <div class="card" id="card" hidden></div>
     </div>
     <div class="panel">
-      <div class="clock-status"><span id="clock-rate"></span><button id="watch-raid">Keep watching</button></div>
+      <div class="clock-status"><span id="clock-rate"></span><span class="raid-controls"><button id="watch-raid">Keep watching</button><button id="shelter-check">Check shelter</button></span></div>
       <button class="ticker" id="ticker" aria-label="Open journal"></button>
       <div class="tools" role="toolbar" aria-label="Tools">
         ${toolBtn('look', 'look', '◎')}
-        ${toolBtn('chalk', 'chalk', '✕')}
+        ${toolBtn('chalk', 'chalk', '□')}
         ${toolBtn('erase', 'rub out', '⌫')}
         ${toolBtn('store', 'store', '⚱')}
         ${toolBtn('beds', 'beds', '≡')}
@@ -269,6 +271,7 @@ function enter() {
     chrome();
   });
   document.getElementById('book')?.addEventListener('click', () => openBook());
+  document.getElementById('shelter-check')?.addEventListener('click', () => openBook('p'));
   // Close on pointerdown before a live redraw can replace the tapped control.
   document.getElementById('card')?.addEventListener('pointerdown', (e) => {
     if (!(e.target as HTMLElement).closest('#cardx')) return;
@@ -312,7 +315,7 @@ function setTool(t: Tool) {
   tool = t;
   syncButtons();
   const hints: Partial<Record<Tool, string>> = {
-    chalk: 'They choose whether to dig.',
+    chalk: 'Dashed outlines plan a dig. People choose when.',
     erase: 'Drag to rub out chalk or a room’s mark.',
     store: 'Drag over open ground to make it a store. Grain goes where the jars are.',
     beds: 'Drag over open ground for sleeping places below.',
@@ -415,7 +418,7 @@ function chrome() {
   const stock = document.getElementById('stock');
   if (stock) stock.textContent = `${souls(alive)} · ${storesWords(s)} · ${waterWords(s)}`;
   const goal = document.getElementById('goal');
-  if (goal) goal.textContent = colonyWords(s);
+  if (goal) goal.textContent = tool === 'beds' && !activeRaid(s) ? sleepingCapacityWords(s) : colonyWords(s);
   const r0 = activeRaid(s);
   const lag = document.getElementById('lag');
   if (lag) lag.hidden = !lagging || speedIx < 2;
@@ -446,7 +449,10 @@ function chrome() {
         : 'Riders are at the hill. Ring the bell to call people below, or keep watching.';
   }
   const watch = document.getElementById('watch-raid') as HTMLButtonElement | null;
+  const shelter = document.getElementById('shelter-check') as HTMLButtonElement | null;
+  if (shelter) shelter.hidden = !!pending;
   if (watch) {
+    watch.hidden = !pending;
     watch.style.visibility = pending ? 'visible' : 'hidden';
     watch.disabled = !pending;
   }
@@ -481,6 +487,7 @@ function chrome() {
   }
   const bell = document.getElementById('bell') as HTMLButtonElement | null;
   if (bell) bell.classList.toggle('ringing', !!s.bell && s.minute < s.bell.until);
+  updateShelter();
   if (paint.selected) card();
 }
 
@@ -546,17 +553,17 @@ function card() {
   const doing = p.activity?.affordance.label ?? 'deciding what to do';
   const tr = s.trips[p.id];
   const walking = tr && paint.t < tr.workFrom && tr.cells.length > 1;
-  const said = s.answers.findLast((a) => a.who === p.id && a.says);
   const why = walking ? undefined : s.why?.[p.id];
   const about = s.notes.filter((n) => n.who === p.id).slice(-2);
   const habit = p.habits.some((h) => h.action === 'dig' && h.strength > 0.25);
   const html = `
     <div class="who"><b>${esc(p.name)}</b> <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'come from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
+    <div class="shelter-person">${esc(exposureWords(s, p))}</div>
     <div>${walking ? 'on the way to ' : ''}${esc(doing)}<span class="soft"> · ${esc(bodyWords(p))}</span></div>
     ${feeling(p) ? `<div class="soft">${esc(feeling(p))}</div>` : ''}
     ${habit ? '<div class="hand">Goes down to the faces every morning now. Nobody asks.</div>' : ''}
     ${trustWords(p) ? `<div class="soft">${esc(p.name)} ${trustWords(p)}.</div>` : ''}
-    ${said ? `<div class="hand">“${esc(said.says)}”</div>` : why ? `<div class="hand">“${esc(why)}”</div>` : ''}
+    ${why ? `<div class="hand">“${esc(why)}”</div>` : ''}
     ${about.map((n) => `<div class="soft small">${esc(n.text)}</div>`).join('')}`;
   if (el.dataset.html !== html) {
     const closing = document.activeElement?.id === 'cardx';
@@ -718,7 +725,9 @@ function commitPaint() {
   const h = g.s.hill;
   if (kind === 'chalk') {
     if (order({ verb: 'chalk', cells, on: true })) {
-      if (!reachable(cells))
+      if (reachable(cells))
+        flash('Dig planned. The dashed outlines show stone to cut. People choose when to dig.');
+      else
         flash(
           'Nobody can get at that stone yet. Chalk a way to it from open ground, and they will dig toward it.',
         );
@@ -739,6 +748,10 @@ function commitPaint() {
     order({ verb: 'use', cells, use: 'none' });
   } else {
     const ok = order({ verb: 'use', cells, use: kind });
+    if (kind === 'beds' && cells.some((c) => h.kind[c] === K.open && h.use[c] === USE.beds)) {
+      const cell = cells.find((c) => h.kind[c] === K.open && h.use[c] === USE.beds);
+      if (cell !== undefined) flash(`${sleepingRoomWords(g.s, cell)} ${sleepingCapacityWords(g.s)}`);
+    }
     if (!ok && cells.every((c) => h.kind[c] !== K.open))
       flash('Rooms are marked on open ground. Chalk the stone first.');
   }
@@ -814,7 +827,7 @@ function describeCell(c: number) {
           ? 'A store. Jars of barley.'
           : 'A store, empty.'
         : u === USE.beds
-          ? 'Sleeping places, three to a mark.'
+          ? `${sleepingRoomWords(g.s, c)} ${sleepingCapacityWords(g.s)}`
           : u === USE.hearth
             ? 'The hearth. Yusuf Usta sits here.'
             : u === USE.well
@@ -851,6 +864,16 @@ function describeCell(c: number) {
 }
 
 // ---------- Game menu ----------
+
+function updateShelter() {
+  if (!g) return;
+  const summary = document.getElementById('shelter-summary');
+  if (summary) summary.textContent = sleepingCapacityWords(g.s);
+  for (const row of document.querySelectorAll<HTMLElement>('[data-shelter-person]')) {
+    const person = personOf(g.s, row.dataset.shelterPerson ?? '');
+    row.textContent = person?.body.alive ? exposureWords(g.s, person) : 'No longer living; see the journal.';
+  }
+}
 
 function closeCard() {
   if (!paint.selected) return;
@@ -894,15 +917,15 @@ function openBook(tab = 's') {
         <button data-tab="s">Save and run</button><button data-tab="j">journal</button><button data-tab="p">people</button>
       </div>
       <div class="tab" data-pane="j">${notes.map((n) => `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br/>${esc(n.text)}</p>`).join('')}</div>
-      <div class="tab" data-pane="p" hidden>${s.houses
+      <div class="tab" data-pane="p" hidden><b>Shelter check · now</b><p id="shelter-summary"></p><p class="soft small">The bell calls people below. Beds make sleeping space; depth and shut doors put stone between people and riders. Open shafts give riders another way in.</p>${s.houses
         .map((hs) => {
           const ms = hs.members.map((m) => personOf(s, m)).filter((p): p is Person => !!p && p.body.alive);
           if (!ms.length) return '';
-          return `<p><b>${esc(hs.name)}</b><br/>${ms.map((p) => `<button class="link" data-who="${p.id}">${esc(p.name)}</button>`).join(' · ')}</p>`;
+          return `<section class="household"><b>${esc(hs.name)}</b>${ms.map((p) => `<div class="shelter-row"><button class="link" data-who="${p.id}">${esc(p.name)}</button><div class="small" data-shelter-person="${p.id}"></div></div>`).join('')}</section>`;
         })
         .join(
           '',
-        )}<p class="soft">${souls(alive.length)} under the hill. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} buried.` : ''}</p></div>
+        )}<p class="soft">${souls(alive.length)} in the village. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} buried.` : ''}</p></div>
       <div class="tab" data-pane="s" hidden>
         ${aboutHill}
         <p>${done.map((x) => `✓ ${esc(x.text)}`).join('<br/>') || '<span class="soft">Nothing ticked off yet.</span>'}</p>
@@ -917,6 +940,7 @@ function openBook(tab = 's') {
       ${footer}
     </div>`;
   d.hidden = false;
+  updateShelter();
   document.getElementById('bookx')?.addEventListener('click', closeBook);
   for (const b of d.querySelectorAll<HTMLButtonElement>('[data-tab]'))
     b.addEventListener('click', () => {

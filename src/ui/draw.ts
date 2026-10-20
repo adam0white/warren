@@ -269,7 +269,7 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
     const x = xOf(i);
     const y = yOf(i);
     if (x < x0 - 1 || x > x1 || y < y0 - 1 || y > y1) continue;
-    chalkMark(c, x * cs, y * cs, cs, ink.rope, i);
+    chalkMark(c, x * cs, y * cs, cs, ink.rope);
   }
   const fs = faces(h);
   c.font = `${Math.round(cs * 0.42)}px Caveat, cursive`;
@@ -290,7 +290,7 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
     for (const i of paint.preview) {
       const px = xOf(i) * cs;
       const py = yOf(i) * cs;
-      if (paint.previewKind === 'chalk') chalkMark(c, px, py, cs, ink.rope, i);
+      if (paint.previewKind === 'chalk') chalkMark(c, px, py, cs, ink.rope);
       else {
         c.globalAlpha = 0.25;
         c.fillStyle = paint.previewKind === 'erase' ? ink.soft : ink.rope;
@@ -391,21 +391,24 @@ function isOpen(s: WarrenState, i: number): boolean {
   return k === K.open || (k === K.theirs && (s.linked || !!s.hill.known[i]));
 }
 
-function chalkMark(
-  c: CanvasRenderingContext2D,
-  px: number,
-  py: number,
-  cs: number,
-  color: string,
-  key: number,
-) {
+/** Dashed room outline and pick: a planned excavation, distinct from a refusal cross. */
+function chalkMark(c: CanvasRenderingContext2D, px: number, py: number, cs: number, color: string) {
+  c.save();
   c.strokeStyle = color;
-  c.globalAlpha = 0.85;
+  c.globalAlpha = 0.9;
+  c.lineWidth = Math.max(1.4, cs * 0.06);
+  c.setLineDash([Math.max(2, cs * 0.12), Math.max(2, cs * 0.1)]);
   c.beginPath();
-  wobLine(c, px + cs * 0.22, py + cs * 0.25, px + cs * 0.78, py + cs * 0.75, key, 1.2);
-  wobLine(c, px + cs * 0.78, py + cs * 0.25, px + cs * 0.22, py + cs * 0.75, key + 3, 1.2);
+  c.rect(px + cs * 0.14, py + cs * 0.14, cs * 0.72, cs * 0.72);
   c.stroke();
-  c.globalAlpha = 1;
+  c.setLineDash([]);
+  c.beginPath();
+  c.moveTo(px + cs * 0.4, py + cs * 0.73);
+  c.lineTo(px + cs * 0.59, py + cs * 0.38);
+  c.moveTo(px + cs * 0.32, py + cs * 0.4);
+  c.quadraticCurveTo(px + cs * 0.56, py + cs * 0.25, px + cs * 0.73, py + cs * 0.49);
+  c.stroke();
+  c.restore();
 }
 
 function lampGlyph(

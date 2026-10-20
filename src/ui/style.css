@@ -479,3 +479,25 @@ button.link {
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* Both responses occupy the same reserved slot; bell and tools stay under the thumb. */
+.raid-controls {
+  display: grid;
+  flex-shrink: 0;
+  width: 112px;
+  height: 44px;
+}
+.raid-controls button {
+  grid-area: 1 / 1;
+}
+.raid-controls button[hidden] {
+  display: none;
+}
+.household,
+.shelter-row {
+  margin: 8px 0;
+}
+.shelter-row button.link {
+  min-height: 44px;
+  min-width: 44px;
+}
