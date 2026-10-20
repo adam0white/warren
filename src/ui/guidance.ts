@@ -9,6 +9,7 @@ import {
 } from '../sim/warren.ts';
 
 export const PURPOSE = 'Dig a refuge where the village can outlast the riders.';
+export const FIRST_CHALK = 'Choose chalk, then drag across stone beside the cellar.';
 
 /** The keeper reads present conditions, rather than treating past achievements as present safety. */
 export function colonyWords(s: WarrenState): string {
@@ -42,7 +43,7 @@ export function colonyWords(s: WarrenState): string {
   if (!s.stats.dug)
     return s.hill.chalk.some(Boolean)
       ? 'The chalk is laid. People choose when to take up a pick.'
-      : 'The cellar is only a beginning. Chalk stone beside it for more room.';
+      : FIRST_CHALK;
   if (grainBelow(s.hill) < 45)
     return cellsWithUse(s.hill, USE.store).length * STORE_CAP >= 45
       ? 'Jars stand empty below. People must bring the harvest down.'

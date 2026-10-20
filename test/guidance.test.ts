@@ -7,7 +7,7 @@ import { colonyWords } from '../src/ui/guidance.ts';
 describe('the keeper’s next line', () => {
   it('explains the first mark and the wait for someone to choose it', () => {
     const s = newGame(7).s;
-    expect(colonyWords(s)).toMatch(/cellar.*[Cc]halk/);
+    expect(colonyWords(s)).toMatch(/Choose chalk.*drag.*cellar/);
     s.hill.chalk[idx(15, SURF + 3)] = 1;
     s.goals.chalk = s.minute;
     expect(colonyWords(s)).toMatch(/choose.*pick/);

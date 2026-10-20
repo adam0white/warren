@@ -9,7 +9,7 @@ import {
   type Person,
   readBody,
 } from '@adam0white/human-framework';
-import { DAY, dateWords, HOUR, hourWords } from '../sim/calendar.ts';
+import { DAY, HOUR, hourWords } from '../sim/calendar.ts';
 import {
   act,
   advance,
@@ -35,8 +35,9 @@ import {
   waterWords,
 } from '../sim/warren.ts';
 import { baseView, easeView } from './camera.ts';
+import { hillDate } from './date.ts';
 import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from './draw.ts';
-import { colonyWords, PURPOSE } from './guidance.ts';
+import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
 import * as store from './store.ts';
 
@@ -105,6 +106,14 @@ const souls = (n: number) =>
         : `${Math.round(n / 10) * 10} souls and more`;
 const footer = `<div class="footer"><a href="https://human.adamwhite.work/games/">◇ all notebooks</a><br/>People by the Human Framework ${FRAMEWORK_VERSION}. What they choose comes from it.</div>`;
 const markLink = '<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>';
+const aboutHill = `<details class="about-hill">
+  <summary>More about the hill</summary>
+  <p>Riders burned two villages to the south this spring. Under Yusuf Usta’s house there is a cellar cut into the soft stone, and the barley stands ripe. The village needs a refuge before the riders come.</p>
+  <p>You keep the dig-master’s chalk and his bell. Mark the stone where a room should be. Hang a lamp where the dark stops them. Ring the bell when there is smoke.</p>
+  <p>Nobody obeys. Everyone follows the worn path.</p>
+  <p>One finger chalks or looks. Two fingers move the page.</p>
+  <p>The hill keeps 365-day years, counted from its first harvest. Dates use English month names; Year 1 begins on 19 August.</p>
+</details>`;
 
 // ---------- start ----------
 
@@ -127,15 +136,14 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
   <div class="page">
     ${markLink}
     <h1>The Warren</h1>
-    <p>Riders burned two villages to the south this spring. Under Yusuf Usta’s house there is a cellar cut into the soft stone, and the barley stands ripe. The village needs a refuge before the riders come.</p>
-    <p>You keep the dig-master’s chalk and his bell. Mark the stone where a room should be. Hang a lamp where the dark stops them. Ring the bell when there is smoke.</p>
-    <p class="soft">Nobody obeys. Everyone follows the worn path.</p>
+    <p>${PURPOSE}</p>
+    <p>${FIRST_CHALK}</p>
     <div class="actions">
-      ${compatible ? `<button class="primary" id="cont">Go back down <span class="soft">· ${esc(dateWords(sv.minute))}</span></button>` : ''}
+      ${compatible ? `<button class="primary" id="cont">Go back down <span class="soft">· ${esc(hillDate(sv.minute))}</span></button>` : ''}
       <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'Begin a new hill' : 'Begin'}</button>
     </div>
     ${sv && !compatible ? '<p class="soft">An older notebook was put away; this version cannot read it.</p>' : ''}
-    <p class="hand">One finger chalks or looks. Two fingers move the page.</p>
+    ${aboutHill}
     ${footer}
   </div>`;
   document.getElementById('cont')?.addEventListener('click', () => {
@@ -167,7 +175,7 @@ function catchUp(savedAt: number) {
     const next = Math.min(to, g.s.minute + 4 * HOUR);
     advance(g, next);
     const el = document.getElementById('cu');
-    if (el) el.textContent = `${hourWords(g.s.minute)}, ${dateWords(g.s.minute)}`;
+    if (el) el.textContent = `${hourWords(g.s.minute)}, ${hillDate(g.s.minute)}`;
     if (g.s.minute < to) setTimeout(step, 0);
     else {
       enter();
@@ -206,7 +214,7 @@ function enter() {
       <div class="card" id="card" hidden></div>
     </div>
     <div class="panel">
-      <button class="ticker" id="ticker" aria-label="Open the notebook"></button>
+      <button class="ticker" id="ticker" aria-label="Open journal"></button>
       <div class="tools" role="toolbar" aria-label="Tools">
         ${toolBtn('look', 'look', '◎')}
         ${toolBtn('chalk', 'chalk', '✕')}
@@ -270,11 +278,6 @@ function enter() {
   cancelAnimationFrame(raf);
   raf = requestAnimationFrame(frame);
   requestWake();
-  if (s.minute < 6 * HOUR)
-    hint(
-      'start',
-      'The cellar is under Yusuf Usta’s house. Choose chalk, then drag across the stone beside it.',
-    );
 }
 
 function toolBtn(t: Tool, label: string, glyph: string) {
@@ -367,7 +370,7 @@ function chrome() {
   if (!g) return;
   const s = g.s;
   const when = document.getElementById('when');
-  if (when) when.textContent = `${hourWords(paint.t)}, ${dateWords(paint.t)}`;
+  if (when) when.textContent = `${hourWords(paint.t)}, ${hillDate(paint.t)}`;
   const alive = s.people.filter((p) => p.body.alive).length;
   const stock = document.getElementById('stock');
   if (stock) stock.textContent = `${souls(alive)} · ${storesWords(s)} · ${waterWords(s)}`;
@@ -425,9 +428,7 @@ function chrome() {
     const text = ticker ? ticker.text : '';
     if (tk.dataset.text !== text) {
       tk.dataset.text = text;
-      tk.innerHTML = ticker
-        ? `<span class="${ticker.weight >= 2 ? 'heavy' : ''}">${esc(text)}</span>`
-        : '<span class="soft">the notebook</span>';
+      tk.innerHTML = `<span class="journal-action">Open journal →</span><span class="journal-preview ${ticker && ticker.weight >= 2 ? 'heavy' : ''}">${ticker ? esc(text) : 'No new entries.'}</span>`;
       tk.classList.remove('ink-in');
       void tk.offsetWidth;
       tk.classList.add('ink-in');
@@ -818,7 +819,7 @@ function openBook() {
       <div class="tabs">
         <button data-tab="j" class="on">journal</button><button data-tab="p">people</button><button data-tab="s">page</button>
       </div>
-      <div class="tab" data-pane="j">${notes.map((n) => `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(dateWords(n.at))}</span><br/>${esc(n.text)}</p>`).join('')}</div>
+      <div class="tab" data-pane="j">${notes.map((n) => `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br/>${esc(n.text)}</p>`).join('')}</div>
       <div class="tab" data-pane="p" hidden>${s.houses
         .map((hs) => {
           const ms = hs.members.map((m) => personOf(s, m)).filter((p): p is Person => !!p && p.body.alive);
@@ -829,6 +830,7 @@ function openBook() {
           '',
         )}<p class="soft">${souls(alive.length)} under the hill. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} buried.` : ''}</p></div>
       <div class="tab" data-pane="s" hidden>
+        ${aboutHill}
         <p>${done.map((x) => `✓ ${esc(x.text)}`).join('<br/>') || '<span class="soft">Nothing ticked off yet.</span>'}</p>
         <div class="actions">
           <button id="savenow">Close the notebook for now</button>
