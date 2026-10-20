@@ -58,6 +58,11 @@ Research: [research-hooks.md](research-hooks.md) ([S] sourced, [I] inference). E
 
 At gallop a sim-day is 1.25 real seconds, so 60 people is about 40–50% of one core on this machine. The frame loop gives the sim at most 10 ms a frame; if it cannot keep up, time slows and the page says "the days pass as fast as they can". **Decision date for moving the sim to a Web Worker: 2026-10-26**, after phone playtests.
 
+## Clarity exceptions
+
+- DL-27: the hill continues during an absence, up to one day. This is the idle design in the hooks map. Saving says “It keeps going while you are gone, a little”; returning reports how much time passed. This exception preserves the existing simulation and replay rules.
+- DL-3 scene colours: chalk marks and lamp flames keep their material accent colour. Selection uses ordinary ink and a heavier ellipse; the current instruction uses the accent in the controls. Material colour does not mark selection.
+
 ## Deferred
 
 - Web Worker sim if phones lag at gallop (decide 2026-10-26).

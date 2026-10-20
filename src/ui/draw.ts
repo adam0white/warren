@@ -669,11 +669,11 @@ function figure(
   c.lineWidth = 1.4;
   c.lineCap = 'round';
   if (sel) {
-    c.strokeStyle = ink.rope;
+    c.lineWidth = 2.4;
     c.beginPath();
     c.ellipse(x, foot - hgt * 0.45, cs * 0.42, hgt * 0.65, 0, 0, Math.PI * 2);
     c.stroke();
-    c.strokeStyle = ink.ink;
+    c.lineWidth = 1.4;
   }
   if (a.startsWith('sleep')) {
     c.beginPath();

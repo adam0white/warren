@@ -205,7 +205,6 @@ function enter() {
     <div class="top">
       ${markLink}
       <div class="when"><span id="when"></span><span class="soft" id="stock"></span></div>
-      <div class="purpose hand" id="purpose">${PURPOSE}</div>
       <div class="goal" id="goal"></div>
     </div>
     <div class="scene" id="scene">
@@ -237,6 +236,7 @@ function enter() {
   canvas = document.getElementById('cv') as HTMLCanvasElement;
   ctx = canvas.getContext('2d');
   disp = g.s.minute;
+  paint.t = disp;
   seenNotes = Math.max(0, g.s.notes.length - 1);
   for (const b of document.querySelectorAll<HTMLButtonElement>('[data-tool]'))
     b.addEventListener('click', () => setTool(b.dataset.tool as Tool));
@@ -288,7 +288,7 @@ function setTool(t: Tool) {
   tool = t;
   syncButtons();
   const hints: Partial<Record<Tool, string>> = {
-    chalk: 'Drag across stone beside open ground. They dig what is chalked, if they will.',
+    chalk: 'They choose whether to dig.',
     erase: 'Drag to rub out chalk or a room’s mark.',
     store: 'Drag over open ground to make it a store. Grain goes where the jars are.',
     beds: 'Drag over open ground for sleeping places below.',

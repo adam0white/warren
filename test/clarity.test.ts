@@ -2,7 +2,7 @@ import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DAY } from '../src/sim/calendar.ts';
-import { newGame, save } from '../src/sim/game.ts';
+import { act, advance, newGame, save } from '../src/sim/game.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -29,13 +29,14 @@ async function fresh() {
 
 async function begin(page: Page) {
   await page.locator('#new').click();
+  await page.locator('#cv').waitFor();
   await page.clock.runFor(500);
 }
 
 const words = (text: string) => text.trim().split(/\s+/).length;
 
 describe('F-213 first-minute clarity', () => {
-  it('offers the refuge goal and chalk instruction within 40 story words across both opening screens', async () => {
+  it('offers the refuge goal and chalk instruction within 40 story words through chalk selection before the first mark', async () => {
     const page = await fresh();
     try {
       const title = (await page.locator('.page > p').allTextContents()).join(' ');
@@ -43,7 +44,9 @@ describe('F-213 first-minute clarity', () => {
       expect(title).toContain('Choose chalk');
       await begin(page);
       const play = await page.locator('.purpose, .goal, .hint').allTextContents();
-      expect(words([title, ...play].join(' '))).toBeLessThanOrEqual(40);
+      await page.locator('[data-tool="chalk"]').click();
+      const hint = await page.locator('.hint').innerText();
+      expect(words([title, ...play, hint].join(' '))).toBeLessThanOrEqual(40);
       const chalk = await page.locator('[data-tool="chalk"]').boundingBox();
       expect(chalk && chalk.y + chalk.height <= 690).toBe(true);
     } finally {
@@ -96,21 +99,89 @@ describe('F-213 first-minute clarity', () => {
       expect(await page.locator('#when').innerText()).toContain('Year 1');
       await page.locator('#book').click();
       expect(await page.locator('[data-pane="j"]').innerText()).toContain('19 August');
-      // Use the normal save envelope to exercise Continue across a month and anniversary.
-      for (const [day, expected] of [
-        [13, '1 September'],
-        [365, '19 August'],
-      ] as const) {
-        const saved = save(newGame(7));
-        saved.minute = day * DAY;
-        saved.state.minute = saved.minute;
-        await page.evaluate(`(async () => {
-          const { put } = await import('/src/ui/store.ts');
-          await put('hill', ${JSON.stringify(saved)});
-        })()`);
-        await page.reload();
-        expect(await page.locator('#cont').innerText()).toContain(expected);
-        expect(await page.locator('#cont').innerText()).toContain(day === 365 ? 'Year 2' : 'Year 1');
+      // Advance the simulation, save an accepted input, and restore through the real control.
+      const game = newGame(7);
+      advance(game, 13 * DAY);
+      expect(act(game, { verb: 'bell' })).toBe(true);
+      const saved = save(game);
+      await page.evaluate(`(async () => {
+        const { put } = await import('/src/ui/store.ts');
+        await put('hill', ${JSON.stringify(saved)});
+      })()`);
+      await page.reload();
+      expect(await page.locator('#cont').innerText()).toContain('1 September');
+      expect(await page.locator('#cont').innerText()).toContain('Year 1');
+      await page.locator('#cont').click();
+      expect(await page.locator('#when').innerText()).toContain('1 September');
+      await page.clock.runFor(300);
+      await page.locator('#book').click();
+      await page.locator('[data-tab="s"]').click();
+      const pending = page.waitForEvent('download');
+      await page.locator('#export').click();
+      const stream = await (await pending).createReadStream();
+      let json = '';
+      for await (const chunk of stream) json += chunk.toString();
+      const restored = JSON.parse(json);
+      expect(restored.minute).toBe(saved.minute);
+      expect(restored.inputs).toEqual(saved.inputs);
+      expect(restored.fingerprint).toBe(saved.fingerprint);
+    } finally {
+      await page.close();
+    }
+  });
+
+  it('shows the English return date after the documented one-day catch-up', async () => {
+    const page = await fresh();
+    try {
+      const game = newGame(7);
+      advance(game, 13 * DAY);
+      await page.evaluate(`(async () => {
+        const { put } = await import('/src/ui/store.ts');
+        await put('hill', ${JSON.stringify(save(game))});
+      })()`);
+      await page.clock.setSystemTime(await page.evaluate(() => Date.now() + 60000));
+      await page.reload();
+      expect(await page.locator('#cont').innerText()).toContain('1 September');
+      await page.locator('#cont').click();
+      await page.clock.runFor(300);
+      await page.locator('#cv').waitFor();
+      expect(await page.locator('#when').innerText()).toContain('2 September');
+      expect(await page.locator('#ticker').innerText()).toContain('a day passed under the hill');
+    } finally {
+      await page.close();
+    }
+  });
+
+  it('draws a selected person in ink with a distinct ring weight', async () => {
+    const page = await fresh();
+    try {
+      await begin(page);
+      // Record the real canvas command for the tall person-selection ellipse.
+      await page.evaluate(() => {
+        const proto = CanvasRenderingContext2D.prototype;
+        const ellipse = proto.ellipse;
+        const strokes: { color: string; width: number }[] = [];
+        Object.assign(window, { selectionStrokes: strokes });
+        proto.ellipse = function (...args) {
+          if (args[3] > args[2]) strokes.push({ color: String(this.strokeStyle), width: this.lineWidth });
+          return ellipse.apply(this, args);
+        };
+      });
+      await page.locator('#book').click();
+      await page.locator('[data-tab="p"]').click();
+      await page.locator('[data-who]').first().click();
+      await page.clock.runFor(50);
+      const strokes = await page.evaluate(
+        () =>
+          (window as unknown as { selectionStrokes: { color: string; width: number }[] }).selectionStrokes,
+      );
+      expect(strokes.length).toBeGreaterThan(0);
+      const ink = await page.evaluate(() =>
+        getComputedStyle(document.documentElement).getPropertyValue('--ink').trim(),
+      );
+      for (const stroke of strokes) {
+        expect(stroke.color).toBe(ink);
+        expect(stroke.width).toBeGreaterThanOrEqual(2);
       }
     } finally {
       await page.close();

@@ -46,6 +46,7 @@ async function enter(page: Page) {
     await put('hill', ${JSON.stringify(save(newGame(7)))});
   })()`);
   await page.reload();
+  expect(await page.locator('.page > p').first().innerText()).toContain('refuge');
   await page.locator('#cont').click();
   await page.evaluate(() => (window as unknown as { __warren: Debug }).__warren.setSpeed(0));
   await page.clock.runFor(1000);
@@ -62,8 +63,7 @@ describe('owner viewport regression', () => {
       try {
         await enter(page);
         await expectViewportFit(page, height);
-        expect(await page.locator('#purpose').innerText()).toContain('refuge');
-        expect(await page.locator('#goal').innerText()).not.toBe('');
+        expect(await page.locator('#goal').innerText()).toMatch(/Choose chalk.*drag.*cellar/);
         await page.screenshot({ path: `${shots}/after-early-${width}.png` });
         await page.locator('.lab-controls summary').click();
         await page.clock.runFor(300);
