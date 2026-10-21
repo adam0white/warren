@@ -59,15 +59,16 @@ describe('F-213 first-minute clarity', () => {
   it('keeps the cut introduction reachable on request before and during play', async () => {
     const page = await fresh();
     try {
-      const about = page.getByText('More about the hill', { exact: true });
+      const about = page.getByRole('button', { name: 'More about the hill', exact: true });
       await about.click();
-      expect(await page.locator('details[open]').innerText()).toContain('Ring the bell when there is smoke.');
-      expect(await page.locator('details[open]').innerText()).toContain('Nobody obeys.');
+      expect(await page.locator('#hill-info').innerText()).toContain('Ring the bell when there is smoke.');
+      expect(await page.locator('#hill-info').innerText()).toContain('Nobody obeys.');
+      await page.keyboard.press('Escape');
       await begin(page);
       await page.locator('#book').click();
       await page.locator('[data-tab="s"]').click();
-      await page.getByText('More about the hill', { exact: true }).click();
-      expect(await page.locator('details[open]').innerText()).toContain('Two fingers move the page.');
+      await page.getByRole('button', { name: 'More about the hill', exact: true }).click();
+      expect(await page.locator('#hill-info').innerText()).toContain('Two fingers move the page.');
     } finally {
       await page.close();
     }
@@ -135,7 +136,7 @@ describe('F-213 first-minute clarity', () => {
     }
   });
 
-  it('shows the English return date after the documented one-day catch-up', async () => {
+  it('restores the saved date and minute without invisible offline decisions', async () => {
     const page = await fresh();
     try {
       const game = newGame(7);
@@ -150,8 +151,8 @@ describe('F-213 first-minute clarity', () => {
       await page.locator('#cont').click();
       await page.clock.runFor(300);
       await page.locator('#cv').waitFor();
-      expect(await page.locator('#when').innerText()).toContain('2 September');
-      expect(await page.locator('#cell-words').innerText()).toContain('a day passed under the hill');
+      expect(await page.locator('#when').innerText()).toContain('1 September');
+      expect(await page.evaluate('window.__warren.game.s.minute')).toBe(game.s.minute);
     } finally {
       await page.close();
     }
@@ -198,7 +199,7 @@ describe('F-213 first-minute clarity', () => {
     try {
       await begin(page);
       await page.locator('[data-tool="chalk"]').click();
-      for (const selector of ['[data-tool="chalk"]', '[data-speed].on', '#bell']) {
+      for (const selector of ['[data-tool="chalk"]', '#bell']) {
         const colors = await page.locator(selector).evaluate((el) => {
           const style = getComputedStyle(el);
           return {

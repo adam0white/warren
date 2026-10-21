@@ -64,10 +64,7 @@ describe('DL-23 actual control targets', () => {
         await page.locator('#new').click();
         await page.locator('#cv').waitFor();
         await page.clock.runFor(500);
-        const play = await boxes(
-          page,
-          '[data-speed], [data-tool], #bell, #book, #ticker, .lab-controls summary',
-        );
+        const play = await boxes(page, '[data-tool], #bell, #book, #ticker, .lab-controls summary');
         const scene = await page.locator('#cv').boundingBox();
         await page.screenshot({ path: `${evidence}/${width}-play.png` });
         await page.locator('.lab-controls summary').click();
@@ -86,7 +83,7 @@ describe('DL-23 actual control targets', () => {
           `${evidence}/${width}.json`,
           JSON.stringify({ play, notebook, card, scene, privacyScene }, null, 2),
         );
-        expect(play).toHaveLength(15);
+        expect(play).toHaveLength(11);
         expect(notebook).toHaveLength(4);
         expect(card).toHaveLength(1);
         expectTargets([...play, ...notebook, ...card], width, height);

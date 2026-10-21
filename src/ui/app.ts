@@ -4,7 +4,7 @@
  */
 import { ageYears, describePerson, FRAMEWORK_VERSION, type Person } from '@adam0white/human-framework';
 import { type PhoneStage, phoneStage } from '@adam0white/lab-kit';
-import { DAY, HOUR, hourWords } from '../sim/calendar.ts';
+import { DAY, hourWords } from '../sim/calendar.ts';
 import {
   act,
   advance,
@@ -39,21 +39,17 @@ import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
 import { personHelpWords } from './person-help.ts';
 import { type PlanSafety, planSafety } from './plan-safety.ts';
+import { eventStamp, playbackRate } from './playback.ts';
 import { bellShelterWords, bellStateWords } from './room-safety.ts';
 import { compactShelterWords, sleepingCapacityWords, sleepingRoomWords } from './shelter.ts';
 import * as store from './store.ts';
 
 type Tool = 'look' | 'chalk' | 'erase' | 'store' | 'beds' | 'lamp' | 'door';
-const SPEEDS = [0.25, 1, 4, 16] as const;
-const SPEED_NAMES = ['slow', 'walk', 'trot', 'gallop'];
-/** Real milliseconds per sim-minute at speed 1: a sim-day is 20 real seconds. */
-const MS_PER_MIN = 20000 / DAY;
 const SAVE_KEY = 'hill';
-const CATCH_UP_MAX = DAY;
 
 let g: Game | null = null;
 let tool: Tool = 'look';
-let speedIx = 1;
+let readUntil = 0;
 let disp = 0;
 let last = 0;
 let raf = 0;
@@ -77,7 +73,7 @@ function queueResize() {
 const paint: Paint = { preview: new Set(), previewKind: null, selected: null, t: 0 };
 let lastSaved = 0;
 let dirty = false;
-let seenNotes = 0;
+let lastSeenNote: Note | null = null;
 let ticker: Note | null = null;
 let tickerUntil = 0;
 let lagging = false;
@@ -87,8 +83,6 @@ const answeredRaids = new Set<number>();
 let labScreen = '';
 const labGoals = new Set<string>();
 let labBase = { arrivals: 0, gone: 0, died: 0 };
-// A pending raid response runs at one sim-minute per real second. Sim quanta stay unchanged.
-const RAID_SPEED = MS_PER_MIN / 1000;
 let menuOpener: HTMLElement | null = null;
 let personOpener: HTMLElement | null = null;
 let doorCell: number | null = null;
@@ -125,14 +119,14 @@ const souls = (n: number) =>
         : `${Math.round(n / 10) * 10} souls and more`;
 const footer = `<div class="footer"><a href="https://human.adamwhite.work/games/">All games</a><br/>People by the Human Framework ${FRAMEWORK_VERSION}. What they choose comes from it.</div>`;
 const markLink = '<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>';
-const aboutHill = `<details class="about-hill">
-  <summary>More about the hill</summary>
+const aboutHill = `<button class="info" aria-label="More about the hill" popovertarget="hill-info">i</button><div class="about-hill info-popover" id="hill-info" popover="auto">
+  <h2>More about the hill</h2>
   <p>Riders burned two villages to the south this spring. Under Yusuf Usta’s house there is a cellar cut into the soft stone, and the barley stands ripe. The village needs a refuge before the riders come.</p>
   <p>You keep the dig-master’s chalk and his bell. Mark the stone where a room should be. Hang a lamp where the dark stops them. Ring the bell when there is smoke.</p>
   <p>Nobody obeys. Everyone follows the worn path.</p>
   <p>One finger chalks or looks. Two fingers move the page.</p>
   <p>The hill keeps 365-day years, counted from its first harvest. Dates use English month names; Year 1 begins on 19 August.</p>
-</details>`;
+</div>`;
 
 // ---------- start ----------
 
@@ -148,7 +142,7 @@ export async function start() {
   title(sv?.value ?? null, sv?.at ?? 0);
 }
 
-function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
+function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
   lab.screen('title');
   const compatible = sv && sv.game.split('.')[0] === GAME_VERSION.split('.')[0];
   app().innerHTML = `
@@ -168,7 +162,7 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
   document.getElementById('cont')?.addEventListener('click', () => {
     if (!sv) return;
     g = load(sv);
-    catchUp(at);
+    enter();
   });
   document.getElementById('new')?.addEventListener('click', async () => {
     if (compatible && !confirm('Start a new hill? The old notebook will be put away.')) return;
@@ -176,34 +170,6 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
     g = newGame((Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0);
     enter();
   });
-}
-
-/** After an absence the hill moves on a little (a day at most), and says so. */
-function catchUp(savedAt: number) {
-  if (!g) return;
-  const away = Math.max(0, Date.now() - savedAt);
-  const minutes = Math.min(CATCH_UP_MAX, Math.floor(away / MS_PER_MIN));
-  const to = Math.floor((g.s.minute + minutes) / QUANTUM) * QUANTUM;
-  if (minutes < 2 * HOUR) {
-    enter();
-    return;
-  }
-  app().innerHTML = `<div class="page"><p class="hand">While you were away…</p><p class="soft" id="cu"></p></div>`;
-  const step = () => {
-    if (!g) return;
-    const next = Math.min(to, g.s.minute + 4 * HOUR);
-    advance(g, next);
-    const el = document.getElementById('cu');
-    if (el) el.textContent = `${hourWords(g.s.minute)}, ${hillDate(g.s.minute)}`;
-    if (g.s.minute < to) setTimeout(step, 0);
-    else {
-      enter();
-      flash(
-        `While you were away, ${minutes >= DAY - QUANTUM ? 'a day' : minutes >= DAY / 2 ? 'half a day' : 'some hours'} passed under the hill.`,
-      );
-    }
-  };
-  setTimeout(step, 30);
 }
 
 // ---------- the scene ----------
@@ -239,7 +205,7 @@ function enter() {
     <div class="panel lk-sheet" aria-label="Hill actions">
       <div class="lk-sheet-body" id="inspection-body">
       <div class="card" id="card" hidden></div>
-      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Reading</b><button class="x" id="cellx" aria-label="Close room or door inspection">×</button></div><p id="cell-words" role="region" aria-label="Full reading"></p><div id="entrance-choice" hidden><button id="confirm-entrance">Plan this entrance</button><button id="cancel-entrance">Cancel</button></div><details id="reading-context" hidden><summary>More about this door</summary><p id="door-context"></p></details></div>
+      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Reading</b><button class="x" id="cellx" aria-label="Close room or door inspection">×</button></div><p id="cell-words" role="region" aria-label="Full reading"></p><div id="entrance-choice" hidden><button id="confirm-entrance">Plan this entrance</button><button id="cancel-entrance">Cancel</button></div><span id="reading-context" hidden><button class="info" aria-label="More about this door" popovertarget="reading-info">i</button><span id="reading-info" class="info-popover" popover="auto"><span id="door-context"></span></span></span></div>
       <div class="drawer" id="drawer" hidden></div>
       <div class="reading-actions"><p id="event-sentence" aria-live="polite"></p><button class="ticker" id="ticker" aria-label="Open journal">Open journal</button><button id="last-reading" disabled>Last reading</button></div>
       </div>
@@ -255,9 +221,6 @@ function enter() {
         ${toolBtn('door', 'door', '◯')}
       </div>
       <div class="row">
-        <div class="speed" role="group" aria-label="Speed">
-          ${SPEEDS.map((_, k) => `<button data-speed="${k}" aria-label="${SPEED_NAMES[k]}">${'›'.repeat(k + 1).replace('››››', '»»')}</button>`).join('')}
-        </div>
         <button class="bell" id="bell" aria-label="Ring the bell" aria-describedby="bell-meaning">bell</button>
         <button id="book" aria-label="Game menu">Game menu</button>
       </div>
@@ -280,16 +243,10 @@ function enter() {
   ctx = canvas.getContext('2d');
   disp = g.s.minute;
   paint.t = disp;
-  seenNotes = Math.max(0, g.s.notes.length - 1);
+  lastSeenNote = g.s.notes.at(-2) ?? null;
+  readUntil = performance.now() + 6000;
   for (const b of document.querySelectorAll<HTMLButtonElement>('[data-tool]'))
     b.addEventListener('click', () => setTool(b.dataset.tool as Tool));
-  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-speed]'))
-    b.addEventListener('click', () => {
-      speedIx = Number(b.dataset.speed);
-      syncButtons();
-      chrome();
-      requestWake();
-    });
   document.getElementById('bell')?.addEventListener('click', () => {
     if (order({ verb: 'bell' })) {
       const raid = g && activeRaid(g.s);
@@ -327,9 +284,6 @@ function enter() {
       commitPaint(true);
     }
   });
-  document.getElementById('reading-context')?.addEventListener('toggle', (e) => {
-    if (!(e.target as HTMLDetailsElement).open) document.getElementById('inspection-body')?.scrollTo(0, 0);
-  });
   // Close on pointerdown before a live redraw can replace the tapped control.
   document.getElementById('card')?.addEventListener('pointerdown', (e) => {
     if (!(e.target as HTMLElement).closest('#cardx')) return;
@@ -356,6 +310,7 @@ function enter() {
   });
   document.querySelector('.game')?.addEventListener('keydown', (e) => {
     if ((e as KeyboardEvent).key !== 'Escape') return;
+    if (document.querySelector(':popover-open')) return;
     if (!document.getElementById('cell-detail')?.hidden) closeCell();
     else if (paint.selected) closeCard();
     else closeBook();
@@ -409,8 +364,6 @@ function setTool(t: Tool) {
 function syncButtons() {
   for (const b of document.querySelectorAll<HTMLButtonElement>('[data-tool]'))
     b.classList.toggle('on', b.dataset.tool === tool);
-  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-speed]'))
-    b.classList.toggle('on', Number(b.dataset.speed) === speedIx);
 }
 
 function resize() {
@@ -491,30 +444,33 @@ function raidDecision() {
 function menuHoldsTime(): boolean {
   return (
     !!document.querySelector('#drawer:not([hidden]), .hflab-veil, .lab-controls[open]') ||
+    !!document.querySelector(':popover-open') ||
     (!!personOpener?.isConnected && !document.getElementById('card')?.hidden)
   );
-}
-
-function clockRate(reading: boolean) {
-  const chosen = SPEEDS[speedIx] ?? 1;
-  return raidDecision() ? Math.min(chosen, RAID_SPEED) : reading ? Math.min(chosen, SPEEDS[0]) : chosen;
 }
 
 function frame(now: number) {
   raf = requestAnimationFrame(frame);
   if (!g || !ctx) return;
-  const dt = Math.min(250, now - last);
+  const elapsed = Math.max(0, now - last);
+  const dt = Math.min(250, elapsed);
+  const held = menuHoldsTime() || isReading() || !!raidDecision();
+  if (held && readUntil > last) readUntil += elapsed;
   last = now;
   const s = g.s;
   const menuHeld = menuHoldsTime();
   const reading = isReading();
-  if (!menuHeld) disp += (dt * clockRate(reading)) / MS_PER_MIN;
+  const rate = playbackRate(reading || menuHeld, !!raidDecision(), now < readUntil);
+  if (rate === 0) disp = s.minute;
+  else disp += (dt * rate) / 1000;
   const t0 = performance.now();
-  while (!menuHeld && s.minute + QUANTUM <= disp && performance.now() - t0 < 10) {
+  while (rate > 0 && s.minute + QUANTUM <= disp && performance.now() - t0 < 10) {
     const pending = raidDecision();
+    const before = eventStamp(s);
     advance(g, s.minute + QUANTUM);
     dirty = true;
-    if (!pending && raidDecision()) {
+    if ((!pending && raidDecision()) || eventStamp(s) !== before) {
+      readUntil = now + 6000;
       // Discard only playback overshoot: never skip or alter a simulation step.
       disp = s.minute;
       chrome();
@@ -543,7 +499,7 @@ function chrome() {
   if (goal) goal.textContent = tool === 'beds' && !activeRaid(s) ? sleepingCapacityWords(s) : colonyWords(s);
   const r0 = activeRaid(s);
   const lag = document.getElementById('lag');
-  if (lag) lag.hidden = !lagging || speedIx < 2;
+  if (lag) lag.hidden = !lagging;
   // The lab: where the player is (the last screen before leaving is the quit point) and what they reached.
   const reading0 = isReading();
   const chapter = reading0 ? 'notebook' : r0 ? 'raid' : 'play';
@@ -578,17 +534,19 @@ function chrome() {
   }
   const rate = document.getElementById('clock-rate');
   if (rate) {
-    const actual = clockRate(reading0);
-    const name =
-      pending || reading0 ? 'Slow' : (SPEED_NAMES[speedIx] ?? 'walk').replace(/^./, (c) => c.toUpperCase());
     rate.textContent = menuHoldsTime()
-      ? 'Paused · Game menu'
-      : `${name} · ${Math.round((actual * 1000) / MS_PER_MIN)} min/s${pending ? ' · raid warning' : reading0 ? ' · reading' : ''}`;
+      ? 'Paused · Game menu or information'
+      : reading0
+        ? 'Reading · time waits'
+        : pending
+          ? 'Bell decision · time waits'
+          : performance.now() < readUntil
+            ? 'Reading the latest word'
+            : 'The hill carries on';
   }
   // New notes: heavy ones take the ticker.
-  for (; seenNotes < s.notes.length; seenNotes++) {
-    const n = s.notes[seenNotes];
-    if (!n) continue;
+  const firstNew = lastSeenNote ? s.notes.indexOf(lastSeenNote) + 1 : Math.max(0, s.notes.length - 1);
+  for (const n of s.notes.slice(firstNew)) {
     // Light notes fill a quiet ticker; heavy ones push in.
     const quiet = performance.now() > tickerUntil;
     if ((n.weight >= 1 && (!ticker || n.weight >= ticker.weight)) || quiet) {
@@ -596,6 +554,7 @@ function chrome() {
       tickerUntil = performance.now() + 5000 + n.weight * 2000;
     }
   }
+  lastSeenNote = s.notes.at(-1) ?? null;
   const tk = document.getElementById('ticker');
   if (tk) {
     const text = ticker ? ticker.text : '';
@@ -663,11 +622,11 @@ function planReading(title: string, reading: PlanSafety, remember = true, preser
 
 function readingContext(words: string) {
   const context = document.getElementById('reading-context');
-  const label = context?.querySelector('summary');
+  const label = context?.querySelector('button');
   const text = document.getElementById('door-context');
   if (context) context.hidden = !words;
   if (label) {
-    label.textContent = 'Route details';
+    label.textContent = 'i';
     label.setAttribute('aria-label', 'More about these routes');
   }
   if (text) text.textContent = words;
@@ -1168,9 +1127,9 @@ function updateDoorContext(cell: number) {
   const context = document.getElementById('reading-context');
   const text = document.getElementById('door-context');
   const words = g.s.hill.use[cell] === USE.door ? doorDetailWords(g.s, cell) : '';
-  const label = context?.querySelector('summary');
+  const label = context?.querySelector('button');
   if (label) {
-    label.textContent = 'More';
+    label.textContent = 'i';
     label.setAttribute('aria-label', 'More about this door');
   }
   if (context) context.hidden = !words;
@@ -1220,11 +1179,11 @@ function showBellReading() {
   const call = bellStateWords(s);
   showReading('Bell call', call, true, true);
   const context = document.getElementById('reading-context');
-  const label = context?.querySelector('summary');
+  const label = context?.querySelector('button');
   const text = document.getElementById('door-context');
   if (context) context.hidden = false;
   if (label) {
-    label.textContent = 'Replies';
+    label.textContent = 'i';
     label.setAttribute('aria-label', 'Replies to the bell');
   }
   if (text)
@@ -1351,7 +1310,7 @@ function openBook(tab = 's') {
   document.getElementById('savenow')?.addEventListener('click', async () => {
     await writeSave();
     closeBook();
-    flash('This hill is saved. It keeps going while you are gone, a little.');
+    flash('This hill is saved. It waits here while you are away.');
   });
   document.getElementById('export')?.addEventListener('click', download);
   document.getElementById('send')?.addEventListener('click', () => {
@@ -1443,8 +1402,8 @@ export const _debug = {
     return g;
   },
   view,
-  setSpeed(k: number) {
-    speedIx = k;
+  setSpeed(_k: number) {
+    // Older test adapters may call this; playback is now automatic.
   },
   order,
 };

@@ -160,14 +160,14 @@ for (const [width, height] of [
       expect(await words.innerText()).toMatch(/six game hours/is);
       expect(await words.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
       const replies = page.locator('#reading-context');
-      await replies.locator('summary').click();
-      expect(await replies.locator('summary').getAttribute('aria-label')).toBe('Replies to the bell');
+      await replies.locator('button').click();
+      expect(await replies.locator('button').getAttribute('aria-label')).toBe('Replies to the bell');
       expect(await page.locator('#door-context').innerText()).toMatch(/Fine.*next choice/is);
       await page.evaluate('window.__warren.game.s.minute += 30');
       await page.clock.runFor(300);
-      expect(await replies.evaluate((el) => (el as HTMLDetailsElement).open)).toBe(true);
+      expect(await page.locator('#reading-info').evaluate((el) => el.matches(':popover-open'))).toBe(true);
       expect(await page.locator('#door-context').innerText()).toMatch(/Fine.*next choice/is);
-      await replies.locator('summary').click();
+      await page.keyboard.press('Escape');
       await page.clock.runFor(100);
       await page.screenshot({ path: `${shots}/after-${width}-bell-context-collapsed-c.png` });
       await assertStage(page, width, height);

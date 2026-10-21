@@ -150,10 +150,10 @@ describe('safety before calling people below', () => {
           expect(await words.innerText()).toMatch(/false alarms/i);
           expect(await words.innerText()).not.toContain('Nearby adults:');
           expect(await words.evaluate((e) => e.scrollHeight <= e.clientHeight)).toBe(true);
-          await page.locator('#reading-context summary').click();
+          await page.locator('#reading-context button').click();
           expect(await page.locator('#door-context').innerText()).toContain('Nearby adults:');
           expect(await page.locator('#door-context').innerText()).toContain('Hasan:');
-          await page.locator('#reading-context summary').click();
+          await page.keyboard.press('Escape');
           await page.screenshot({
             animations: 'disabled',
             path: `${shots}/after-${width}-door${suffix}-b.png`,

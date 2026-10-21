@@ -20,7 +20,7 @@ Research: [research-hooks.md](research-hooks.md) ([S] sourced, [I] inference). E
 | 4. Growth and the queen [S] | Yusuf Usta, 74, sits at the hearth and shows the young how to cut stone (the immobile anchor). Word spreads when the hill holds; families arrive if there are beds. Growth is capped at sixty souls. |
 | 5. Cross-section, discovery, digging [S] | Unseen stone is drawn as plain rock until someone digs beside it. Hard bands, loose pockets, a water seam that becomes a well, an old chamber with soot and two lamps, the neighbours' passages. |
 | 6. Wars between colonies [S] | Riders come at set seasons (smoke first, then the hill). The neighbours across the ridge have a store; a tunnel can reach it. Theft is a norm violation people weigh for themselves; if noticed, a grudge grows, they retaliate, then wall the passage, and word of the hill drops. |
-| 7. Compounding, idle pull [S] | Four speeds (slow, walk, trot, gallop); nothing pauses. The journal fills while you watch. After an absence the hill moves on up to one day, and says so. |
+| 7. Compounding, idle pull [S] | Automatic quiet playback; new words and arrivals stop fast batches for reading. Inspections and bell decisions wait. The saved hill waits while you are away. |
 | 8. Stories you retell [S] | The journal records breakthroughs, finds, raids, refusals, habits and deaths in past tense. People answer the bell in their own words. |
 
 **Naughty edges, by design, a little fun and inside the model:** crying wolf with the bell (false alarms make sheltering a poor outcome, so trust in the bell falls and later the bell is ignored); digging into the neighbours' store (above); peering into everyone's lives through the cross-section; overworking the diggers (fatigue builds over days in HF's slow store; tired people stop, slow down, or get hurt on loose stone).
@@ -56,9 +56,9 @@ Research: [research-hooks.md](research-hooks.md) ([S] sourced, [I] inference). E
 | 35 | ~135 | day 120 |
 | 81 | ~810 | before the population cap; now capped at 60 |
 
-A pending raid warning runs at one sim-minute per real second until the keeper rings the bell or chooses Keep watching. The chosen speed then returns. Inspection sheets slow playback without pausing. These are UI playback changes; simulation quanta, state, inputs and exports stay unchanged. Keep watching lasts for the current sitting; resuming an unresolved raid shows its warning again.
+A pending raid warning holds playback until the keeper rings the bell or chooses Keep watching. Inspections hold time. Quiet playback runs at 72 game minutes per real second, and the first new note, arrival, departure or death stops the current batch for six seconds of reading time. These are UI playback changes; simulation quanta, state, inputs and exports stay unchanged. Keep watching lasts for the current sitting; resuming an unresolved raid shows its warning again.
 
-At gallop a sim-day is 1.25 real seconds, so 60 people is about 40–50% of one core on this machine. The frame loop gives the sim at most 10 ms a frame; if it cannot keep up, time slows and the page says "the days pass as fast as they can". **Decision date for moving the sim to a Web Worker: 2026-10-26**, after phone playtests.
+The earlier gallop setting ran a sim-day in 1.25 real seconds; automatic quiet playback now takes 20 seconds before reading stops. The earlier CPU measurement does not describe the current pacing. The frame loop gives the sim at most 10 ms a frame; if it cannot keep up, time slows and the page says "the days pass as fast as they can". **Decision date for moving the sim to a Web Worker: 2026-10-26**, after phone playtests.
 
 ## Shelter and marks (round 4)
 
@@ -88,7 +88,7 @@ Revert: new runs start on the previous edition by setting `DEFAULT_EDITION` in `
 
 ## Clarity exceptions
 
-- DL-27: the hill continues during an absence, up to one day. This is the idle design in the hooks map. Saving says “It keeps going while you are gone, a little”; returning reports how much time passed. This exception preserves the existing simulation and replay rules.
+- DL-27 updated 2026-10-21: resuming restores the saved minute. Offline catch-up was removed so it cannot pass a bell decision before the player sees the hill. Old saves, inputs, editions and replay quanta remain unchanged.
 - DL-3 scene colours: chalk marks and lamp flames keep their material accent colour. Selection uses ordinary ink and a heavier ellipse; the current instruction uses the accent in the controls. Material colour does not mark selection.
 
 ## Deferred
@@ -148,3 +148,6 @@ Rules, simulation sources, HF 2.8.0 pin, save/export format and editions remain 
 **Round 2 (2026-10-20).** Yusra’s fresh retest of 6c00dab says “I had spent more time opening readings than carving rooms” and asks “Keep the place I am marking stable and obvious while I choose tools and read the result.” Her report has no ledger id yet; this extends the F-275 phone work and fun-warren §5 recommendations 1–2. The 360×690 working scene keeps the same position, scale and height across tools and readings. Excavation no longer reframes the camera automatically; Fit hill, zoom, gestures and explicit person selection change it. Every pressed cell gets an outline before release. Ordinary marks remain one gesture; a new surface entrance asks once in words, and cancel or another gesture discards that pending selection. Essential plan/bed/door readings are shorter. Compound plan conditions use compact counts; full route explanations sit behind Route details and remain available through Last reading. A complete named work sentence sits beside Open journal. Bed capacity updates in the same input as its reading. The journal starts with the complete newest safety entry, with earlier entries behind a labelled disclosure; changing tabs returns to the top. These serve DL-13–15, DL-22–25 and DL-30–33 without changing simulation, editions, saves or the HF pin.
 
 Round-2 cost and revert: reserving the reading space keeps a 120 px canvas even when the reading is closed at 360×690; the 156 px strip and 320 px sheet stay fixed. Two Zoom + presses reach at least 44 px cells; deeper building may need deliberate Fit hill or pan. Very short/enlarged-text layouts retain page flow and the existing 2026-11-03 real-device follow-up. Optional lists and disclosures still scroll. Action availability is unchanged: seed 7, 301 one-second samples over five default-speed minutes each had a verified legal direct chalk action, longest sampled unavailable gap zero; replay 9f124635. This does not measure enjoyment or attention. Revert the Round-2 shipping commit to restore the preceding UI; retain edition 0.4.0 and HF 2.8.0. Adam still accepts by playing.
+
+## Owner pacing update (2026-10-21)
+The speed chooser is removed. Automatic playback stops at the first delivered event, waits for reading, and holds during inspections, information, menus and unanswered raid warnings. Menus preserve the remaining reading beat. The existing hill and route/door information remains in native dismissible information popovers; records of people and earlier events keep their gameplay disclosures. No simulation, edition, save format, tally or HF change. Adam accepts feel.

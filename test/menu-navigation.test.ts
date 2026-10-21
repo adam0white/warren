@@ -188,30 +188,48 @@ describe('Game menu and person return paths', () => {
   });
 });
 
-it('pauses the Game menu and its person pages without changing inputs or selected speed', async () => {
+it('pauses the Game menu and its person pages without changing inputs or spending reading time', async () => {
   const page = await begin();
   const state = () =>
     page.evaluate<{ minute: number; inputs: string }>(
       `({minute: window.__warren.game.s.minute, inputs: JSON.stringify(window.__warren.game.inputs)})`,
     );
   try {
-    await page.locator('[data-speed="2"]').click();
     await page.locator('#book').click();
     const before = await state();
     await page.clock.runFor(2000);
     expect(await state()).toEqual(before);
-    expect(await page.locator('#clock-rate').innerText()).toBe('Paused · Game menu');
+    expect(await page.locator('#clock-rate').innerText()).toBe('Paused · Game menu or information');
     await page.locator('[data-tab="p"]').click();
     await page.locator('[data-who]').first().click();
     await page.clock.runFor(2000);
     expect(await state()).toEqual(before);
     await page.locator('#cardx').click();
     await page.keyboard.press('Escape');
-    expect(await page.locator('[data-speed="2"]').getAttribute('class')).toContain('on');
-    await page.clock.runFor(500);
+    expect(await page.locator('[data-speed]').count()).toBe(0);
+    await page.clock.runFor(8000);
     const resumed = await state();
     expect(resumed.minute).toBeGreaterThan(before.minute);
     expect(resumed.inputs).toBe(before.inputs);
+  } finally {
+    await page.close();
+  }
+});
+
+it('presents a new important word after the retained note log fills', async () => {
+  const page = await begin();
+  try {
+    await page.evaluate(
+      `(() => { const s=window.__warren.game.s; const n=s.notes.at(-1); s.notes=Array.from({length:400},()=>({...n})); })()`,
+    );
+    await page.clock.runFor(300);
+    await page.evaluate(
+      `(() => { const s=window.__warren.game.s; s.notes.shift(); s.notes.push({at:s.minute,kind:'story',text:'A new important reply after four hundred notes.',weight:10}); })()`,
+    );
+    await page.clock.runFor(300);
+    expect(await page.locator('#ticker').getAttribute('title')).toBe(
+      'A new important reply after four hundred notes.',
+    );
   } finally {
     await page.close();
   }

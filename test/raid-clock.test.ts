@@ -37,8 +37,7 @@ async function enter(width = 360, height = 690) {
   })()`);
   await page.reload();
   await page.locator('#cont').click();
-  await page.locator('[data-speed="3"]').click();
-  await page.clock.runFor(250);
+  await page.clock.runFor(7000);
   return page;
 }
 async function exported(page: Page): Promise<Saved> {
@@ -65,9 +64,9 @@ describe('F-233 raid playback', () => {
   it('catches smoke within a fast frame, leaves time to inspect and restores gallop on ringing', async () => {
     const page = await enter();
     try {
-      expect(await page.locator('#clock-rate').innerText()).toBe('Slow · 1 min/s · raid warning');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Bell decision · time waits');
       expect(await page.locator('#raid-warning').innerText()).toContain('Smoke');
-      expect(await page.locator('[data-speed="3"]').getAttribute('class')).toContain('on');
+      expect(await page.locator('[data-speed]').count()).toBe(0);
       await page.locator('#book').click();
       await page.locator('[data-tab="p"]').click();
       await page.locator('[data-who]').first().click();
@@ -76,7 +75,7 @@ describe('F-233 raid playback', () => {
       await page.locator('#bookx').click();
       expect(await page.locator('#raid-warning').innerText()).toContain('Smoke');
       await page.locator('#bell').click();
-      expect(await page.locator('#clock-rate').innerText()).toBe('Gallop · 1152 min/s');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Reading the latest word');
       expect(await page.locator('#raid-warning').isVisible()).toBe(false);
       const run = await exported(page);
       expect(run.minute).toBe(saved.state.raids[0]?.smoke);
@@ -96,11 +95,10 @@ describe('F-233 raid playback', () => {
   it('keeps selected speed while pending and restores it when choosing to watch', async () => {
     const page = await enter();
     try {
-      await page.locator('[data-speed="2"]').click();
       await page.clock.runFor(500);
-      expect(await page.locator('#clock-rate').innerText()).toContain('1 min/s · raid warning');
+      expect(await page.locator('#clock-rate').innerText()).toContain('Bell decision · time waits');
       await page.locator('#watch-raid').click();
-      expect(await page.locator('#clock-rate').innerText()).toBe('Trot · 288 min/s');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Reading the latest word');
       const run = await exported(page);
       expect(run.inputs).toEqual(saved.inputs);
     } finally {

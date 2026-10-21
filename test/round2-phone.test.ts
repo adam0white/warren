@@ -316,8 +316,10 @@ it('fits mixed door conditions while marking and keeps full route details on reo
     await page.mouse.move(skyB.x, skyB.y);
     await page.mouse.move(b.x, b.y);
     await page.clock.runFor(100);
-    expect(await page.locator('#reading-context summary').isVisible()).toBe(true);
-    expect(await page.locator('#reading-context summary').innerText()).toBe('Route details');
+    expect(await page.locator('#reading-context button').isVisible()).toBe(true);
+    expect(await page.locator('#reading-context button').getAttribute('aria-label')).toBe(
+      'More about these routes',
+    );
     expect(await page.locator('#cell-words').innerText()).toContain('Keep protective doors shut.');
     const essentialFits = () =>
       page.locator('#cell-words').evaluate((el) => {
@@ -334,7 +336,7 @@ it('fits mixed door conditions while marking and keeps full route details on reo
     expect(await essentialFits()).toBe(true);
     await page.locator('#cellx').click();
     await page.locator('#last-reading').click();
-    await page.locator('#reading-context summary').click();
+    await page.locator('#reading-context button').click();
     expect(await page.locator('#door-context').innerText()).toContain('The entrance admits riders.');
     expect(await page.locator('#door-context').innerText()).toContain('keep protective stone doors shut');
     await page.screenshot({ path: `${shots}/after-360-complex-route-details-b.png` });
