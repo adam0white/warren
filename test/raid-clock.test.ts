@@ -79,7 +79,7 @@ describe('F-233 raid playback', () => {
       expect(await page.locator('#clock-rate').innerText()).toBe('Gallop · 1152 min/s');
       expect(await page.locator('#raid-warning').isVisible()).toBe(false);
       const run = await exported(page);
-      expect(run.minute).toBeGreaterThanOrEqual((saved.state.raids[0]?.smoke ?? 0) + QUANTUM);
+      expect(run.minute).toBe(saved.state.raids[0]?.smoke);
       expect(run.inputs.at(-1)?.verb).toBe('bell');
       expect(run.inputs.at(-1)?.at).toBeLessThan(run.state.raids[0]?.riders ?? 0);
       expect(fingerprint(replay(run.seed, run.inputs, run.minute, run.game).s)).toBe(run.fingerprint);

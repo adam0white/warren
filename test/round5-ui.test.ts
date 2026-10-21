@@ -142,7 +142,7 @@ describe('round five phone building', () => {
       expect(await body.evaluate((e) => e.scrollTop)).toBeGreaterThan(100);
       await page.screenshot({ path: `${evidence}/round5-after-360-shelter-touch.png` });
       await page.clock.runFor(32000);
-      expect(await page.evaluate<number>('window.__warren.game.s.minute')).toBeGreaterThan(minute);
+      expect(await page.evaluate<number>('window.__warren.game.s.minute')).toBe(minute);
       const close = await page.locator('#bookx').boundingBox();
       expect((close?.y ?? 999) + (close?.height ?? 0)).toBeLessThan(690);
       await page.locator('#bookx').tap();

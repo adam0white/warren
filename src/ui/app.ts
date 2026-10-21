@@ -1,6 +1,6 @@
 /**
  * The page around the hill: a title, the cross-section, the keeper's tools, the bell, the speed, a person card
- * and the Game menu (journal, people, saves, download). Time runs continuously; nothing pauses, it only slows.
+ * and the Game menu (journal, people, saves, download). Time runs continuously; the Game menu pauses it.
  */
 import { ageYears, describePerson, FRAMEWORK_VERSION, type Person } from '@adam0white/human-framework';
 import { type PhoneStage, phoneStage } from '@adam0white/lab-kit';
@@ -487,6 +487,14 @@ function raidDecision() {
   return raid && !answeredRaids.has(raid.smoke) ? raid : null;
 }
 
+/** Menu pages, their person pages and notebook/privacy dialogs hold only playback. */
+function menuHoldsTime(): boolean {
+  return (
+    !!document.querySelector('#drawer:not([hidden]), .hflab-veil, .lab-controls[open]') ||
+    (!!personOpener?.isConnected && !document.getElementById('card')?.hidden)
+  );
+}
+
 function clockRate(reading: boolean) {
   const chosen = SPEEDS[speedIx] ?? 1;
   return raidDecision() ? Math.min(chosen, RAID_SPEED) : reading ? Math.min(chosen, SPEEDS[0]) : chosen;
@@ -498,11 +506,11 @@ function frame(now: number) {
   const dt = Math.min(250, now - last);
   last = now;
   const s = g.s;
-  // The notebook open slows the days to 'slow' rather than stopping them.
+  const menuHeld = menuHoldsTime();
   const reading = isReading();
-  disp += (dt * clockRate(reading)) / MS_PER_MIN;
+  if (!menuHeld) disp += (dt * clockRate(reading)) / MS_PER_MIN;
   const t0 = performance.now();
-  while (s.minute + QUANTUM <= disp && performance.now() - t0 < 10) {
+  while (!menuHeld && s.minute + QUANTUM <= disp && performance.now() - t0 < 10) {
     const pending = raidDecision();
     advance(g, s.minute + QUANTUM);
     dirty = true;
@@ -573,7 +581,9 @@ function chrome() {
     const actual = clockRate(reading0);
     const name =
       pending || reading0 ? 'Slow' : (SPEED_NAMES[speedIx] ?? 'walk').replace(/^./, (c) => c.toUpperCase());
-    rate.textContent = `${name} · ${Math.round((actual * 1000) / MS_PER_MIN)} min/s${pending ? ' · raid warning' : reading0 ? ' · reading' : ''}`;
+    rate.textContent = menuHoldsTime()
+      ? 'Paused · Game menu'
+      : `${name} · ${Math.round((actual * 1000) / MS_PER_MIN)} min/s${pending ? ' · raid warning' : reading0 ? ' · reading' : ''}`;
   }
   // New notes: heavy ones take the ticker.
   for (; seenNotes < s.notes.length; seenNotes++) {

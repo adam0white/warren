@@ -81,7 +81,7 @@ describe('round four shelter clarity', () => {
         const before = await page.evaluate<number>('window.__warren.game.s.minute');
         await page.clock.runFor(5000);
         const after = await page.evaluate<number>('window.__warren.game.s.minute');
-        expect(after).toBeGreaterThan(before ?? 0);
+        expect(after).toBe(before);
         await page.locator('#bookx').click();
         expect(await check.evaluate((el) => el === document.activeElement)).toBe(true);
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
