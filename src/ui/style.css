@@ -1454,3 +1454,9 @@ button.link {
     right: 136px;
   }
 }
+
+@media (min-width: 900px) {
+  #fullscreen {
+    display: none;
+  }
+}

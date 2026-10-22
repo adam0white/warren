@@ -75,7 +75,7 @@ describe('DL-23 actual control targets', () => {
         const privacyScene = await page.locator('#cv').boundingBox();
         await page.screenshot({ path: `${evidence}/${width}-privacy.png` });
 
-        const notebook = await boxes(page, '.menu-rows > *, #bookx, #resume');
+        const notebook = await boxes(page, '.menu-rows > *:visible, #bookx, #resume');
         await page.screenshot({ path: `${evidence}/${width}-notebook.png` });
         await page.locator('#bookx').click();
         await page.locator('#shelter-check').click();
@@ -87,7 +87,7 @@ describe('DL-23 actual control targets', () => {
           JSON.stringify({ play, notebook, card, scene, privacyScene }, null, 2),
         );
         expect(play).toHaveLength(14);
-        expect(notebook).toHaveLength(8);
+        expect(notebook).toHaveLength(width >= 900 ? 7 : 8);
         expect(card).toHaveLength(1);
         expectTargets([...play, ...notebook, ...card], width, height);
         expect(scene?.height).toBeGreaterThanOrEqual(width === 320 ? 100 : 120);
