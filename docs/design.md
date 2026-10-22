@@ -151,3 +151,7 @@ Round-2 cost and revert: reserving the reading space keeps a 120 px canvas even 
 
 ## Owner pacing update (2026-10-21)
 The speed chooser is removed. Automatic playback stops at the first delivered event, waits for reading, and holds during inspections, information, menus and unanswered raid warnings. Menus preserve the remaining reading beat. The existing hill and route/door information remains in native dismissible information popovers; records of people and earlier events keep their gameplay disclosures. No simulation, edition, save format, tally or HF change. Adam accepts feel.
+
+
+## Owner speed restoration (2026-10-22)
+The original speed choices are restored. Inspection, new-event reading time and menu protections remain. Pending raid warnings still hold time. Simulation inputs, saves and replay rules are unchanged.

@@ -64,9 +64,11 @@ describe('F-233 raid playback', () => {
   it('catches smoke within a fast frame, leaves time to inspect and restores gallop on ringing', async () => {
     const page = await enter();
     try {
+      await page.locator('[data-speed="3"]').click();
+      expect(await page.locator('[data-speed="3"]').getAttribute('aria-pressed')).toBe('true');
       expect(await page.locator('#clock-rate').innerText()).toBe('Bell decision · time waits');
       expect(await page.locator('#raid-warning').innerText()).toContain('Smoke');
-      expect(await page.locator('[data-speed]').count()).toBe(0);
+      expect(await page.locator('[data-speed]').count()).toBe(4);
       await page.locator('#book').click();
       await page.locator('[data-tab="p"]').click();
       await page.locator('[data-who]').first().click();

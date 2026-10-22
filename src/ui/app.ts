@@ -45,6 +45,10 @@ import { compactShelterWords, sleepingCapacityWords, sleepingRoomWords } from '.
 import * as store from './store.ts';
 
 type Tool = 'look' | 'chalk' | 'erase' | 'store' | 'beds' | 'lamp' | 'door';
+const SPEEDS = [0.25, 1, 4, 16] as const;
+const SPEED_NAMES = ['slow', 'walk', 'trot', 'gallop'];
+const MS_PER_MIN = 20000 / DAY;
+let speedIx = 1;
 const SAVE_KEY = 'hill';
 
 let g: Game | null = null;
@@ -221,6 +225,7 @@ function enter() {
         ${toolBtn('door', 'door', '◯')}
       </div>
       <div class="row">
+        <div class="speed" role="group" aria-label="Speed">${SPEEDS.map((_, k) => `<button data-speed="${k}" aria-label="${SPEED_NAMES[k]}">${'›'.repeat(k + 1).replace('››››', '»»')}</button>`).join('')}</div>
         <button class="bell" id="bell" aria-label="Ring the bell" aria-describedby="bell-meaning">bell</button>
         <button id="book" aria-label="Game menu">Game menu</button>
       </div>
@@ -247,6 +252,13 @@ function enter() {
   readUntil = performance.now() + 6000;
   for (const b of document.querySelectorAll<HTMLButtonElement>('[data-tool]'))
     b.addEventListener('click', () => setTool(b.dataset.tool as Tool));
+  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-speed]'))
+    b.addEventListener('click', () => {
+      speedIx = Number(b.dataset.speed);
+      syncButtons();
+      chrome();
+      requestWake();
+    });
   document.getElementById('bell')?.addEventListener('click', () => {
     if (order({ verb: 'bell' })) {
       const raid = g && activeRaid(g.s);
@@ -362,6 +374,11 @@ function setTool(t: Tool) {
 }
 
 function syncButtons() {
+  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-speed]')) {
+    const selected = Number(b.dataset.speed) === speedIx;
+    b.classList.toggle('on', selected);
+    b.setAttribute('aria-pressed', String(selected));
+  }
   for (const b of document.querySelectorAll<HTMLButtonElement>('[data-tool]'))
     b.classList.toggle('on', b.dataset.tool === tool);
 }
@@ -460,7 +477,12 @@ function frame(now: number) {
   const s = g.s;
   const menuHeld = menuHoldsTime();
   const reading = isReading();
-  const rate = playbackRate(reading || menuHeld, !!raidDecision(), now < readUntil);
+  const rate = playbackRate(
+    reading || menuHeld,
+    !!raidDecision(),
+    now < readUntil,
+    ((SPEEDS[speedIx] ?? 1) * 1000) / MS_PER_MIN,
+  );
   if (rate === 0) disp = s.minute;
   else disp += (dt * rate) / 1000;
   const t0 = performance.now();
@@ -542,7 +564,7 @@ function chrome() {
           ? 'Bell decision · time waits'
           : performance.now() < readUntil
             ? 'Reading the latest word'
-            : 'The hill carries on';
+            : `${SPEED_NAMES[speedIx]} · the hill carries on`;
   }
   // New notes: heavy ones take the ticker.
   const firstNew = lastSeenNote ? s.notes.indexOf(lastSeenNote) + 1 : Math.max(0, s.notes.length - 1);
@@ -1402,8 +1424,10 @@ export const _debug = {
     return g;
   },
   view,
-  setSpeed(_k: number) {
-    // Older test adapters may call this; playback is now automatic.
+  setSpeed(k: number) {
+    speedIx = k;
+    syncButtons();
+    chrome();
   },
   order,
 };

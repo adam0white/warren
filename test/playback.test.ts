@@ -7,6 +7,8 @@ it('holds inspections, bell decisions and reading, then runs quiet time briskly'
   expect(playbackRate(false, true, false)).toBe(0);
   expect(playbackRate(false, false, true)).toBe(0);
   expect(playbackRate(false, false, false)).toBe(72);
+  expect(playbackRate(false, false, false, 1152)).toBe(1152);
+  expect(playbackRate(false, true, false, 1152)).toBe(0);
 });
 it('detects an arrival and a new note even after the bounded log fills', () => {
   const s = newGame(7).s;

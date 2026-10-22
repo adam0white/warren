@@ -206,7 +206,7 @@ it('pauses the Game menu and its person pages without changing inputs or spendin
     expect(await state()).toEqual(before);
     await page.locator('#cardx').click();
     await page.keyboard.press('Escape');
-    expect(await page.locator('[data-speed]').count()).toBe(0);
+    expect(await page.locator('[data-speed]').count()).toBe(4);
     await page.clock.runFor(8000);
     const resumed = await state();
     expect(resumed.minute).toBeGreaterThan(before.minute);
