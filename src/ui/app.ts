@@ -3,7 +3,7 @@
  * and the Game menu (journal, people, saves, download). Time runs continuously; the Game menu pauses it.
  */
 import { ageYears, describePerson, FRAMEWORK_VERSION, type Person } from '@adam0white/human-framework';
-import { type PhoneStage, phoneStage } from '@adam0white/lab-kit';
+import { type PhoneStage, phoneStage, telemetryNotice, telemetryToggle } from '@adam0white/lab-kit';
 import { DAY, hourWords } from '../sim/calendar.ts';
 import {
   act,
@@ -95,6 +95,8 @@ let planCell: number | null = null;
 let lastReading: { title: string; words: string; context?: string } | null = null;
 let pendingEntrance: number[] | null = null;
 
+const notice = telemetryNotice();
+if (notice) Object.assign(notice.style, { position: 'static', transform: 'none', margin: '0 auto' });
 const app = () => document.getElementById('app') as HTMLElement;
 const esc = (x: string) =>
   x.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
@@ -136,6 +138,20 @@ const aboutHill = `<button class="info" aria-label="More about the hill" popover
 
 export async function start() {
   mountLabControls();
+  lab.trackRun(
+    async () => {
+      const current = g;
+      try {
+        const stored = await store.get<Saved>(SAVE_KEY);
+        if (current && g === current && stored?.value.seed === current.s.seed) lab.captureSave(stored.value);
+      } catch {}
+      return runOf();
+    },
+    {
+      runKey: () => g?.s.seed ?? 'title',
+      getLogs: () => g?.s.notes.slice(-40).map((line) => line.text) ?? [],
+    },
+  );
   if ('serviceWorker' in navigator && location.hostname !== 'localhost')
     navigator.serviceWorker.register('/sw.js').catch(() => {});
   ink = readInk();
@@ -163,6 +179,12 @@ function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
     ${aboutHill}
     ${footer}
   </div>`;
+  if (notice && !notice.dataset.shown) {
+    const slot = document.createElement('div');
+    slot.append(notice);
+    app().querySelector('.page')?.prepend(slot);
+    notice.dataset.shown = '1';
+  }
   document.getElementById('cont')?.addEventListener('click', () => {
     if (!sv) return;
     g = load(sv);
@@ -1304,6 +1326,7 @@ function openBook(tab = 's') {
       </div>
       ${footer}</div>
     </div>`;
+  d.querySelector('[data-pane="s"]')?.append(telemetryToggle(lab));
   hideOtherSheets('drawer');
   d.hidden = false;
   updateShelter();
@@ -1373,7 +1396,8 @@ async function writeSave(): Promise<void> {
   if (!g) return;
   lastSaved = performance.now();
   dirty = false;
-  await store.put(SAVE_KEY, { ...save(g), savedAt: Date.now() });
+  const saved = { ...save(g), savedAt: Date.now() };
+  if (await store.put(SAVE_KEY, saved)) lab.captureSave(saved);
 }
 
 function runOf() {
@@ -1436,19 +1460,20 @@ export const _debug = {
 function mountLabControls() {
   const controls = document.createElement('details');
   controls.className = 'lab-controls';
-  controls.innerHTML = `<summary>Playtest privacy</summary><label><input type="checkbox"> Anonymous play events</label> <a href="https://human.adamwhite.work/lab/privacy/">Privacy</a>`;
+  controls.innerHTML = `<summary>Playtest privacy</summary><label><input type="checkbox"> Lab recording</label> <a href="https://human.adamwhite.work/lab/privacy/">Privacy</a>`;
   const toggle = controls.querySelector('input');
   if (toggle) {
-    toggle.checked = lab.eventsOn;
+    toggle.checked = lab.telemetryOn;
     const sync = () => {
-      toggle.checked = lab.eventsOn;
+      toggle.checked = lab.telemetryOn;
     };
+    window.addEventListener('hf-lab-preference', sync);
     window.addEventListener('storage', sync);
     window.addEventListener('focus', sync);
     document.addEventListener('change', sync);
     toggle.addEventListener('change', () => {
-      lab.setEventsOff(!toggle.checked);
-      toggle.checked = lab.eventsOn;
+      lab.setTelemetryOff(!toggle.checked);
+      toggle.checked = lab.telemetryOn;
     });
   }
   document.body.append(controls);
