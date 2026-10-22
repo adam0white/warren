@@ -19,9 +19,8 @@ mkdirSync(shots, { recursive: true });
 const browser = await chromium.launch();
 try {
   for (const [width, height] of [
-    [360, 780],
-    [412, 891],
-    [1440, 900],
+    [360, 690],
+    [1280, 800],
   ] as const) {
     const page = await browser.newPage({ viewport: { width, height }, serviceWorkers: 'block' });
     try {
@@ -56,7 +55,7 @@ try {
       await page.clock.runFor(500);
       for (const privacy of ['closed', 'open']) {
         if (privacy === 'open') {
-          await page.locator('.lab-controls summary').click();
+          await page.locator('#book').click();
           await page.clock.runFor(300);
         }
         const size = await page.evaluate(() => ({

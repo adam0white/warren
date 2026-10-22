@@ -35,7 +35,7 @@ async function expectViewportFit(page: Page, height: number) {
   }));
   expect(size.height).toBeLessThanOrEqual(height);
   expect(size.width).toBeLessThanOrEqual(size.viewport);
-  for (const selector of ['#book', '.lab-controls summary']) {
+  for (const selector of ['#book', '#shelter-check']) {
     const box = await page.locator(selector).boundingBox();
     expect(box).not.toBeNull();
     expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(height);
@@ -70,10 +70,10 @@ describe('owner viewport regression', () => {
         await expectViewportFit(page, height);
         expect(await page.locator('#goal').innerText()).toMatch(/Choose chalk.*drag.*cellar/);
         await page.screenshot({ path: `${shots}/after-early-${width}.png` });
-        await page.locator('.lab-controls summary').click();
+        await page.locator('#book').click();
         await page.clock.runFor(300);
         await expectViewportFit(page, height);
-        expect(await page.locator('.lab-controls input').isVisible()).toBe(true);
+        expect(await page.locator('#record-play').isVisible()).toBe(true);
         await page.screenshot({ path: `${shots}/after-privacy-${width}.png` });
       } finally {
         await page.close();

@@ -141,6 +141,7 @@ it('asks before planning a new surface entrance; cancel and confirm leave exact 
 it('updates sleeping capacity on the same input as the reading', async () => {
   const page = await start();
   try {
+    await page.locator('#furnish').click();
     await page.locator('[data-tool="beds"]').click();
     await page.clock.runFor(100);
     const p = await point(page, 19, 11);
@@ -155,7 +156,7 @@ it('updates sleeping capacity on the same input as the reading', async () => {
       );
     }, p);
     expect(await page.locator('#cell-words').innerText()).toContain('three');
-    expect(await page.locator('#bell-meaning').innerText()).toContain('three');
+    expect(await page.locator('#shelter-check').getAttribute('aria-label')).toBe('The village');
     expect(await page.locator('#goal').innerText()).not.toContain('No sleeping places');
   } finally {
     await page.close();
@@ -198,11 +199,12 @@ it('shows a complete work sentence and opens the complete newest safety entry', 
     });
     expect(fit).toBe(true);
     await page.screenshot({ path: `${shots}/after-360-journal-b.png` });
-    await page.locator('[data-tab="s"]').click();
+    await page.locator('#bookx').click();
+    await page.locator('#book').click();
     await page.locator('#sheet-body').evaluate((el) => {
       el.scrollTop = el.scrollHeight;
     });
-    await page.locator('[data-tab="j"]').click();
+    await page.locator('[data-open="j"]').click();
     expect(await page.locator('#sheet-body').evaluate((el) => el.scrollTop)).toBe(0);
   } finally {
     await page.close();
@@ -243,6 +245,7 @@ it('fits the mixed/open-door plan and longest bed and door readings above contro
     await page.clock.runFor(300);
     expect(await fits()).toBe(true);
     await page.screenshot({ path: `${shots}/after-360-smoke-mixed-b.png` });
+    await page.locator('#watch-raid').click();
     await page.locator('[data-tool="look"]').click();
     await page.evaluate(`(async()=>{
       const {idx,K,SURF,USE}=await import('/src/sim/grid.ts');const s=window.__warren.game.s;
@@ -255,6 +258,7 @@ it('fits the mixed/open-door plan and longest bed and door readings above contro
     expect(await page.locator('#cell-title').innerText()).toBe('Sleeping room');
     expect(await fits()).toBe(true);
     await page.screenshot({ path: `${shots}/after-360-bed-b.png` });
+    await page.locator('#furnish').click();
     await page.locator('[data-tool="door"]').click();
     const door = await point(page, 18, 9);
     await page.touchscreen.tap(door.x, door.y);
@@ -275,7 +279,7 @@ it('cancels a pending entrance when a new scene gesture starts', async () => {
     const p = await point(page, 19, 8);
     await page.touchscreen.tap(p.x, p.y);
     expect(await page.locator('#confirm-entrance').isVisible()).toBe(true);
-    const other = await point(page, 20, 11);
+    const other = await point(page, 20, 7);
     await page.touchscreen.tap(other.x, other.y);
     expect(await page.locator('#confirm-entrance').isVisible()).toBe(false);
     expect(
@@ -301,7 +305,7 @@ it('fits mixed door conditions while marking and keeps full route details on reo
         h.use[idx(x,SURF+1)]=USE.door;
         for(let y=SURF+2;y<=SURF+8;y++)h.chalk[idx(x,y)]=1;
       }
-      h.shut[idx(22,SURF+1)]=1;h.chalk[idx(18,SURF+2)]=0;s.raids[0].stage='smoke';
+      h.shut[idx(22,SURF+1)]=1;h.chalk[idx(18,SURF+2)]=0;
       Object.assign(window.__warren.view,{cs:12,x:4,y:5});
     })()`);
     await page.locator('[data-tool="chalk"]').click();
@@ -316,8 +320,8 @@ it('fits mixed door conditions while marking and keeps full route details on reo
     await page.mouse.move(skyB.x, skyB.y);
     await page.mouse.move(b.x, b.y);
     await page.clock.runFor(100);
-    expect(await page.locator('#reading-context button').isVisible()).toBe(true);
-    expect(await page.locator('#reading-context button').getAttribute('aria-label')).toBe(
+    expect(await page.locator('#reading-context summary').isVisible()).toBe(true);
+    expect(await page.locator('#reading-context summary').getAttribute('aria-label')).toBe(
       'More about these routes',
     );
     expect(await page.locator('#cell-words').innerText()).toContain('Keep protective doors shut.');
@@ -336,7 +340,7 @@ it('fits mixed door conditions while marking and keeps full route details on reo
     expect(await essentialFits()).toBe(true);
     await page.locator('#cellx').click();
     await page.locator('#last-reading').click();
-    await page.locator('#reading-context button').click();
+    await page.locator('#reading-context summary').click();
     expect(await page.locator('#door-context').innerText()).toContain('The entrance admits riders.');
     expect(await page.locator('#door-context').innerText()).toContain('keep protective stone doors shut');
     await page.screenshot({ path: `${shots}/after-360-complex-route-details-b.png` });

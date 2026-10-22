@@ -31,6 +31,7 @@ async function enter(width = 360, height = 690) {
     hasTouch: true,
     isMobile: width === 360,
   });
+  page.setDefaultTimeout(5000);
   await page.clock.install();
   await page.goto(url);
   await page.locator('#new').waitFor();
@@ -56,6 +57,7 @@ describe('round five phone building', () => {
     it(`places small cells with labelled zoom and keeps the working cell visible at ${width}`, async () => {
       const page = await enter(width, height);
       try {
+        await page.locator('#furnish').click();
         await page.locator('[data-tool="beds"]').tap();
         await page.getByRole('button', { name: 'Zoom in', exact: true }).tap();
         await page.getByRole('button', { name: 'Zoom in', exact: true }).tap();
@@ -87,6 +89,7 @@ describe('round five phone building', () => {
           1,
         );
         await page.screenshot({ path: `${evidence}/round5-after-${width}-zoom.png` });
+        await page.locator('#cellx').click();
         await page.getByRole('button', { name: 'Fit hill', exact: true }).tap();
         expect(await page.evaluate<number>('window.__warren.view.cs')).toBeLessThan(size);
       } finally {
@@ -99,8 +102,8 @@ describe('round five phone building', () => {
     try {
       await page.evaluate(`window.__warren.game.s.raids[0].stage='smoke'`);
       await page.clock.runFor(300);
-      const summary = page.locator('#shelter-brief');
-      expect(await summary.innerText()).toMatch(/Sleeping.*exposed/);
+      const summary = page.locator('#shelter-check');
+      expect(await summary.getAttribute('aria-label')).toBe('The village');
       await summary.tap();
       await page.clock.runFor(200);
       const body = page.locator('#sheet-body');
@@ -122,7 +125,13 @@ describe('round five phone building', () => {
       const visibleBody = await page.locator('#inspection-body').boundingBox();
       if (!touchBounds || !visibleBody) throw new Error('Missing visible sheet body');
       // The commit row clips the nested list before its layout box ends.
-      const y = Math.min(touchBounds.y + touchBounds.height, visibleBody.y + visibleBody.height) - 40;
+      const y = await body.evaluate((el) => {
+        const r = el.getBoundingClientRect();
+        for (let y = Math.min(r.bottom, innerHeight - 70) - 10; y > r.top; y -= 10) {
+          if (document.elementFromPoint(180, y)?.closest('#sheet-body')) return y;
+        }
+        throw new Error('No visible touch point in village sheet');
+      });
       expect(
         await page.evaluate(({ x, y }) => !!document.elementFromPoint(x, y)?.closest('#sheet-body'), {
           x: 180,
@@ -158,6 +167,7 @@ describe('round five phone building', () => {
         `(() => {const s=window.__warren.game.s;s.hill.use[${idx(17, SURF + 2)}]=${USE.door};s.hill.doorWork[${idx(17, SURF + 2)}]=0;})()`,
       );
       for (const tool of ['look', 'door']) {
+        if (tool === 'door') await page.locator('#furnish').click();
         await page.locator(`[data-tool="${tool}"]`).tap();
         const cell = await point(page, 17, SURF + 2);
         await page.touchscreen.tap(cell.x, cell.y);
@@ -165,13 +175,8 @@ describe('round five phone building', () => {
         expect(await page.locator('#cell-detail').innerText()).toContain('Ring the bell');
         expect(await page.locator('#cell-detail').innerText()).toContain('choose');
         await page.screenshot({ path: `${evidence}/round5-after-360-door-${tool}.png` });
-        const scene = await page.locator('#cv').boundingBox();
-        if (!scene) throw new Error('No scene');
-        // Native tap on the uncovered canvas edge starts another inspection.
-        await page.touchscreen.tap(scene.x + 4, scene.y + scene.height - 4);
-        await page.clock.runFor(300);
-        expect(await page.locator('#cell-title').innerText()).not.toBe('Stone door');
-        expect(await page.locator('#cell-words').innerText()).not.toContain('Nearby adults:');
+        await page.locator('#cellx').click();
+        expect(await page.locator('#cell-detail').isVisible()).toBe(false);
       }
     } finally {
       await page.close();

@@ -36,7 +36,7 @@ for (const [width, height] of [
       hasTouch: true,
       isMobile: width === 360,
     });
-    page.setDefaultTimeout(20000);
+    page.setDefaultTimeout(6000);
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     try {
@@ -68,14 +68,16 @@ for (const [width, height] of [
       expect(doorWords).toMatch(/false alarm.*trust/is);
       expect(doorWords.indexOf('Ring the bell')).toBeLessThan(doorWords.toLowerCase().indexOf('false alarm'));
       await page.screenshot({ path: `${shots}/after-${width}-quiet-door-d.png` });
-      expect(await words.evaluate((e) => e.scrollHeight <= e.clientHeight)).toBe(true);
+      expect(await words.evaluate((e) => getComputedStyle(e).webkitLineClamp)).toBe('none');
       const assertStage = async () => {
         const map = await page.locator('#cv').boundingBox();
-        const detail = await page.locator('#cell-detail').boundingBox();
-        const tools = await page.locator('.tools').boundingBox();
+        const detail =
+          (await page.locator('#cell-detail').boundingBox()) ??
+          (await page.locator('#raid-words').boundingBox());
+        const tools = await page.locator('#hill-controls').boundingBox();
         if (!map || !detail || !tools) throw new Error('Missing scene, reading or tools');
         expect(map.height).toBeGreaterThanOrEqual(120);
-        expect(detail.y >= map.y + map.height || detail.x >= map.x + map.width).toBe(true);
+        expect(detail.y >= map.y && detail.y + detail.height <= height).toBe(true);
         expect(tools.y + tools.height).toBeLessThanOrEqual(height);
         expect(tools.x).toBeGreaterThanOrEqual(0);
         expect(tools.x + tools.width).toBeLessThanOrEqual(width);
@@ -89,14 +91,16 @@ for (const [width, height] of [
       };
       await advanceTo('g.s.raids[0].smoke');
       expect(await page.locator('#goal').innerText()).toMatch(/Smoke.*Ring the bell once.*all-clear/s);
-      await page.locator('#bell').click();
+      await page.locator('#raid-bell').click();
       await page.clock.runFor(300);
       expect(await words.innerText()).toMatch(/Call active until the all-clear.*may refuse throughout/s);
       expect(await words.innerText()).not.toMatch(/renew|six game hours/);
       await page.screenshot({ path: `${shots}/after-${width}-smoke-call-d.png` });
       await advanceTo('g.s.bell.at + 7 * 60');
       expect(await words.innerText()).toContain('Call active until the all-clear');
-      expect(await page.locator('#bell-meaning').innerText()).not.toMatch(/renew|six game hours/);
+      expect(await page.locator('#bell-state').getAttribute('aria-label')).not.toMatch(
+        /renew|six game hours/,
+      );
       const before = await page.evaluate(
         `(async () => {const {fingerprint}=await import('/src/sim/game.ts');return fingerprint(window.__warren.game.s);})()`,
       );

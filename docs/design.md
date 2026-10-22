@@ -155,3 +155,13 @@ The speed chooser is removed. Automatic playback stops at the first delivered ev
 
 ## Owner speed restoration (2026-10-22)
 The original speed choices are restored. Inspection, new-event reading time and menu protections remain. Pending raid warnings still hold time. Simulation inputs, saves and replay rules are unchanged.
+
+## Approved UI sweep (2026-10-22)
+
+Adam approved the lab layout spec: "All good decisions, proceed." The implementation follows `ui-sweep/specs/warren.md` and `GRAMMAR.md` in the lab scratch store. The drawn village state opens The village. Five bottom chips replace the seven equal tools. Furnish holds the four room marks. Readings cover the lower map on phones and occupy the right column on desktop. The menu holds rare reading rows, recording and Send word. Send word remembers an optional name and preserves the explicit recording-off and browser privacy consent paths. The title page holds the only new-hill action, behind inline confirmation.
+
+Warren keeps the spec-default three player speeds. Slow starts a new hill; Steady starts a resumed one. Reading, information, menu and pending raids hold playback only. There is deliberately no end screen and no skip action. Simulation, editions, framework version, saved hills and replay inputs stay unchanged. A beds mark still exports the existing `{ verb: 'use', use: 'beds' }` order.
+
+Done means signed main commits, green CI, a deployed clean matching release, live browser acceptance at 360×690 and 1280×800, the unchanged owner export replay, and the owner ledger entries. Adam accepts the result by playing afterwards. Evidence and report live in `~/code/.lab-scratch/ui-sweep/built/warren/` and `~/code/.lab-scratch/codex/build-warren.md`.
+
+Deferred to 2026-10-26: add a presentation slowdown for water struck and rooms finished, with strip words "Water struck" and "A room is dug". It must preserve seed/input replay identity.

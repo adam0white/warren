@@ -23,7 +23,8 @@ async function enter(width: number, height: number) {
     hasTouch: true,
     isMobile: width === 360,
   });
-  page.setDefaultTimeout(20000);
+  page.setDefaultTimeout(6000);
+  page.setDefaultTimeout(5000);
   await page.clock.install();
   await page.goto(url);
   await page.locator('#new').waitFor();
@@ -101,8 +102,8 @@ describe('round four shelter clarity', () => {
         s.bell = null;
         s.answers.push({who:s.people[0].id,at:s.minute-30,verdict:'refused',says:'An old refusal.'});
       })()`);
-      await page.locator('[data-tool="beds"]').click();
-      await page.locator('#bell').click();
+      await page.clock.runFor(300);
+      await page.locator('#raid-bell').click();
       await page.clock.runFor(300);
       expect(await page.locator('#goal').isVisible()).toBe(true);
       expect(await page.locator('#goal').innerText()).toContain('Check shelter');
@@ -118,6 +119,7 @@ describe('round four shelter clarity', () => {
   }, async () => {
     const page = await enter(360, 690);
     try {
+      await page.locator('#furnish').click();
       await page.locator('[data-tool="beds"]').click();
       const bed = await point(page, 18, SURF + 3);
       await page.mouse.click(bed.x, bed.y);
@@ -129,7 +131,7 @@ describe('round four shelter clarity', () => {
       await page.mouse.click(chalk.x, chalk.y);
       await page.clock.runFor(300);
       expect(await page.locator('#cell-words').innerText()).toContain('Dig planned');
-      expect(await page.locator('[data-tool="chalk"] .g').innerText()).not.toBe('✕');
+      expect(await page.locator('[data-tool="chalk"]').innerText()).not.toBe('✕');
     } finally {
       await page.close();
     }

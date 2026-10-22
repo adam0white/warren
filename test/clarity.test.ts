@@ -39,14 +39,19 @@ describe('F-213 first-minute clarity', () => {
   it('offers the refuge goal and chalk instruction within 40 story words through chalk selection before the first mark', async () => {
     const page = await fresh();
     try {
-      const title = (await page.locator('.page > p').allTextContents()).join(' ');
+      const title = await page.locator('.title-goal').evaluate((el) =>
+        Array.from(el.childNodes)
+          .filter((node) => node.nodeType === Node.TEXT_NODE)
+          .map((node) => node.textContent)
+          .join(' '),
+      );
       expect(title).toContain('Dig a refuge');
-      expect(title).toContain('Choose chalk');
+      expect(title).not.toContain('Choose chalk');
       await begin(page);
       const play = await page.locator('.purpose, .goal').allTextContents();
       await page.locator('[data-tool="chalk"]').click();
       await page.clock.runFor(300);
-      const hint = await page.locator('#cell-words').innerText();
+      const hint = await page.locator('#event-sentence').innerText();
       expect(hint).toContain('Dashed outlines plan a dig');
       expect(words([title, ...play, hint].join(' '))).toBeLessThanOrEqual(40);
       const chalk = await page.locator('[data-tool="chalk"]').boundingBox();
@@ -59,36 +64,32 @@ describe('F-213 first-minute clarity', () => {
   it('keeps the cut introduction reachable on request before and during play', async () => {
     const page = await fresh();
     try {
-      const about = page.getByRole('button', { name: 'More about the hill', exact: true });
+      const about = page.getByRole('button', { name: 'Information', exact: true });
       await about.click();
-      expect(await page.locator('#hill-info').innerText()).toContain('Ring the bell when there is smoke.');
-      expect(await page.locator('#hill-info').innerText()).toContain('Nobody obeys.');
+      expect(await page.locator('#hill-info').innerText()).toContain('You have the chalk and the bell.');
+      expect(await page.locator('#hill-info').innerText()).toContain('Nobody obeys;');
       await page.keyboard.press('Escape');
       await begin(page);
-      await page.locator('#book').click();
-      await page.locator('[data-tab="s"]').click();
-      await page.getByRole('button', { name: 'More about the hill', exact: true }).click();
-      expect(await page.locator('#hill-info').innerText()).toContain('Two fingers move the page.');
+      await page.getByRole('button', { name: 'Information', exact: true }).click();
+      expect(await page.locator('#hill-info').innerText()).toContain('People choose when to dig it.');
     } finally {
       await page.close();
     }
   });
 
-  it('makes the journal entry a bordered control with a visible action label', async () => {
+  it('makes the journal chip a visible action in the sheet peek row', async () => {
     const page = await fresh();
     try {
       await begin(page);
       const ticker = page.locator('#ticker');
-      expect(await ticker.innerText()).toContain('Open journal');
-      expect(await ticker.evaluate((el) => parseFloat(getComputedStyle(el).borderTopWidth))).toBeGreaterThan(
-        0,
-      );
+      expect(await ticker.innerText()).toContain('Journal');
+      expect(await ticker.innerText()).toContain('▸');
       const box = await ticker.boundingBox();
       expect(box?.height).toBeGreaterThanOrEqual(44);
       expect(box && box.y + box.height <= 690).toBe(true);
       await ticker.click();
-      expect(await page.locator('[data-pane="j"]').isVisible()).toBe(true);
-      expect(await page.locator('[data-pane="j"]').innerText()).toContain('The barley stood ripe.');
+      expect(await page.locator('#drawer[data-kind="j"]').isVisible()).toBe(true);
+      expect(await page.locator('#drawer[data-kind="j"]').innerText()).toContain('The barley stood ripe.');
     } finally {
       await page.close();
     }
@@ -98,10 +99,10 @@ describe('F-213 first-minute clarity', () => {
     const page = await fresh();
     try {
       await begin(page);
-      expect(await page.locator('#when').innerText()).toContain('19 August');
-      expect(await page.locator('#when').innerText()).toContain('Year 1');
-      await page.locator('#book').click();
-      expect(await page.locator('[data-pane="j"]').innerText()).toContain('19 August');
+      expect(await page.locator('#when').innerText()).toContain('19 Aug');
+      expect(await page.locator('#when').innerText()).toContain('year 1');
+      await page.locator('#ticker').click();
+      expect(await page.locator('#drawer[data-kind="j"]').innerText()).toContain('19 August');
       // Advance the simulation, save an accepted input, and restore through the real control.
       const game = newGame(7);
       advance(game, 13 * DAY);
@@ -113,14 +114,13 @@ describe('F-213 first-minute clarity', () => {
       })()`);
       await page.reload();
       expect(await page.locator('#cont').innerText()).toContain('1 September');
-      expect(await page.locator('#cont').innerText()).toContain('Year 1');
       await page.locator('#cont').click();
-      expect(await page.locator('#when').innerText()).toContain('1 September');
+      expect(await page.locator('#when').innerText()).toContain('1 Sep');
       await page.clock.runFor(300);
       await page.locator('#book').click();
-      await page.locator('[data-tab="s"]').click();
+      await page.locator('#send').click();
       const pending = page.waitForEvent('download');
-      await page.locator('#export').click();
+      await page.getByRole('button', { name: 'Keep a copy of this run', exact: true }).click();
       const stream = await (await pending).createReadStream();
       let json = '';
       for await (const chunk of stream) json += chunk.toString();
@@ -151,7 +151,7 @@ describe('F-213 first-minute clarity', () => {
       await page.locator('#cont').click();
       await page.clock.runFor(300);
       await page.locator('#cv').waitFor();
-      expect(await page.locator('#when').innerText()).toContain('1 September');
+      expect(await page.locator('#when').innerText()).toContain('1 Sep');
       expect(await page.evaluate('window.__warren.game.s.minute')).toBe(game.s.minute);
     } finally {
       await page.close();
@@ -173,8 +173,7 @@ describe('F-213 first-minute clarity', () => {
           return ellipse.apply(this, args);
         };
       });
-      await page.locator('#book').click();
-      await page.locator('[data-tab="p"]').click();
+      await page.locator('#shelter-check').click();
       await page.locator('[data-who]').first().click();
       await page.clock.runFor(50);
       const strokes = await page.evaluate(
@@ -194,7 +193,7 @@ describe('F-213 first-minute clarity', () => {
     }
   });
 
-  it('reserves the accent for the instruction while selection uses an ink outline', async () => {
+  it('marks the selected tool as pressed while tools retain ink text', async () => {
     const page = await fresh();
     try {
       await begin(page);
@@ -210,11 +209,11 @@ describe('F-213 first-minute clarity', () => {
         });
         const ink = await page.locator('#book').evaluate((el) => getComputedStyle(el).color);
         expect(colors.color).toBe(ink);
-        if (selector !== '#bell') expect(colors.width).toBeGreaterThanOrEqual(2);
+        if (selector !== '#bell') {
+          expect(colors.width).toBeGreaterThanOrEqual(1);
+          expect(await page.locator(selector).getAttribute('aria-pressed')).toBe('true');
+        }
       }
-      expect(await page.locator('#goal').evaluate((el) => getComputedStyle(el).color)).not.toBe(
-        await page.locator('#book').evaluate((el) => getComputedStyle(el).color),
-      );
     } finally {
       await page.close();
     }

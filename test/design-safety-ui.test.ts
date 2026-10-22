@@ -41,7 +41,7 @@ describe('safety before calling people below', () => {
           hasTouch: true,
           isMobile: width === 360,
         });
-        page.setDefaultTimeout(20000);
+        page.setDefaultTimeout(6000);
         try {
           await page.addInitScript(`(() => {
           window.drawnWords = [];
@@ -64,11 +64,11 @@ describe('safety before calling people below', () => {
           await page.reload();
           await page.locator('#cont').click();
           await page.clock.runFor(100);
-          expect(await page.locator('#bell-meaning').innerText()).toContain('Sleeping places');
-          expect(await page.locator('#bell-meaning').innerText()).toContain('Bell quiet');
+          expect(await page.locator('#shelter-check').getAttribute('aria-label')).toBe('The village');
+          expect(await page.locator('#bell-state').getAttribute('aria-label')).toContain('Bell quiet');
           const suffix = theme === 'light' ? '' : '-dark';
           await page.clock.runFor(1000);
-          expect(await page.locator('#ticker').innerText()).toBe('Open journal');
+          expect(await page.locator('#ticker').innerText()).toBe('Journal ▸');
           expect(await page.locator('#ticker').getAttribute('title')).toContain('Riders had burned');
           expect(await page.locator('#scene').innerText()).not.toContain('Riders had burned');
           expect(
@@ -90,14 +90,14 @@ describe('safety before calling people below', () => {
           const map = await page.locator('#cv').boundingBox();
           const detail = await page.locator('#cell-detail').boundingBox();
           if (!map || !detail) throw new Error('Missing room or map');
-          expect(detail.y >= map.y + map.height || detail.x >= map.x + map.width).toBe(true);
+          expect(detail.y >= map.y && detail.y + detail.height <= height).toBe(true);
           const tools = await page.locator('.tools').boundingBox();
           if (!tools) throw new Error('Missing tools');
           expect(tools.y).toBeGreaterThanOrEqual(detail.y + detail.height);
           expect(tools.y + tools.height).toBeLessThanOrEqual(height);
-          expect(await page.locator('#cell-words').evaluate((el) => el.scrollHeight <= el.clientHeight)).toBe(
-            true,
-          );
+          expect(
+            await page.locator('#cell-words').evaluate((el) => el.scrollHeight <= el.clientHeight + 1),
+          ).toBe(true);
           expect(await page.locator('#clock-rate').isVisible()).toBe(true);
           const roomPoint = await page.evaluate<{ x: number; y: number }>(
             `(() => {const v=window.__warren.view;const b=document.querySelector('#cv').getBoundingClientRect();return {x:b.x+(18.5-v.x)*v.cs,y:b.y+(${SURF}+3.5-v.y)*v.cs};})()`,
@@ -128,10 +128,11 @@ describe('safety before calling people below', () => {
           await page.locator('#cellx').click();
           expect(await page.locator('#cv').evaluate((e) => e === document.activeElement)).toBe(true);
           // Selecting Door fixes the working view, as it does for a keeper placing a door.
+          await page.locator('#furnish').click();
           await page.locator('[data-tool="door"]').tap();
           await page.clock.runFor(1000);
           expect(await page.locator('#scene .hint').count()).toBe(0);
-          expect(await page.locator('#cell-words').innerText()).toContain('Three doors at most');
+          expect(await page.locator('#event-sentence').innerText()).toContain('Three doors at most');
           await page.evaluate(`(() => {
           const s=window.__warren.game.s;
           s.hill.use[${idx(18, SURF + 2)}]=${USE.door};
@@ -149,11 +150,11 @@ describe('safety before calling people below', () => {
           expect(await words.innerText()).toContain('Ring the bell');
           expect(await words.innerText()).toMatch(/false alarms/i);
           expect(await words.innerText()).not.toContain('Nearby adults:');
-          expect(await words.evaluate((e) => e.scrollHeight <= e.clientHeight)).toBe(true);
-          await page.locator('#reading-context button').click();
+          expect(await words.evaluate((e) => e.scrollHeight <= e.clientHeight + 1)).toBe(true);
+          await page.locator('#reading-context summary').click();
           expect(await page.locator('#door-context').innerText()).toContain('Nearby adults:');
           expect(await page.locator('#door-context').innerText()).toContain('Hasan:');
-          await page.keyboard.press('Escape');
+          await page.locator('#reading-context summary').click();
           await page.screenshot({
             animations: 'disabled',
             path: `${shots}/after-${width}-door${suffix}-b.png`,
@@ -189,7 +190,7 @@ describe('safety before calling people below', () => {
           hasTouch: true,
           isMobile: width === 360,
         });
-        page.setDefaultTimeout(20000);
+        page.setDefaultTimeout(6000);
         try {
           await page.clock.install();
           await page.goto(url);

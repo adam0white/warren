@@ -64,18 +64,21 @@ describe('DL-23 actual control targets', () => {
         await page.locator('#new').click();
         await page.locator('#cv').waitFor();
         await page.clock.runFor(500);
-        const play = await boxes(page, '[data-tool], #bell, #book, #ticker, .lab-controls summary');
+        const play = await boxes(
+          page,
+          '#hill-controls .tools > button, #book, #ticker, #shelter-check, [data-speed], .view-controls button',
+        );
         const scene = await page.locator('#cv').boundingBox();
         await page.screenshot({ path: `${evidence}/${width}-play.png` });
-        await page.locator('.lab-controls summary').click();
+        await page.locator('#book').click();
         await page.clock.runFor(300);
         const privacyScene = await page.locator('#cv').boundingBox();
         await page.screenshot({ path: `${evidence}/${width}-privacy.png` });
-        await page.locator('.lab-controls summary').click();
-        await page.locator('#book').click();
-        const notebook = await boxes(page, '[data-tab], #bookx');
+
+        const notebook = await boxes(page, '.menu-rows > *, #bookx, #resume');
         await page.screenshot({ path: `${evidence}/${width}-notebook.png` });
-        await page.locator('[data-tab="p"]').click();
+        await page.locator('#bookx').click();
+        await page.locator('#shelter-check').click();
         await page.locator('[data-who]').first().click();
         await page.clock.runFor(100);
         const card = await boxes(page, '#cardx');
@@ -83,8 +86,8 @@ describe('DL-23 actual control targets', () => {
           `${evidence}/${width}.json`,
           JSON.stringify({ play, notebook, card, scene, privacyScene }, null, 2),
         );
-        expect(play).toHaveLength(11);
-        expect(notebook).toHaveLength(4);
+        expect(play).toHaveLength(14);
+        expect(notebook).toHaveLength(8);
         expect(card).toHaveLength(1);
         expectTargets([...play, ...notebook, ...card], width, height);
         expect(scene?.height).toBeGreaterThanOrEqual(width === 320 ? 100 : 120);

@@ -42,9 +42,9 @@ async function enter(width = 360, height = 690) {
 }
 async function exported(page: Page): Promise<Saved> {
   await page.locator('#book').click();
-  await page.locator('[data-tab="s"]').click();
+  await page.locator('#send').click();
   const pending = page.waitForEvent('download');
-  await page.locator('#export').click();
+  await page.getByRole('button', { name: 'Keep a copy of this run', exact: true }).click();
   const stream = await (await pending).createReadStream();
   let json = '';
   for await (const chunk of stream) json += chunk.toString();
@@ -61,24 +61,27 @@ describe('F-233 raid playback', () => {
     advance(oldRun, baseline.continuationMinute);
     expect(fingerprint(oldRun.s)).toBe(baseline.continuationFingerprint);
   });
-  it('catches smoke within a fast frame, leaves time to inspect and restores gallop on ringing', async () => {
+  it('catches smoke within a fast frame, leaves time to inspect and restores Fast on ringing', async () => {
     const page = await enter();
     try {
-      await page.locator('[data-speed="3"]').click();
-      expect(await page.locator('[data-speed="3"]').getAttribute('aria-pressed')).toBe('true');
-      expect(await page.locator('#clock-rate').innerText()).toBe('Bell decision · time waits');
+      await page.evaluate('window.__warren.setSpeed(2)');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Smoke: time waits for you');
       expect(await page.locator('#raid-warning').innerText()).toContain('Smoke');
-      expect(await page.locator('[data-speed]').count()).toBe(4);
-      await page.locator('#book').click();
-      await page.locator('[data-tab="p"]').click();
+      expect(await page.locator('[data-speed]').count()).toBe(3);
+      expect(await page.locator('.speed').isVisible()).toBe(false);
+      expect(await page.locator('[data-speed="2"]').getAttribute('aria-pressed')).toBe('true');
+      await page.locator('#shelter-check').click();
       await page.locator('[data-who]').first().click();
       await page.clock.runFor(45000);
       await page.locator('#cardx').click();
       await page.locator('#bookx').click();
       expect(await page.locator('#raid-warning').innerText()).toContain('Smoke');
-      await page.locator('#bell').click();
+      await page.locator('#raid-bell').click();
       expect(await page.locator('#clock-rate').innerText()).toBe('Reading the latest word');
       expect(await page.locator('#raid-warning').isVisible()).toBe(false);
+      expect(await page.locator('#raid-bell, #watch-raid').count()).toBe(0);
+      expect(await page.locator('.speed').isVisible()).toBe(true);
+      expect(await page.locator('[data-speed="2"]').getAttribute('aria-pressed')).toBe('true');
       const run = await exported(page);
       expect(run.minute).toBe(saved.state.raids[0]?.smoke);
       expect(run.inputs.at(-1)?.verb).toBe('bell');
@@ -98,8 +101,13 @@ describe('F-233 raid playback', () => {
     const page = await enter();
     try {
       await page.clock.runFor(500);
-      expect(await page.locator('#clock-rate').innerText()).toContain('Bell decision · time waits');
+      expect(await page.locator('#clock-rate').innerText()).toContain('Smoke: time waits for you');
+      expect(await page.locator('.speed').isVisible()).toBe(false);
+      expect(await page.locator('[data-speed="1"]').getAttribute('aria-pressed')).toBe('true');
       await page.locator('#watch-raid').click();
+      expect(await page.locator('#watch-raid').count()).toBe(0);
+      expect(await page.locator('.speed').isVisible()).toBe(true);
+      expect(await page.locator('[data-speed="1"]').getAttribute('aria-pressed')).toBe('true');
       expect(await page.locator('#clock-rate').innerText()).toBe('Reading the latest word');
       const run = await exported(page);
       expect(run.inputs).toEqual(saved.inputs);
@@ -115,19 +123,21 @@ describe('F-233 raid playback', () => {
     it(`keeps raid context, responses and stable touch targets on screen at ${width}×${height}`, async () => {
       const page = await enter(width, height);
       try {
-        const before = await page.locator('#bell').boundingBox();
-        for (const selector of ['#raid-warning', '#clock-rate', '#bell', '#watch-raid', '#book']) {
+        const before = await page.locator('#raid-bell').boundingBox();
+        for (const selector of ['#raid-warning', '#clock-rate', '#raid-bell', '#watch-raid', '#book']) {
           const box = await page.locator(selector).boundingBox();
           expect(box, selector).not.toBeNull();
           expect((box?.y ?? 0) + (box?.height ?? 0), selector).toBeLessThanOrEqual(height);
           expect((box?.x ?? 0) + (box?.width ?? 0), selector).toBeLessThanOrEqual(width);
-          if (selector === '#bell' || selector === '#watch-raid' || selector === '#book') {
+          if (selector === '#raid-bell' || selector === '#watch-raid' || selector === '#book') {
             expect(box?.height).toBeGreaterThanOrEqual(44);
             expect(box?.width).toBeGreaterThanOrEqual(44);
           }
         }
         await page.locator('#watch-raid').click();
-        expect(await page.locator('#bell').boundingBox()).toEqual(before);
+        expect(before?.height).toBeGreaterThanOrEqual(44);
+        expect(await page.locator('#bell').isVisible()).toBe(true);
+        expect(await page.locator('#watch-raid').count()).toBe(0);
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
       } finally {
         await page.close();

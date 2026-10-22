@@ -32,10 +32,9 @@ async function assertStage(page: Page, width: number, height: number) {
   const tools = await page.locator('.tools').boundingBox();
   if (!scene || !detail || !tools) throw new Error('Missing scene, reading or tools');
   expect(scene.height).toBeGreaterThanOrEqual(120);
-  expect(
-    detail.y >= scene.y + scene.height || detail.x >= scene.x + scene.width,
-    JSON.stringify({ scene, detail }),
-  ).toBe(true);
+  expect(detail.y >= scene.y && detail.y + detail.height <= height, JSON.stringify({ scene, detail })).toBe(
+    true,
+  );
   expect(tools.y + tools.height).toBeLessThanOrEqual(height);
   expect(tools.x + tools.width).toBeLessThanOrEqual(width);
 }
@@ -50,7 +49,7 @@ for (const [width, height] of [
       hasTouch: true,
       isMobile: width === 360,
     });
-    page.setDefaultTimeout(20000);
+    page.setDefaultTimeout(6000);
     try {
       await page.clock.install();
       await page.goto(url);
@@ -93,6 +92,7 @@ for (const [width, height] of [
       expect(await page.locator('#cell-words').innerText()).toMatch(/about six/);
       await assertStage(page, width, height);
       await page.screenshot({ path: `${shots}/after-${width}-plan-c.png` });
+      await page.locator('#furnish').click();
       await page.locator('[data-tool="beds"]').click();
       const bedPoint = await point(18, SURF + 3);
       await page.mouse.move(bedPoint.x, bedPoint.y);
@@ -115,9 +115,9 @@ for (const [width, height] of [
       );
       await page.clock.runFor(100);
       await page.clock.runFor(300);
-      expect(await page.locator('#ticker').innerText()).toBe('Open journal');
+      expect(await page.locator('#ticker').innerText()).toBe('Journal ▸');
       expect(await page.locator('#ticker').getAttribute('title')).toContain('new warning');
-      await page.getByRole('button', { name: 'Last reading', exact: true }).click();
+      await page.locator('#last-reading').click();
       expect(await page.locator('#cell-words').innerText()).toBe(reading);
       const close = await page.locator('#cellx').boundingBox();
       expect((close?.y ?? height) + (close?.height ?? height)).toBeLessThan(height);
@@ -139,7 +139,7 @@ for (const [width, height] of [
       hasTouch: true,
       isMobile: width === 360,
     });
-    page.setDefaultTimeout(20000);
+    page.setDefaultTimeout(6000);
     try {
       await page.clock.install();
       await page.goto(url);
@@ -160,14 +160,16 @@ for (const [width, height] of [
       expect(await words.innerText()).toMatch(/six game hours/is);
       expect(await words.evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(true);
       const replies = page.locator('#reading-context');
-      await replies.locator('button').click();
-      expect(await replies.locator('button').getAttribute('aria-label')).toBe('Replies to the bell');
+      await replies.locator('summary').click();
+      expect(await replies.locator('summary').getAttribute('aria-label')).toBe('Replies to the bell');
       expect(await page.locator('#door-context').innerText()).toMatch(/Fine.*next choice/is);
       await page.evaluate('window.__warren.game.s.minute += 30');
       await page.clock.runFor(300);
-      expect(await page.locator('#reading-info').evaluate((el) => el.matches(':popover-open'))).toBe(true);
+      expect(await page.locator('#reading-context').evaluate((el) => (el as HTMLDetailsElement).open)).toBe(
+        true,
+      );
       expect(await page.locator('#door-context').innerText()).toMatch(/Fine.*next choice/is);
-      await page.keyboard.press('Escape');
+      await replies.locator('summary').click();
       await page.clock.runFor(100);
       await page.screenshot({ path: `${shots}/after-${width}-bell-context-collapsed-c.png` });
       await assertStage(page, width, height);
@@ -176,7 +178,7 @@ for (const [width, height] of [
       await page.evaluate(
         `(() => { const s=window.__warren.game.s; s.minute=s.bell.until; s.bell=null; })()`,
       );
-      await page.getByRole('button', { name: 'Last reading', exact: true }).click();
+      await page.locator('#last-reading').click();
       await page.clock.runFor(300);
       expect(await words.innerText()).toMatch(/Call ended.*six game hours elapsed/s);
       await assertStage(page, width, height);

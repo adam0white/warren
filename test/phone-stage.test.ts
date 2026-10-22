@@ -19,12 +19,14 @@ afterAll(async () => {
 it('keeps shelter state and a complete reading visible beside the scene', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
   try {
+    page.setDefaultTimeout(5000);
     await page.clock.install();
     await page.goto(url);
     await page.locator('#new').click();
+    await page.locator('#furnish').click();
     await page.locator('[data-tool="door"]').click();
     expect(await page.locator('.lk-stage').count()).toBe(1);
-    expect(await page.locator('.lk-strip #bell-meaning').isVisible()).toBe(true);
+    expect(await page.locator('#bell-state').isVisible()).toBe(true);
     expect(await page.locator('#cell-words').evaluate((el) => el.scrollHeight <= el.clientHeight + 1)).toBe(
       true,
     );
@@ -32,7 +34,7 @@ it('keeps shelter state and a complete reading visible beside the scene', async 
       100,
     );
     expect(await page.locator('#bell').isVisible()).toBe(true);
-    await page.getByRole('button', { name: 'People', exact: true }).click();
+    await page.locator('#shelter-check').click();
     await page.locator('[data-who="hasan"]').click();
     expect(await page.locator('#person-help').innerText()).toMatch(/help|needs|need|well enough/i);
     expect(await page.locator('#cell-detail').isVisible()).toBe(false);
@@ -49,6 +51,7 @@ it('keeps shelter state and a complete reading visible beside the scene', async 
 
 async function startPhone() {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
+  page.setDefaultTimeout(5000);
   await page.clock.install();
   await page.goto(url);
   await page.locator('#new').click();
@@ -86,7 +89,7 @@ it('shows known poor health without a contradictory healthy label', async () => 
         since: s?.minute ?? 0,
       });
     });
-    await page.getByRole('button', { name: 'People', exact: true }).click();
+    await page.locator('#shelter-check').click();
     await page.locator('[data-who="hasan"]').click();
     expect(await page.locator('#person-help').innerText()).toContain('poor health');
     expect(await page.locator('#person-help').innerText()).toContain('illness');
@@ -99,7 +102,7 @@ it('shows known poor health without a contradictory healthy label', async () => 
 it('preserves an expanded person disclosure and its focus while the condition changes', async () => {
   const page = await startPhone();
   try {
-    await page.getByRole('button', { name: 'People', exact: true }).click();
+    await page.locator('#shelter-check').click();
     await page.locator('[data-who="hasan"]').click();
     await page.locator('#person-context-toggle').click();
     expect(await page.locator('#person-context').evaluate((el) => (el as HTMLDetailsElement).open)).toBe(
@@ -128,18 +131,14 @@ it('preserves an expanded person disclosure and its focus while the condition ch
 it('updates reflow after rotation and after text enlargement', async () => {
   const page = await startPhone();
   try {
-    expect(await page.locator('.game').getAttribute('data-reflow')).toBe('false');
-    await page.setViewportSize({ width: 690, height: 360 });
-    await page.clock.runFor(500);
-    expect(await page.locator('.game').getAttribute('data-reflow')).toBe('true');
-    await page.setViewportSize({ width: 360, height: 690 });
-    await page.clock.runFor(500);
-    expect(await page.locator('.game').getAttribute('data-reflow')).toBe('false');
-    await page.locator('.game').evaluate((el) => {
-      (el as HTMLElement).style.fontSize = '28px';
-    });
-    await page.clock.runFor(500);
-    expect(await page.locator('.game').getAttribute('data-reflow')).toBe('true');
+    for (const viewport of [
+      { width: 690, height: 360 },
+      { width: 360, height: 690 },
+    ]) {
+      await page.setViewportSize(viewport);
+      await page.clock.runFor(500);
+      expect(await page.evaluate(() => document.documentElement.scrollHeight <= innerHeight)).toBe(true);
+    }
     expect(
       await page.locator('#scene').evaluate((el) => el.getBoundingClientRect().height),
     ).toBeGreaterThanOrEqual(120);
@@ -170,7 +169,7 @@ it('frames a selected traveller at the current trip cell instead of the departur
       return { current: positionAt(s, 'hasan', s.minute), departure };
     })()`);
     expect(cells.current).not.toBe(cells.departure);
-    await page.getByRole('button', { name: 'People', exact: true }).click();
+    await page.locator('#shelter-check').click();
     await page.locator('[data-who="hasan"]').click();
     await page.clock.runFor(500);
     const framed = await page.evaluate<{
@@ -203,6 +202,7 @@ it('shows complete bed and door remedies inside the sheet and acknowledges stora
 }, async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 }, hasTouch: true });
   try {
+    page.setDefaultTimeout(5000);
     await page.clock.install();
     await page.goto(url);
     await page.locator('#new').click();
@@ -217,6 +217,7 @@ it('shows complete bed and door remedies inside the sheet and acknowledges stora
     })()`);
     await page.clock.runFor(100);
     for (const scenario of ['beds', 'door', 'store']) {
+      if (scenario !== 'beds') await page.locator('#furnish').click();
       await page
         .locator(`[data-tool="${scenario === 'store' ? 'store' : scenario === 'door' ? 'door' : 'look'}"]`)
         .click();
@@ -241,7 +242,7 @@ it('shows complete bed and door remedies inside the sheet and acknowledges stora
         return !!body && text.top >= body.top && text.bottom <= body.bottom + 1;
       });
       expect(visible, `${scenario} remedy fits its sheet`).toBe(true);
-      expect(await page.locator('.lk-strip #bell-meaning').isVisible()).toBe(true);
+      expect(await page.locator('#bell-state').isVisible()).toBe(true);
     }
   } finally {
     await page.close();

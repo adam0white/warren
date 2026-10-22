@@ -3,7 +3,7 @@
  * and the Game menu (journal, people, saves, download). Time runs continuously; the Game menu pauses it.
  */
 import { ageYears, describePerson, FRAMEWORK_VERSION, type Person } from '@adam0white/human-framework';
-import { type PhoneStage, phoneStage, telemetryNotice, telemetryToggle } from '@adam0white/lab-kit';
+import { type PhoneStage, phoneStage, telemetryNotice } from '@adam0white/lab-kit';
 import { DAY, hourWords } from '../sim/calendar.ts';
 import {
   act,
@@ -35,20 +35,26 @@ import { hillDate } from './date.ts';
 import { doorDetailWords, doorWords } from './door-help.ts';
 import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from './draw.ts';
 import { exposureWords } from './exposure.ts';
+import { openFeedback } from './feedback.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
 import { personHelpWords } from './person-help.ts';
 import { type PlanSafety, planSafety } from './plan-safety.ts';
 import { eventStamp, playbackRate } from './playback.ts';
 import { bellShelterWords, bellStateWords } from './room-safety.ts';
-import { compactShelterWords, sleepingCapacityWords, sleepingRoomWords } from './shelter.ts';
+import {
+  compactShelterWords,
+  sleepingCapacity,
+  sleepingCapacityWords,
+  sleepingRoomWords,
+} from './shelter.ts';
 import * as store from './store.ts';
 
 type Tool = 'look' | 'chalk' | 'erase' | 'store' | 'beds' | 'lamp' | 'door';
-const SPEEDS = [0.25, 1, 4, 16] as const;
-const SPEED_NAMES = ['slow', 'walk', 'trot', 'gallop'];
+const SPEEDS = [1, 4, 16] as const;
+const SPEED_NAMES = ['Slow', 'Steady', 'Fast'];
 const MS_PER_MIN = 20000 / DAY;
-let speedIx = 1;
+let speedIx = 0;
 const SAVE_KEY = 'hill';
 
 let g: Game | null = null;
@@ -123,21 +129,15 @@ const souls = (n: number) =>
       : n < 40
         ? `some ${Math.round(n / 5) * 5} souls`
         : `${Math.round(n / 10) * 10} souls and more`;
-const footer = `<div class="footer"><a href="https://human.adamwhite.work/games/">All games</a><br/>People by the Human Framework ${FRAMEWORK_VERSION}. What they choose comes from it.</div>`;
-const markLink = '<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>';
-const aboutHill = `<button class="info" aria-label="More about the hill" popovertarget="hill-info">i</button><div class="about-hill info-popover" id="hill-info" popover="auto">
-  <h2>More about the hill</h2>
-  <p>Riders burned two villages to the south this spring. Under Yusuf Usta’s house there is a cellar cut into the soft stone, and the barley stands ripe. The village needs a refuge before the riders come.</p>
-  <p>You keep the dig-master’s chalk and his bell. Mark the stone where a room should be. Hang a lamp where the dark stops them. Ring the bell when there is smoke.</p>
-  <p>Nobody obeys. Everyone follows the worn path.</p>
-  <p>One finger chalks or looks. Two fingers move the page.</p>
-  <p>The hill keeps 365-day years, counted from its first harvest. Dates use English month names; Year 1 begins on 19 August.</p>
-</div>`;
+const footer = `<div class="footer">${'<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>'}<br>People by the Human Framework ${FRAMEWORK_VERSION}.</div>`;
+const playInfo = `<p>Chalk a dashed outline. People choose when to dig it. A plan with no air or light waits.</p><p>Furnish open ground: a store for jars, beds for sleeping, a lamp, or a door.</p><p>A door needs one cell wide, open on two opposite sides. Three at most.</p><p>Filled figures have sleeping places below. Hollow figures are exposed.</p>`;
+function topbar(titlePage = false) {
+  return `<header class="topbar"><div class="bar-words">${titlePage ? '<a href="https://human.adamwhite.work/games/">All games</a>' : '<span id="when"></span>'}</div><button class="info" aria-label="Information" popovertarget="hill-info">i</button><button id="book" aria-label="Game menu">≡<span class="menu-label"> Menu</span></button></header><div id="hill-info" class="info-popover" popover="auto"><div class="who"><b>${titlePage ? 'The hill' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${titlePage ? '<p>Riders burned two villages. The cellar under Yusuf Usta’s house is the start.</p><p>You have the chalk and the bell. Nobody obeys; everyone follows the worn path.</p><p>One finger chalks or looks. Two fingers move the hill.</p><p>A year has 365 days. Year 1 begins on 19 August.</p>' : playInfo}</div>`;
+}
 
 // ---------- start ----------
 
 export async function start() {
-  mountLabControls();
   lab.trackRun(
     async () => {
       const current = g;
@@ -164,37 +164,59 @@ export async function start() {
 
 function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
   lab.screen('title');
+  feedbackCleanup?.();
   const compatible = sv && sv.game.split('.')[0] === GAME_VERSION.split('.')[0];
-  app().innerHTML = `
-  <div class="page">
-    ${markLink}
-    <h1>The Warren</h1>
-    <p>${PURPOSE}</p>
-    <p>${FIRST_CHALK}</p>
-    <div class="actions">
-      ${compatible ? `<button class="primary" id="cont">Go back down <span class="soft">· ${esc(hillDate(sv.minute))}</span></button>` : ''}
-      <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'Begin a new hill' : 'Begin'}</button>
-    </div>
+  cancelAnimationFrame(raf);
+  canvas = null;
+  stage?.destroy();
+  sceneObserver?.disconnect();
+  app().innerHTML = `<div class="page">${topbar(true)}
+    <div class="title-art"><canvas id="title-cv" aria-label="The village above its cellar"></canvas><h1>The Warren</h1></div>
+    <p class="title-goal">${PURPOSE}</p>
     ${sv && !compatible ? '<p class="soft">An older notebook was put away; this version cannot read it.</p>' : ''}
-    ${aboutHill}
-    ${footer}
-  </div>`;
+    <div class="title-actions">${compatible ? `<button class="primary" id="cont">Go back down <span class="soft">· ${esc(hillDate(sv.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
+      <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'Begin a new hill' : 'Begin'}</button>
+      <div id="new-confirm" hidden><p>This hill is put away for good.</p><button id="new-yes">Yes, begin</button><button id="new-no">No</button></div>
+      ${footer}</div><div id="title-drawer" hidden></div></div>`;
+  const art = document.getElementById('title-cv') as HTMLCanvasElement;
+  const artCtx = art.getContext('2d');
+  const demo = sv && compatible ? load(sv) : newGame(7);
+  art.width = art.clientWidth * devicePixelRatio;
+  art.height = art.clientHeight * devicePixelRatio;
+  artCtx?.scale(devicePixelRatio, devicePixelRatio);
+  if (artCtx)
+    draw(artCtx, demo.s, baseView(demo.s, art.clientWidth, art.clientHeight), ink, {
+      ...paint,
+      t: demo.s.minute,
+    });
+  document.getElementById('book')?.addEventListener('click', () => titleMenu());
   if (notice && !notice.dataset.shown) {
-    const slot = document.createElement('div');
-    slot.append(notice);
-    app().querySelector('.page')?.prepend(slot);
+    app().querySelector('.title-goal')?.append(notice);
     notice.dataset.shown = '1';
   }
   document.getElementById('cont')?.addEventListener('click', () => {
     if (!sv) return;
     g = load(sv);
+    speedIx = 1;
     enter();
   });
-  document.getElementById('new')?.addEventListener('click', async () => {
-    if (compatible && !confirm('Start a new hill? The old notebook will be put away.')) return;
+  const begin = async () => {
     await store.drop(SAVE_KEY);
     g = newGame((Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0);
+    speedIx = 0;
+    seenHint.clear();
     enter();
+  };
+  document.getElementById('new')?.addEventListener('click', () => {
+    if (compatible) {
+      document.getElementById('new-confirm')?.removeAttribute('hidden');
+      document.getElementById('new')?.setAttribute('hidden', '');
+    } else void begin();
+  });
+  document.getElementById('new-yes')?.addEventListener('click', begin);
+  document.getElementById('new-no')?.addEventListener('click', () => {
+    document.getElementById('new-confirm')?.setAttribute('hidden', '');
+    document.getElementById('new')?.removeAttribute('hidden');
   });
 }
 
@@ -217,43 +239,27 @@ function enter() {
       answeredRaids.add(raid.smoke);
   app().innerHTML = `
   <div class="game lk-stage" data-sheet="fit"><span id="font-probe" aria-hidden="true"></span>
-    <div class="top lk-strip">
-      <div class="when"><span id="when"></span><span class="soft" id="stock"></span></div>
-      <div class="goal-slot"><div class="goal" id="goal"></div>
-      <div class="goal" id="raid-warning" hidden></div></div>
-      <div id="shelter-brief"><button id="shelter-check" aria-label="Check shelter summary"><span id="bell-meaning"></span></button></div>
-    </div>
-    <div class="scene lk-scene" id="scene">
-      <canvas id="cv" tabindex="0" aria-label="The hill"></canvas>
-      <div class="view-controls" role="group" aria-label="Hill view"><button id="zoom-in" aria-label="Zoom in">Zoom +</button><button id="zoom-out" aria-label="Zoom out">Zoom −</button><button id="fit-hill">Fit hill</button><button id="people" aria-label="People">People</button></div>
+    ${topbar()}
+    <div class="state-strip"><div class="state-drawing"><button id="shelter-check" aria-label="The village"></button><span id="stock"></span><span id="bell-state" aria-label="Bell quiet">🔔</span></div>
+    <div class="pace"><span id="clock-rate"></span><div class="speed" role="group" aria-label="Speed">${SPEEDS.map((_, k) => `<button data-speed="${k}">${SPEED_NAMES[k]}</button>`).join('')}</div></div></div>
+    <div class="goal-slot"><div class="goal" id="goal"></div><div class="goal" id="raid-warning" hidden></div></div>
+    <div class="scene lk-scene" id="scene"><canvas id="cv" tabindex="0" aria-label="The hill"></canvas>
+      <div class="view-controls" role="group" aria-label="Hill view"><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><button id="fit-hill" aria-label="Fit hill">⤢</button></div>
       <div class="lag soft" id="lag" hidden>the days pass as fast as they can</div>
     </div>
-    <div class="panel lk-sheet" aria-label="Hill actions">
-      <div class="lk-sheet-body" id="inspection-body">
+    <div class="panel lk-sheet" aria-label="Hill actions"><div class="lk-sheet-body" id="inspection-body">
       <div class="card" id="card" hidden></div>
-      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Reading</b><button class="x" id="cellx" aria-label="Close room or door inspection">×</button></div><p id="cell-words" role="region" aria-label="Full reading"></p><div id="entrance-choice" hidden><button id="confirm-entrance">Plan this entrance</button><button id="cancel-entrance">Cancel</button></div><span id="reading-context" hidden><button class="info" aria-label="More about this door" popovertarget="reading-info">i</button><span id="reading-info" class="info-popover" popover="auto"><span id="door-context"></span></span></span></div>
+      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Reading</b><button class="x" id="cellx" aria-label="Close reading">×</button></div><p id="cell-words" role="region" aria-label="Full reading"></p><div id="entrance-choice" hidden><button id="confirm-entrance">Plan this entrance</button><button id="cancel-entrance">Cancel</button></div><details id="reading-context" hidden><summary>More ▸</summary><div id="door-context"></div></details></div>
       <div class="drawer" id="drawer" hidden></div>
-      <div class="reading-actions"><p id="event-sentence" aria-live="polite"></p><button class="ticker" id="ticker" aria-label="Open journal">Open journal</button><button id="last-reading" disabled>Last reading</button></div>
-      </div>
-      <div class="lk-commit" id="hill-controls">
-      <div class="clock-status"><span id="clock-rate"></span><span class="raid-controls"><button id="watch-raid">Keep watching</button></span></div>
-      <div class="tools" role="toolbar" aria-label="Tools">
-        ${toolBtn('look', 'look', '◎')}
-        ${toolBtn('chalk', 'chalk', '□')}
-        ${toolBtn('erase', 'rub out', '⌫')}
-        ${toolBtn('store', 'store', '⚱')}
-        ${toolBtn('beds', 'beds', '≡')}
-        ${toolBtn('lamp', 'lamp', '♨')}
-        ${toolBtn('door', 'door', '◯')}
-      </div>
-      <div class="row">
-        <div class="speed" role="group" aria-label="Speed">${SPEEDS.map((_, k) => `<button data-speed="${k}" aria-label="${SPEED_NAMES[k]}">${'›'.repeat(k + 1).replace('››››', '»»')}</button>`).join('')}</div>
-        <button class="bell" id="bell" aria-label="Ring the bell" aria-describedby="bell-meaning">bell</button>
-        <button id="book" aria-label="Game menu">Game menu</button>
-      </div>
+      <div id="journal-tail"></div>
     </div>
-    </div>
-  </div>`;
+    <div class="reading-actions"><button id="last-reading"><span id="event-sentence" aria-live="polite">${FIRST_CHALK}</span> ▸</button><button class="ticker" id="ticker">Journal ▸</button></div>
+    <div class="lk-commit" id="hill-controls"><div class="tools" role="toolbar" aria-label="Tools">
+      ${toolBtn('look', 'look', '◎')}${toolBtn('chalk', 'chalk', '□')}${toolBtn('erase', 'rub out', '⌫')}
+      <button id="furnish" aria-expanded="false">furnish ▾</button><button class="bell" id="bell">bell</button></div>
+      <div id="furnish-picker" hidden>${(['store', 'beds', 'lamp', 'door'] as const).map((t) => `<button data-tool="${t}">${t}<small>${{ store: 'Open ground for jars', beds: 'Open ground for sleeping', lamp: 'Light on open ground', door: 'one cell wide, open on two opposite sides' }[t]}</small></button>`).join('')}</div>
+      <div id="raid-actions" hidden></div>
+    </div></div></div>`;
   stage?.destroy();
   const stageRoot = document.querySelector<HTMLElement>('.lk-stage');
   if (!stageRoot) return;
@@ -290,14 +296,24 @@ function enter() {
       showBellReading();
     }
   });
-  document.getElementById('watch-raid')?.addEventListener('click', () => {
+  document.getElementById('raid-actions')?.addEventListener('click', (e) => {
+    const id = (e.target as HTMLElement).closest('button')?.id;
+    if (id === 'raid-bell') {
+      document.getElementById('bell')?.click();
+      return;
+    }
+    if (id !== 'watch-raid') return;
     const raid = g && activeRaid(g.s);
     if (raid) answeredRaids.add(raid.smoke);
     chrome();
   });
-  document.getElementById('people')?.addEventListener('click', () => openBook('p'));
+  document.getElementById('furnish')?.addEventListener('click', () => {
+    const picker = document.getElementById('furnish-picker');
+    if (picker) picker.hidden = !picker.hidden;
+    document.getElementById('furnish')?.setAttribute('aria-expanded', String(!picker?.hidden));
+  });
   document.getElementById('book')?.addEventListener('click', () => openBook());
-  document.getElementById('shelter-brief')?.addEventListener('click', () => openBook('p'));
+  document.getElementById('shelter-check')?.addEventListener('click', () => openBook('p'));
   document.getElementById('zoom-in')?.addEventListener('click', () => zoomView(2.2));
   document.getElementById('zoom-out')?.addEventListener('click', () => zoomView(1 / 2.2));
   document.getElementById('fit-hill')?.addEventListener('click', () => {
@@ -340,7 +356,7 @@ function enter() {
         readingContext(saved.context);
         if (lastReading) lastReading.context = saved.context;
       }
-    }
+    } else showReading('Latest word', document.getElementById('event-sentence')?.textContent ?? FIRST_CHALK);
   });
   document.querySelector('.game')?.addEventListener('keydown', (e) => {
     if ((e as KeyboardEvent).key !== 'Escape') return;
@@ -378,8 +394,10 @@ function toolBtn(t: Tool, label: string, glyph: string) {
 
 function setTool(t: Tool) {
   closeCell(false);
-  closeBook();
   closeCard();
+  closeBook();
+  document.getElementById('furnish-picker')?.setAttribute('hidden', '');
+  document.getElementById('furnish')?.setAttribute('aria-expanded', 'false');
   focusCell = null;
   tool = t;
   syncButtons();
@@ -401,8 +419,16 @@ function syncButtons() {
     b.classList.toggle('on', selected);
     b.setAttribute('aria-pressed', String(selected));
   }
-  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-tool]'))
+  for (const b of document.querySelectorAll<HTMLButtonElement>('[data-tool]')) {
     b.classList.toggle('on', b.dataset.tool === tool);
+    b.setAttribute('aria-pressed', String(b.dataset.tool === tool));
+  }
+  const furnish = document.getElementById('furnish');
+  if (furnish) {
+    const selected = ['store', 'beds', 'lamp', 'door'].includes(tool);
+    furnish.textContent = selected ? `${tool} ▾` : 'furnish ▾';
+    furnish.setAttribute('aria-pressed', String(selected));
+  }
 }
 
 function resize() {
@@ -422,7 +448,7 @@ function resize() {
     );
   }
   const sceneBounds = sc.getBoundingClientRect();
-  const controlsHeight = sc.querySelector('.view-controls')?.getBoundingClientRect().height ?? 0;
+  const controlsHeight = 0;
   const r = {
     width: sceneBounds.width,
     height: Math.max(1, sceneBounds.height - controlsHeight),
@@ -482,7 +508,7 @@ function raidDecision() {
 /** Menu pages, their person pages and notebook/privacy dialogs hold only playback. */
 function menuHoldsTime(): boolean {
   return (
-    !!document.querySelector('#drawer:not([hidden]), .hflab-veil, .lab-controls[open]') ||
+    !!document.querySelector('#drawer:not([hidden]), .hflab-veil, #feedback-host:not([hidden])') ||
     !!document.querySelector(':popover-open') ||
     (!!personOpener?.isConnected && !document.getElementById('card')?.hidden)
   );
@@ -535,12 +561,27 @@ function chrome() {
   if (!g) return;
   const s = g.s;
   const when = document.getElementById('when');
-  if (when) when.textContent = `${hourWords(paint.t)}, ${hillDate(paint.t)}`;
-  const alive = s.people.filter((p) => p.body.alive).length;
+  if (when)
+    when.textContent = `${hourWords(paint.t).replace(/^./, (c) => c.toUpperCase())} · ${hillDate(paint.t)
+      .replace(' under the hill', '')
+      .replace('Year', 'year')
+      .replace(/(January|February|March|April|August|September|October|November|December)/g, (m) =>
+        m.slice(0, 3),
+      )}`;
   const stock = document.getElementById('stock');
-  if (stock) stock.textContent = `${souls(alive)} · ${storesWords(s)} · ${waterWords(s)}`;
+  if (stock) {
+    const jars = storesWords(s);
+    const filled = ['empty', 'a few', 'month', 'winter', 'year'].findIndex((w) => jars.includes(w));
+    const water = waterWords(s);
+    stock.innerHTML = `<span class="jars" aria-label="${jars}" title="${jars}">${[0, 1, 2, 3].map((i) => `<span class="${i < filled ? 'full' : 'empty'}">⚱</span>`).join('')}</span><span class="water ${water.includes('dry') ? 'dry' : ''}" style="--fill:${water.includes('little') ? '25%' : '100%'}" aria-label="${water}" title="${water}">${water.includes('dry') ? '♧' : water.includes('little') ? '◒' : '◕'}</span>`;
+  }
   const goal = document.getElementById('goal');
-  if (goal) goal.textContent = tool === 'beds' && !activeRaid(s) ? sleepingCapacityWords(s) : colonyWords(s);
+  if (goal)
+    goal.textContent = waterWords(s).includes('dry')
+      ? 'The water jars are dry. A well or water carried below is needed.'
+      : tool === 'beds' && !activeRaid(s)
+        ? sleepingCapacityWords(s)
+        : colonyWords(s);
   const r0 = activeRaid(s);
   const lag = document.getElementById('lag');
   if (lag) lag.hidden = !lagging;
@@ -568,26 +609,42 @@ function chrome() {
       ? ''
       : `${pending.stage === 'smoke' ? 'Smoke on the ridge.' : 'Riders are at the hill.'} Ring the bell once, or keep watching. People choose whether to come.`;
   }
-  const watch = document.getElementById('watch-raid') as HTMLButtonElement | null;
-  const shelter = document.getElementById('shelter-check') as HTMLButtonElement | null;
-  if (shelter) shelter.hidden = false;
-  if (watch) {
-    watch.hidden = !pending;
-    watch.style.visibility = pending ? 'visible' : 'hidden';
-    watch.disabled = !pending;
+  const root = document.querySelector<HTMLElement>('.game');
+  if (root) root.dataset.raid = String(!!pending);
+  const tools = document.querySelector<HTMLElement>('.tools');
+  if (tools) tools.hidden = !!pending;
+  const speeds = document.querySelector<HTMLElement>('.speed');
+  if (speeds) speeds.hidden = !!pending;
+  const decisions = document.getElementById('raid-actions');
+  if (decisions) {
+    decisions.hidden = !pending;
+    if (pending) document.getElementById('furnish-picker')?.setAttribute('hidden', '');
+    if (pending && !decisions.children.length)
+      decisions.innerHTML = `<p id="raid-words"></p><button id="raid-bell">🔔 Ring the bell</button><button id="watch-raid">Keep watching</button>`;
+    if (!pending) decisions.replaceChildren();
+    const words = document.getElementById('raid-words');
+    const below = s.people.filter((p) => p.body.alive && yOf(positionAt(s, p.id, s.minute)) >= SURF);
+    if (words)
+      words.textContent = `${pending?.stage === 'smoke' ? 'Smoke on the ridge. Riders may be half a day off.' : 'Riders are at the hill.'} People choose whether to come. Below now: ${below.length <= 4 ? below.map((p) => p.name).join(', ') || 'no one' : souls(below.length)}. Above: ${s.people.filter((p) => p.body.alive).length - below.length}.`;
+  }
+  const info = document.getElementById('hill-info');
+  if (info && !info.matches(':popover-open')) {
+    const raidInfo = !!pending;
+    if (info.dataset.raid !== String(raidInfo)) {
+      info.dataset.raid = String(raidInfo);
+      info.innerHTML = `<div class="who"><b>${raidInfo ? 'Smoke and riders' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${raidInfo ? '<p>Smoke gives about half a day.</p><p>The bell calls whoever hears it.</p><p>A bell without riders weakens trust, person by person.</p>' : playInfo}`;
+    }
   }
   const rate = document.getElementById('clock-rate');
-  if (rate) {
-    rate.textContent = menuHoldsTime()
-      ? 'Paused · Game menu or information'
-      : reading0
-        ? 'Reading · time waits'
+  if (rate)
+    rate.textContent =
+      menuHoldsTime() || reading0
+        ? 'Time waits while you read'
         : pending
-          ? 'Bell decision · time waits'
+          ? 'Smoke: time waits for you'
           : performance.now() < readUntil
             ? 'Reading the latest word'
-            : `${SPEED_NAMES[speedIx]} · the hill carries on`;
-  }
+            : '';
   // New notes: heavy ones take the ticker.
   const firstNew = lastSeenNote ? s.notes.indexOf(lastSeenNote) + 1 : Math.max(0, s.notes.length - 1);
   for (const n of s.notes.slice(firstNew)) {
@@ -604,7 +661,7 @@ function chrome() {
     const text = ticker ? ticker.text : '';
     if (tk.dataset.text !== text) {
       tk.dataset.text = text;
-      tk.textContent = 'Open journal';
+      tk.textContent = 'Journal ▸';
       tk.title = text;
       tk.classList.remove('ink-in');
       void tk.offsetWidth;
@@ -618,11 +675,22 @@ function chrome() {
   if (event) {
     const sentences = work?.text.match(/[^.!?]+[.!?]/g) ?? [];
     const name = work?.who ? personOf(s, work.who)?.name : undefined;
-    event.textContent =
-      (name ? sentences.find((line) => line.includes(name)) : sentences[0])?.trim() ?? work?.text ?? '';
+    if (performance.now() > hintUntil)
+      event.textContent =
+        (name ? sentences.find((line) => line.includes(name)) : sentences[0])?.trim() ??
+        work?.text ??
+        FIRST_CHALK;
   }
   const bell = document.getElementById('bell') as HTMLButtonElement | null;
   if (bell) bell.classList.toggle('ringing', !!s.bell && s.minute < s.bell.until);
+  const tail = document.getElementById('journal-tail');
+  if (tail)
+    tail.innerHTML = s.notes
+      .filter((n) => n.weight >= 1)
+      .slice(-8)
+      .reverse()
+      .map((n) => `<p>${esc(n.text)}</p>`)
+      .join('');
   updateShelter();
   updateDoor();
   updatePlanPreview();
@@ -666,11 +734,11 @@ function planReading(title: string, reading: PlanSafety, remember = true, preser
 
 function readingContext(words: string) {
   const context = document.getElementById('reading-context');
-  const label = context?.querySelector('button');
+  const label = context?.querySelector('summary');
   const text = document.getElementById('door-context');
   if (context) context.hidden = !words;
   if (label) {
-    label.textContent = 'i';
+    label.textContent = 'More ▸';
     label.setAttribute('aria-label', 'More about these routes');
   }
   if (text) text.textContent = words;
@@ -691,8 +759,11 @@ function flash(text: string, contextWords = '') {
 function hint(key: string, text: string) {
   if (seenHint.has(key)) return;
   seenHint.add(key);
-  flash(text);
+  const peek = document.getElementById('event-sentence');
+  hintUntil = performance.now() + 6000;
+  if (peek) peek.textContent = text;
 }
+let hintUntil = 0;
 
 function isReading() {
   return ['drawer', 'card', 'cell-detail'].some((id) => !document.getElementById(id)?.hidden);
@@ -708,18 +779,14 @@ function hideOtherSheets(keep: string) {
   const actions = document.querySelector<HTMLElement>('.reading-actions');
   if (actions) actions.hidden = true;
   const controls = document.getElementById('hill-controls');
-  if (controls) controls.dataset.compact = String(keep === 'drawer' || keep === 'card');
+  if (controls) controls.dataset.compact = 'false';
 }
 
 function restoreActions() {
   const actions = document.querySelector<HTMLElement>('.reading-actions');
   if (actions) actions.hidden = isReading();
   const controls = document.getElementById('hill-controls');
-  if (controls)
-    controls.dataset.compact = String(
-      !(document.getElementById('drawer')?.hidden ?? true) ||
-        !(document.getElementById('card')?.hidden ?? true),
-    );
+  if (controls) controls.dataset.compact = 'false';
 }
 
 // ---------- the person card ----------
@@ -764,7 +831,7 @@ function card() {
   const about = s.notes.filter((n) => n.who === p.id).slice(-2);
   const habit = p.habits.some((h) => h.action === 'dig' && h.strength > 0.25);
   const html = `
-    <div class="who"><b>${esc(p.name)}</b> <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'come from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
+    <div class="who"><b>${personOpener ? '← ' : ''}${esc(p.name)}</b> <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'come from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
     <p id="person-help">${esc(personHelpWords(s, p))}</p>
     <div>${walking ? 'on the way to ' : ''}${esc(doing)}</div>
     <details id="person-context"><summary id="person-context-toggle">Activity and words</summary>
@@ -1171,9 +1238,9 @@ function updateDoorContext(cell: number) {
   const context = document.getElementById('reading-context');
   const text = document.getElementById('door-context');
   const words = g.s.hill.use[cell] === USE.door ? doorDetailWords(g.s, cell) : '';
-  const label = context?.querySelector('button');
+  const label = context?.querySelector('summary');
   if (label) {
-    label.textContent = 'i';
+    label.textContent = 'More ▸';
     label.setAttribute('aria-label', 'More about this door');
   }
   if (context) context.hidden = !words;
@@ -1186,7 +1253,14 @@ function showPlan(cell: number) {
   bellReading = false;
   planCell = cell;
   doorCell = cell;
-  planReading('Unbuilt plan', planSafety(g.s, [cell], 'chalk'));
+  const reading = planSafety(g.s, [cell], 'chalk');
+  const stand = neighbours(cell).find((j) => g?.s.hill.kind[j] === K.open);
+  if (stand !== undefined) {
+    const blocked = airWords(stand);
+    if (blocked)
+      reading.words = `A lamp or a second opening may be needed. ${blocked.trim()} ${reading.words}`;
+  }
+  planReading('Unbuilt plan', reading);
   document.getElementById('cellx')?.focus();
 }
 
@@ -1223,11 +1297,11 @@ function showBellReading() {
   const call = bellStateWords(s);
   showReading('Bell call', call, true, true);
   const context = document.getElementById('reading-context');
-  const label = context?.querySelector('button');
+  const label = context?.querySelector('summary');
   const text = document.getElementById('door-context');
   if (context) context.hidden = false;
   if (label) {
-    label.textContent = 'i';
+    label.textContent = 'More ▸';
     label.setAttribute('aria-label', 'Replies to the bell');
   }
   if (text)
@@ -1238,11 +1312,27 @@ function showBellReading() {
 
 function updateShelter() {
   if (!g) return;
-  const brief = document.getElementById('shelter-brief');
-  if (brief) brief.title = 'Check shelter and choose a person';
-  const meaning = document.getElementById('bell-meaning');
-  if (meaning)
-    meaning.textContent = `${compactShelterWords(g.s).replace('Sleeping room', 'Sleeping places')}. ${g.s.bell && g.s.minute < g.s.bell.until ? 'Bell call active.' : 'Bell quiet; false alarms weaken trust.'}`;
+  const brief = document.getElementById('shelter-check');
+  const alive = g.s.people.filter((p) => p.body.alive);
+  const { places } = sleepingCapacity(g.s);
+  if (brief) {
+    brief.title = compactShelterWords(g.s);
+    brief.innerHTML = `${alive
+      .slice(0, 20)
+      .map(
+        (p, i) =>
+          `<span class="soul ${i < places ? 'sheltered' : 'exposed'} ${p.activity?.action === 'hide' ? 'hiding' : ''}" aria-label="${esc(p.name)}">${i < places ? '●' : '○'}</span>`,
+      )
+      .join('')}${alive.length > 20 ? ' and more' : ''}<span class="small"> souls</span>`;
+  }
+  const bellState = document.getElementById('bell-state');
+  if (bellState) {
+    const ringing = !!g.s.bell && g.s.minute < g.s.bell.until;
+    const low = alive.some((p) => (p.will.voices.find((v) => v.voiceId === BELL)?.trust ?? 0.5) < 0.3);
+    bellState.textContent = low ? '🔔╱' : '🔔';
+    bellState.classList.toggle('ringing', ringing);
+    bellState.setAttribute('aria-label', ringing ? 'Bell ringing' : low ? 'Bell trust is low' : 'Bell quiet');
+  }
   const summary = document.getElementById('shelter-summary');
   if (summary) summary.textContent = bellShelterWords(g.s).replace(bellStateWords(g.s), '').trim();
   for (const row of document.querySelectorAll<HTMLElement>('[data-shelter-person]')) {
@@ -1267,6 +1357,7 @@ function closeCard() {
 }
 
 function closeBook() {
+  feedbackCleanup?.();
   const d = document.getElementById('drawer');
   if (!d || d.hidden) return;
   d.hidden = true;
@@ -1274,130 +1365,148 @@ function closeBook() {
   menuOpener?.focus();
 }
 
+function menuRows() {
+  return `<p>The hill waits while it is open.</p><div class="menu-rows"><button data-open="j">Read the journal ▸</button><button data-open="d">What the village has done ▸</button><button id="send">Send word ▸</button><button id="fullscreen">Full screen</button><button id="to-title">To the title page</button><a href="https://human.adamwhite.work/games/">All games</a></div><div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Record play for the lab</label><a href="https://human.adamwhite.work/lab/privacy/">Lab privacy</a></div><button class="primary" id="resume">Back to the hill</button>`;
+}
+let feedbackCleanup: (() => void) | undefined;
+function showFeedback(host: HTMLElement, onBack: () => void) {
+  feedbackCleanup?.();
+  feedbackCleanup = openFeedback(host, lab, runOf, download, onBack);
+}
+function bindMenu(host: HTMLElement, close: () => void) {
+  host.querySelector('#resume')?.addEventListener('click', close);
+  host
+    .querySelector('#record-play')
+    ?.addEventListener('change', (e) => lab.setTelemetryOff(!(e.target as HTMLInputElement).checked));
+  host.querySelector('#fullscreen')?.addEventListener('click', () => {
+    if (document.fullscreenElement) void document.exitFullscreen();
+    else void document.documentElement.requestFullscreen?.();
+  });
+  host.querySelector('#to-title')?.addEventListener('click', async () => {
+    if (!(await writeSave())) {
+      let warning = host.querySelector<HTMLElement>('#save-warning');
+      if (!warning) {
+        warning = document.createElement('p');
+        warning.id = 'save-warning';
+        warning.setAttribute('role', 'alert');
+        host.querySelector('.menu-rows')?.before(warning);
+      }
+      warning.textContent = 'This hill could not be saved. Keep it open and try again.';
+      return;
+    }
+    const sv = await store.get<Saved>(SAVE_KEY);
+    title(sv?.value ?? null, sv?.at ?? 0);
+  });
+  host.querySelector('#send')?.addEventListener('click', () => {
+    host.dataset.kind = 'feedback';
+    showFeedback(host, () => {
+      if (host.id === 'drawer') openBook();
+      else titleMenu();
+    });
+  });
+  for (const b of host.querySelectorAll<HTMLElement>('[data-open]'))
+    b.addEventListener('click', () => openBook(b.dataset.open));
+}
+function titleMenu() {
+  const host = document.getElementById('title-drawer');
+  if (!host) return;
+  host.hidden = false;
+  host.dataset.kind = 's';
+  host.innerHTML = `<div class="sheet"><div class="who"><b>Game menu</b><button id="title-menu-x" aria-label="Close menu">×</button></div>${menuRows()}</div>`;
+  const close = () => {
+    host.hidden = true;
+  };
+  host.querySelector('#title-menu-x')?.addEventListener('click', close);
+  bindMenu(host, close);
+  // Reading rows belong to the current hill; enter it before opening a reading.
+  for (const b of host.querySelectorAll<HTMLElement>('[data-open]'))
+    b.addEventListener('click', async () => {
+      const sv = await store.get<Saved>(SAVE_KEY);
+      if (sv) {
+        g = load(sv.value);
+        speedIx = 1;
+        enter();
+        openBook(b.dataset.open);
+      }
+    });
+}
 function openBook(tab = 's') {
+  feedbackCleanup?.();
   closeCell(false);
   bellReading = false;
   const d = document.getElementById('drawer');
   if (!d || !g) return;
+  if (tab === 's') void writeSave();
   menuOpener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   paint.selected = null;
   personOpener = null;
-  const personCard = document.getElementById('card');
-  if (personCard) personCard.hidden = true;
   const s = g.s;
   const notes = s.notes
     .filter((n) => n.weight >= 1)
     .slice(-60)
     .reverse();
-  const newestSafety = [...s.notes]
-    .reverse()
-    .find(
-      (n) =>
-        n.kind === 'raid' || n.kind === 'hurt' || (n.kind === 'dig' && /shaft|riders|door/i.test(n.text)),
-    );
+  const newestSafety = notes.find(
+    (n) => n.kind === 'raid' || n.kind === 'hurt' || (n.kind === 'dig' && /shaft|riders|door/i.test(n.text)),
+  );
+  const entry = (n: Note) =>
+    `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br>${esc(n.text)}</p>`;
   const alive = s.people.filter((p) => p.body.alive);
+  const below = alive.filter((p) => yOf(positionAt(s, p.id, s.minute)) >= SURF);
   const done = GOALS.filter((x) => s.goals[x.id] !== undefined);
-  d.innerHTML = `
-    <div class="sheet">
-      <div class="who"><b>${tab === 'p' ? 'People · shelter check' : 'Game menu'}</b><button class="x" id="bookx" aria-label="Close">×</button></div>
-      <div class="tabs">
-        <button data-tab="s">Save and run</button><button data-tab="j">journal</button><button data-tab="p">people</button>
-      </div>
-      <div id="sheet-body" tabindex="0" role="region" aria-label="Game menu contents"><div class="tab" data-pane="j">${newestSafety ? `<p id="newest-safety"><b>Latest safety entry</b><br/>${esc(newestSafety.text)}</p><details><summary>Earlier journal entries</summary>` : ''}${notes.map((n) => `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br/>${esc(n.text)}</p>`).join('')}${newestSafety ? '</details>' : ''}</div>
-      <div class="tab" data-pane="p" hidden><b>Shelter check · now</b><p id="shelter-summary"></p>${s.houses
-        .map((hs) => {
-          const ms = hs.members.map((m) => personOf(s, m)).filter((p): p is Person => !!p && p.body.alive);
-          if (!ms.length) return '';
-          return `<section class="household"><b>${esc(hs.name)}</b>${ms.map((p) => `<div class="shelter-row"><button class="link" data-who="${p.id}">${esc(p.name)}</button><div class="small" data-shelter-person="${p.id}"></div></div>`).join('')}</section>`;
-        })
-        .join(
-          '',
-        )}<p class="soft">${souls(alive.length)} in the village. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} buried.` : ''}</p></div>
-      <div class="tab" data-pane="s" hidden>
-        ${aboutHill}
-        <p>${done.map((x) => `✓ ${esc(x.text)}`).join('<br/>') || '<span class="soft">Nothing ticked off yet.</span>'}</p>
-        <div class="actions">
-          <button id="savenow">Save this hill</button>
-          <button id="send">Send this run to the notebook</button>
-          <button id="export">Download this run</button>
-          <button id="restart">Begin a new hill</button>
-        </div>
-        <p class="soft small">The Warren ${GAME_VERSION} · HF ${FRAMEWORK_VERSION} · seed ${s.seed}</p>
-      </div>
-      ${footer}</div>
-    </div>`;
-  d.querySelector('[data-pane="s"]')?.append(telemetryToggle(lab));
+  const heading =
+    tab === 'p'
+      ? 'The village'
+      : tab === 'j'
+        ? 'Journal'
+        : tab === 'd'
+          ? 'What the village has done'
+          : 'Game menu';
+  d.dataset.kind = tab;
+  d.innerHTML = `<div class="sheet"><div class="who"><b>${heading}</b><button class="x" id="bookx" aria-label="Close">×</button></div><div id="sheet-body" tabindex="0" role="region" aria-label="${heading}">${
+    tab === 's'
+      ? menuRows()
+      : tab === 'j'
+        ? `${newestSafety ? `<p id="newest-safety"><b>Latest safety entry</b><br>${esc(newestSafety.text)}</p>` : ''}${notes.slice(0, 8).map(entry).join('')}<details><summary>Earlier journal entries</summary>${notes.slice(8).map(entry).join('')}</details>`
+        : tab === 'd'
+          ? `<p>${done.map((x) => `✓ ${esc(x.text)}`).join('<br>') || 'Nothing ticked off yet.'}</p>`
+          : `<h3>Below now</h3><p>${below.map((p) => esc(p.name)).join(', ') || 'No one below yet.'}</p><h3>Exposed</h3><p id="shelter-summary"></p>${s.houses
+              .map((hs) => {
+                const ms = hs.members
+                  .map((m) => personOf(s, m))
+                  .filter((p): p is Person => !!p && p.body.alive);
+                return ms.length
+                  ? `<section class="household"><b>${esc(hs.name)}</b>${ms.map((p) => `<div class="shelter-row"><button class="link" data-who="${p.id}">${esc(p.name)}</button><div class="small" data-shelter-person="${p.id}"></div></div>`).join('')}</section>`
+                  : '';
+              })
+              .join(
+                '',
+              )}<p class="soft">${souls(alive.length)} in the village. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} buried.` : 'None buried.'}</p>`
+  }</div></div>`;
   hideOtherSheets('drawer');
   d.hidden = false;
   updateShelter();
   document.getElementById('bookx')?.addEventListener('click', closeBook);
-  for (const b of d.querySelectorAll<HTMLButtonElement>('[data-tab]'))
-    b.addEventListener('click', () => {
-      for (const x of d.querySelectorAll<HTMLButtonElement>('[data-tab]')) x.classList.toggle('on', x === b);
-      for (const p of d.querySelectorAll<HTMLElement>('[data-pane]'))
-        p.hidden = p.dataset.pane !== b.dataset.tab;
-      document.getElementById('sheet-body')?.scrollTo(0, 0);
-    });
+  bindMenu(d, closeBook);
   for (const b of d.querySelectorAll<HTMLButtonElement>('[data-who]'))
     b.addEventListener('click', () => {
       personOpener = b;
       paint.selected = b.dataset.who ?? null;
       d.hidden = true;
-      const cell = g ? positionAt(g.s, paint.selected ?? '', paint.t) : 0;
-      focusCell = cell;
-      const [x, y] = [xOf(cell), yOf(cell)];
-      view.x = x - view.w / view.cs / 2;
-      view.y = y - view.h / view.cs / 2;
-      clampView();
       card();
       document.getElementById('cardx')?.focus();
     });
-  document.getElementById('savenow')?.addEventListener('click', async () => {
-    await writeSave();
-    closeBook();
-    flash('This hill is saved. It waits here while you are away.');
-  });
-  document.getElementById('export')?.addEventListener('click', download);
-  document.getElementById('send')?.addEventListener('click', () => {
-    if (!g) return;
-    const send = document.getElementById('send');
-    const restore = () => {
-      if (!d.isConnected) return;
-      d.hidden = false;
-      send?.focus();
-    };
-    d.hidden = true;
-    lab.openSendDialog({ getRun: () => runOf() });
-    const veil = document.querySelector('.hflab-veil');
-    if (!veil) {
-      restore();
-      return;
-    }
-    // The pinned lab client has no dismissal callback; observe its own veil removal.
-    const dismissed = new MutationObserver(() => {
-      if (veil.isConnected) return;
-      dismissed.disconnect();
-      restore();
-    });
-    dismissed.observe(document.body, { childList: true });
-  });
-  d.querySelector<HTMLButtonElement>(`[data-tab="${tab}"]`)?.click();
   document.getElementById('bookx')?.focus();
-  document.getElementById('restart')?.addEventListener('click', async () => {
-    if (!confirm('Begin a new hill? This one will be put away for good.')) return;
-    await store.drop(SAVE_KEY);
-    g = newGame((Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0);
-    seenHint.clear();
-    enter();
-  });
 }
 
-async function writeSave(): Promise<void> {
-  if (!g) return;
+async function writeSave(): Promise<boolean> {
+  if (!g) return true;
   lastSaved = performance.now();
   dirty = false;
   const saved = { ...save(g), savedAt: Date.now() };
-  if (await store.put(SAVE_KEY, saved)) lab.captureSave(saved);
+  const stored = await store.put(SAVE_KEY, saved);
+  if (stored) lab.captureSave(saved);
+  else dirty = true;
+  return stored;
 }
 
 function runOf() {
@@ -1455,26 +1564,3 @@ export const _debug = {
   },
   order,
 };
-
-/** Available on the title page too, before regular play events begin. */
-function mountLabControls() {
-  const controls = document.createElement('details');
-  controls.className = 'lab-controls';
-  controls.innerHTML = `<summary>Playtest privacy</summary><label><input type="checkbox"> Lab recording</label> <a href="https://human.adamwhite.work/lab/privacy/">Privacy</a>`;
-  const toggle = controls.querySelector('input');
-  if (toggle) {
-    toggle.checked = lab.telemetryOn;
-    const sync = () => {
-      toggle.checked = lab.telemetryOn;
-    };
-    window.addEventListener('hf-lab-preference', sync);
-    window.addEventListener('storage', sync);
-    window.addEventListener('focus', sync);
-    document.addEventListener('change', sync);
-    toggle.addEventListener('change', () => {
-      lab.setTelemetryOff(!toggle.checked);
-      toggle.checked = lab.telemetryOn;
-    });
-  }
-  document.body.append(controls);
-}
