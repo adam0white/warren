@@ -61,6 +61,8 @@ describe('DL-23 actual control targets', () => {
       try {
         await page.clock.install();
         await page.goto(url);
+        await page.locator('#new').waitFor();
+        expectTargets(await boxes(page, '.topbar a'), width, height);
         await page.locator('#new').click();
         await page.locator('#cv').waitFor();
         await page.clock.runFor(500);

@@ -61,6 +61,10 @@ body {
   display: none !important;
 }
 a {
+  display: inline-flex;
+  align-items: center;
+  min-width: 44px;
+  min-height: 44px;
   color: inherit;
   text-underline-offset: 3px;
 }
