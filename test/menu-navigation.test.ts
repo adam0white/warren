@@ -63,7 +63,7 @@ describe('Game menu and person return paths', () => {
       await person.click();
       expect(await page.locator('#drawer').isVisible()).toBe(false);
       expect(await page.locator('#card').isVisible()).toBe(true);
-      await page.locator('#cardx').click();
+      await page.getByRole('button', { name: 'Back to The village', exact: true }).click();
       expect(await page.locator('#card').isVisible()).toBe(false);
       expect(await page.locator('#drawer[data-kind="p"]').isVisible()).toBe(true);
       expect(await person.evaluate((el) => el === document.activeElement)).toBe(true);

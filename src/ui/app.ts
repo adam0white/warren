@@ -336,13 +336,13 @@ function enter() {
   });
   // Close on pointerdown before a live redraw can replace the tapped control.
   document.getElementById('card')?.addEventListener('pointerdown', (e) => {
-    if (!(e.target as HTMLElement).closest('#cardx')) return;
+    if (!(e.target as HTMLElement).closest('#cardx, #cardback')) return;
     e.preventDefault();
     closeCard();
   });
   // Keyboard activation dispatches a click without pointerdown.
   document.getElementById('card')?.addEventListener('click', (e) => {
-    if ((e.target as HTMLElement).closest('#cardx')) closeCard();
+    if ((e.target as HTMLElement).closest('#cardx, #cardback')) closeCard();
   });
   document.getElementById('ticker')?.addEventListener('click', () => openBook('j'));
   document.getElementById('last-reading')?.addEventListener('click', () => {
@@ -831,7 +831,7 @@ function card() {
   const about = s.notes.filter((n) => n.who === p.id).slice(-2);
   const habit = p.habits.some((h) => h.action === 'dig' && h.strength > 0.25);
   const html = `
-    <div class="who"><b>${personOpener ? '← ' : ''}${esc(p.name)}</b> <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'come from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
+    <div class="who">${personOpener ? `<button id="cardback" aria-label="Back to The village">← ${esc(p.name)}</button>` : `<b>${esc(p.name)}</b>`} <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'come from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
     <p id="person-help">${esc(personHelpWords(s, p))}</p>
     <div>${walking ? 'on the way to ' : ''}${esc(doing)}</div>
     <details id="person-context"><summary id="person-context-toggle">Activity and words</summary>
@@ -1453,6 +1453,15 @@ function openBook(tab = 's') {
   const alive = s.people.filter((p) => p.body.alive);
   const below = alive.filter((p) => yOf(positionAt(s, p.id, s.minute)) >= SURF);
   const done = GOALS.filter((x) => s.goals[x.id] !== undefined);
+  const householdRows = (members: Person[]) =>
+    s.houses
+      .map((hs) => {
+        const people = members.filter((p) => hs.members.includes(p.id));
+        return people.length
+          ? `<section class="household"><b>${esc(hs.name)}</b>${people.map((p) => `<div class="shelter-row"><button class="link" data-who="${p.id}">${esc(p.name)}</button><div class="small" data-shelter-person="${p.id}"></div></div>`).join('')}</section>`
+          : '';
+      })
+      .join('');
   const heading =
     tab === 'p'
       ? 'The village'
@@ -1469,18 +1478,7 @@ function openBook(tab = 's') {
         ? `${newestSafety ? `<p id="newest-safety"><b>Latest safety entry</b><br>${esc(newestSafety.text)}</p>` : ''}${notes.slice(0, 8).map(entry).join('')}<details><summary>Earlier journal entries</summary>${notes.slice(8).map(entry).join('')}</details>`
         : tab === 'd'
           ? `<p>${done.map((x) => `✓ ${esc(x.text)}`).join('<br>') || 'Nothing ticked off yet.'}</p>`
-          : `<h3>Below now</h3><p>${below.map((p) => esc(p.name)).join(', ') || 'No one below yet.'}</p><h3>Exposed</h3><p id="shelter-summary"></p>${s.houses
-              .map((hs) => {
-                const ms = hs.members
-                  .map((m) => personOf(s, m))
-                  .filter((p): p is Person => !!p && p.body.alive);
-                return ms.length
-                  ? `<section class="household"><b>${esc(hs.name)}</b>${ms.map((p) => `<div class="shelter-row"><button class="link" data-who="${p.id}">${esc(p.name)}</button><div class="small" data-shelter-person="${p.id}"></div></div>`).join('')}</section>`
-                  : '';
-              })
-              .join(
-                '',
-              )}<p class="soft">${souls(alive.length)} in the village. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} buried.` : 'None buried.'}</p>`
+          : `<h3>Below now</h3>${householdRows(below) || '<p>No one below yet.</p>'}<h3>Exposed</h3><p id="shelter-summary"></p>${householdRows(alive.filter((p) => !below.includes(p))) || '<p>No one above ground.</p>'}<p class="soft">${souls(alive.length)} in the village. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} buried.` : 'None buried.'}</p>`
   }</div></div>`;
   hideOtherSheets('drawer');
   d.hidden = false;
