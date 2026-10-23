@@ -381,6 +381,8 @@ function enter() {
   if (commitRow) sceneObserver.observe(commitRow);
   const fontProbe = document.getElementById('font-probe');
   if (fontProbe) sceneObserver.observe(fontProbe);
+  const guidance = stageRoot.querySelector<HTMLElement>(':scope > .goal-slot');
+  if (guidance) sceneObserver.observe(guidance);
   syncButtons();
   chrome();
   last = performance.now();
@@ -439,6 +441,10 @@ function resize() {
   if (root) {
     root.dataset.reflow = String(parseFloat(getComputedStyle(root).fontSize) > 24 || innerHeight < 600);
     root.style.setProperty('--warren-height', `${root.clientHeight}px`);
+    root.style.setProperty(
+      '--warren-goal-height',
+      `${root.querySelector(':scope > .goal-slot')?.getBoundingClientRect().height ?? 64}px`,
+    );
     root.style.setProperty(
       '--warren-commit-height',
       `${document.getElementById('hill-controls')?.getBoundingClientRect().height ?? 0}px`,
