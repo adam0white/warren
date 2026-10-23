@@ -106,6 +106,14 @@ export function gameTimeWords(minutes: number): string {
     : `${total} game ${total === 1 ? 'minute' : 'minutes'}`;
 }
 
+/** Observed threat only: never expose the next scheduled raid. */
+export function bellThreatWords(s: WarrenState): string {
+  const raid = activeRaid(s);
+  if (raid?.stage === 'riders') return 'Riders are at the hill.';
+  if (raid?.stage === 'smoke') return 'Smoke on the ridge. Riders may be half a day off.';
+  return 'No smoke or riders in sight.';
+}
+
 export function bellStateWords(s: WarrenState): string {
   if (s.edition === '0.4.0' && s.bell?.real && s.bell.until > s.minute)
     return 'Call active until the all-clear. People choose whether to come below and may refuse throughout.';

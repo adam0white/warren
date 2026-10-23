@@ -106,7 +106,7 @@ describe('round four shelter clarity', () => {
       await page.locator('#raid-bell').click();
       await page.clock.runFor(300);
       expect(await page.locator('#goal').isVisible()).toBe(true);
-      expect(await page.locator('#goal').innerText()).toContain('Check shelter');
+      expect(await page.locator('#goal').innerText()).toContain('Tap souls');
       await page.locator('#shelter-check').click();
       await page.locator('[data-who]').first().click();
       expect(await page.locator('#card').innerText()).not.toContain('An old refusal');

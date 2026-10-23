@@ -165,3 +165,13 @@ Warren keeps the spec-default three player speeds. Slow starts a new hill; Stead
 Done means signed main commits, green CI, a deployed clean matching release, live browser acceptance at 360×690 and 1280×800, the unchanged owner export replay, and the owner ledger entries. Adam accepts the result by playing afterwards. Evidence and report live in `~/code/.lab-scratch/ui-sweep/built/warren/` and `~/code/.lab-scratch/codex/build-warren.md`.
 
 Deferred to 2026-10-26: add a presentation slowdown for water struck and rooms finished, with strip words "Water struck" and "A room is dug". It must preserve seed/input replay identity.
+
+## Open-fix sweep (2026-10-23)
+
+Store and hung-lamp success receipts stay in the peek row. They do not open an inspection or add a playback hold; tapping the peek reopens the receipt for reading. Lamp prerequisites and refused marks retain their explanations. The bell reading names observed smoke or riders, or their absence, without revealing the scheduled raid. The shortened door hint retains its placement and light rules. The information legend distinguishes sleeping capacity from each person's actual exposure, and raid guidance points to the visible souls control.
+
+What the village has done now opens with a growth record from existing saved facts: dug cells, arriving families and completed rider visits. A completed visit does not imply protection. The record points to The village for current safety and states that the saved hill waits while away. Simulation, editions, HF, input logs and saved state are unchanged.
+
+The sweep report and all 23 proposed ledger statuses live in `~/code/.lab-scratch/sweep/warren.md` and `warren-ledger.md`. Delivery means one independent Codex review, focused regression checks and check:lane, signed main commit, green exact-commit CI, a clean live release containing that commit, and Chromium checks at 360×690 and 1280×800. Adam accepts feel by playing afterwards.
+
+Owner decisions remain: automatic widening versus the later fixed working camera (F-199), and keeping a room visible beneath an approved phone overlay without moving the working view (F-294 DL-31). Revisit these together on 2026-10-26. Outcome-based goal criteria remain deferred to 2026-10-26; offline progression and its return record remain a 2026-11-02 design decision. The growth record does not introduce offline progression or resolve the wider between-raid arc.

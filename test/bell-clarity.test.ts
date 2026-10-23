@@ -4,7 +4,7 @@ import { newGame } from '../src/sim/game.ts';
 import { idx, SURF } from '../src/sim/grid.ts';
 import { exposureWords } from '../src/ui/exposure.ts';
 import { colonyWords } from '../src/ui/guidance.ts';
-import { bellStateWords } from '../src/ui/room-safety.ts';
+import { bellStateWords, bellThreatWords } from '../src/ui/room-safety.ts';
 
 function ringing() {
   const s = newGame(7, '0.3.0').s;
@@ -103,4 +103,22 @@ describe('bell duration and observed replies', () => {
     p.activity.affordance.label = 'pray';
     expect(exposureWords(s, p)).not.toMatch(/minutes|hours|choice due/);
   });
+});
+
+it('names only the threat the village can currently see beside the bell', () => {
+  const s = newGame(7).s;
+  const before = JSON.stringify(s);
+  expect(bellThreatWords(s)).toBe('No smoke or riders in sight.');
+  expect(JSON.stringify(s)).toBe(before);
+  const raid = s.raids[0];
+  if (!raid) throw new Error('Missing raid');
+  raid.stage = 'smoke';
+  expect(bellThreatWords(s)).toMatch(/Smoke.*half a day/);
+  s.bell = { at: s.minute, until: s.minute + 360, real: true };
+  expect(colonyWords(s)).toContain('Tap souls');
+  expect(colonyWords(s)).not.toContain('Check shelter');
+  raid.stage = 'riders';
+  expect(bellThreatWords(s)).toBe('Riders are at the hill.');
+  raid.stage = 'gone';
+  expect(bellThreatWords(s)).toBe('No smoke or riders in sight.');
 });

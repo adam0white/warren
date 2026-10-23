@@ -36,12 +36,13 @@ import { doorDetailWords, doorWords } from './door-help.ts';
 import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from './draw.ts';
 import { exposureWords } from './exposure.ts';
 import { openFeedback } from './feedback.ts';
+import { growthWords } from './growth.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
 import { personHelpWords } from './person-help.ts';
 import { type PlanSafety, planSafety } from './plan-safety.ts';
 import { eventStamp, playbackRate } from './playback.ts';
-import { bellShelterWords, bellStateWords } from './room-safety.ts';
+import { bellShelterWords, bellStateWords, bellThreatWords } from './room-safety.ts';
 import {
   compactShelterWords,
   sleepingCapacity,
@@ -130,7 +131,7 @@ const souls = (n: number) =>
         ? `some ${Math.round(n / 5) * 5} souls`
         : `${Math.round(n / 10) * 10} souls and more`;
 const footer = `<div class="footer">${'<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>'}<br>People by the Human Framework ${FRAMEWORK_VERSION}.</div>`;
-const playInfo = `<p>Chalk a dashed outline. People choose when to dig it. A plan with no air or light waits.</p><p>Furnish open ground: a store for jars, beds for sleeping, a lamp, or a door.</p><p>A door needs one cell wide, open on two opposite sides. Three at most.</p><p>Filled figures have sleeping places below. Hollow figures are exposed.</p>`;
+const playInfo = `<p>Chalk a dashed outline. People choose when to dig it. A plan with no air or light waits.</p><p>Furnish open ground: a store for jars, beds for sleeping, a lamp, or a door.</p><p>A door needs one cell wide, open on two opposite sides. Three at most.</p><p>Filled figures count marked sleeping places. Hollow figures show missing places. Tap souls to check each person’s exposure.</p>`;
 function topbar(titlePage = false) {
   return `<header class="topbar"><div class="bar-words">${titlePage ? '<a href="https://human.adamwhite.work/games/">All games</a>' : '<span id="when"></span>'}</div><button class="info" aria-label="Information" popovertarget="hill-info">i</button><button id="book" aria-label="Game menu">≡<span class="menu-label"> Menu</span></button></header><div id="hill-info" class="info-popover" popover="auto"><div class="who"><b>${titlePage ? 'The hill' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${titlePage ? '<p>Riders burned two villages. The cellar under Yusuf Usta’s house is the start.</p><p>You have the chalk and the bell. Nobody obeys; everyone follows the worn path.</p><p>One finger chalks or looks. Two fingers move the hill.</p><p>A year has 365 days. Year 1 begins on 19 August.</p>' : playInfo}</div>`;
 }
@@ -407,7 +408,7 @@ function setTool(t: Tool) {
     store: 'Drag over open ground to make it a store. Grain goes where the jars are.',
     beds: 'Drag over open ground for sleeping places below.',
     lamp: 'Tap open ground to hang a lamp. Tap it again to take it down.',
-    door: 'Tap a passage one cell wide, open on two opposite sides only. They carve a rolling stone there if it is lit. Three doors at most.',
+    door: 'Tap a lit, one-cell passage with two opposite openings. Three doors at most.',
   };
   const h = hints[t];
   if (h) hint(`tool:${t}`, h);
@@ -756,6 +757,17 @@ function flash(text: string, contextWords = '') {
   tickerUntil = performance.now() + 9000;
 }
 
+/** A successful mark is a receipt, not an inspection. Keep it available through the peek. */
+function receipt(text: string) {
+  closeCell(false);
+  lastReading = { title: 'Reading', words: text };
+  const reopen = document.getElementById('last-reading') as HTMLButtonElement | null;
+  if (reopen) reopen.disabled = false;
+  hintUntil = performance.now() + 6000;
+  const peek = document.getElementById('event-sentence');
+  if (peek) peek.textContent = text;
+}
+
 function hint(key: string, text: string) {
   if (seenHint.has(key)) return;
   seenHint.add(key);
@@ -1067,9 +1079,9 @@ function commitPaint(entranceConfirmed = false) {
       const cell = cells.find((c) => h.kind[c] === K.open && h.use[c] === USE.beds);
       if (cell !== undefined) flash(sleepingRoomWords(g.s, cell));
     }
-    if (kind === 'store' && ok) flash('Store marked. People can bring grain to these jars.');
+    if (kind === 'store' && ok) receipt('Store marked. People can bring grain to these jars.');
     else if (kind === 'store' && cells.some((c) => h.kind[c] === K.open && h.use[c] === USE.store))
-      flash('This ground is already marked as a store.');
+      receipt('This ground is already marked as a store.');
     chrome();
     if (!ok && cells.every((c) => h.kind[c] !== K.open))
       flash('Rooms are marked on open ground. Chalk the stone first.');
@@ -1090,7 +1102,7 @@ function tap(px: number, py: number) {
         flash(
           'No lamp in hand: the dashed ring marks where it will hang. Someone will shape one at the hearth, if they will.',
         );
-      else flash('Lamp hung.');
+      else receipt('Lamp hung.');
     } else flash('A lamp hangs in open ground, below the surface.');
     return;
   }
@@ -1295,7 +1307,7 @@ function showBellReading() {
     (p) => p.body.alive && at !== undefined && s.answers.some((a) => a.who === p.id && a.at >= at),
   );
   const call = bellStateWords(s);
-  showReading('Bell call', call, true, true);
+  showReading('Bell call', `${bellThreatWords(s)} ${call}`, true, true);
   const context = document.getElementById('reading-context');
   const label = context?.querySelector('summary');
   const text = document.getElementById('door-context');
@@ -1477,7 +1489,7 @@ function openBook(tab = 's') {
       : tab === 'j'
         ? `${newestSafety ? `<p id="newest-safety"><b>Latest safety entry</b><br>${esc(newestSafety.text)}</p>` : ''}${notes.slice(0, 8).map(entry).join('')}<details><summary>Earlier journal entries</summary>${notes.slice(8).map(entry).join('')}</details>`
         : tab === 'd'
-          ? `<p>${done.map((x) => `✓ ${esc(x.text)}`).join('<br>') || 'Nothing ticked off yet.'}</p>`
+          ? `<p id="growth-record">${esc(growthWords(s))}</p><p>${done.map((x) => `✓ ${esc(x.text)}`).join('<br>') || 'Nothing ticked off yet.'}</p>`
           : `<h3>Below now</h3>${householdRows(below) || '<p>No one below yet.</p>'}<h3>Exposed</h3><p id="shelter-summary"></p>${householdRows(alive.filter((p) => !below.includes(p))) || '<p>No one above ground.</p>'}<p class="soft">${souls(alive.length)} in the village. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} buried.` : 'None buried.'}</p>`
   }</div></div>`;
   hideOtherSheets('drawer');

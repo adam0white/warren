@@ -232,15 +232,19 @@ it('shows complete bed and door remedies inside the sheet and acknowledges stora
       })()`);
       await page.touchscreen.tap(point.x, point.y);
       await page.clock.runFor(100);
-      const words = await page.locator('#cell-words').innerText();
+      const words = await page.locator(scenario === 'store' ? '#event-sentence' : '#cell-words').innerText();
       expect(words).toMatch(scenario === 'store' ? /Store marked/ : /Ring the bell/);
-      const visible = await page.locator('#cell-words').evaluate((el) => {
-        const range = document.createRange();
-        range.selectNodeContents(el);
-        const text = range.getBoundingClientRect(),
-          body = document.querySelector('#inspection-body')?.getBoundingClientRect();
-        return !!body && text.top >= body.top && text.bottom <= body.bottom + 1;
-      });
+      const visible = await page
+        .locator(scenario === 'store' ? '#event-sentence' : '#cell-words')
+        .evaluate((el) => {
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const text = range.getBoundingClientRect(),
+            body =
+              document.querySelector('#cell-detail:not([hidden])')?.getBoundingClientRect() ??
+              document.querySelector('.reading-actions')?.getBoundingClientRect();
+          return !!body && text.top >= body.top && text.bottom <= body.bottom + 1;
+        });
       expect(visible, `${scenario} remedy fits its sheet`).toBe(true);
       expect(await page.locator('#bell-state').isVisible()).toBe(true);
     }

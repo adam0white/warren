@@ -23,11 +23,11 @@ export function colonyWords(s: WarrenState): string {
       : 'Ring the bell to call the village below. Each call lasts six game hours.';
   if (raid?.stage === 'riders')
     return ringing
-      ? `Riders are at the hill. ${bellStateWords(s)} Check shelter to see who is still exposed.`
+      ? `Riders are at the hill. ${bellStateWords(s)} Tap souls above to check exposure.`
       : `Riders are at the hill. ${renew}`;
   if (raid?.stage === 'smoke')
     return ringing
-      ? `Smoke rises in the south. ${bellStateWords(s)} Check shelter to see who is still exposed.`
+      ? `Smoke rises in the south. ${bellStateWords(s)} Tap souls above to check exposure.`
       : `Smoke rises in the south. ${renew}`;
 
   const fs = faces(s.hill);
