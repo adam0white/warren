@@ -24,9 +24,23 @@ describe('sleeping capacity words', () => {
     const s = withBeds([16, 17, 20]);
     const words = sleepingRoomWords(s, idx(16, SURF + 3));
     expect(words).toMatch(/room for about six/i);
-    expect(words).not.toMatch(/nine|\d/);
+    expect(words).toContain('Across all sleeping rooms: about nine places.');
+    expect(words).not.toMatch(/\d/);
     expect(sleepingRoomWords(s, idx(20, SURF + 3))).toMatch(/about three/);
     expect(sleepingRoomWords(s, idx(19, SURF + 3))).toBe('');
+  });
+
+  it('labels room capacity but compares the village with all marked beds', () => {
+    const s = withBeds([16, 17, 20]);
+    expect(sleepingCapacity(s)).toEqual({ places: 9, people: 9, enough: true });
+    const words = sleepingRoomWords(s, idx(16, SURF + 3));
+    expect(words).toContain('Room for about six here.');
+    expect(words).toContain('Across all sleeping rooms: about nine places. Enough for the village.');
+    expect(words).not.toContain('More sleeping places needed');
+    const person = s.people[0];
+    if (!person) throw new Error('Missing villager');
+    s.people.push({ ...person, id: 'extra' });
+    expect(sleepingRoomWords(s, idx(16, SURF + 3))).toContain('More sleeping places needed');
   });
 
   it('puts the bed remedy before capacity in a short phone response', () => {
