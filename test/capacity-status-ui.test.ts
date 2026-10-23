@@ -49,6 +49,7 @@ for (const [width, height] of [
         await page.screenshot({ path: `${shots}/status-${width}.png` });
       }
       expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client + 1);
+      expect(await goal.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
     } finally {
       await page.close();
     }

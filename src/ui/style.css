@@ -450,6 +450,7 @@ button[aria-pressed="true"] {
   background: linear-gradient(var(--paper) 30%, transparent);
 }
 .goal {
+  background: var(--paper);
   margin: 0;
   font-size: 14px;
   line-height: 1.35;
