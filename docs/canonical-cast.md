@@ -32,7 +32,7 @@ Old framework notebooks refuse with Start fresh. Historical input logs remain us
 ## Pins
 
 - `@adam0white/human-framework`: 2.18.0; engine 2.17.0.
-- `adam0white-lab-client-0.4.1.tgz`: SHA256 `c1c9061dcafc920b8184ad81c0f1aef1920239ff7701acbeba3366715fc14b21`.
-- `adam0white-lab-kit-0.5.1.tgz`: SHA256 `23dadbc049aec835aaaf53be8486fd0a00d358a226112138ad76c74f7707b8a1`.
+
+The exact vendored client/kit paths and package integrity are recorded in `package.json` and `package-lock.json`. Those manifests remain authoritative when a separately authorized shared feedback release updates the artifacts. Verify the current SHA256 values against the final scratch release receipt; never replace a vendor archive in place.
 
 Dynamic source, CI, deploy and browser receipts belong in the scratch report, not repeated receipt-only commits.
