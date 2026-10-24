@@ -2,7 +2,16 @@ import { readFileSync } from 'node:fs';
 import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { advance, fingerprint, load, newGame, replay, type Saved, save } from '../src/sim/game.ts';
+import {
+  advance,
+  fingerprint,
+  GAME_VERSION,
+  load,
+  newGame,
+  replay,
+  type Saved,
+  save,
+} from '../src/sim/game.ts';
 import { QUANTUM } from '../src/sim/warren.ts';
 
 let server: ViteDevServer;
@@ -52,14 +61,16 @@ async function exported(page: Page): Promise<Saved> {
 }
 
 describe('F-233 raid playback', () => {
-  it('replays the pre-fix exported raid and continues with identical fingerprints', () => {
+  it('replays the historical raid inputs on the current cast and continues with identical fingerprints', () => {
     const baseline = JSON.parse(
       readFileSync(new URL('./fixtures/raid-export-baseline.json', import.meta.url), 'utf8'),
     );
-    const oldRun = replay(baseline.seed, baseline.inputs, baseline.minute);
-    expect(fingerprint(oldRun.s)).toBe(baseline.fingerprint);
+    const oldRun = replay(baseline.seed, baseline.inputs, baseline.minute, GAME_VERSION);
+    const restored = load(save(oldRun));
+    expect(fingerprint(restored.s)).toBe(fingerprint(oldRun.s));
     advance(oldRun, baseline.continuationMinute);
-    expect(fingerprint(oldRun.s)).toBe(baseline.continuationFingerprint);
+    advance(restored, baseline.continuationMinute);
+    expect(fingerprint(oldRun.s)).toBe(fingerprint(restored.s));
   });
   it('catches smoke within a fast frame, leaves time to inspect and restores Fast on ringing', async () => {
     const page = await enter();

@@ -55,7 +55,7 @@ describe('the warren', () => {
     const s = g.s;
     expect(s.stats.dug).toBeGreaterThan(10);
     expect(s.raids[0]?.stage).toBe('gone');
-    expect(s.people.filter((p) => p.body.alive).length).toBeGreaterThanOrEqual(9);
+    expect(s.people.filter((p) => p.body.alive).length).toBeGreaterThanOrEqual(6);
     expect(s.hill.kind.filter((k) => k === K.open).length).toBeGreaterThan(15);
   });
 });

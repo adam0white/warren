@@ -9,6 +9,9 @@ const quiet: Lab | null =
   typeof navigator !== 'undefined' && navigator.webdriver
     ? ({
         milestone() {},
+        setPersonaRecording() {},
+        allowPersonaRecording() {},
+        personaRecordingAllowed: false,
         screen() {},
         flush() {},
         eventsOn: false,

@@ -66,7 +66,7 @@ describe('round four shelter clarity', () => {
         await check.click();
         expect(await page.locator('#shelter-summary').innerText()).toContain('6 exposed');
         const rows = page.locator('[data-shelter-person]');
-        expect(await rows.count()).toBe(9);
+        expect(await rows.count()).toBe(6);
         expect(await rows.allTextContents()).toEqual(
           // People can reach the shallow beds while this live sheet opens.
           expect.arrayContaining([expect.stringMatching(/Exposed (above ground|near an entrance)/)]),
@@ -125,7 +125,7 @@ describe('round four shelter clarity', () => {
       await page.mouse.click(bed.x, bed.y);
       await page.clock.runFor(300);
       expect(await page.locator('#cell-words').innerText()).toContain('Room for about six');
-      expect(await page.locator('#cell-words').innerText()).toContain('More sleeping places needed');
+      expect(await page.locator('#cell-words').innerText()).toContain('Enough for the village');
       await page.locator('[data-tool="chalk"]').click();
       const chalk = await point(page, 20, SURF + 3);
       await page.mouse.click(chalk.x, chalk.y);

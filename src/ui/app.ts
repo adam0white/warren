@@ -17,7 +17,8 @@ import {
   save,
 } from '../sim/game.ts';
 import { AIR_REACH, diggable, H, idx, K, neighbours, SURF, THEIR_X, USE, W, xOf, yOf } from '../sim/grid.ts';
-import { BELL } from '../sim/people.ts';
+import { BELL, VISIT_TERMS } from '../sim/people.ts';
+import { INVITATIONS } from '../sim/visits.ts';
 import {
   activeRaid,
   airAndLight,
@@ -31,6 +32,7 @@ import {
   waterWords,
 } from '../sim/warren.ts';
 import { baseView } from './camera.ts';
+import * as continuity from './continuity.ts';
 import { hillDate } from './date.ts';
 import { doorDetailWords, doorWords } from './door-help.ts';
 import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from './draw.ts';
@@ -139,6 +141,10 @@ function topbar(titlePage = false) {
 // ---------- start ----------
 
 export async function start() {
+  continuity.attach(
+    () => g,
+    async (game) => (g === game ? writeSave() : false),
+  );
   lab.trackRun(
     async () => {
       const current = g;
@@ -166,7 +172,8 @@ export async function start() {
 function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
   lab.screen('title');
   feedbackCleanup?.();
-  const compatible = sv && sv.game.split('.')[0] === GAME_VERSION.split('.')[0];
+  const compatible =
+    sv && sv.framework === FRAMEWORK_VERSION && sv.game.split('.')[0] === GAME_VERSION.split('.')[0];
   cancelAnimationFrame(raf);
   canvas = null;
   stage?.destroy();
@@ -195,15 +202,23 @@ function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
     app().querySelector('.title-goal')?.append(notice);
     notice.dataset.shown = '1';
   }
-  document.getElementById('cont')?.addEventListener('click', () => {
+  document.getElementById('cont')?.addEventListener('click', async () => {
     if (!sv) return;
-    g = load(sv);
+    g = await continuity.localLoad(sv);
     speedIx = 1;
     enter();
   });
   const begin = async () => {
-    await store.drop(SAVE_KEY);
-    g = newGame((Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0);
+    try {
+      const prepared = await continuity.fresh((Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0);
+      await store.drop(SAVE_KEY);
+      g = prepared;
+    } catch (error) {
+      alert(
+        `Continuity refused: ${String(error)}. Keep your existing hill, export, or choose fresh local play in the menu.`,
+      );
+      return;
+    }
     speedIx = 0;
     seenHint.clear();
     enter();
@@ -544,7 +559,15 @@ function frame(now: number) {
   while (rate > 0 && s.minute + QUANTUM <= disp && performance.now() - t0 < 10) {
     const pending = raidDecision();
     const before = eventStamp(s);
+    const dayBefore = Math.floor(s.minute / DAY);
+    const aliveBefore = s.people.filter((p) => p.body.alive).length;
     advance(g, s.minute + QUANTUM);
+    if (
+      s.people.some((p) => (s.flags[`released:${p.id}`] ?? 0) >= s.minute - QUANTUM + 1 && !p.activity) ||
+      Math.floor(s.minute / DAY) !== dayBefore ||
+      s.people.filter((p) => p.body.alive).length !== aliveBefore
+    )
+      void continuity.checkpoint();
     dirty = true;
     if ((!pending && raidDecision()) || eventStamp(s) !== before) {
       readUntil = now + 6000;
@@ -850,7 +873,7 @@ function card() {
   const habit = p.habits.some((h) => h.action === 'dig' && h.strength > 0.25);
   const html = `
     <div class="who">${personOpener ? `<button id="cardback" aria-label="Back to The village">← ${esc(p.name)}</button>` : `<b>${esc(p.name)}</b>`} <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'come from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
-    <p id="person-help">${esc(personHelpWords(s, p))}</p>
+        <p id="person-help">${esc(personHelpWords(s, p))}</p>
     <div>${walking ? 'on the way to ' : ''}${esc(doing)}</div>
     <details id="person-context"><summary id="person-context-toggle">Activity and words</summary>
     <div class="shelter-person">${esc(exposureWords(s, p))}</div>
@@ -858,12 +881,28 @@ function card() {
     ${habit ? '<div class="hand">Goes down to the faces every morning now. Nobody asks.</div>' : ''}
     ${trustWords(p) ? `<div class="soft">${esc(p.name)} ${trustWords(p)}.</div>` : ''}
     ${why ? `<div class="hand">“${esc(why)}”</div>` : ''}
-    ${about.map((n) => `<div class="soft small">${esc(n.text)}</div>`).join('')}</details>`;
+    ${about.map((n) => `<div class="soft small">${esc(n.text)}</div>`).join('')}${s.edition === '0.5.0' && VISIT_TERMS[p.id] ? `<p>${esc(VISIT_TERMS[p.id]!)}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>Invite chapter release</button>` : ''}
+</details>`;
   if (el.dataset.html !== html) {
     const focused = document.activeElement?.id;
     const expanded = el.querySelector('details')?.open ?? false;
     el.dataset.html = html;
     el.innerHTML = html;
+    el.querySelector('#release-person')?.addEventListener('click', () => {
+      if (g) {
+        const ok = act(g, { verb: 'release', who: p.id });
+        if (!ok) alert('Not ready: active work, duty, danger or care still needs this chapter.');
+        dirty = true;
+        card();
+      }
+    });
+    el.querySelector('#visit-person')?.addEventListener('click', () => {
+      if (g) {
+        act(g, { verb: 'visit', who: p.id });
+        dirty = true;
+        card();
+      }
+    });
     const details = el.querySelector('details');
     if (details) details.open = expanded;
     if (focused) el.querySelector<HTMLElement>(`#${focused}`)?.focus();
@@ -1384,7 +1423,7 @@ function closeBook() {
 }
 
 function menuRows() {
-  return `<p>The hill waits while it is open.</p><div class="menu-rows"><button data-open="j">Read the journal ▸</button><button data-open="d">What the village has done ▸</button><button id="send">Send word ▸</button><button id="fullscreen">Full screen</button><button id="to-title">To the title page</button><a href="https://human.adamwhite.work/games/">All games</a></div><div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Record play for the lab</label><a href="https://human.adamwhite.work/lab/privacy/">Lab privacy</a></div><button class="primary" id="resume">Back to the hill</button>`;
+  return `<p>The hill waits while it is open.</p><div class="menu-rows"><button data-open="j">Read the journal ▸</button><button data-open="d">What the village has done ▸</button><button id="send">Send word ▸</button><button id="fullscreen">Full screen</button><button id="to-title">To the title page</button><a href="https://human.adamwhite.work/games/">All games</a></div>${continuity.controls()}<div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Record play for the lab</label><a href="https://human.adamwhite.work/lab/privacy/">Lab privacy</a></div><button class="primary" id="resume">Back to the hill</button>`;
 }
 let feedbackCleanup: (() => void) | undefined;
 function showFeedback(host: HTMLElement, onBack: () => void) {
@@ -1392,6 +1431,11 @@ function showFeedback(host: HTMLElement, onBack: () => void) {
   feedbackCleanup = openFeedback(host, lab, runOf, download, onBack);
 }
 function bindMenu(host: HTMLElement, close: () => void) {
+  continuity.bind(host, (game) => {
+    g = game;
+    speedIx = 0;
+    enter();
+  });
   host.querySelector('#resume')?.addEventListener('click', close);
   host
     .querySelector('#record-play')
@@ -1441,7 +1485,7 @@ function titleMenu() {
     b.addEventListener('click', async () => {
       const sv = await store.get<Saved>(SAVE_KEY);
       if (sv) {
-        g = load(sv.value);
+        g = await continuity.localLoad(sv.value);
         speedIx = 1;
         enter();
         openBook(b.dataset.open);

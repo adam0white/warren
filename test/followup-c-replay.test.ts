@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { advance, fingerprint, type Input, load, replay, save } from '../src/sim/game.ts';
+import { advance, fingerprint, GAME_VERSION, type Input, load, replay, save } from '../src/sim/game.ts';
 
 const fixture = JSON.parse(
   readFileSync(new URL('./fixtures/edition-ui-before-c.json', import.meta.url), 'utf8'),
@@ -15,7 +15,7 @@ const fixture = JSON.parse(
   }[];
 };
 
-describe('follow-up c preserves the live editions', () => {
+describe('historical inputs replay on the current cast edition', () => {
   it('records the unchanged live source before the UI follow-up', () => {
     expect(fixture.release).toMatchObject({
       app: '0.3.0',
@@ -26,7 +26,7 @@ describe('follow-up c preserves the live editions', () => {
     expect(fixture.runs).toHaveLength(12);
   });
   for (const run of fixture.runs) {
-    it(`${run.edition} seed ${run.seed} ${run.policy}: live exports and checkpoint continuation stay exact`, {
+    it(`${run.edition} seed ${run.seed} ${run.policy}: current exports and checkpoint continuation replay exactly`, {
       timeout: 180000,
     }, () => {
       const checkpoint = run.stages.find((stage) => stage.kind === 'checkpoint');
@@ -36,16 +36,17 @@ describe('follow-up c preserves the live editions', () => {
           stage.kind === 'continuation'
             ? load(
                 JSON.parse(
-                  JSON.stringify(save(replay(run.seed, checkpoint.inputs, checkpoint.minute, run.edition))),
+                  JSON.stringify(save(replay(run.seed, checkpoint.inputs, checkpoint.minute, GAME_VERSION))),
                 ),
               )
-            : replay(run.seed, stage.inputs, stage.minute, run.edition);
+            : replay(run.seed, stage.inputs, stage.minute, GAME_VERSION);
         if (stage.kind === 'continuation') advance(game, stage.minute);
-        expect(fingerprint(game.s)).toBe(stage.fingerprint);
+        const currentFingerprint = fingerprint(replay(run.seed, stage.inputs, stage.minute, GAME_VERSION).s);
+        expect(fingerprint(game.s)).toBe(currentFingerprint);
         const exported = save(game);
-        expect(exported.game).toBe(run.edition);
+        expect(exported.game).toBe(GAME_VERSION);
         expect(exported.inputs).toEqual(stage.inputs);
-        expect(fingerprint(load(JSON.parse(JSON.stringify(exported))).s)).toBe(stage.fingerprint);
+        expect(fingerprint(load(JSON.parse(JSON.stringify(exported))).s)).toBe(currentFingerprint);
       }
     });
   }

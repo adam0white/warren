@@ -14,6 +14,7 @@ import {
   promise,
   seedTie,
 } from '@adam0white/human-framework';
+import { castForGame } from '@adam0white/lab-client';
 import { DAY } from './calendar.ts';
 import { DRAW, hashUnit, mixSeed, stream } from './rng.ts';
 
@@ -279,7 +280,7 @@ function tieHouse(ps: Person[], ws: Who[], now: number) {
     }
 }
 
-export function founders(seed: number, now: number): { houses: House[]; people: Person[] } {
+function legacyFounders(seed: number, now: number): { houses: House[]; people: Person[] } {
   const houses: House[] = [];
   const people: Person[] = [];
   for (const h of FOUNDERS) {
@@ -441,4 +442,91 @@ export function arrivingFamily(
     },
     people: ps,
   };
+}
+
+/** The keeper is a player office; Yusuf Usta remains an independent person. */
+export const CAST_IDS: Record<string, string> = {
+  yusuf: 'hf.cast.yusuf.warren',
+  meryem: 'hf.cast.meryem.warren',
+  maryam: 'hf.cast.maryam.well',
+  tariq: 'hf.cast.tariq.well',
+  kian: 'hf.cast.kian.watch',
+  tamar: 'hf.cast.tamar.watch',
+};
+export const VISIT_TERMS: Record<string, string> = {
+  yusuf:
+    'Retired well-digger and adviser. Meryem is his granddaughter. The keeper holds the chalk and bell, not his identity.',
+  meryem: 'Apprentice surveyor, living with her grandfather Yusuf Usta. Her parents live elsewhere.',
+  maryam:
+    'Widowed cook and seed-store organiser. Her son Yusuf remains at the Well. This kitchen visit is bounded; she has agreed the household meal rota before leaving.',
+  tariq:
+    'Sixteen-year-old building apprentice. Maryam is his grandmother. His father Yusuf and stepmother Zehra agreed this supervised visit; he sleeps in her guest household and returns with her.',
+  kian: 'Sixteen-year-old watcher. Ada is his sister and ward. Fresh local fiction: Ada accompanies him with her assent; he retains her care and they return together. This is no claim about an imported Watch arrangement.',
+  tamar:
+    'Fifty-four-year-old perimeter adviser. Kian is her mentee, not her child. Her bounded off-duty refuge visit grants no guardian role.',
+};
+export function founders(
+  seed: number,
+  now: number,
+  canonical = false,
+): { houses: House[]; people: Person[] } {
+  if (!canonical) return legacyFounders(seed, now);
+  const rows = castForGame('warren');
+  const houses: House[] = [
+    { id: 'usta', name: 'the dig-master’s house', x: 14, jars: 7, members: ['yusuf', 'meryem'], came: 0 },
+    {
+      id: 'well-guests',
+      name: 'Maryam’s guest household',
+      x: 10,
+      jars: 7,
+      members: ['maryam', 'tariq'],
+      came: 0,
+    },
+    {
+      id: 'watch-guests',
+      name: 'the Watch guest household (Ada stays with Kian)',
+      x: 12,
+      jars: 5,
+      members: ['kian', 'tamar'],
+      came: 0,
+    },
+  ];
+  const people = Object.entries(CAST_IDS).map(([id, castId]) => {
+    const c = rows.find((c) => c.castId === castId)!;
+    const house = houses.find((h) => h.members.includes(id))!;
+    const p = makePerson(
+      {
+        id,
+        name: c.name,
+        age: c.age,
+        sex: ['meryem', 'maryam', 'tamar'].includes(id) ? 'female' : 'male',
+        traits: c.traits,
+        values: c.values,
+        skills: { digging: id === 'yusuf' ? 0.9 : id === 'meryem' ? 0.45 : 0.15, farming: 0.15 },
+        devout: id === 'yusuf',
+      },
+      seed,
+      now,
+      house.id,
+    );
+    // Baseline means exactly the registry, including values previously overridden by this host.
+    p.values = structuredClone(c.values);
+    return p;
+  });
+  const relate = (a: string, b: string, roles: string[]) =>
+    seedTie(people.find((p) => p.id === a)!, {
+      otherId: b,
+      roles,
+      affection: 0.7,
+      familiarity: 0.95,
+      trust: 0.75,
+    });
+  relate('meryem', 'yusuf', ['grandparent']);
+  relate('yusuf', 'meryem', ['grandchild']);
+  relate('tariq', 'maryam', ['grandparent']);
+  relate('maryam', 'tariq', ['grandchild']);
+  relate('kian', 'tamar', ['mentor']);
+  relate('tamar', 'kian', ['mentee']);
+  // Visiting people do not receive fabricated familiarity with the host household or each other.
+  return { houses, people };
 }

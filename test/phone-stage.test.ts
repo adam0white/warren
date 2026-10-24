@@ -35,13 +35,13 @@ it('keeps shelter state and a complete reading visible beside the scene', async 
     );
     expect(await page.locator('#bell').isVisible()).toBe(true);
     await page.locator('#shelter-check').click();
-    await page.locator('[data-who="hasan"]').click();
+    await page.locator('[data-who="meryem"]').click();
     expect(await page.locator('#person-help').innerText()).toMatch(/help|needs|need|well enough/i);
     expect(await page.locator('#cell-detail').isVisible()).toBe(false);
     expect(await page.locator('#drawer').isVisible()).toBe(false);
     await page.locator('#cardx').click();
     expect(await page.locator('#drawer').isVisible()).toBe(true);
-    expect(await page.locator('[data-who="hasan"]').evaluate((el) => el === document.activeElement)).toBe(
+    expect(await page.locator('[data-who="meryem"]').evaluate((el) => el === document.activeElement)).toBe(
       true,
     );
   } finally {
@@ -69,8 +69,8 @@ it('shows known poor health without a contradictory healthy label', async () => 
   try {
     await page.evaluate(() => {
       const s = (window as unknown as { __warren: Debug }).__warren.game?.s;
-      const p = s?.people.find((p) => p.id === 'hasan');
-      if (!p) throw new Error('Missing Hasan');
+      const p = s?.people.find((p) => p.id === 'meryem');
+      if (!p) throw new Error('Missing Meryem');
       Object.assign(p.body, {
         health: 0.4,
         pain: 0,
@@ -90,7 +90,7 @@ it('shows known poor health without a contradictory healthy label', async () => 
       });
     });
     await page.locator('#shelter-check').click();
-    await page.locator('[data-who="hasan"]').click();
+    await page.locator('[data-who="meryem"]').click();
     expect(await page.locator('#person-help').innerText()).toContain('poor health');
     expect(await page.locator('#person-help').innerText()).toContain('illness');
     expect(await page.locator('#card').innerText()).not.toMatch(/well enough|No immediate bodily need/i);
@@ -103,16 +103,16 @@ it('preserves an expanded person disclosure and its focus while the condition ch
   const page = await startPhone();
   try {
     await page.locator('#shelter-check').click();
-    await page.locator('[data-who="hasan"]').click();
+    await page.locator('[data-who="meryem"]').click();
     await page.locator('#person-context-toggle').click();
     expect(await page.locator('#person-context').evaluate((el) => (el as HTMLDetailsElement).open)).toBe(
       true,
     );
     await page.evaluate(() => {
       const p = (window as unknown as { __warren: Debug }).__warren.game?.s.people.find(
-        (p) => p.id === 'hasan',
+        (p) => p.id === 'meryem',
       );
-      if (!p) throw new Error('Missing Hasan');
+      if (!p) throw new Error('Missing Meryem');
       p.body.hydration = 0.1;
     });
     await page.clock.runFor(500);
@@ -158,19 +158,19 @@ it('frames a selected traveller at the current trip cell instead of the departur
       const departure = idx(2, SURF - 1);
       const current = idx(27, SURF + 12);
       const arrival = idx(27, SURF + 14);
-      s.pos.hasan = departure;
-      s.trips.hasan = {
+      s.pos.meryem = departure;
+      s.trips.meryem = {
         action: 'shelter',
         cells: [departure, current, arrival],
         times: [s.minute - 200, s.minute - 100, s.minute + 100],
         workFrom: s.minute + 100,
         end: arrival,
       };
-      return { current: positionAt(s, 'hasan', s.minute), departure };
+      return { current: positionAt(s, 'meryem', s.minute), departure };
     })()`);
     expect(cells.current).not.toBe(cells.departure);
     await page.locator('#shelter-check').click();
-    await page.locator('[data-who="hasan"]').click();
+    await page.locator('[data-who="meryem"]').click();
     await page.clock.runFor(500);
     const framed = await page.evaluate<{
       x: number;

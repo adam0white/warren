@@ -79,6 +79,7 @@ import {
 } from './grid.ts';
 import { arrivingFamily, BELL, founders, type House, USTA_ID } from './people.ts';
 import { DRAW, hashUnit, strHash } from './rng.ts';
+import { releaseVisit, visit } from './visits.ts';
 
 export const QUANTUM = 30;
 
@@ -168,7 +169,7 @@ export interface Answer {
 
 export interface WarrenState {
   /** Absent in legacy saves; never added when continuing them. */
-  edition?: '0.3.0' | '0.4.0';
+  edition?: '0.3.0' | '0.4.0' | '0.5.0';
   recoveries?: { who: string; injury: string; part: string; severity: number }[];
   seed: number;
   minute: number;
@@ -214,10 +215,10 @@ export interface WarrenState {
 
 // ---------- setup ----------
 
-export function newWarren(seed: number): WarrenState {
+export function newWarren(seed: number, canonical = false): WarrenState {
   const now = 5 * HOUR;
   const hill = newHill(seed);
-  const { houses, people } = founders(seed, now);
+  const { houses, people } = founders(seed, now, canonical);
   const pos: Record<string, number> = {};
   for (const h of houses) for (const m of h.members) pos[m] = surfaceCell(h.x);
   pos[USTA_ID] = idx(17, SURF + 3);
@@ -546,6 +547,10 @@ function riskOutside(s: WarrenState): Affordance['risk'] | undefined {
 }
 
 export function offersFor(s: WarrenState, p: Person): Affordance[] {
+  if (s.flags[`invitation-pending:${p.id}`] && !p.activity && !s.raids.some((r) => r.stage === 'riders'))
+    visit(s, p.id);
+  if (s.flags[`release-pending:${p.id}`] && !p.activity) releaseVisit(s, p.id);
+  if (s.flags[`released:${p.id}`] === s.minute + 1) return [];
   const at = s.minute;
   const h = s.hill;
   const { air, lit } = airAndLight(s);
@@ -566,7 +571,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
   const { rise, set } = daylight(doy);
   const light = mod >= rise && mod < set - 20;
   const threat = underThreat(s);
-  const preferProtectedBed = s.edition === '0.4.0' && !!activeRaid(s);
+  const preferProtectedBed = (s.edition === '0.4.0' || s.edition === '0.5.0') && !!activeRaid(s);
   const outside = riskOutside(s);
   const house = houseOf(s, p.id);
   const sleepy = !light || p.body.sleepPressure > 0.7 || p.body.sleepDebt > 0.5 || p.body.health < 0.5;
@@ -599,7 +604,9 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
       );
     }
     const beds = cellsWithUse(h, USE.beds).filter((c) =>
-      s.edition === '0.4.0' ? bedAvailable(s, c, p.id) : sleepersAt(s, c) < BEDS_PER_CELL,
+      s.edition === '0.4.0' || s.edition === '0.5.0'
+        ? bedAvailable(s, c, p.id)
+        : sleepersAt(s, c) < BEDS_PER_CELL,
     );
     let bc = -1;
     let bd = Number.POSITIVE_INFINITY;
@@ -1225,7 +1232,11 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
       }
     }
   }
-  return out;
+  return s.flags[`released:${p.id}`]
+    ? out.filter((a) =>
+        ['eat', 'drink', 'sleep', 'rest', 'pray', 'shelter', 'hide', 'shut-door'].includes(a.action),
+      )
+    : out;
 }
 
 function seedAvailable(s: WarrenState): number {
@@ -1240,7 +1251,7 @@ function deepestSafe(s: WarrenState, f: Field, who: string): number {
   let score = -1;
   for (let i = 0; i < h.kind.length; i++) {
     if (h.kind[i] !== K.open || !Number.isFinite(f.dist[i] ?? Number.POSITIVE_INFINITY)) continue;
-    if (s.edition === '0.4.0') {
+    if (s.edition === '0.4.0' || s.edition === '0.5.0') {
       if (h.use[i] === USE.beds && !bedAvailable(s, i, who)) continue;
       const { air } = airAndLight(s);
       if (route(f, i).some((c) => yOf(c) >= SURF && (air[c] ?? 32000) > AIR_REACH)) continue;
@@ -2042,7 +2053,7 @@ function raidStep(s: WarrenState) {
         r.stage = 'gone';
         const lost = r.took;
         const held = r.hurt.length === 0 && lost < s.people.length * V.ration * 30;
-        if (!(s.edition === '0.4.0' && scare)) {
+        if (!((s.edition === '0.4.0' || s.edition === '0.5.0') && scare)) {
           if (held) {
             s.heldAt = s.minute;
             s.word = Math.min(1, s.word + 0.25);
@@ -2578,7 +2589,7 @@ export function ringBell(s: WarrenState): boolean {
   const r = activeRaid(s);
   s.bell = {
     at: s.minute,
-    until: s.edition === '0.4.0' && r ? r.leave : s.minute + V.bellHours * HOUR,
+    until: (s.edition === '0.4.0' || s.edition === '0.5.0') && r ? r.leave : s.minute + V.bellHours * HOUR,
     real: !!r,
   };
   note(s, {

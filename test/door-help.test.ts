@@ -6,7 +6,7 @@ import { doorDetailWords, doorWords } from '../src/ui/door-help.ts';
 
 const door = idx(17, SURF + 2);
 function state() {
-  const s = newGame(7).s;
+  const s = newGame(7, '0.4.0').s;
   s.hill.use[door] = USE.door;
   s.hill.doorWork[door] = 0;
   return s;

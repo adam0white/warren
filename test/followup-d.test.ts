@@ -26,8 +26,8 @@ function layout() {
     s.pos[p.id] = idx(x, SURF);
     p.activity = null;
   }
-  const p = s.people.find((q) => q.id === 'hasan');
-  if (!p) throw new Error('Missing Hasan');
+  const p = s.people.find((q) => q.id === 'meryem');
+  if (!p) throw new Error('Missing Meryem');
   p.body.sleepPressure = 0.95;
   const raid = s.raids[0];
   if (!raid) throw new Error('Missing raid');
@@ -63,13 +63,13 @@ describe('edition 0.4.0 raid call', () => {
     expect(colonyWords(g.s)).toMatch(/Smoke rises.*No call active.*Ring the bell once.*until the all-clear/);
     expect(colonyWords(g.s)).not.toContain('riders have gone');
   });
-  it('starts only new runs on 0.4.0 and replays its export and continuation', () => {
+  it('starts only new runs on 0.5.0 and replays its export and continuation', () => {
     const g = newGame(19);
-    expect(g.s.edition).toBe('0.4.0');
+    expect(g.s.edition).toBe('0.5.0');
     act(g, { verb: 'bell' });
     advance(g, g.s.minute + HOUR);
     const exported = save(g);
-    expect(exported.game).toBe('0.4.0');
+    expect(exported.game).toBe('0.5.0');
     expect(fingerprint(replay(exported.seed, exported.inputs, exported.minute, exported.game).s)).toBe(
       exported.fingerprint,
     );

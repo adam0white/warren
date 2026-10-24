@@ -56,7 +56,7 @@ describe('safety before calling people below', () => {
           const g = newGame(7);
           const bed = idx(18, SURF + 3);
           act(g, { verb: 'use', cells: [bed], use: 'beds' });
-          g.s.pos.hasan = bed;
+          g.s.pos.meryem = bed;
           g.s.trips = {};
           await page.evaluate(
             `(async () => {const {put} = await import('/src/ui/store.ts'); await put('hill', ${JSON.stringify(save(g))});})()`,
@@ -153,7 +153,7 @@ describe('safety before calling people below', () => {
           expect(await words.evaluate((e) => e.scrollHeight <= e.clientHeight + 1)).toBe(true);
           await page.locator('#reading-context summary').click();
           expect(await page.locator('#door-context').innerText()).toContain('Nearby adults:');
-          expect(await page.locator('#door-context').innerText()).toContain('Hasan:');
+          expect(await page.locator('#door-context').innerText()).toContain('Meryem:');
           await page.locator('#reading-context summary').click();
           await page.screenshot({
             animations: 'disabled',

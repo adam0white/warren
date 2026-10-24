@@ -1,6 +1,6 @@
 {
   "name": "warren",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "type": "module",
   "description": "The Warren: a village digs a refuge into soft stone. Nobody obeys; everyone follows the worn path.",
@@ -22,9 +22,9 @@
     "check:lane": "npm run check"
   },
   "dependencies": {
-    "@adam0white/human-framework": "2.8.0",
-    "@adam0white/lab-client": "file:vendor/adam0white-lab-client-0.2.1.tgz",
-    "@adam0white/lab-kit": "file:vendor/adam0white-lab-kit-0.3.1.tgz"
+    "@adam0white/human-framework": "2.18.0",
+    "@adam0white/lab-client": "file:vendor/adam0white-lab-client-0.4.0.tgz",
+    "@adam0white/lab-kit": "file:vendor/adam0white-lab-kit-0.5.0.tgz"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.15",

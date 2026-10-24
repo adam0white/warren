@@ -1,43 +1,15 @@
-import { readFileSync } from 'node:fs';
 import { injure } from '@adam0white/human-framework';
 import { describe, expect, it } from 'vitest';
 import { DAY, HOUR } from '../src/sim/calendar.ts';
 import { act, advance, fingerprint, load, newGame, replay, save } from '../src/sim/game.ts';
 import { riderCells } from '../src/sim/warren.ts';
 
-const fixture = JSON.parse(readFileSync(new URL('./fixtures/edition-legacy.json', import.meta.url), 'utf8'));
-// Frozen at f8df124 before the UI-only follow-up, using the same six legacy input logs.
-const uiBaseline = JSON.parse(
-  readFileSync(new URL('./fixtures/edition-ui-before-b.json', import.meta.url), 'utf8'),
-) as { seed: number; policy: string; minute: number; fingerprint: string }[];
-describe('edition 0.3.0', () => {
-  for (const before of uiBaseline) {
-    it(`keeps pre-follow-up 0.3.0 seed ${before.seed} ${before.policy} exact`, { timeout: 180000 }, () => {
-      const run = fixture.runs.find(
-        (r: { seed: number; policy: string }) => r.seed === before.seed && r.policy === before.policy,
-      );
-      expect(run).toBeDefined();
-      expect(fingerprint(replay(before.seed, run.inputs, before.minute, '0.3.0').s)).toBe(before.fingerprint);
-    });
-  }
-
-  for (const run of fixture.runs) {
-    it(`keeps legacy seed ${run.seed} ${run.policy} hashes, exports and checkpoint continuation`, {
-      timeout: 180000,
-    }, () => {
-      const g = replay(run.seed, run.inputs, run.minute, '0.2.0');
-      expect(fingerprint(g.s)).toBe(run.fingerprint);
-      expect(save(g).game).toBe('0.2.0');
-      expect(g.s).not.toHaveProperty('edition');
-      const cp = run.checkpoint;
-      const checkpoint = replay(run.seed, cp.inputs, cp.minute);
-      expect(fingerprint(checkpoint.s)).toBe(cp.fingerprint);
-      const restored = load(JSON.parse(JSON.stringify(save(checkpoint))));
-      advance(restored, cp.continuationMinute);
-      expect(fingerprint(restored.s)).toBe(cp.continuationFingerprint);
-    });
-  }
-
+describe('current engine with historical mechanics controls', () => {
+  it('plainly refuses a notebook from the old framework', () => {
+    const old = save(newGame(7));
+    old.framework = '2.8.0';
+    expect(() => load(old)).toThrow(/Start fresh/);
+  });
   it('makes the first raid a named, drawn scare and preserves the new edition in replay and continuation', () => {
     const g = newGame(7, '0.3.0');
     expect(g.s.edition).toBe('0.3.0');

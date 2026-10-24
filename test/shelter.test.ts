@@ -9,7 +9,7 @@ import {
 } from '../src/ui/shelter.ts';
 
 function withBeds(xs: number[]) {
-  const s = newGame(7).s;
+  const s = newGame(7, '0.4.0').s;
   s.hill.use.fill(USE.none);
   for (const x of xs) {
     const cell = idx(x, SURF + 3);

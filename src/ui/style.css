@@ -1462,3 +1462,33 @@ button.link {
     display: none;
   }
 }
+
+/* Continuity stays secondary; its expanded controls scroll within the existing menu. */
+.continuity {
+  flex: 0 0 auto;
+  padding: 4px 0;
+}
+.continuity summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+.continuity[open] {
+  display: block;
+}
+.continuity label {
+  display: block;
+  padding: 8px 0;
+}
+.continuity button {
+  min-height: 44px;
+  display: block;
+  margin: 4px 0;
+  max-width: 100%;
+}
+.continuity input[type="file"] {
+  max-width: 100%;
+}
+#inspection-body:has(#drawer[data-kind="s"]:not([hidden])) {
+  height: min(560px, calc(100dvh - 44px));
+}
