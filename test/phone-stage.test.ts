@@ -1,6 +1,7 @@
 import { type Browser, chromium } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
+import { localHill } from './local-hill.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -22,7 +23,7 @@ it('keeps shelter state and a complete reading visible beside the scene', async 
     page.setDefaultTimeout(5000);
     await page.clock.install();
     await page.goto(url);
-    await page.locator('#new').click();
+    await localHill(page);
     await page.locator('#furnish').click();
     await page.locator('[data-tool="door"]').click();
     expect(await page.locator('.lk-stage').count()).toBe(1);
@@ -54,7 +55,7 @@ async function startPhone() {
   page.setDefaultTimeout(5000);
   await page.clock.install();
   await page.goto(url);
-  await page.locator('#new').click();
+  await localHill(page);
   await page.locator('.game').waitFor();
   await page.evaluate(() => {
     (window as unknown as { __warren: Debug }).__warren.setSpeed(0);
@@ -116,7 +117,7 @@ it('preserves an expanded person disclosure and its focus while the condition ch
       p.body.hydration = 0.1;
     });
     await page.clock.runFor(500);
-    expect(await page.locator('#person-help').innerText()).toContain('Needs water');
+    expect(await page.locator('#person-help').innerText()).toContain('They need water');
     expect(await page.locator('#person-context').evaluate((el) => (el as HTMLDetailsElement).open)).toBe(
       true,
     );
@@ -205,7 +206,7 @@ it('shows complete bed and door remedies inside the sheet and acknowledges stora
     page.setDefaultTimeout(5000);
     await page.clock.install();
     await page.goto(url);
-    await page.locator('#new').click();
+    await localHill(page);
     await page.locator('#cv').waitFor();
     await page.evaluate(`(async () => {
       const {idx,K,SURF,USE}=await import('/src/sim/grid.ts');
@@ -233,7 +234,7 @@ it('shows complete bed and door remedies inside the sheet and acknowledges stora
       await page.touchscreen.tap(point.x, point.y);
       await page.clock.runFor(100);
       const words = await page.locator(scenario === 'store' ? '#event-sentence' : '#cell-words').innerText();
-      expect(words).toMatch(scenario === 'store' ? /Store marked/ : /Ring the bell/);
+      expect(words).toMatch(scenario === 'store' ? /The store is marked/ : /Ring the bell/);
       const visible = await page
         .locator(scenario === 'store' ? '#event-sentence' : '#cell-words')
         .evaluate((el) => {

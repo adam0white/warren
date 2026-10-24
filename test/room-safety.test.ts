@@ -27,7 +27,7 @@ describe('room safety from the actual rider layout', () => {
   it('separates shallow beds from deep beds and changes only the door flags in its counterfactual', () => {
     const { s, x, near, deep } = layout();
     expect(roomSafetyWords(s, near)).toMatch(/^Dig deeper, or shut stone doors on every open route\./);
-    expect(roomSafetyWords(s, deep)).toContain('Deep enough');
+    expect(roomSafetyWords(s, deep)).toContain('deep enough');
     expect(bedSafety(s)).toEqual({ safe: 3, exposed: 3 });
     const door = idx(x, SURF + 2);
     s.hill.use[door] = USE.door;
@@ -86,11 +86,11 @@ describe('room safety from the actual rider layout', () => {
     const { s } = layout();
     s.edition = '0.3.0';
     expect(bellShelterWords(s)).toContain('Sleeping places: 3');
-    expect(bellStateWords(s)).toContain('Bell quiet');
+    expect(bellStateWords(s)).toContain('The bell is quiet');
     s.bell = { at: s.minute, until: s.minute + 60, real: false };
-    expect(bellStateWords(s)).toContain('Call active');
+    expect(bellStateWords(s)).toContain('The call is active');
     s.minute += 60;
-    expect(bellStateWords(s)).toContain('Call ended');
+    expect(bellStateWords(s)).toContain('The call has ended');
     const person = s.people[0];
     if (!person) throw new Error('Missing person');
     s.trips[person.id] = { action: 'shelter', workFrom: s.minute + 60 } as (typeof s.trips)[string];
@@ -102,7 +102,7 @@ describe('room safety from the actual rider layout', () => {
     s.bell = null;
     s.notes = [];
     s.stats.bell.assented = 1;
-    expect(bellStateWords(s)).toContain('Call ended');
+    expect(bellStateWords(s)).toContain('The call has ended');
     expect(bellStateWords(s)).not.toContain('no call yet');
     Object.assign(raid, { scouted: [42, 43] });
     expect([...scoutedCells(s)]).toEqual([42, 43]);

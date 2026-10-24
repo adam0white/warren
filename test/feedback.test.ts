@@ -20,7 +20,7 @@ afterAll(async () => {
 
 async function mount(privacy = false, off = false, failRun = false): Promise<Page> {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
-  await page.goto(url);
+  await page.goto(`${url}?lab=1`);
   await page.evaluate(`(async () => {
     const {openFeedback} = await import('/src/ui/feedback.ts');
     if (${off}) localStorage.setItem('hf-lab-recording-off', '1');
@@ -88,7 +88,7 @@ it('sends notes while recording is off or privacy is on, without a second dialog
       expect(await page.locator('.feedback-primary').isEnabled()).toBe(true);
       await page.locator('textarea').fill('QA feedback-fix');
       await page.locator('.feedback-primary').click();
-      expect(await page.locator('.feedback-status').innerText()).toContain('Note queued');
+      expect(await page.locator('.feedback-status').innerText()).toContain('Your note is queued');
       expect(await page.evaluate('window.feedbackCalls')).toEqual([
         [
           'feedback',

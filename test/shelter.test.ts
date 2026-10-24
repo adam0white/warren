@@ -23,8 +23,8 @@ describe('sleeping capacity words', () => {
   it('describes only the connected sleeping room under the pointer', () => {
     const s = withBeds([16, 17, 20]);
     const words = sleepingRoomWords(s, idx(16, SURF + 3));
-    expect(words).toMatch(/room for about six/i);
-    expect(words).toContain('Across all sleeping rooms: about nine places.');
+    expect(words).toMatch(/room has about six/i);
+    expect(words).toContain('All rooms have about nine.');
     expect(words).not.toMatch(/\d/);
     expect(sleepingRoomWords(s, idx(20, SURF + 3))).toMatch(/about three/);
     expect(sleepingRoomWords(s, idx(19, SURF + 3))).toBe('');
@@ -34,20 +34,20 @@ describe('sleeping capacity words', () => {
     const s = withBeds([16, 17, 20]);
     expect(sleepingCapacity(s)).toEqual({ places: 9, people: 9, enough: true });
     const words = sleepingRoomWords(s, idx(16, SURF + 3));
-    expect(words).toContain('Room for about six here.');
-    expect(words).toContain('Across all sleeping rooms: about nine places. Enough for the village.');
-    expect(words).not.toContain('More sleeping places needed');
+    expect(words).toContain('This room has about six sleeping places.');
+    expect(words).toContain('All rooms have about nine. There is space for everyone.');
+    expect(words).not.toContain('The village needs more sleeping places');
     const person = s.people[0];
     if (!person) throw new Error('Missing villager');
     s.people.push({ ...person, id: 'extra' });
-    expect(sleepingRoomWords(s, idx(16, SURF + 3))).toContain('More sleeping places needed');
+    expect(sleepingRoomWords(s, idx(16, SURF + 3))).toContain('The village needs more sleeping places');
   });
 
   it('puts the bed remedy before capacity in a short phone response', () => {
     const s = withBeds([18]);
     const words = sleepingRoomWords(s, idx(18, SURF + 3));
     expect(words.startsWith('Dig deeper, or shut stone doors')).toBe(true);
-    expect(words.indexOf('shut stone doors')).toBeLessThan(words.indexOf('Room for about'));
+    expect(words.indexOf('shut stone doors')).toBeLessThan(words.indexOf('This room has about'));
     expect(words.split(/\s+/).length).toBeLessThanOrEqual(50);
   });
 
@@ -56,13 +56,13 @@ describe('sleeping capacity words', () => {
     s.people = s.people.slice(0, 4);
     expect(sleepingCapacity(s)).toEqual({ places: 3, people: 4, enough: false });
     expect(sleepingCapacityWords(s)).toMatch(/more sleeping places/);
-    expect(sleepingRoomWords(s, idx(16, SURF + 3))).toMatch(/More sleeping places needed/);
+    expect(sleepingRoomWords(s, idx(16, SURF + 3))).toMatch(/The village needs more sleeping places/);
     const person = s.people[0];
     if (!person) throw new Error('Missing villager');
     person.body.alive = false;
     expect(sleepingCapacity(s)).toEqual({ places: 3, people: 3, enough: true });
-    expect(sleepingCapacityWords(s)).toMatch(/enough.*village/i);
-    expect(sleepingRoomWords(s, idx(16, SURF + 3))).toMatch(/Enough for the village/);
+    expect(sleepingCapacityWords(s)).toMatch(/space for everyone/i);
+    expect(sleepingRoomWords(s, idx(16, SURF + 3))).toMatch(/There is space for everyone/);
   });
 
   it('does not count beds marked on unopened ground or other room uses', () => {

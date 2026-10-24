@@ -41,6 +41,10 @@ import { openFeedback } from './feedback.ts';
 import { growthWords } from './growth.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
+import { activityWords, displayWords, speechWords } from './words.ts';
+
+const labTools = new URLSearchParams(location.search).get('lab') === '1';
+
 import { personHelpWords } from './person-help.ts';
 import { type PlanSafety, planSafety } from './plan-safety.ts';
 import { eventStamp, playbackRate } from './playback.ts';
@@ -132,15 +136,32 @@ const souls = (n: number) =>
       : n < 40
         ? `some ${Math.round(n / 5) * 5} souls`
         : `${Math.round(n / 10) * 10} souls and more`;
-const footer = `<div class="footer">${'<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>'}<br>People by the Human Framework ${FRAMEWORK_VERSION}.</div>`;
-const playInfo = `<p>Chalk a dashed outline. People choose when to dig it. A plan with no air or light waits.</p><p>Furnish open ground: a store for jars, beds for sleeping, a lamp, or a door.</p><p>A door needs one cell wide, open on two opposite sides. Three at most.</p><p>Filled figures count marked sleeping places. Hollow figures show missing places. Tap souls to check each person’s exposure.</p>`;
+// Keep the actual notice and its host outside app rerenders. SDK removal and Dismiss stay final.
+const noticeFooter = document.createElement('footer');
+noticeFooter.id = 'notice-footer';
+if (notice) noticeFooter.append(notice);
+document.body.append(noticeFooter);
+const footer = `<div class="footer">${'<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>'}<br>People by the Human Framework.${labTools ? ` Version ${FRAMEWORK_VERSION}.` : ''}</div>`;
+const playInfo = `<p>Chalk a dashed outline. People choose when to dig it. People need air and light to dig a marked wall.</p><p>Furnish open ground: a store for jars, beds for sleeping, a lamp, or a door.</p><p>A door needs one cell wide, open on two opposite sides. You can mark up to three doors.</p><p>Filled figures count marked sleeping places. Hollow figures show missing places. Tap souls to check each person’s exposure.</p>`;
 function topbar(titlePage = false) {
-  return `<header class="topbar"><div class="bar-words">${titlePage ? '<a href="https://human.adamwhite.work/games/">All games</a>' : '<span id="when"></span>'}</div><button class="info" aria-label="Information" popovertarget="hill-info">i</button><button id="book" aria-label="Game menu">≡<span class="menu-label"> Menu</span></button></header><div id="hill-info" class="info-popover" popover="auto"><div class="who"><b>${titlePage ? 'The hill' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${titlePage ? '<p>Riders burned two villages. The cellar under Yusuf Usta’s house is the start.</p><p>You have the chalk and the bell. Nobody obeys; everyone follows the worn path.</p><p>One finger chalks or looks. Two fingers move the hill.</p><p>A year has 365 days. Year 1 begins on 19 August.</p>' : playInfo}</div>`;
+  return `<header class="topbar"><div class="bar-words">${titlePage ? '<a target="_top" href="https://human.adamwhite.work/games/">All games</a>' : '<span id="when"></span>'}</div><button class="info" aria-label="Information" popovertarget="hill-info">i</button><button id="book" aria-label="Game menu">≡<span class="menu-label"> Menu</span></button></header><div id="hill-info" class="info-popover" popover="auto"><div class="who"><b>${titlePage ? 'The hill' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${titlePage ? '<p>Riders burned two villages. The cellar under Yusuf Usta’s house is the start.</p><p>You have the chalk and the bell. You mark where work is needed. Each person chooses what to do.</p><p>One finger chalks or looks. Two fingers move the hill.</p><p>A year has 365 days. Year 1 begins on 19 August.</p>' : playInfo}</div>`;
 }
 
 // ---------- start ----------
 
 export async function start() {
+  window.addEventListener('warren-history-error', (event) => {
+    if ((event as CustomEvent<Game>).detail !== g) return;
+    let warning = document.getElementById('history-warning');
+    if (!warning) {
+      warning = document.createElement('p');
+      warning.id = 'history-warning';
+      warning.setAttribute('role', 'alert');
+      noticeFooter.prepend(warning);
+    }
+    warning.textContent =
+      'Shared history could not be confirmed. Keep this hill open. You can open Feedback from the menu.';
+  });
   continuity.attach(
     () => g,
     async (game) => (g === game ? writeSave() : false),
@@ -181,9 +202,9 @@ function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
     <div class="title-art"><canvas id="title-cv" aria-label="The village above its cellar"></canvas><h1>The Warren</h1></div>
     <p class="title-goal">${PURPOSE}</p>
     ${sv && !compatible ? '<p class="soft">An older notebook was put away; this version cannot read it.</p>' : ''}
-    <div class="title-actions">${compatible ? `<button class="primary" id="cont">Go back down <span class="soft">· ${esc(hillDate(sv.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
-      <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'Begin a new hill' : 'Begin'}</button>
-      <div id="new-confirm" hidden><p>This hill is put away for good.</p><button id="new-yes">Yes, begin</button><button id="new-no">No</button></div>
+    <div class="title-actions">${compatible ? `<button class="primary" id="cont">Resume <span class="soft">· ${esc(hillDate(sv.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
+      <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'New game' : 'Begin'}</button>
+      <div id="new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="new-yes">Yes, begin</button><button id="new-no">No</button></div>
       ${footer}</div><div id="title-drawer" hidden></div></div>`;
   const art = document.getElementById('title-cv') as HTMLCanvasElement;
   const artCtx = art.getContext('2d');
@@ -197,42 +218,55 @@ function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
       t: demo.s.minute,
     });
   document.getElementById('book')?.addEventListener('click', () => titleMenu());
-  if (notice && !notice.dataset.shown) {
-    app().querySelector('.title-goal')?.append(notice);
-    notice.dataset.shown = '1';
-  }
   document.getElementById('cont')?.addEventListener('click', async () => {
     if (!sv) return;
-    g = await continuity.localLoad(sv);
-    speedIx = 1;
-    enter();
-  });
-  const begin = async () => {
     try {
-      const prepared = await continuity.fresh((Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0);
-      await store.drop(SAVE_KEY);
+      const prepared = await continuity.localLoad(sv);
       g = prepared;
+      speedIx = 1;
+      enter();
     } catch (error) {
-      alert(
-        `Continuity refused: ${String(error)}. Keep your existing hill, export, or choose fresh local play in the menu.`,
-      );
-      return;
+      startError(error, 'The saved hill could not be opened.');
     }
-    speedIx = 0;
-    seenHint.clear();
-    enter();
-  };
+  });
   document.getElementById('new')?.addEventListener('click', () => {
     if (compatible) {
       document.getElementById('new-confirm')?.removeAttribute('hidden');
       document.getElementById('new')?.setAttribute('hidden', '');
-    } else void begin();
+    } else void beginNewHill();
   });
-  document.getElementById('new-yes')?.addEventListener('click', begin);
+  document.getElementById('new-yes')?.addEventListener('click', () => void beginNewHill());
   document.getElementById('new-no')?.addEventListener('click', () => {
     document.getElementById('new-confirm')?.setAttribute('hidden', '');
     document.getElementById('new')?.removeAttribute('hidden');
   });
+}
+
+async function beginNewHill(errorHost?: HTMLElement): Promise<boolean> {
+  try {
+    const prepared = await continuity.fresh((Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0);
+    await store.drop(SAVE_KEY);
+    g = prepared;
+  } catch (error) {
+    startError(error, 'A new hill could not be started.', errorHost);
+    return false;
+  }
+  speedIx = 0;
+  seenHint.clear();
+  enter();
+  return true;
+}
+
+function startError(error: unknown, message: string, host?: HTMLElement) {
+  console.error('Warren start failed', error);
+  let status = document.getElementById('start-error');
+  if (!status) {
+    status = document.createElement('p');
+    status.id = 'start-error';
+    status.setAttribute('role', 'alert');
+    (host ?? document.querySelector('.title-actions'))?.prepend(status);
+  }
+  status.textContent = `${message} Your saved hill has not been replaced. You can retry or open Feedback in the menu.${labTools ? ` ${String(error)}` : ''}`;
 }
 
 // ---------- the scene ----------
@@ -419,12 +453,12 @@ function setTool(t: Tool) {
   tool = t;
   syncButtons();
   const hints: Partial<Record<Tool, string>> = {
-    chalk: 'Dashed outlines plan a dig. People choose when.',
+    chalk: 'A dashed outline marks where people can dig. Each person chooses when to work.',
     erase: 'Drag to rub out chalk or a room’s mark.',
     store: 'Drag over open ground to make it a store. Grain goes where the jars are.',
     beds: 'Drag over open ground for sleeping places below.',
     lamp: 'Tap open ground to hang a lamp. Tap it again to take it down.',
-    door: 'Tap a lit, one-cell passage with two opposite openings. Three doors at most.',
+    door: 'Tap a lit, one-cell passage with two opposite openings. You can mark up to three doors.',
   };
   const h = hints[t];
   if (h) hint(`tool:${t}`, h);
@@ -636,7 +670,7 @@ function chrome() {
     warning.hidden = !pending;
     warning.textContent = !pending
       ? ''
-      : `${pending.stage === 'smoke' ? 'Smoke on the ridge.' : 'Riders are at the hill.'} Ring the bell once, or keep watching. People choose whether to come.`;
+      : `${pending.stage === 'smoke' ? 'Smoke rises on the ridge.' : 'Riders are at the hill.'} Ring the bell once, or keep watching. People choose whether to come.`;
   }
   const root = document.querySelector<HTMLElement>('.game');
   if (root) root.dataset.raid = String(!!pending);
@@ -654,14 +688,14 @@ function chrome() {
     const words = document.getElementById('raid-words');
     const below = s.people.filter((p) => p.body.alive && yOf(positionAt(s, p.id, s.minute)) >= SURF);
     if (words)
-      words.textContent = `${pending?.stage === 'smoke' ? 'Smoke on the ridge. Riders may be half a day off.' : 'Riders are at the hill.'} People choose whether to come. Below now: ${below.length <= 4 ? below.map((p) => p.name).join(', ') || 'no one' : souls(below.length)}. Above: ${s.people.filter((p) => p.body.alive).length - below.length}.`;
+      words.textContent = `${pending?.stage === 'smoke' ? 'Smoke rises on the ridge. Riders may arrive in half a day.' : 'Riders are at the hill.'} People choose whether to come. Currently below: ${below.length <= 4 ? below.map((p) => p.name).join(', ') || 'no one' : souls(below.length)}. Above: ${s.people.filter((p) => p.body.alive).length - below.length}.`;
   }
   const info = document.getElementById('hill-info');
   if (info && !info.matches(':popover-open')) {
     const raidInfo = !!pending;
     if (info.dataset.raid !== String(raidInfo)) {
       info.dataset.raid = String(raidInfo);
-      info.innerHTML = `<div class="who"><b>${raidInfo ? 'Smoke and riders' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${raidInfo ? '<p>Smoke gives about half a day.</p><p>The bell calls whoever hears it.</p><p>A bell without riders weakens trust, person by person.</p>' : playInfo}`;
+      info.innerHTML = `<div class="who"><b>${raidInfo ? 'Smoke and riders' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${raidInfo ? '<p>Smoke warns that riders may arrive in about half a day.</p><p>The bell calls whoever hears it.</p><p>A bell without riders weakens trust, person by person.</p>' : playInfo}`;
     }
   }
   const rate = document.getElementById('clock-rate');
@@ -691,7 +725,7 @@ function chrome() {
     if (tk.dataset.text !== text) {
       tk.dataset.text = text;
       tk.textContent = 'Journal ▸';
-      tk.title = text;
+      tk.title = displayWords(text);
       tk.classList.remove('ink-in');
       void tk.offsetWidth;
       tk.classList.add('ink-in');
@@ -702,12 +736,12 @@ function chrome() {
     .reverse()
     .find((n) => (n.kind === 'dig' && n.who) || n.kind === 'arrival' || n.kind === 'raid');
   if (event) {
-    const sentences = work?.text.match(/[^.!?]+[.!?]/g) ?? [];
+    const sentences = (work ? displayWords(work.text) : undefined)?.match(/[^.!?]+[.!?]/g) ?? [];
     const name = work?.who ? personOf(s, work.who)?.name : undefined;
     if (performance.now() > hintUntil)
       event.textContent =
         (name ? sentences.find((line) => line.includes(name)) : sentences[0])?.trim() ??
-        work?.text ??
+        (work ? displayWords(work.text) : undefined) ??
         FIRST_CHALK;
   }
   const bell = document.getElementById('bell') as HTMLButtonElement | null;
@@ -718,7 +752,7 @@ function chrome() {
       .filter((n) => n.weight >= 1)
       .slice(-8)
       .reverse()
-      .map((n) => `<p>${esc(n.text)}</p>`)
+      .map((n) => `<p>${esc(displayWords(n.text))}</p>`)
       .join('');
   updateShelter();
   updateDoor();
@@ -741,6 +775,7 @@ function showReading(title: string, words: string, remember = true, preserveScro
   const sameReading = preserveScroll && !detail.hidden && heading.textContent === title;
   if (!sameReading) document.getElementById('inspection-body')?.scrollTo(0, 0);
   heading.textContent = title;
+  words = displayWords(words);
   if (text.textContent !== words) {
     const scroll = sameReading ? text.scrollTop : 0;
     text.textContent = words;
@@ -873,24 +908,25 @@ function card() {
   const html = `
     <div class="who">${personOpener ? `<button id="cardback" aria-label="Back to The village">← ${esc(p.name)}</button>` : `<b>${esc(p.name)}</b>`} <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'come from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
         <p id="person-help">${esc(personHelpWords(s, p))}</p>
-    <div>${walking ? 'on the way to ' : ''}${esc(doing)}</div>
+    <div>${esc(activityWords(doing, walking))}</div>
     <details id="person-context"><summary id="person-context-toggle">Activity and words</summary>
     <div class="shelter-person">${esc(exposureWords(s, p))}</div>
     ${feeling(p) ? `<div class="soft">${esc(feeling(p))}</div>` : ''}
-    ${habit ? '<div class="hand">Goes down to the faces every morning now. Nobody asks.</div>' : ''}
+    ${habit ? `<div class="hand">${esc(p.name)} goes down to the marked walls every morning now. Nobody asks.</div>` : ''}
     ${trustWords(p) ? `<div class="soft">${esc(p.name)} ${trustWords(p)}.</div>` : ''}
-    ${why ? `<div class="hand">“${esc(why)}”</div>` : ''}
-    ${about.map((n) => `<div class="soft small">${esc(n.text)}</div>`).join('')}${(s.edition === '0.5.0' || s.edition === '0.6.0') && VISIT_TERMS[p.id] ? `<p>${esc(VISIT_TERMS[p.id]!)}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>Invite chapter release</button>` : ''}
-</details>`;
+    ${why ? `<div class="hand">“${esc(speechWords(why))}”</div>` : ''}
+    ${about.map((n) => `<div class="soft small">${esc(displayWords(n.text))}</div>`).join('')}${(s.edition === '0.5.0' || s.edition === '0.6.0') && VISIT_TERMS[p.id] ? `<p>${esc(displayWords(VISIT_TERMS[p.id]!))}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>End optional work</button>` : ''}
+</details>${p.id === 'kian' ? continuity.careControls() : ''}`;
   if (el.dataset.html !== html) {
     const focused = document.activeElement?.id;
     const expanded = el.querySelector('details')?.open ?? false;
     el.dataset.html = html;
     el.innerHTML = html;
+    continuity.bind(el, () => {});
     el.querySelector('#release-person')?.addEventListener('click', () => {
       if (g) {
         const ok = act(g, { verb: 'release', who: p.id });
-        if (!ok) alert('Not ready: active work, duty, danger or care still needs this chapter.');
+        if (!ok) alert('This person cannot leave yet. Work, a duty, danger or care still needs them here.');
         dirty = true;
         card();
       }
@@ -1097,7 +1133,7 @@ function commitPaint(entranceConfirmed = false) {
     if (order({ verb: 'chalk', cells, on: true })) {
       if (reachable(cells)) {
         const reading = planSafety(g.s, cells, 'chalk');
-        flash(`Dig planned. ${reading.words}`, reading.context);
+        flash(`The dig is marked. ${reading.words}`, reading.context);
       } else
         flash(
           'Nobody can get at that stone yet. Chalk a way to it from open ground, and they will dig toward it.',
@@ -1123,7 +1159,7 @@ function commitPaint(entranceConfirmed = false) {
       const cell = cells.find((c) => h.kind[c] === K.open && h.use[c] === USE.beds);
       if (cell !== undefined) flash(sleepingRoomWords(g.s, cell));
     }
-    if (kind === 'store' && ok) receipt('Store marked. People can bring grain to these jars.');
+    if (kind === 'store' && ok) receipt('The store is marked. People can bring grain to these jars.');
     else if (kind === 'store' && cells.some((c) => h.kind[c] === K.open && h.use[c] === USE.store))
       receipt('This ground is already marked as a store.');
     chrome();
@@ -1144,16 +1180,16 @@ function tap(px: number, py: number) {
     else if (order({ verb: 'lamp', cell: c })) {
       if (s.hill.lampsWanted.includes(c))
         flash(
-          'No lamp in hand: the dashed ring marks where it will hang. Someone will shape one at the hearth, if they will.',
+          'There is no spare lamp. The dashed ring marks its place. Someone may choose to make one at the hearth.',
         );
-      else receipt('Lamp hung.');
+      else receipt('The lamp is hung.');
     } else flash('A lamp hangs in open ground, below the surface.');
     return;
   }
   if (tool === 'door') {
     if (c < 0) return;
     if (order({ verb: 'door', cell: c }))
-      flash('A door marked. They will carve the rolling stone when someone has the time and a light.');
+      flash('The door is marked. Someone may carve it when they have time and light.');
     else if (s.hill.use[c] === USE.door) showDoor(c);
     else if (s.hill.use.filter((u) => u === USE.door).length >= 3)
       flash('“Three doors are all we can keep rolled, Usta.”');
@@ -1194,7 +1230,7 @@ function airWords(c: number): string {
   const { lit, air } = airAndLight(g.s);
   if (yOf(c) >= SURF && (air[c] ?? 32000) > AIR_REACH)
     return ' The air is stale: no lamp burns and nobody will cut here. Air comes down an opening to the sky; it carries a long way straight down a shaft, not far sideways.';
-  if (!lit[c]) return ' Dark. A lamp hung here would let them work.';
+  if (!lit[c]) return ' It is dark here. A lamp would let people work.';
   return '';
 }
 
@@ -1210,30 +1246,30 @@ function describeCell(c: number) {
     text =
       u === USE.store
         ? (h.grain[c] ?? 0) > 0.5
-          ? 'A store. Jars of barley.'
-          : 'A store, empty.'
+          ? 'This store holds jars of barley.'
+          : 'This store is empty.'
         : u === USE.beds
           ? `${sleepingRoomWords(g.s, c)} ${sleepingCapacityWords(g.s)}`
           : u === USE.hearth
-            ? 'The hearth. Yusuf Usta sits here.'
+            ? 'Yusuf Usta sits at this hearth.'
             : u === USE.well
-              ? 'The well. Cold water from the seam.'
+              ? 'Cold water flows into this well from the seam.'
               : u === USE.door
                 ? doorWords(g.s, c, lightAt(c))
                 : (h.wear[c] ?? 0) > 6
-                  ? 'Worn smooth. They walk this way.'
-                  : 'Open ground.';
+                  ? 'People have worn this path smooth.'
+                  : 'This ground is open.';
     text += airWords(c);
-  } else if (!known) text = 'Stone. Nobody has seen what is in it.';
+  } else if (!known) text = 'Nobody has seen what is inside this stone.';
   else
     text =
       k === K.hard
-        ? 'Hard stone. Slow to cut.'
+        ? 'This stone is hard and slow to cut.'
         : k === K.loose
-          ? 'Loose, crumbling stone. Quick to dig, and it can come down.'
+          ? 'This loose stone is quick to dig, but it can fall.'
           : k === K.seam
-            ? 'Damp stone. Water seeps here.'
-            : 'Soft stone. It cuts like cheese when it is fresh.';
+            ? 'Water seeps through this damp stone.'
+            : 'This soft stone is easy to cut when freshly exposed.';
   if (k !== K.open && h.chalk[c]) {
     const stand = neighbours(c).find((j) => h.kind[j] === K.open && yOf(j) >= SURF);
     if (stand !== undefined) text += airWords(stand);
@@ -1363,7 +1399,7 @@ function showBellReading() {
   if (text)
     text.textContent = replies.length
       ? replies.map((p) => `${p.name}: ${exposureWords(s, p)}`).join('\n\n')
-      : 'No replies recorded yet.';
+      : 'No one has replied yet.';
 }
 
 function updateShelter() {
@@ -1393,7 +1429,7 @@ function updateShelter() {
   if (summary) summary.textContent = bellShelterWords(g.s).replace(bellStateWords(g.s), '').trim();
   for (const row of document.querySelectorAll<HTMLElement>('[data-shelter-person]')) {
     const person = personOf(g.s, row.dataset.shelterPerson ?? '');
-    const words = person?.body.alive ? exposureWords(g.s, person) : 'No longer living; see the journal.';
+    const words = person?.body.alive ? exposureWords(g.s, person) : 'This person has died. See the journal.';
     if (row.textContent !== words) row.textContent = words;
   }
 }
@@ -1422,7 +1458,7 @@ function closeBook() {
 }
 
 function menuRows() {
-  return `<p>The hill waits while it is open.</p><div class="menu-rows"><button data-open="j">Read the journal ▸</button><button data-open="d">What the village has done ▸</button><button id="send">Send word ▸</button><button id="fullscreen">Full screen</button><button id="to-title">To the title page</button><a href="https://human.adamwhite.work/games/">All games</a></div>${continuity.controls()}<div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Record play for the lab</label><a href="https://human.adamwhite.work/lab/privacy/">Lab privacy</a></div><button class="primary" id="resume">Back to the hill</button>`;
+  return `<p>The hill waits while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div>${labTools ? continuity.controls() : ''}<div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label></div><button class="primary" id="resume">Resume</button>`;
 }
 let feedbackCleanup: (() => void) | undefined;
 function showFeedback(host: HTMLElement, onBack: () => void) {
@@ -1457,8 +1493,19 @@ function bindMenu(host: HTMLElement, close: () => void) {
       warning.textContent = 'This hill could not be saved. Keep it open and try again.';
       return;
     }
-    const sv = await store.get<Saved>(SAVE_KEY);
-    title(sv?.value ?? null, sv?.at ?? 0);
+    host.querySelector('#menu-new-confirm')?.removeAttribute('hidden');
+    host.querySelector('#to-title')?.setAttribute('hidden', '');
+  });
+  host.querySelector('#menu-new-no')?.addEventListener('click', () => {
+    host.querySelector('#menu-new-confirm')?.setAttribute('hidden', '');
+    host.querySelector('#to-title')?.removeAttribute('hidden');
+    host.querySelector<HTMLElement>('#to-title')?.focus();
+  });
+  host.querySelector('#menu-new-yes')?.addEventListener('click', async (event) => {
+    const button = event.currentTarget as HTMLButtonElement;
+    button.disabled = true;
+    await beginNewHill(host.querySelector<HTMLElement>('#menu-new-confirm') ?? host);
+    if (button.isConnected) button.disabled = false;
   });
   host.querySelector('#send')?.addEventListener('click', () => {
     host.dataset.kind = 'feedback';
@@ -1512,7 +1559,7 @@ function openBook(tab = 's') {
     (n) => n.kind === 'raid' || n.kind === 'hurt' || (n.kind === 'dig' && /shaft|riders|door/i.test(n.text)),
   );
   const entry = (n: Note) =>
-    `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br>${esc(n.text)}</p>`;
+    `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br>${esc(displayWords(n.text))}</p>`;
   const alive = s.people.filter((p) => p.body.alive);
   const below = alive.filter((p) => yOf(positionAt(s, p.id, s.minute)) >= SURF);
   const done = GOALS.filter((x) => s.goals[x.id] !== undefined);
@@ -1538,10 +1585,10 @@ function openBook(tab = 's') {
     tab === 's'
       ? menuRows()
       : tab === 'j'
-        ? `${newestSafety ? `<p id="newest-safety"><b>Latest safety entry</b><br>${esc(newestSafety.text)}</p>` : ''}${notes.slice(0, 8).map(entry).join('')}<details><summary>Earlier journal entries</summary>${notes.slice(8).map(entry).join('')}</details>`
+        ? `<button data-open="d">What the village has done</button>${newestSafety ? `<p id="newest-safety"><b>Latest safety entry</b><br>${esc(displayWords(newestSafety.text))}</p>` : ''}${notes.slice(0, 8).map(entry).join('')}<details><summary>Earlier journal entries</summary>${notes.slice(8).map(entry).join('')}</details>`
         : tab === 'd'
-          ? `<p id="growth-record">${esc(growthWords(s))}</p><p>${done.map((x) => `✓ ${esc(x.text)}`).join('<br>') || 'Nothing ticked off yet.'}</p>`
-          : `<h3>Below now</h3>${householdRows(below) || '<p>No one below yet.</p>'}<h3>Exposed</h3><p id="shelter-summary"></p>${householdRows(alive.filter((p) => !below.includes(p))) || '<p>No one above ground.</p>'}<p class="soft">${souls(alive.length)} in the village. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} buried.` : 'None buried.'}</p>`
+          ? `<p id="growth-record">${esc(growthWords(s))}</p><p>${done.map((x) => `✓ ${esc(displayWords(x.text))}`).join('<br>') || 'No goals are complete yet.'}</p>`
+          : `<h3>Below now</h3>${householdRows(below) || '<p>No one is below yet.</p>'}<h3>Exposed</h3><p id="shelter-summary"></p>${householdRows(alive.filter((p) => !below.includes(p))) || '<p>No one is above ground.</p>'}<p class="soft">${souls(alive.length)} in the village. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} people have died.` : 'No one has died.'}</p>`
   }</div></div>`;
   hideOtherSheets('drawer');
   d.hidden = false;

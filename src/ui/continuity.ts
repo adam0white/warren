@@ -59,7 +59,13 @@ function esc(value: string): string {
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!,
   );
 }
+export function careControls() {
+  return current()?.s.adaVisit
+    ? `<section><p>${esc(adaWords(current()!.s))}</p><button id="ada-care">Invite Kian to share grain, water and rest with Ada</button><button id="ada-end">End Kian’s optional refuge work</button><p data-cast-status role="status"></p></section>`
+    : '';
+}
 export function controls() {
+  if (new URLSearchParams(location.search).get('lab') !== '1') return '';
   const provenance =
     current()
       ?.chapter?.inputs.map(
@@ -76,7 +82,7 @@ export async function fresh(seed: number): Promise<Game> {
   const token = ++generation;
   await shelf.ready;
   const base = newGame(seed);
-  if (!shelf.enabled) {
+  if (!shelf.enabled && new URLSearchParams(location.search).get('lab') === '1') {
     lab.setPersonaRecording(null);
     return base;
   }
@@ -200,11 +206,13 @@ export async function checkpoint(): Promise<void> {
       if (!castId) continue;
       const parent = game.fileOrigin ? game.nativeReturnHeads?.[castId] : game.ownedHeads?.[castId];
       if (game.fileOrigin && !parent) continue;
+      let publishing = false;
       try {
         if (!p.body.alive) {
           if (parent && !parent.terminal) {
             const terminal = await closePersonaBranch(parent, stamps(), game.s.minute);
             if (token !== generation || current() !== game) return;
+            publishing = true;
             await shelf.request({ action: 'put', envelope: terminal });
             if (token === generation && current() === game) {
               if (!game.fileOrigin) {
@@ -243,6 +251,7 @@ export async function checkpoint(): Promise<void> {
         });
         if (token !== generation || current() !== game) return;
         // No authored association is inferred from a save, imported chapter, or a fresh branch.
+        publishing = true;
         await shelf.request({ action: 'put', envelope });
         if (token !== generation || current() !== game) return;
         game.ownedHeads ??= {};
@@ -259,6 +268,11 @@ export async function checkpoint(): Promise<void> {
         continuityStatus = `Saved ${p.name} at a natural boundary. Other people may still be ineligible.`;
       } catch (error) {
         continuityStatus = `${p.name}: ${String(error)}`;
+        if (publishing) {
+          console.error('Warren shared history could not be confirmed', error);
+          if (typeof CustomEvent === 'function')
+            window.dispatchEvent?.(new CustomEvent('warren-history-error', { detail: game }));
+        }
       }
     }
   } finally {

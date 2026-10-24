@@ -102,12 +102,17 @@ export function planSafety(s: WarrenState, cells: Iterable<number>, kind: PlanKi
   const exposedCapacity = exposed * BEDS_PER_CELL;
   const protectedCapacity = protectedCells * BEDS_PER_CELL;
   const unreachableCapacity = unreachable * BEDS_PER_CELL;
-  const prefix = kind === 'chalk' ? 'If dug:' : planned.size ? 'If chalk is dug:' : 'With these beds:';
+  const prefix =
+    kind === 'chalk'
+      ? 'If dug, this space would have'
+      : planned.size
+        ? 'If the chalk is dug, this space would have'
+        : 'These beds have';
   let words = capacity
     ? `${prefix} about ${numberWords(capacity)} sleeping places.`
-    : 'No sleeping space in this selection.';
+    : 'This selection has no sleeping space.';
   if (exposed && protectedCells)
-    words += ` ${numberWords(protectedCapacity).replace(/^./, (c) => c.toUpperCase())} beyond riders’ reach; ${numberWords(exposedCapacity)} exposed.`;
+    words += ` ${numberWords(protectedCapacity).replace(/^./, (c) => c.toUpperCase())} places are beyond riders’ reach; ${numberWords(exposedCapacity)} are exposed.`;
   if (exposed) {
     // Trace decreasing rider distances to a real sky entry. No invented shaft direction.
     const trace = [...room].filter((i) => exposure.has(i));
@@ -134,10 +139,10 @@ export function planSafety(s: WarrenState, cells: Iterable<number>, kind: PlanKi
     if (openDoor) {
       const closedReach = riderCells({ ...state, hill: { ...state.hill, shut } });
       if ([...room].some((i) => exposure.has(i) && !closedReach.has(i)))
-        words += ' Shut open stone doors; check other routes.';
+        words += ' Ring the bell so a nearby adult can choose to shut open stone doors. Check other routes.';
     }
   }
-  if (exposed && !words.includes('Shut open stone doors'))
+  if (exposed && !words.includes('shut open stone doors'))
     words += ' Dig deeper, or shut doors on every open route.';
   let doorProtected = false;
   if (protectedCells) {
@@ -156,14 +161,14 @@ export function planSafety(s: WarrenState, cells: Iterable<number>, kind: PlanKi
       }
     }
   }
-  if (protectedCells && !exposed && !doorProtected)
-    words = `Beyond riders’ reach; ${words.charAt(0).toLowerCase()}${words.slice(1)}`;
-  if (unreachable) words += ` ${numberWords(unreachableCapacity)} unreachable: connect a passage.`;
+  if (protectedCells && !exposed && !doorProtected) words = `This space is beyond riders’ reach. ${words}`;
+  if (unreachable)
+    words += ` ${numberWords(unreachableCapacity)} places cannot be reached. Connect a passage.`;
   if (kind === 'chalk') words += ' People choose when to dig.';
   let context: string | undefined;
   if ((exposed && doorProtected) || (unreachable && (exposed || protectedCells))) {
     context = words;
-    words = `${prefix} about ${capacity} places. ${protectedCapacity} protected; ${exposedCapacity} exposed; ${unreachableCapacity} unreachable.`;
+    words = `${prefix} about ${capacity} places. ${protectedCapacity} places are protected, ${exposedCapacity} are exposed, and ${unreachableCapacity} cannot be reached.`;
     if (exposed) words += ' Dig deeper or shut route doors.';
     if (doorProtected) words += ' Keep protective doors shut.';
     if (unreachable) words += ' Connect unreachable space.';

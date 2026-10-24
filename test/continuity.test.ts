@@ -77,7 +77,8 @@ beforeEach(() => {
   mock.requests = [];
   mock.defer = null;
   mock.handle = null;
-  vi.stubGlobal('window', { addEventListener() {} });
+  vi.stubGlobal('location', { search: '?lab=1' });
+  vi.stubGlobal('window', { addEventListener() {}, dispatchEvent: vi.fn() });
   vi.stubGlobal('document', { querySelector: () => null });
   current = null;
   attach(() => current);
@@ -183,6 +184,7 @@ describe('continuity privacy and source receipts', () => {
 });
 
 it('does not cancel a pending hill when recording identity acknowledges', async () => {
+  vi.stubGlobal('location', { search: '?lab=1' });
   vi.stubGlobal('window', new EventTarget());
   attach(() => current);
   mock.enabled = true;
@@ -296,4 +298,28 @@ describe('selected native Watch publication from genuine care run', () => {
     };
     await expect(checkpointNative('kian', true)).rejects.toThrow(/Run or prepared/);
   });
+});
+
+it('reports a real failed checkpoint without replacing prior ownership receipts', async () => {
+  current = newGame(7);
+  current.s.minute = 305;
+  expect(act(current, { verb: 'release', who: 'meryem' })).toBe(true);
+  mock.enabled = true;
+  mock.handle = async () => {
+    throw new Error('Shelf unavailable. Use a local file.');
+  };
+  const prior = JSON.stringify(current.ownedHeads ?? {});
+  await checkpoint();
+  expect(JSON.stringify(current.ownedHeads ?? {})).toBe(prior);
+  expect(window.dispatchEvent).toHaveBeenCalled();
+});
+
+it('keeps routine Kian ineligibility separate from failed publication', async () => {
+  current = newGame(7);
+  current.s.minute = 305;
+  current.s.people = current.s.people.filter((p) => p.id === 'kian');
+  mock.enabled = true;
+  await checkpoint();
+  expect(mock.requests).toEqual([]);
+  expect(window.dispatchEvent).not.toHaveBeenCalled();
 });

@@ -48,7 +48,7 @@ for (const [width, height] of [
       await page.clock.runFor(500);
       const goal = page.locator('#goal');
       expect(await goal.innerText()).toBe(
-        'Riders are at the hill. Call active until the all-clear. People choose whether to come below and may refuse throughout. Tap souls above to check exposure.',
+        'Riders are at the hill. The call stays active until the all-clear. People choose whether to come below and may refuse throughout. Tap souls above to check exposure.',
       );
       const goalBox = await goal.boundingBox();
       const bodyBox = await page.locator('#inspection-body').boundingBox();
@@ -57,7 +57,8 @@ for (const [width, height] of [
       const shots = process.env.WARREN_BUG_SHOTS;
       if (shots) {
         mkdirSync(shots, { recursive: true });
-        await page.screenshot({ path: `${shots}/raid-${width}.png` });
+        if (process.env.WARREN_SCREENSHOTS === '1')
+          await page.screenshot({ path: `${shots}/raid-${width}.png` });
       }
       if (width >= 900) {
         if (!bodyBox) throw new Error('Missing journal');

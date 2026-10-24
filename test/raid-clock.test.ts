@@ -38,7 +38,7 @@ async function enter(width = 360, height = 690) {
     isMobile: width === 360,
   });
   await page.clock.install();
-  await page.goto(url);
+  await page.goto(`${url}?lab=1`);
   await page.locator('#new').waitFor();
   await page.evaluate(`(async () => {
     const { put } = await import('/src/ui/store.ts');

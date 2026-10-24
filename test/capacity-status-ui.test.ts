@@ -2,6 +2,7 @@ import { mkdirSync } from 'node:fs';
 import { type Browser, chromium } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
+import { localHill } from './local-hill.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -26,7 +27,7 @@ for (const [width, height] of [
     try {
       await page.clock.install();
       await page.goto(url);
-      await page.locator('#new').click();
+      await localHill(page);
       await page.locator('#cv').waitFor();
       await page.evaluate(`(async () => {
         const { idx, USE } = await import('/src/sim/grid.ts');
@@ -46,7 +47,8 @@ for (const [width, height] of [
       const shots = process.env.WARREN_BUG_SHOTS;
       if (shots) {
         mkdirSync(shots, { recursive: true });
-        await page.screenshot({ path: `${shots}/status-${width}.png` });
+        if (process.env.WARREN_SCREENSHOTS === '1')
+          await page.screenshot({ path: `${shots}/status-${width}.png` });
       }
       expect(dimensions.scroll).toBeLessThanOrEqual(dimensions.client + 1);
       expect(await goal.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');

@@ -58,14 +58,14 @@ export function roomSafetyWords(s: WarrenState, cell: number): string {
     const open = doorReach(s, false);
     if (room.some((i) => open.has(i))) {
       const location = doorLocation(s, room);
-      return `Beyond riders’ reach while the ${location} ${location.startsWith('stone doors') ? 'stay' : 'stays'} shut.`;
+      return `This room is beyond riders’ reach while the ${location} ${location.startsWith('stone doors') ? 'stay' : 'stays'} shut.`;
     }
-    return 'Deep enough: beyond riders’ reach along open routes.';
+    return 'This room is deep enough to be beyond riders’ reach along open routes.';
   }
   const closed = doorReach(s, true);
   const door = exposed.some((i) => !closed.has(i));
   const shaft = exposed.some((i) => routeSource(s, i) !== s.hill.surface.entrance);
-  const partly = exposed.length < room.length ? 'Partly exposed. ' : '';
+  const partly = exposed.length < room.length ? 'Part of this room is exposed. ' : '';
   if (door && exposed.every((i) => !closed.has(i))) {
     const location = doorLocation(s, room);
     return location.startsWith('stone doors')
@@ -110,8 +110,8 @@ export function gameTimeWords(minutes: number): string {
 export function bellThreatWords(s: WarrenState): string {
   const raid = activeRaid(s);
   if (raid?.stage === 'riders') return 'Riders are at the hill.';
-  if (raid?.stage === 'smoke') return 'Smoke on the ridge. Riders may be half a day off.';
-  return 'No smoke or riders in sight.';
+  if (raid?.stage === 'smoke') return 'Smoke rises on the ridge. Riders may arrive in half a day.';
+  return 'No smoke or riders are in sight.';
 }
 
 export function bellStateWords(s: WarrenState): string {
@@ -120,11 +120,11 @@ export function bellStateWords(s: WarrenState): string {
     s.bell?.real &&
     s.bell.until > s.minute
   )
-    return 'Call active until the all-clear. People choose whether to come below and may refuse throughout.';
+    return 'The call stays active until the all-clear. People choose whether to come below and may refuse throughout.';
   if (s.bell && s.bell.until > s.minute)
-    return `Call active for six game hours; ${gameTimeWords(s.bell.until - s.minute)} left. People choose whether to come below.`;
+    return `The call is active for six game hours; ${gameTimeWords(s.bell.until - s.minute)} left. People choose whether to come below.`;
   if ((s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') && activeRaid(s))
-    return 'No call active. Ring the bell once to call people below until the all-clear. People choose whether to come.';
+    return 'No call is active. Ring the bell once to call people below until the all-clear. People choose whether to come.';
   if (hadBellCall(s)) {
     const travelling = s.people.some(
       (p) => p.body.alive && s.trips[p.id]?.action === 'shelter' && (s.trips[p.id]?.workFrom ?? 0) > s.minute,
@@ -143,19 +143,19 @@ export function bellStateWords(s: WarrenState): string {
         ? ' The call’s six game hours elapsed.'
         : '';
     const ended = travelling
-      ? 'Call ended; some are still on the way below.'
+      ? 'The call has ended; some are still on the way below.'
       : sheltering
-        ? 'Call ended; some are still sheltering below.'
-        : 'Call ended.';
+        ? 'The call has ended; some are still sheltering below.'
+        : 'The call has ended.';
     return `${ended}${reason}${activeRaid(s) && (s.edition !== '0.4.0' && s.edition !== '0.5.0' && s.edition !== '0.6.0') ? ' Ring to renew.' : ''}`;
   }
   return activeRaid(s)
     ? s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0'
-      ? 'No call active. Ring the bell once to call people below until the all-clear. People choose whether to come.'
-      : 'No call active. Ring the bell to call people below for six game hours.'
+      ? 'No call is active. Ring the bell once to call people below until the all-clear. People choose whether to come.'
+      : 'No call is active. Ring the bell to call people below for six game hours.'
     : s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0'
-      ? 'Bell quiet. During a raid, one call stands until the all-clear. Quiet-time calls last six game hours; false alarms can weaken trust. People choose whether to come below.'
-      : 'Bell quiet. Each call lasts six game hours. People choose whether to come below.';
+      ? 'The bell is quiet. During a raid, one call stands until the all-clear. Quiet-time calls last six game hours; false alarms can weaken trust. People choose whether to come below.'
+      : 'The bell is quiet. Each call lasts six game hours. People choose whether to come below.';
 }
 
 export function bellShelterWords(s: WarrenState): string {

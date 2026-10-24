@@ -53,7 +53,7 @@ describe('plain person help', () => {
     const raid = s.raids[0];
     if (!raid) throw new Error('Missing raid');
     raid.stage = 'riders';
-    expect(personHelpWords(s, p)).toContain('Exposed above ground during the raid.');
+    expect(personHelpWords(s, p)).toContain('They are exposed above ground during the raid.');
   });
 
   it('does not promise safety behind a shut door, and leaves the whole run unchanged', () => {

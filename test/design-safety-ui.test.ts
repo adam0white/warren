@@ -76,7 +76,8 @@ describe('safety before calling people below', () => {
               `window.drawnWords.some(text => text.includes('Riders had burned'))`,
             ),
           ).toBe(false);
-          await page.screenshot({ animations: 'disabled', path: `${shots}/after-${width}${suffix}-b.png` });
+          if (process.env.WARREN_SCREENSHOTS === '1')
+            await page.screenshot({ animations: 'disabled', path: `${shots}/after-${width}${suffix}-b.png` });
           const point = await page.evaluate<{ x: number; y: number }>(
             `(() => { const v=window.__warren.view; const b=document.querySelector('#cv').getBoundingClientRect(); return {x:b.x+(18.5-v.x)*v.cs,y:b.y+(${SURF}+3.5-v.y)*v.cs}; })()`,
           );
@@ -106,10 +107,11 @@ describe('safety before calling people below', () => {
           expect(roomPoint.x).toBeLessThan(map.x + map.width);
           expect(roomPoint.y).toBeGreaterThan(map.y + 44);
           expect(roomPoint.y).toBeLessThan(map.y + map.height);
-          await page.screenshot({
-            animations: 'disabled',
-            path: `${shots}/after-${width}-room${suffix}-b.png`,
-          });
+          if (process.env.WARREN_SCREENSHOTS === '1')
+            await page.screenshot({
+              animations: 'disabled',
+              path: `${shots}/after-${width}-room${suffix}-b.png`,
+            });
           // Opening shelter directly replaces the room reading rather than stacking sheets.
           await page.locator('#shelter-check').click();
           expect(await page.locator('#cell-detail').isVisible()).toBe(false);
@@ -132,7 +134,9 @@ describe('safety before calling people below', () => {
           await page.locator('[data-tool="door"]').tap();
           await page.clock.runFor(1000);
           expect(await page.locator('#scene .hint').count()).toBe(0);
-          expect(await page.locator('#event-sentence').innerText()).toContain('Three doors at most');
+          expect(await page.locator('#event-sentence').innerText()).toContain(
+            'You can mark up to three doors',
+          );
           await page.evaluate(`(() => {
           const s=window.__warren.game.s;
           s.hill.use[${idx(18, SURF + 2)}]=${USE.door};
@@ -155,18 +159,20 @@ describe('safety before calling people below', () => {
           expect(await page.locator('#door-context').innerText()).toContain('Nearby adults:');
           expect(await page.locator('#door-context').innerText()).toContain('Meryem:');
           await page.locator('#reading-context summary').click();
-          await page.screenshot({
-            animations: 'disabled',
-            path: `${shots}/after-${width}-door${suffix}-b.png`,
-          });
+          if (process.env.WARREN_SCREENSHOTS === '1')
+            await page.screenshot({
+              animations: 'disabled',
+              path: `${shots}/after-${width}-door${suffix}-b.png`,
+            });
           await page.locator('#cellx').click();
           await page.locator('#bell').click();
           await page.clock.runFor(100);
-          expect(await page.locator('#cell-words').innerText()).toContain('Call active');
-          await page.screenshot({
-            animations: 'disabled',
-            path: `${shots}/after-${width}-bell${suffix}-b.png`,
-          });
+          expect(await page.locator('#cell-words').innerText()).toContain('The call is active');
+          if (process.env.WARREN_SCREENSHOTS === '1')
+            await page.screenshot({
+              animations: 'disabled',
+              path: `${shots}/after-${width}-bell${suffix}-b.png`,
+            });
           expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
           expect(await page.locator('#scene .hint').count()).toBe(0);
           await page.locator('#shelter-check').click();
@@ -222,10 +228,11 @@ describe('safety before calling people below', () => {
           await page.locator('#fit-hill').click();
           await page.clock.runFor(100);
           const suffix = theme === 'light' ? '' : '-dark';
-          await page.screenshot({
-            animations: 'disabled',
-            path: `${shots}/after-${width}-exposure-open${suffix}-b.png`,
-          });
+          if (process.env.WARREN_SCREENSHOTS === '1')
+            await page.screenshot({
+              animations: 'disabled',
+              path: `${shots}/after-${width}-exposure-open${suffix}-b.png`,
+            });
           // Fix a readable pixel-sampling scale independently of the reserved phone scene height.
           await page.evaluate(`Object.assign(window.__warren.view, {cs:24,x:14,y:${SURF + 2}})`);
           await page.clock.runFor(100);
@@ -244,10 +251,11 @@ describe('safety before calling people below', () => {
           await page.clock.runFor(100);
           expect(open - (await sample(16, SURF + 5))).toBeGreaterThan(20);
           expect(await sample(23, SURF + 4)).toBeCloseTo(shaft, 0);
-          await page.screenshot({
-            animations: 'disabled',
-            path: `${shots}/after-${width}-exposure-shut${suffix}-b.png`,
-          });
+          if (process.env.WARREN_SCREENSHOTS === '1')
+            await page.screenshot({
+              animations: 'disabled',
+              path: `${shots}/after-${width}-exposure-shut${suffix}-b.png`,
+            });
         } finally {
           await page.close();
         }

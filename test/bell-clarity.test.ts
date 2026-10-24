@@ -27,7 +27,7 @@ function ringing() {
 describe('bell duration and observed replies', () => {
   it('explains the call duration before the first ring', () => {
     const s = newGame(7, '0.3.0').s;
-    expect(bellStateWords(s)).toMatch(/Bell quiet.*six game hours/);
+    expect(bellStateWords(s)).toMatch(/The bell is quiet.*six game hours/);
   });
 
   it('reports game time remaining and the actual deadline expiry reason', () => {
@@ -36,7 +36,7 @@ describe('bell duration and observed replies', () => {
     expect(bellStateWords(s)).toMatch(/six game hours.*1 game hour 15 minutes left/);
     s.minute += 75;
     s.bell = null;
-    expect(bellStateWords(s)).toMatch(/Call ended.*six game hours elapsed/);
+    expect(bellStateWords(s)).toMatch(/The call has ended.*six game hours elapsed/);
     s.notes = [];
     expect(bellStateWords(s)).not.toContain('elapsed');
   });
@@ -56,12 +56,12 @@ describe('bell duration and observed replies', () => {
     const { s, p } = ringing();
     const before = JSON.stringify(s);
     expect(exposureWords(s, p)).toMatch(
-      /carve the rolling stone.*At the bell: “Fine.”.*current task.*12 game minutes/,
+      /carve the rolling stone.*At the bell: “I agree.”.*current task.*12 game minutes/,
     );
-    expect(exposureWords(s, p)).not.toMatch(/will.*(come|follow|head|go)|On the way below/);
+    expect(exposureWords(s, p)).not.toMatch(/will.*(come|follow|head|go)|They are still travelling below/);
     expect(JSON.stringify(s)).toBe(before);
     s.minute += 13;
-    expect(exposureWords(s, p)).toContain('Next choice due now');
+    expect(exposureWords(s, p)).toContain('Their next choice is due now');
   });
 
   it('distinguishes observed shelter travel from a later different choice', () => {
@@ -73,13 +73,13 @@ describe('bell duration and observed replies', () => {
       workFrom: s.minute + 60,
       end: idx(17, SURF + 3),
     };
-    expect(exposureWords(s, p)).toContain('On the way below');
+    expect(exposureWords(s, p)).toContain('They are still travelling below');
     expect(exposureWords(s, p)).not.toContain('current task first');
     delete s.trips[p.id];
     if (!p.activity) throw new Error('Missing activity');
     p.activity.startedAt = s.minute + 1;
     s.minute += 2;
-    expect(exposureWords(s, p)).toContain('Since that reply, chose a different task');
+    expect(exposureWords(s, p)).toContain('Since that reply, they chose a different task');
     expect(exposureWords(s, p)).not.toContain('current task first');
   });
 
@@ -92,8 +92,8 @@ describe('bell duration and observed replies', () => {
       workFrom: s.minute + 60,
       end: idx(17, SURF + 3),
     };
-    expect(exposureWords(s, p)).toMatch(/On the way to carve.*current task.*12 game minutes/);
-    expect(exposureWords(s, p)).not.toContain('On the way below');
+    expect(exposureWords(s, p)).toMatch(/They are on their way to carve.*current task.*12 game minutes/);
+    expect(exposureWords(s, p)).not.toContain('They are still travelling below');
   });
 
   it('does not turn prayer into a countdown', () => {
@@ -108,7 +108,7 @@ describe('bell duration and observed replies', () => {
 it('names only the threat the village can currently see beside the bell', () => {
   const s = newGame(7).s;
   const before = JSON.stringify(s);
-  expect(bellThreatWords(s)).toBe('No smoke or riders in sight.');
+  expect(bellThreatWords(s)).toBe('No smoke or riders are in sight.');
   expect(JSON.stringify(s)).toBe(before);
   const raid = s.raids[0];
   if (!raid) throw new Error('Missing raid');
@@ -120,5 +120,5 @@ it('names only the threat the village can currently see beside the bell', () => 
   raid.stage = 'riders';
   expect(bellThreatWords(s)).toBe('Riders are at the hill.');
   raid.stage = 'gone';
-  expect(bellThreatWords(s)).toBe('No smoke or riders in sight.');
+  expect(bellThreatWords(s)).toBe('No smoke or riders are in sight.');
 });

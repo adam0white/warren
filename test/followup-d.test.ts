@@ -60,7 +60,9 @@ describe('edition 0.4.0 raid call', () => {
     g.s.notes.push({ at: first.smoke, kind: 'story', text: 'You rang the bell.', weight: 1 });
     second.stage = 'smoke';
     g.s.minute = second.smoke;
-    expect(colonyWords(g.s)).toMatch(/Smoke rises.*No call active.*Ring the bell once.*until the all-clear/);
+    expect(colonyWords(g.s)).toMatch(
+      /Smoke rises.*No call is active.*Ring the bell once.*until the all-clear/,
+    );
     expect(colonyWords(g.s)).not.toContain('riders have gone');
   });
   it('starts only new runs on 0.6.0 and replays its export and continuation', () => {

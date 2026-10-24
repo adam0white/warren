@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
+import { localHill } from './local-hill.ts';
 
 type Debug = typeof import('../src/ui/app.ts')['_debug'];
 let server: ViteDevServer;
@@ -33,7 +34,7 @@ async function start(width = 360, height = 690) {
   page.setDefaultTimeout(5000);
   await page.clock.install();
   await page.goto(url);
-  await page.locator('#new').click();
+  await localHill(page);
   await page.locator('.game').waitFor();
   await page.evaluate(() => document.fonts.ready);
   await page.clock.runFor(500);
@@ -104,12 +105,14 @@ for (const [width, height] of [
           before.view.cs - 2,
         ]),
       );
-      await page.screenshot({ path: `${shots}/after-${width}-press-b.png` });
+      if (process.env.WARREN_SCREENSHOTS === '1')
+        await page.screenshot({ path: `${shots}/after-${width}-press-b.png` });
       await page.mouse.up();
       await page.clock.runFor(500);
       expect(await camera(page)).toEqual(before);
-      expect(await page.locator('#cell-words').innerText()).toContain('Dig planned');
-      await page.screenshot({ path: `${shots}/after-${width}-plan-b.png` });
+      expect(await page.locator('#cell-words').innerText()).toContain('The dig is marked');
+      if (process.env.WARREN_SCREENSHOTS === '1')
+        await page.screenshot({ path: `${shots}/after-${width}-plan-b.png` });
     } finally {
       await page.close();
     }
@@ -198,13 +201,15 @@ it('shows a complete work sentence and opens the complete newest safety entry', 
       return r.top >= b.top && r.bottom <= b.bottom;
     });
     expect(fit).toBe(true);
-    await page.screenshot({ path: `${shots}/after-360-journal-b.png` });
+    if (process.env.WARREN_SCREENSHOTS === '1')
+      await page.screenshot({ path: `${shots}/after-360-journal-b.png` });
     await page.locator('#bookx').click();
     await page.locator('#book').click();
     await page.locator('#sheet-body').evaluate((el) => {
       el.scrollTop = el.scrollHeight;
     });
-    await page.locator('[data-open="j"]').click();
+    await page.locator('#bookx').click();
+    await page.locator('#ticker').click();
     expect(await page.locator('#sheet-body').evaluate((el) => el.scrollTop)).toBe(0);
   } finally {
     await page.close();
@@ -236,7 +241,8 @@ it('fits the mixed/open-door plan and longest bed and door readings above contro
         const body = document.querySelector('#inspection-body')?.getBoundingClientRect();
         return !!body && text.top >= body.top && text.bottom <= body.bottom;
       });
-    await page.screenshot({ path: `${shots}/after-360-mixed-b.png` });
+    if (process.env.WARREN_SCREENSHOTS === '1')
+      await page.screenshot({ path: `${shots}/after-360-mixed-b.png` });
     expect(await fits()).toBe(true);
     await page.evaluate(() => {
       const raid = (window as unknown as { __warren: Debug }).__warren.game?.s.raids[0];
@@ -244,7 +250,8 @@ it('fits the mixed/open-door plan and longest bed and door readings above contro
     });
     await page.clock.runFor(300);
     expect(await fits()).toBe(true);
-    await page.screenshot({ path: `${shots}/after-360-smoke-mixed-b.png` });
+    if (process.env.WARREN_SCREENSHOTS === '1')
+      await page.screenshot({ path: `${shots}/after-360-smoke-mixed-b.png` });
     await page.locator('#watch-raid').click();
     await page.locator('[data-tool="look"]').click();
     await page.evaluate(`(async()=>{
@@ -257,7 +264,8 @@ it('fits the mixed/open-door plan and longest bed and door readings above contro
     await page.clock.runFor(200);
     expect(await page.locator('#cell-title').innerText()).toBe('Sleeping room');
     expect(await fits()).toBe(true);
-    await page.screenshot({ path: `${shots}/after-360-bed-b.png` });
+    if (process.env.WARREN_SCREENSHOTS === '1')
+      await page.screenshot({ path: `${shots}/after-360-bed-b.png` });
     await page.locator('#furnish').click();
     await page.locator('[data-tool="door"]').click();
     const door = await point(page, 18, 9);
@@ -265,7 +273,8 @@ it('fits the mixed/open-door plan and longest bed and door readings above contro
     await page.clock.runFor(200);
     expect(await page.locator('#cell-title').innerText()).toBe('Stone door');
     expect(await fits()).toBe(true);
-    await page.screenshot({ path: `${shots}/after-360-door-b.png` });
+    if (process.env.WARREN_SCREENSHOTS === '1')
+      await page.screenshot({ path: `${shots}/after-360-door-b.png` });
   } finally {
     await page.close();
   }
@@ -343,7 +352,8 @@ it('fits mixed door conditions while marking and keeps full route details on reo
     await page.locator('#reading-context summary').click();
     expect(await page.locator('#door-context').innerText()).toContain('The entrance admits riders.');
     expect(await page.locator('#door-context').innerText()).toContain('keep protective stone doors shut');
-    await page.screenshot({ path: `${shots}/after-360-complex-route-details-b.png` });
+    if (process.env.WARREN_SCREENSHOTS === '1')
+      await page.screenshot({ path: `${shots}/after-360-complex-route-details-b.png` });
   } finally {
     await page.close();
   }

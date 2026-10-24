@@ -19,7 +19,8 @@ async function gzip(text: string): Promise<Blob> {
   return new Response(new Blob([text]).stream().pipeThrough(cs)).blob();
 }
 
-async function gunzip(b: Blob): Promise<string> {
+async function gunzip(value: Blob | ArrayBuffer): Promise<string> {
+  const b = value instanceof Blob ? value : new Blob([value]);
   const ds = new DecompressionStream('gzip');
   return new Response(b.stream().pipeThrough(ds)).text();
 }
@@ -27,10 +28,12 @@ async function gunzip(b: Blob): Promise<string> {
 export async function put(key: string, value: unknown): Promise<boolean> {
   try {
     const blob = await gzip(JSON.stringify(value));
+    const bytes = await blob.arrayBuffer();
     const db = await open();
     await new Promise<void>((res, rej) => {
       const tx = db.transaction(STORE, 'readwrite');
-      tx.objectStore(STORE).put({ blob, at: Date.now() }, key);
+      // WebKit can abort Blob writes in IndexedDB. Keep the same gzip bytes as an ArrayBuffer.
+      tx.objectStore(STORE).put({ blob: bytes, at: Date.now() }, key);
       tx.oncomplete = () => res();
       tx.onerror = () => rej(tx.error);
     });
@@ -44,9 +47,9 @@ export async function put(key: string, value: unknown): Promise<boolean> {
 export async function get<T>(key: string): Promise<{ value: T; at: number } | null> {
   try {
     const db = await open();
-    const row = await new Promise<{ blob: Blob; at: number } | undefined>((res, rej) => {
+    const row = await new Promise<{ blob: Blob | ArrayBuffer; at: number } | undefined>((res, rej) => {
       const r = db.transaction(STORE, 'readonly').objectStore(STORE).get(key);
-      r.onsuccess = () => res(r.result as { blob: Blob; at: number } | undefined);
+      r.onsuccess = () => res(r.result as { blob: Blob | ArrayBuffer; at: number } | undefined);
       r.onerror = () => rej(r.error);
     });
     db.close();

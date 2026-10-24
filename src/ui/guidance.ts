@@ -35,13 +35,13 @@ export function colonyWords(s: WarrenState): string {
     const { air, lit } = airAndLight(s);
     const states = fs.map((f) => faceState(s, f.face, f.stand, lit, air));
     if (states.every((x) => x === 'stale'))
-      return 'The chalked faces lack fresh air. A shaft to the sky would bring air down.';
+      return 'The marked walls lack fresh air. A shaft to the sky would bring air down.';
     if (states.every((x) => x === 'dark'))
-      return 'The chalked faces are dark. Hang a lamp beside open ground near the chalk.';
+      return 'The marked walls are dark. Hang a lamp beside open ground near the chalk.';
     if (states.every((x) => x === 'dark' || x === 'stale'))
-      return 'The chalked faces need light or fresh air. Look where the lamps gutter.';
+      return 'The marked walls need light or fresh air. Look where the lamps go out.';
     if (states.every((x) => x === 'spoil'))
-      return 'Spoil blocks the chalked faces. People must carry it up before picks can work.';
+      return 'Loose rock blocks the marked walls. People must carry it up before picks can work.';
   } else if (s.hill.chalk.some(Boolean)) {
     return 'The chalk is beyond open ground. Chalk a way to it from the cellar.';
   }

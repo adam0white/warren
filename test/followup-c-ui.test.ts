@@ -6,6 +6,7 @@ import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { newGame, save } from '../src/sim/game.ts';
 import { idx, K, SURF, USE } from '../src/sim/grid.ts';
+import { localHill } from './local-hill.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -80,7 +81,8 @@ for (const [width, height] of [
       expect(await page.locator('#cell-title').innerText()).toBe('Plan preview');
       expect(await page.locator('#cell-words').innerText()).toMatch(/about six/);
       expect(await page.evaluate(`window.__warren.game.s.hill.chalk[${cells[0]}]`)).toBe(0);
-      await page.screenshot({ path: `${shots}/after-${width}-drag-c.png` });
+      if (process.env.WARREN_SCREENSHOTS === '1')
+        await page.screenshot({ path: `${shots}/after-${width}-drag-c.png` });
       await page.mouse.up();
       await page.clock.runFor(100);
       expect(await page.evaluate(`window.__warren.game.s.hill.chalk[${cells[0]}]`)).toBe(1);
@@ -91,7 +93,8 @@ for (const [width, height] of [
       expect(await page.locator('#cell-title').innerText()).toBe('Unbuilt plan');
       expect(await page.locator('#cell-words').innerText()).toMatch(/about six/);
       await assertStage(page, width, height);
-      await page.screenshot({ path: `${shots}/after-${width}-plan-c.png` });
+      if (process.env.WARREN_SCREENSHOTS === '1')
+        await page.screenshot({ path: `${shots}/after-${width}-plan-c.png` });
       await page.locator('#furnish').click();
       await page.locator('[data-tool="beds"]').click();
       const bedPoint = await point(18, SURF + 3);
@@ -100,7 +103,8 @@ for (const [width, height] of [
       await page.clock.runFor(100);
       expect(await page.locator('#cell-words').innerText()).toMatch(/about three/);
       expect(await page.evaluate(`window.__warren.game.s.hill.use[${idx(18, SURF + 3)}]`)).not.toBe(USE.beds);
-      await page.screenshot({ path: `${shots}/after-${width}-beds-drag-c.png` });
+      if (process.env.WARREN_SCREENSHOTS === '1')
+        await page.screenshot({ path: `${shots}/after-${width}-beds-drag-c.png` });
       await page.mouse.up();
       await page.clock.runFor(100);
       const reading = await page.locator('#cell-words').innerText();
@@ -108,7 +112,8 @@ for (const [width, height] of [
       expect(await page.locator('#cell-words').evaluate((e) => getComputedStyle(e).webkitLineClamp)).toBe(
         'none',
       );
-      await page.screenshot({ path: `${shots}/after-${width}-reading-c.png` });
+      if (process.env.WARREN_SCREENSHOTS === '1')
+        await page.screenshot({ path: `${shots}/after-${width}-reading-c.png` });
       await page.locator('#cellx').click();
       await page.evaluate(
         `window.__warren.game.s.notes.push({at:window.__warren.game.s.minute,kind:'raid',text:'A new warning replaces the journal preview.',weight:3})`,
@@ -122,7 +127,8 @@ for (const [width, height] of [
       const close = await page.locator('#cellx').boundingBox();
       expect((close?.y ?? height) + (close?.height ?? height)).toBeLessThan(height);
       expect(await page.evaluate('document.documentElement.scrollWidth <= innerWidth')).toBe(true);
-      await page.screenshot({ path: `${shots}/after-${width}-reopened-c.png` });
+      if (process.env.WARREN_SCREENSHOTS === '1')
+        await page.screenshot({ path: `${shots}/after-${width}-reopened-c.png` });
     } finally {
       await page.close();
     }
@@ -143,7 +149,7 @@ for (const [width, height] of [
     try {
       await page.clock.install();
       await page.goto(url);
-      await page.locator('#new').click();
+      await localHill(page);
       await page.evaluate('window.__warren.setSpeed(0)');
       await page.clock.runFor(100);
       await page.locator('#bell').click();
@@ -162,30 +168,33 @@ for (const [width, height] of [
       const replies = page.locator('#reading-context');
       await replies.locator('summary').click();
       expect(await replies.locator('summary').getAttribute('aria-label')).toBe('Replies to the bell');
-      expect(await page.locator('#door-context').innerText()).toMatch(/Fine.*next choice/is);
+      expect(await page.locator('#door-context').innerText()).toMatch(/I agree.*next choice/is);
       await page.evaluate('window.__warren.game.s.minute += 30');
       await page.clock.runFor(300);
       expect(await page.locator('#reading-context').evaluate((el) => (el as HTMLDetailsElement).open)).toBe(
         true,
       );
-      expect(await page.locator('#door-context').innerText()).toMatch(/Fine.*next choice/is);
+      expect(await page.locator('#door-context').innerText()).toMatch(/I agree.*next choice/is);
       await replies.locator('summary').click();
       await page.clock.runFor(100);
-      await page.screenshot({ path: `${shots}/after-${width}-bell-context-collapsed-c.png` });
+      if (process.env.WARREN_SCREENSHOTS === '1')
+        await page.screenshot({ path: `${shots}/after-${width}-bell-context-collapsed-c.png` });
       await assertStage(page, width, height);
-      await page.screenshot({ path: `${shots}/after-${width}-bell-c.png` });
+      if (process.env.WARREN_SCREENSHOTS === '1')
+        await page.screenshot({ path: `${shots}/after-${width}-bell-c.png` });
       await page.locator('#cellx').click();
       await page.evaluate(
         `(() => { const s=window.__warren.game.s; s.minute=s.bell.until; s.bell=null; })()`,
       );
       await page.locator('#last-reading').click();
       await page.clock.runFor(300);
-      expect(await words.innerText()).toMatch(/Call ended.*six game hours elapsed/s);
+      expect(await words.innerText()).toMatch(/The call has ended.*six game hours elapsed/s);
       await assertStage(page, width, height);
       await words.evaluate((e) => {
         e.scrollTop = 0;
       });
-      await page.screenshot({ path: `${shots}/after-${width}-bell-ended-c.png` });
+      if (process.env.WARREN_SCREENSHOTS === '1')
+        await page.screenshot({ path: `${shots}/after-${width}-bell-ended-c.png` });
     } finally {
       await page.close();
     }

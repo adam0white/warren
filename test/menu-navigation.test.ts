@@ -2,6 +2,7 @@ import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { newGame, save } from '../src/sim/game.ts';
+import { localHill } from './local-hill.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -38,9 +39,9 @@ describe('Game menu and person return paths', () => {
       expect(await page.locator('#book').getAttribute('aria-label')).toBe('Game menu');
       await page.locator('#book').click();
       expect(await page.locator('#drawer .who b').innerText()).toBe('Game menu');
-      expect(await page.locator('[data-open="j"]').innerText()).toContain('Read the journal');
-      expect(await page.locator('[data-open="d"]').innerText()).toContain('What the village has done');
-      expect(await page.locator('#send').innerText()).toContain('Send word');
+      expect(await page.locator('[data-open]').count()).toBe(0);
+      expect(await page.locator('.continuity').count()).toBe(0);
+      expect(await page.locator('#send').innerText()).toContain('Feedback');
       expect(await page.locator('#savenow, #restart').count()).toBe(0);
       expect(await page.getByRole('link', { name: 'All games', exact: true }).isVisible()).toBe(true);
       await page.locator('#bookx').click();
@@ -106,7 +107,7 @@ describe('Game menu and person return paths', () => {
     }
   });
 
-  it('returns from Send word to the menu without sending', async () => {
+  it('returns from Feedback to the menu without sending', async () => {
     const page = await begin();
     try {
       await page.evaluate(`(async () => {
@@ -227,7 +228,7 @@ it('keeps the current hill and shows a warning when returning to the title canno
   try {
     await page.clock.install();
     await page.goto(url);
-    await page.locator('#new').click();
+    await localHill(page);
     await page.locator('#cv').waitFor();
     const before = await page.evaluate('window.__warren.game.s.seed');
     await page.locator('#book').click();
@@ -268,6 +269,23 @@ it('keeps keyboard focus in feedback with recording off and retains the note', a
       ).toBe(true);
     }
     expect(await page.locator('#furnish').getAttribute('aria-expanded')).toBe('false');
+  } finally {
+    await page.close();
+  }
+});
+
+it('confirms New game inside the menu and cancels without replacing the hill', async () => {
+  const page = await begin();
+  try {
+    const before = await page.evaluate('window.__warren.game.s.seed');
+    await page.locator('#book').click();
+    await page.locator('#to-title').click();
+    await page.locator('#drawer #menu-new-confirm').waitFor({ state: 'visible' });
+    expect(await page.locator('#drawer #menu-new-confirm').isVisible()).toBe(true);
+    expect(await page.locator('.page').count()).toBe(0);
+    await page.locator('#menu-new-no').click();
+    expect(await page.locator('#menu-new-confirm').isVisible()).toBe(false);
+    expect(await page.evaluate('window.__warren.game.s.seed')).toBe(before);
   } finally {
     await page.close();
   }

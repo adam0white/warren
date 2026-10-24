@@ -65,7 +65,7 @@ function element<K extends keyof HTMLElementTagNameMap>(
   return node;
 }
 
-/** Mount Send word. The caller holds game time until onBack, and calls cleanup when replacing the host. */
+/** Mount Feedback. The caller holds game time until onBack, and calls cleanup when replacing the host. */
 export function openFeedback(
   host: HTMLElement,
   lab: FeedbackLab,
@@ -75,9 +75,9 @@ export function openFeedback(
   _chooseRecording?: (allow: boolean) => Promise<void>,
 ): () => void {
   const screen = element('section', '', 'feedback-screen');
-  screen.setAttribute('aria-label', 'Send word');
+  screen.setAttribute('aria-label', 'Feedback');
   const body = element('div', '', 'feedback-body');
-  body.append(element('h2', 'Send word'), element('p', 'Send a note about this game.'));
+  body.append(element('h2', 'Feedback'), element('p', 'Send a note about this game.'));
 
   let verdict = '';
   let pending = false;
@@ -108,7 +108,7 @@ export function openFeedback(
   noteLabel.append(element('span', 'Your note (optional)'));
   const note = element('textarea');
   note.rows = 4;
-  note.placeholder = 'What happened on the hill, what you wanted, what got in the way.';
+  note.placeholder = 'What happened? What did you want to do? What got in the way?';
   noteLabel.append(note);
 
   const nameDetails = element('details', '', 'feedback-name');
@@ -141,13 +141,15 @@ export function openFeedback(
       'Recording on or Share includes an available run and links play across games on this device. Otherwise only your verdict, note and optional name are sent.',
     ),
   );
+  const diagnostic = new URLSearchParams(location.search).get('lab') === '1';
   const versions = element('p');
   const preview = element('pre', '', 'feedback-preview');
   const privacy = element('a', 'Lab privacy');
   privacy.href = PRIVACY_URL;
   privacy.target = '_blank';
   privacy.rel = 'noopener noreferrer';
-  disclosure.append(versions, preview, privacy);
+  if (diagnostic) disclosure.append(versions, preview);
+  disclosure.append(privacy);
   disclosure.addEventListener('toggle', updatePreview);
   name.addEventListener('input', updatePreview);
   note.addEventListener('input', updatePreview);
@@ -160,6 +162,7 @@ export function openFeedback(
   const actions = element('div', '', 'feedback-actions');
   const copy = element('button', 'Keep a copy of this run', 'feedback-secondary');
   copy.type = 'button';
+  copy.hidden = !diagnostic;
   copy.addEventListener('click', () => {
     try {
       download();
@@ -245,8 +248,8 @@ export function openFeedback(
     sent = true;
     pending = false;
     status.textContent = noteOnly
-      ? 'Note queued without a run or history linkage. This is not a delivery receipt.'
-      : 'Note queued. An available run may also be included. This is not a delivery receipt.';
+      ? 'Your note is queued without a run or linked play history. This is not a delivery receipt.'
+      : 'Your note is queued. An available run may also be included. This is not a delivery receipt.';
     back.hidden = true;
     verdicts.hidden = true;
     noteLabel.hidden = true;

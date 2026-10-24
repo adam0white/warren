@@ -3,6 +3,7 @@ import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DAY } from '../src/sim/calendar.ts';
 import { act, advance, fingerprint, newGame, replay, save } from '../src/sim/game.ts';
+import { localHill } from './local-hill.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -22,13 +23,13 @@ afterAll(async () => {
 async function fresh() {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   await page.clock.install();
-  await page.goto(url);
+  await page.goto(`${url}?lab=1`);
   await page.locator('#new').waitFor();
   return page;
 }
 
 async function begin(page: Page) {
-  await page.locator('#new').click();
+  await localHill(page);
   await page.locator('#cv').waitFor();
   await page.clock.runFor(500);
 }
@@ -52,7 +53,7 @@ describe('F-213 first-minute clarity', () => {
       await page.locator('[data-tool="chalk"]').click();
       await page.clock.runFor(300);
       const hint = await page.locator('#event-sentence').innerText();
-      expect(hint).toContain('Dashed outlines plan a dig');
+      expect(hint).toContain('A dashed outline marks where people can dig');
       expect(words([title, ...play, hint].join(' '))).toBeLessThanOrEqual(40);
       const chalk = await page.locator('[data-tool="chalk"]').boundingBox();
       expect(chalk && chalk.y + chalk.height <= 690).toBe(true);
@@ -67,7 +68,7 @@ describe('F-213 first-minute clarity', () => {
       const about = page.getByRole('button', { name: 'Information', exact: true });
       await about.click();
       expect(await page.locator('#hill-info').innerText()).toContain('You have the chalk and the bell.');
-      expect(await page.locator('#hill-info').innerText()).toContain('Nobody obeys;');
+      expect(await page.locator('#hill-info').innerText()).toContain('Each person chooses what to do.');
       await page.keyboard.press('Escape');
       await begin(page);
       await page.getByRole('button', { name: 'Information', exact: true }).click();

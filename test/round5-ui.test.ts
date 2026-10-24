@@ -88,7 +88,8 @@ describe('round five phone building', () => {
         expect(await page.evaluate<number>(`window.__warren.game.s.hill.chalk[${idx(20, SURF + 3)}]`)).toBe(
           1,
         );
-        await page.screenshot({ path: `${evidence}/round5-after-${width}-zoom.png` });
+        if (process.env.WARREN_SCREENSHOTS === '1')
+          await page.screenshot({ path: `${evidence}/round5-after-${width}-zoom.png` });
         await page.locator('#cellx').click();
         await page.getByRole('button', { name: 'Fit hill', exact: true }).tap();
         expect(await page.evaluate<number>('window.__warren.view.cs')).toBeLessThan(size);
@@ -149,7 +150,8 @@ describe('round five phone building', () => {
       await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
       await page.clock.runFor(1200);
       expect(await body.evaluate((e) => e.scrollTop)).toBeGreaterThan(100);
-      await page.screenshot({ path: `${evidence}/round5-after-360-shelter-touch.png` });
+      if (process.env.WARREN_SCREENSHOTS === '1')
+        await page.screenshot({ path: `${evidence}/round5-after-360-shelter-touch.png` });
       await page.clock.runFor(32000);
       expect(await page.evaluate<number>('window.__warren.game.s.minute')).toBe(minute);
       const close = await page.locator('#bookx').boundingBox();
@@ -174,7 +176,8 @@ describe('round five phone building', () => {
         await page.clock.runFor(300);
         expect(await page.locator('#cell-detail').innerText()).toContain('Ring the bell');
         expect(await page.locator('#cell-detail').innerText()).toContain('choose');
-        await page.screenshot({ path: `${evidence}/round5-after-360-door-${tool}.png` });
+        if (process.env.WARREN_SCREENSHOTS === '1')
+          await page.screenshot({ path: `${evidence}/round5-after-360-door-${tool}.png` });
         await page.locator('#cellx').click();
         expect(await page.locator('#cell-detail').isVisible()).toBe(false);
       }

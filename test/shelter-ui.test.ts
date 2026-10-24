@@ -69,13 +69,13 @@ describe('round four shelter clarity', () => {
         expect(await rows.count()).toBe(6);
         expect(await rows.allTextContents()).toEqual(
           // People can reach the shallow beds while this live sheet opens.
-          expect.arrayContaining([expect.stringMatching(/Exposed (above ground|near an entrance)/)]),
+          expect.arrayContaining([expect.stringMatching(/exposed (above ground|near an entrance)/)]),
         );
         const person = page.locator('[data-who]').first();
         await person.click();
         expect(await page.locator('#person-help').isVisible()).toBe(true);
         await page.locator('#card details summary').click();
-        expect(await page.locator('#card .shelter-person').innerText()).toMatch(/Exposed|Beyond|Hiding/);
+        expect(await page.locator('#card .shelter-person').innerText()).toMatch(/exposed|beyond|hiding/);
         await page.locator('#cardx').click();
         expect(await page.locator('#drawer').isVisible()).toBe(true);
         expect(await person.evaluate((el) => el === document.activeElement)).toBe(true);
@@ -124,13 +124,13 @@ describe('round four shelter clarity', () => {
       const bed = await point(page, 18, SURF + 3);
       await page.mouse.click(bed.x, bed.y);
       await page.clock.runFor(300);
-      expect(await page.locator('#cell-words').innerText()).toContain('Room for about six');
-      expect(await page.locator('#cell-words').innerText()).toContain('Enough for the village');
+      expect(await page.locator('#cell-words').innerText()).toContain('This room has about six');
+      expect(await page.locator('#cell-words').innerText()).toContain('There is space for everyone');
       await page.locator('[data-tool="chalk"]').click();
       const chalk = await point(page, 20, SURF + 3);
       await page.mouse.click(chalk.x, chalk.y);
       await page.clock.runFor(300);
-      expect(await page.locator('#cell-words').innerText()).toContain('Dig planned');
+      expect(await page.locator('#cell-words').innerText()).toContain('The dig is marked');
       expect(await page.locator('[data-tool="chalk"]').innerText()).not.toBe('✕');
     } finally {
       await page.close();

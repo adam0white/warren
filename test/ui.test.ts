@@ -69,12 +69,14 @@ describe('owner viewport regression', () => {
         await enter(page);
         await expectViewportFit(page, height);
         expect(await page.locator('#goal').innerText()).toMatch(/Choose chalk.*drag.*cellar/);
-        await page.screenshot({ path: `${shots}/after-early-${width}.png` });
+        if (process.env.WARREN_SCREENSHOTS === '1')
+          await page.screenshot({ path: `${shots}/after-early-${width}.png` });
         await page.locator('#book').click();
         await page.clock.runFor(300);
         await expectViewportFit(page, height);
         expect(await page.locator('#record-play').isVisible()).toBe(true);
-        await page.screenshot({ path: `${shots}/after-privacy-${width}.png` });
+        if (process.env.WARREN_SCREENSHOTS === '1')
+          await page.screenshot({ path: `${shots}/after-privacy-${width}.png` });
       } finally {
         await page.close();
       }
@@ -98,7 +100,8 @@ describe('owner viewport regression', () => {
       await page.clock.runFor(2000);
       const wide = await page.evaluate(() => (window as unknown as { __warren: Debug }).__warren.view.cs);
       expect(wide).toBe(mid);
-      await page.screenshot({ path: `${shots}/after-grown-360.png` });
+      if (process.env.WARREN_SCREENSHOTS === '1')
+        await page.screenshot({ path: `${shots}/after-grown-360.png` });
       await page.locator('#fit-hill').click();
       expect(
         await page.evaluate(() => (window as unknown as { __warren: Debug }).__warren.view.cs),

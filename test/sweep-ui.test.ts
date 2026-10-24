@@ -1,6 +1,7 @@
 import { type Browser, chromium } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
+import { localHill } from './local-hill.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -22,7 +23,7 @@ for (const width of [360, 1280]) {
     try {
       await page.clock.install();
       await page.goto(url);
-      await page.locator('#new').click();
+      await localHill(page);
       await page.locator('#cv').waitFor();
       await page.clock.runFor(300);
       const point = await page.evaluate<{ x: number; y: number }>(`(async () => {
@@ -40,7 +41,7 @@ for (const width of [360, 1280]) {
         await page.clock.runFor(300);
         expect(await page.locator('#cell-detail').isVisible()).toBe(false);
         expect(await page.locator('#event-sentence').innerText()).toContain(
-          tool === 'store' ? 'Store marked' : 'Lamp hung',
+          tool === 'store' ? 'The store is marked' : 'The lamp is hung',
         );
         const before = await page.evaluate<number>(`window.__warren.game.s.minute`);
         await page.clock.runFor(8000);
@@ -48,12 +49,12 @@ for (const width of [360, 1280]) {
         expect(after).toBeGreaterThan(before);
         await page.locator('#last-reading').click();
         expect(await page.locator('#cell-words').innerText()).toContain(
-          tool === 'store' ? 'Store marked' : 'Lamp hung',
+          tool === 'store' ? 'The store is marked' : 'The lamp is hung',
         );
         await page.locator('#cellx').click();
       }
       await page.locator('#bell').click();
-      expect(await page.locator('#cell-words').innerText()).toContain('No smoke or riders in sight.');
+      expect(await page.locator('#cell-words').innerText()).toContain('No smoke or riders are in sight.');
     } finally {
       await page.close();
     }

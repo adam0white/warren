@@ -21,6 +21,7 @@ import {
 
 import { planGeometry } from './plan-safety.ts';
 import { scoutedCells } from './room-safety.ts';
+import { speechWords } from './words.ts';
 
 export interface Ink {
   paper: string;
@@ -402,7 +403,7 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
     );
     const said = recent.get(p.id);
     if (said && (paint.selected === p.id || recent.size <= 4))
-      bubble(c, said, (fx + 0.5) * cs, (fy - 0.15) * cs, cs, ink);
+      bubble(c, speechWords(said), (fx + 0.5) * cs, (fy - 0.15) * cs, cs, ink);
   }
 
   // The bell: rope arcs at the entrance while it rings.

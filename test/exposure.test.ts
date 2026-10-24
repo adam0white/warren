@@ -10,13 +10,13 @@ describe('the keeper’s shelter check', () => {
     if (!p) throw new Error('Missing person');
     delete s.trips[p.id];
     s.pos[p.id] = idx(17, SURF - 1);
-    expect(exposureWords(s, p)).toContain('Exposed above ground');
+    expect(exposureWords(s, p)).toContain('They are exposed above ground');
     expect(exposureWords(s, p)).toContain('reason is not known');
     s.pos[p.id] = idx(18, SURF + 1);
-    expect(exposureWords(s, p)).toMatch(/Exposed near.*entrance.*riders can reach/);
+    expect(exposureWords(s, p)).toMatch(/They are exposed near.*entrance.*Riders can reach/);
     for (let y = SURF; y < SURF + 12; y++) s.hill.kind[idx(17, y)] = K.open;
     s.pos[p.id] = idx(17, SURF + 11);
-    expect(exposureWords(s, p)).toContain('Beyond the passages riders search');
+    expect(exposureWords(s, p)).toContain('They are beyond the passages riders search');
     expect(exposureWords(s, p)).not.toMatch(/safe|guarantee/i);
   });
 
@@ -35,13 +35,13 @@ describe('the keeper’s shelter check', () => {
       workFrom: s.minute + 60,
       end: below,
     };
-    expect(exposureWords(s, p)).toMatch(/Exposed above ground.*On the way below/);
+    expect(exposureWords(s, p)).toMatch(/They are exposed above ground.*They are still travelling below/);
     expect(exposureWords(s, p)).not.toContain('An old answer');
     s.answers.push({ at: s.minute, who: p.id, verdict: 'deferred', says: 'I will follow.' });
     expect(exposureWords(s, p)).toContain('At the bell: “I will follow.”');
     s.minute += 60;
-    expect(exposureWords(s, p)).toContain('Exposed near');
-    expect(exposureWords(s, p)).not.toContain('On the way below');
+    expect(exposureWords(s, p)).toContain('They are exposed near');
+    expect(exposureWords(s, p)).not.toContain('They are still travelling below');
   });
 
   it('reads a shut door and leaves the entire run unchanged', () => {
@@ -53,7 +53,7 @@ describe('the keeper’s shelter check', () => {
     s.hill.shut[idx(18, SURF + 1)] = 1;
     s.pos[p.id] = idx(17, SURF + 3);
     const before = JSON.stringify(s);
-    expect(exposureWords(s, p)).toContain('Beyond the passages riders search');
+    expect(exposureWords(s, p)).toContain('They are beyond the passages riders search');
     expect(exposureWords(s, p)).not.toMatch(/\d/);
     expect(JSON.stringify(s)).toBe(before);
   });

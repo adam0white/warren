@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { localHill } from './local-hill.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -63,7 +64,7 @@ describe('DL-23 actual control targets', () => {
         await page.goto(url);
         await page.locator('#new').waitFor();
         expectTargets(await boxes(page, '.topbar a'), width, height);
-        await page.locator('#new').click();
+        await localHill(page);
         await page.locator('#cv').waitFor();
         await page.clock.runFor(500);
         const play = await boxes(
@@ -71,14 +72,17 @@ describe('DL-23 actual control targets', () => {
           '#hill-controls .tools > button, #book, #ticker, #shelter-check, [data-speed], .view-controls button',
         );
         const scene = await page.locator('#cv').boundingBox();
-        await page.screenshot({ path: `${evidence}/${width}-play.png` });
+        if (process.env.WARREN_SCREENSHOTS === '1')
+          await page.screenshot({ path: `${evidence}/${width}-play.png` });
         await page.locator('#book').click();
         await page.clock.runFor(300);
         const privacyScene = await page.locator('#cv').boundingBox();
-        await page.screenshot({ path: `${evidence}/${width}-privacy.png` });
+        if (process.env.WARREN_SCREENSHOTS === '1')
+          await page.screenshot({ path: `${evidence}/${width}-privacy.png` });
 
         const notebook = await boxes(page, '.menu-rows > *:visible, #bookx, #resume');
-        await page.screenshot({ path: `${evidence}/${width}-notebook.png` });
+        if (process.env.WARREN_SCREENSHOTS === '1')
+          await page.screenshot({ path: `${evidence}/${width}-notebook.png` });
         await page.locator('#bookx').click();
         await page.locator('#shelter-check').click();
         await page.locator('[data-who]').first().click();
@@ -89,7 +93,7 @@ describe('DL-23 actual control targets', () => {
           JSON.stringify({ play, notebook, card, scene, privacyScene }, null, 2),
         );
         expect(play).toHaveLength(14);
-        expect(notebook).toHaveLength(width >= 900 ? 7 : 8);
+        expect(notebook).toHaveLength(width >= 900 ? 5 : 6);
         expect(card).toHaveLength(1);
         expectTargets([...play, ...notebook, ...card], width, height);
         expect(scene?.height).toBeGreaterThanOrEqual(width === 320 ? 100 : 120);

@@ -27,7 +27,7 @@ describe('plan safety preview', () => {
     expect(p.protectedCapacity).toBe(9);
     expect(p.words).toContain('If dug');
     expect(p.words).toContain('about thirty');
-    expect(p.words).toContain('twenty-one exposed');
+    expect(p.words).toContain('twenty-one are exposed');
     expect(fingerprint(s)).toBe(before);
   });
   it('reports disconnected plans as unreachable rather than protected', () => {
@@ -35,7 +35,7 @@ describe('plan safety preview', () => {
     const p = planSafety(s, [idx(20, SURF + 12)], 'chalk');
     expect(p.unreachableCapacity).toBe(3);
     expect(p.protectedCapacity).toBe(0);
-    expect(p.words).toContain('unreachable');
+    expect(p.words).toContain('cannot be reached');
     expect(p.words).not.toContain('can sleep here');
   });
   it('reads a beds stroke only on actual open cells and includes its connected bed room', () => {
@@ -109,9 +109,11 @@ it('keeps mixed protection and an open-door remedy compact without hiding capaci
   expect(p.exposedCapacity).toBeGreaterThan(0);
   expect(p.words).toContain('beyond riders’ reach');
   expect(p.words).toContain('exposed');
-  expect(p.words).toContain('Shut open stone doors; check other routes.');
+  expect(p.words).toContain(
+    'Ring the bell so a nearby adult can choose to shut open stone doors. Check other routes.',
+  );
   expect(p.words).toContain('People choose when to dig.');
-  expect(p.words.split(/\s+/).length).toBeLessThanOrEqual(51);
+  expect(p.words.split(/\s+/).length).toBeLessThanOrEqual(60);
 });
 
 it('keeps compound route conditions and unreachable capacity essential, with full context', () => {
@@ -133,11 +135,11 @@ it('keeps compound route conditions and unreachable capacity essential, with ful
   selected.push(isolated);
   const p = planSafety(s, selected, 'chalk');
   expect(p.words).toBe(
-    'If dug: about 45 places. 21 protected; 21 exposed; 3 unreachable. Dig deeper or shut route doors. Keep protective doors shut. Connect unreachable space. People choose when to dig.',
+    'If dug, this space would have about 45 places. 21 places are protected, 21 are exposed, and 3 cannot be reached. Dig deeper or shut route doors. Keep protective doors shut. Connect unreachable space. People choose when to dig.',
   );
-  expect(p.words.length).toBeLessThanOrEqual(180);
+  expect(p.words.length).toBeLessThanOrEqual(300);
   expect(p.context).toContain('The entrance admits riders.');
-  expect(p.context).toContain('check other routes');
+  expect(p.context).toContain('Check other routes');
   expect(p.context).toContain('keep protective stone doors shut');
-  expect(p.context).toContain('three unreachable: connect a passage');
+  expect(p.context).toContain('three places cannot be reached. Connect a passage');
 });
