@@ -1,9 +1,8 @@
 import { type Build, PRIVACY_URL } from '@adam0white/lab-client';
 
-import { feedbackPersonaControl } from '@adam0white/lab-kit';
+import { feedbackPersonaControl, feedbackSharePlay } from '@adam0white/lab-kit';
 
 const NAME_KEY = 'hf-lab-feedback-name';
-const RECORDING_OFF_KEY = 'hf-lab-recording-off';
 
 /** The feedback surface accepts a lab stub without starting a live lab client. */
 export type FeedbackLab = {
@@ -14,7 +13,7 @@ export type FeedbackLab = {
   readonly privacySignalOn: boolean;
   readonly privacyOverride: boolean;
   setTelemetryOff(off: boolean): void;
-  sendFeedback(note: string, extra?: { name?: string; run?: unknown }): Promise<string>;
+  sendFeedback(note: string, extra?: { name?: string; run?: unknown; sharePlay?: boolean }): Promise<string>;
   sendRun(run: unknown, extra?: { note?: string; name?: string }): Promise<string>;
   openSendDialog(options: {
     getRun: () => unknown;
@@ -72,21 +71,18 @@ export function openFeedback(
   getRun: () => unknown,
   download: () => void,
   onBack: () => void,
-  chooseRecording?: (allow: boolean) => Promise<void>,
+  _chooseRecording?: (allow: boolean) => Promise<void>,
 ): () => void {
   const screen = element('section', '', 'feedback-screen');
   screen.setAttribute('aria-label', 'Send word');
   const body = element('div', '', 'feedback-body');
-  body.append(
-    element('h2', 'Send word'),
-    element('p', "Your run, saves and log reach us on their own. Tell us what they can't show."),
-  );
+  body.append(element('h2', 'Send word'), element('p', 'Send a note about this game.'));
 
   let verdict = '';
   let pending = false;
   let sent = false;
   let active = true;
-  const recordingOff = stored(RECORDING_OFF_KEY) === '1';
+  const recordingOff = lab.telemetryOn === false;
   const privacyConsentRequired = lab.privacySignalOn && !lab.privacyOverride;
   const verdicts = element('div', '', 'feedback-verdicts');
   verdicts.setAttribute('role', 'group');
@@ -142,15 +138,6 @@ export function openFeedback(
   recording.append(recordingMessage);
   recording.hidden = !recordingOff;
 
-  if (privacyConsentRequired) {
-    body.append(
-      element(
-        'p',
-        'Your browser asks for privacy. Your note and verdict can still be sent without a run or history linkage.',
-      ),
-    );
-  }
-
   const disclosure = element('details', '', 'feedback-disclosure');
   disclosure.append(element('summary', 'What is sent'));
   disclosure.append(
@@ -158,7 +145,7 @@ export function openFeedback(
       'p',
       privacyConsentRequired
         ? 'Your verdict, note and optional name are sent without a run or linked player id.'
-        : 'Your verdict, note and optional name are sent. Recording on may include an available run and continuing character state. It is linked to recorded history only when you approve linkage.',
+        : 'Your verdict, note and optional name are sent. Recording on may include an available run and continuing character state. Recorded play is linked across games on this device.',
     ),
   );
   const versions = element('p');
@@ -175,25 +162,8 @@ export function openFeedback(
   const status = element('p', '', 'feedback-status');
   status.setAttribute('role', 'status');
   body.append(verdicts, noteLabel, nameDetails, recording, disclosure, status);
-  if (lab.personaRecordingRequired && chooseRecording) {
-    const scoped = Object.create(lab) as Parameters<typeof feedbackPersonaControl>[0];
-    scoped.allowPersonaRecording = (allow) => {
-      void chooseRecording(allow)
-        .then(() => {
-          const checkbox = choice?.querySelector('input');
-          if (checkbox) checkbox.checked = lab.personaRecordingAllowed === true;
-        })
-        .catch(() => {
-          status.textContent = 'History choice could not be applied. Your note can still send.';
-        });
-    };
-    const choice = feedbackPersonaControl(scoped);
-    if (choice) {
-      if (choice.lastChild)
-        choice.lastChild.textContent = ' Link all continuing people in this run to lab recording (optional)';
-      body.insertBefore(choice, disclosure);
-    }
-  }
+  const choice = feedbackPersonaControl({ telemetryOn: lab.telemetryOn !== false });
+  if (choice) body.insertBefore(choice, disclosure);
   const actions = element('div', '', 'feedback-actions');
   const copy = element('button', 'Keep a copy of this run', 'feedback-secondary');
   copy.type = 'button';
@@ -304,10 +274,12 @@ export function openFeedback(
     const submittedName = name.value.trim();
     const submittedNote = composedNote();
     try {
-      const noteOnly = lab.telemetryOn === false || (lab.privacySignalOn && !lab.privacyOverride);
+      const sharePlay = feedbackSharePlay(choice);
+      const noteOnly = lab.telemetryOn === false && !sharePlay;
       await lab.sendFeedback(submittedNote, {
         name: submittedName,
-        run: feedbackRun(getRun, lab.personaRecordingAllowed === true),
+        run: feedbackRun(getRun, true),
+        sharePlay,
       });
       markSent(submittedName, noteOnly);
     } catch {

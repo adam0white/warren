@@ -62,7 +62,7 @@ export function controls() {
   const care = current()?.s.adaVisit
     ? `<p>${esc(adaWords(current()!.s))}</p><button id="ada-care">Invite Kian to share grain, water and rest with Ada</button><button id="ada-end">End Kian’s optional refuge work</button>`
     : '';
-  return `<details class="continuity"><summary>People between chapters</summary><label><input id="continuity" type="checkbox" ${shelf.enabled ? 'checked' : ''}> Continue people between games in this browser</label><p data-cast-status role="status">${esc(continuityStatus)}</p>${provenance}<p>Departure projects, injuries and duties can refuse a new chapter. Local play and export remain available. Kian requires the exact Watch assent, completed-care receipt and pending return duty. Onward Kian transfer is refused.</p>${care}<button id="local-fresh">Use fresh local play</button><label>Open current playtest file <input id="cast-file" type="file" accept="application/json"></label>${current() ? '<button id="checkpoint-cast">Save eligible people to the browser shelf</button><button id="record-history">Allow recording this continuing run</button>' : ''}<a href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">Inspect browser people</a></details>`;
+  return `<details class="continuity"><summary>People between chapters</summary><label><input id="continuity" type="checkbox" ${shelf.enabled ? 'checked' : ''}> Continue people between games in this browser</label><p data-cast-status role="status">${esc(continuityStatus)}</p>${provenance}<p>Departure projects, injuries and duties can refuse a new chapter. Local play and export remain available. Kian requires the exact Watch assent, completed-care receipt and pending return duty. Onward Kian transfer is refused.</p>${care}<button id="local-fresh">Use fresh local play</button><label>Open current playtest file <input id="cast-file" type="file" accept="application/json"></label>${current() ? '<button id="checkpoint-cast">Save eligible people to the browser shelf</button>' : ''}<a href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">Inspect browser people</a></details>`;
 }
 export async function fresh(seed: number): Promise<Game> {
   const token = ++generation;
@@ -321,14 +321,6 @@ export function bind(host: HTMLElement, onFile: (game: Game) => void) {
       void persistAccepted(game);
     });
   host.querySelector('#checkpoint-cast')?.addEventListener('click', () => void checkpoint());
-  host.querySelector('#record-history')?.addEventListener('click', () => {
-    if (
-      confirm(
-        'Recording this continuing run can link it to earlier games. Allow recording all carried histories for this identity?',
-      )
-    )
-      void chooseContinuityRecording(true);
-  });
   host.querySelector('#cast-file')?.addEventListener('change', (event) => {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (file)

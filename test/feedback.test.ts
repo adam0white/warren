@@ -28,7 +28,7 @@ async function mount(privacy = false, off = false, failRun = false): Promise<Pag
     window.feedbackCalls = [];
     const calls = window.feedbackCalls;
     const lab = {
-      privacySignalOn: ${privacy}, privacyOverride: false,
+      privacySignalOn: ${privacy}, privacyOverride: false, telemetryOn: !${privacy} && !${off},
       setTelemetryOff: off => { calls.push(['off',off]); if (off) localStorage.setItem('hf-lab-recording-off','1'); else localStorage.removeItem('hf-lab-recording-off'); },
       sendFeedback: async (...args) => {calls.push(['feedback',...args]);return 'queued';},
       sendRun: async (...args) => {calls.push(['run',...args]); if (${failRun}) throw Error('offline');return 'queued';},
@@ -59,6 +59,7 @@ it('queues a linked verdict and trimmed name, remembers the name, and keeps down
         'Verdict: keep\n\nThe door was hard to place.',
         {
           name: 'Tester 7',
+          sharePlay: false,
           run: {
             seed: 7,
             inputs: [],
@@ -94,6 +95,7 @@ it('sends notes while recording is off or privacy is on, without a second dialog
           'QA feedback-fix',
           {
             name: '',
+            sharePlay: false,
             run: {
               seed: 7,
               inputs: [],
@@ -109,40 +111,21 @@ it('sends notes while recording is off or privacy is on, without a second dialog
   }
 });
 
-it('routes optional linkage through the host and keeps an unlinked export replayable without local ownership', async () => {
-  const page = await mount();
-  try {
-    const result = await page.evaluate(`(async () => {
-      const {openFeedback} = await import('/src/ui/feedback.ts');
-      const {newGame,save,load,replay,fingerprint} = await import('/src/sim/game.ts');
-      const original = {...save(newGame(7)), ownedHeads: {}, sourceArchives: {privateOwner: 'browser-only'}};
-      const lab = window.testFeedbackLab;
-      const choices = [], direct = [];
-      lab.personaRecordingRequired = true;
-      lab.personaRecordingAllowed = false;
-      lab.allowPersonaRecording = value => direct.push(value);
-      let exported;
-      lab.sendFeedback = async (_note, extra) => {exported=extra.run; return 'queued';};
-      openFeedback(document.body, lab, () => original, () => {}, () => {}, async value => {choices.push(value);});
-      const checkbox = document.querySelector('label input[type=checkbox]');
-      checkbox.click();
-      await Promise.resolve();
-      checkbox.checked=false;
-      checkbox.dispatchEvent(new Event('change'));
-      await Promise.resolve();
-      document.querySelector('.feedback-primary').click();
-      await new Promise(resolve => setTimeout(resolve,10));
-      return {choices,direct,hasOwned: 'ownedHeads' in exported,hasArchive:'sourceArchives' in exported, originalIntact: 'ownedHeads' in original && 'sourceArchives' in original, same:fingerprint(load(exported).s)===fingerprint(load(original).s) && fingerprint(replay(exported.seed,exported.inputs,exported.minute,exported.game).s)===exported.fingerprint};
-    })()`);
-    expect(result).toEqual({
-      choices: [true, false],
-      direct: [],
-      hasOwned: false,
-      hasArchive: false,
-      originalIntact: true,
-      same: true,
-    });
-  } finally {
-    await page.close();
-  }
-});
+for (const checked of [false, true]) {
+  it(`passes off-state share intent ${checked} at submit`, async () => {
+    const page = await mount(true, true);
+    try {
+      const checkbox = page.getByRole('checkbox', {
+        name: 'Share this run and my play with the lab',
+        exact: true,
+      });
+      expect(await checkbox.isChecked()).toBe(false);
+      if (checked) await checkbox.check();
+      expect(await page.evaluate('window.feedbackCalls')).toEqual([]);
+      await page.locator('.feedback-primary').click();
+      expect(await page.evaluate('window.feedbackCalls[0][2].sharePlay')).toBe(checked);
+    } finally {
+      await page.close();
+    }
+  });
+}

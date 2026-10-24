@@ -1436,9 +1436,11 @@ function bindMenu(host: HTMLElement, close: () => void) {
     enter();
   });
   host.querySelector('#resume')?.addEventListener('click', close);
-  host
-    .querySelector('#record-play')
-    ?.addEventListener('change', (e) => lab.setTelemetryOff(!(e.target as HTMLInputElement).checked));
+  host.querySelector('#record-play')?.addEventListener('change', (e) => {
+    const on = (e.target as HTMLInputElement).checked;
+    lab.setPrivacyOverride(on);
+    lab.setTelemetryOff(!on);
+  });
   host.querySelector('#fullscreen')?.addEventListener('click', () => {
     if (document.fullscreenElement) void document.exitFullscreen();
     else void document.documentElement.requestFullscreen?.();
