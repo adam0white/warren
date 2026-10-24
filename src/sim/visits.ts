@@ -59,7 +59,7 @@ export function releaseVisit(s: WarrenState, id: string): boolean {
     s.raids.some((r) => r.stage === 'riders')
   )
     return false;
-  if (id === 'kian') return false; // Source care adapter is still required.
+  if (id === 'kian') return false; // Use the finite Ada end choice; generic release must not abandon care or return.
   if (
     p.agenda.goals.some(
       (g) =>

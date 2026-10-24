@@ -21,9 +21,9 @@ Person cards expose ordinary public household facts. Under Activity and words, t
 
 The menu's People between chapters control separates browser continuity from recording. Fresh starts await readiness and preflight every applicable allocated head before one atomic claim. A loaded hill never imports newer shelf state. The initial complete actors, incoming envelopes, captured life clock/results, claim and edition stay pinned in exports. Actual source snapshots remain in a bounded local journal; only approved projections and digests enter the shelf. Unmapped skills, social context and private source memories stay in that archive. This is a bounded projection, not whole-state transfer or simulated travel.
 
-Supported inbound dialects are `site-cast/1` with `site-cast-calendar/1` from Well Maryam/Tariq and Watch Meryem/Tamar, `valley-cast/1` with `valley-calendar/1` from Valley Yusuf Usta/Meryem/Maryam under `valley-cast-3`, and this host's `warren-calendar/1`. Source roles, norms, canonical revision, engine, age, body and family must match. Only implemented prayer calendars are currently supported; care, work and owed duties refuse rather than disappear. Cooking, watching and surveying do not certify stone digging. Clinical incompatibility remains an HF refusal.
+Supported inbound dialects are `site-cast/1` with `site-cast-calendar/1` from Well Maryam/Tariq and Watch Meryem/Tamar, `valley-cast/1` with `valley-calendar/1` from Valley Yusuf Usta/Meryem/Maryam under `valley-cast-3`, and this host's `warren-calendar/1`. Source roles, norms, canonical revision, engine, age, body and family must match. Only implemented prayer calendars are currently supported; work, owed duties and care outside the exact Kian/Ada contract refuse rather than disappear. Cooking, watching and surveying do not certify stone digging. Clinical incompatibility remains an HF refusal.
 
-Kian's care route is deliberately pending the source author's actual Watch choice and supported calendar. Fresh local accompanying-Ada prose is an authored possibility, not proof of a care agreement or a portable source duty. Do not report it as completed adoption. The exact coordinator proposal and remaining work live in the scratch ledger/report.
+Kian requires the released `watch-warren-ada/1` source agreement, both assents, actual completed meal receipt, healthy referenced Ada reservoirs and exact pending `return-with-ada` duty. The one target offset preserves the remaining window and source provenance. The menu can invite further actual 30-minute care, which spends 0.1 household grain and 0.1 jar water and changes only the bounded food/water/rest reservoirs. Ending optional refuge work waits for a quiet boundary and retains the exact return duty; it does not claim travel or completed return. Onward Kian transfer refuses. Ada stays a referenced dependent with Kian, without an invented guardian, autonomous foreground arc or offscreen simulation. Actual guardian shelter outcomes record protection/exposure without inferring healing or future safety. Source and target live receipts remain separate from owner acceptance.
 
 Local saves persist the latest accepted ownership envelopes after publication. Stale ownership conflicts without fetching and retrying a new head. File imports validate their semantic initial state, claims, replay and restored state, lose ownership and retain file origin after reload. All carried histories stay recording-gated until an explicit current-identity choice. Unique permission attempts and generation checks discard late replies. A genuine owned death publishes terminal closure.
 
@@ -32,7 +32,7 @@ Old framework notebooks refuse with Start fresh. Historical input logs remain us
 ## Pins
 
 - `@adam0white/human-framework`: 2.18.0; engine 2.17.0.
-- `adam0white-lab-client-0.4.0.tgz`: SHA256 `a43f9bb934f502ebf5c8d25b1a6424e28b2437c56919f545b4442d4ee8202291`.
-- `adam0white-lab-kit-0.5.0.tgz`: SHA256 `7ecd295d5c1e47eb308d5be452ecc819a0d2d15a49c7291360db10f1554ac45b`.
+- `adam0white-lab-client-0.4.1.tgz`: SHA256 `c1c9061dcafc920b8184ad81c0f1aef1920239ff7701acbeba3366715fc14b21`.
+- `adam0white-lab-kit-0.5.1.tgz`: SHA256 `23dadbc049aec835aaaf53be8486fd0a00d358a226112138ad76c74f7707b8a1`.
 
 Dynamic source, CI, deploy and browser receipts belong in the scratch report, not repeated receipt-only commits.

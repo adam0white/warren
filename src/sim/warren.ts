@@ -34,6 +34,7 @@ import {
   stepCommunity,
   type World,
 } from '@adam0white/human-framework';
+import { type AdaVisit, completeAdaCare, requestAdaEnd } from './ada-care.ts';
 import {
   DAY,
   daylight,
@@ -171,6 +172,7 @@ export interface Answer {
 export interface WarrenState {
   /** Absent in legacy saves; never added when continuing them. */
   edition?: '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0';
+  adaVisit?: AdaVisit;
   recoveries?: { who: string; injury: string; part: string; severity: number }[];
   seed: number;
   minute: number;
@@ -548,6 +550,13 @@ function riskOutside(s: WarrenState): Affordance['risk'] | undefined {
 }
 
 export function offersFor(s: WarrenState, p: Person): Affordance[] {
+  if (
+    p.id === 'kian' &&
+    !p.activity &&
+    s.adaVisit &&
+    (s.adaVisit.endRequested || s.minute >= s.adaVisit.returnBy)
+  )
+    requestAdaEnd(s);
   if (s.flags[`invitation-pending:${p.id}`] && !p.activity && !s.raids.some((r) => r.stage === 'riders'))
     visit(s, p.id);
   if (s.flags[`release-pending:${p.id}`] && !p.activity) releaseVisit(s, p.id);
@@ -611,6 +620,33 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
         plan(s, f, at, destination, task.minutes, lit),
         task.minutes,
       );
+  }
+  if (
+    p.id === 'kian' &&
+    s.adaVisit &&
+    s.adaVisit.endedAt === undefined &&
+    at < s.adaVisit.returnBy &&
+    !threat &&
+    house &&
+    house.jars >= 0.1 &&
+    (h.water[hearth] ?? 0) >= 0.1 &&
+    s.flags['ada-care-request']
+  ) {
+    offer(
+      {
+        id: 'care-ada',
+        action: 'care-ada',
+        label: 'share household grain and jar water with Ada, then rest together',
+        targetId: 'ada',
+        placeId: 'hearth',
+        duration: 0,
+        effort: 0.08,
+        advertises: { belonging: 0.5, meaning: 0.4 },
+        tags: ['bounded-role'],
+      },
+      plan(s, f, at, hearth, 30, lit),
+      30,
+    );
   }
   // Sleep: at home on the surface, or below if there are beds there.
   if (sleepy) {
@@ -1395,6 +1431,12 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
     return { ...base, status: 'interrupted' };
   if (s.edition === '0.6.0' && finishRoleWork(s, p, act.action, done, V.ration))
     return { ...base, needs: { competence: done ? 0.05 : 0, belonging: done ? 0.03 : 0 } };
+  if (act.action === 'care-ada')
+    return { ...base, status: completeAdaCare(s, p, done, hearthCell(s)) ? 'completed' : 'interrupted' };
+  if (p.id === 'kian' && s.adaVisit && done && ['shelter', 'hide', 'sleep'].includes(act.action)) {
+    const cell = s.pos[p.id] ?? 0;
+    s.adaVisit.protection = yOf(cell) >= SURF && !riderCells(s).has(cell) ? 'protected' : 'exposed';
+  }
   switch (act.action) {
     case 'dig': {
       const face = Number(act.targetId);

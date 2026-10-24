@@ -4,6 +4,7 @@
  */
 import { FRAMEWORK_VERSION, restore, snapshot } from '@adam0white/human-framework';
 import type { PersonaEnvelope } from '@adam0white/lab-client';
+import { requestAdaEnd } from './ada-care.ts';
 import type { Chapter } from './cast.ts';
 import { USE, type UseName } from './grid.ts';
 import { seedRoleGoals } from './roles.ts';
@@ -42,7 +43,8 @@ export type Input =
   | { at: number; verb: 'door'; cell: number }
   | { at: number; verb: 'bell' }
   | { at: number; verb: 'visit'; who: string }
-  | { at: number; verb: 'release'; who: string };
+  | { at: number; verb: 'release'; who: string }
+  | { at: number; verb: 'care-ada' | 'end-ada-visit' };
 
 export type Order = Input extends infer I ? (I extends Input ? Omit<I, 'at'> : never) : never;
 
@@ -81,6 +83,18 @@ export function act(g: Game, o: Order): boolean {
 
 function apply(s: WarrenState, i: Input): boolean {
   switch (i.verb) {
+    case 'end-ada-visit':
+      return requestAdaEnd(s);
+    case 'care-ada':
+      if (
+        !s.people.find((p) => p.id === 'kian')?.body.alive ||
+        !s.adaVisit ||
+        s.adaVisit.endedAt !== undefined ||
+        s.minute >= s.adaVisit.returnBy
+      )
+        return false;
+      s.flags['ada-care-request'] = s.minute + 1;
+      return true;
     case 'release':
       return releaseVisit(s, i.who);
     case 'visit':

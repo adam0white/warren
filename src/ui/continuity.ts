@@ -14,8 +14,9 @@ import {
   validatePersona,
   watchPersonaCheckpoint,
 } from '@adam0white/lab-client';
+import { adaWords } from '../sim/ada-care.ts';
 import { admit, applyLife, project } from '../sim/cast.ts';
-import { fingerprint, type Game, load, newGame, replay, type Saved, stateJson } from '../sim/game.ts';
+import { act, fingerprint, type Game, load, newGame, replay, type Saved, stateJson } from '../sim/game.ts';
 import { CAST_IDS } from '../sim/people.ts';
 import { lab } from './lab.ts';
 
@@ -58,7 +59,10 @@ export function controls() {
           `<p>${esc(canonicalCast(input.parent.castId).name)} continues from ${esc(input.parent.source.game)}, build ${esc(input.parent.source.build)}. The admitted person and between-chapter outcomes stay pinned in this hill.</p>`,
       )
       .join('') ?? '';
-  return `<details class="continuity"><summary>People between chapters</summary><label><input id="continuity" type="checkbox" ${shelf.enabled ? 'checked' : ''}> Continue people between games in this browser</label><p data-cast-status role="status">${esc(continuityStatus)}</p>${provenance}<p>Departure projects, injuries and duties can refuse a new chapter. Local play and export remain available. Kian's Ada-care transfer is not supported yet.</p><button id="local-fresh">Use fresh local play</button><label>Open current playtest file <input id="cast-file" type="file" accept="application/json"></label>${current() ? '<button id="checkpoint-cast">Save eligible people to the browser shelf</button><button id="record-history">Allow recording this continuing run</button>' : ''}<a href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">Inspect browser people</a></details>`;
+  const care = current()?.s.adaVisit
+    ? `<p>${esc(adaWords(current()!.s))}</p><button id="ada-care">Invite Kian to share grain, water and rest with Ada</button><button id="ada-end">End Kian’s optional refuge work</button>`
+    : '';
+  return `<details class="continuity"><summary>People between chapters</summary><label><input id="continuity" type="checkbox" ${shelf.enabled ? 'checked' : ''}> Continue people between games in this browser</label><p data-cast-status role="status">${esc(continuityStatus)}</p>${provenance}<p>Departure projects, injuries and duties can refuse a new chapter. Local play and export remain available. Kian requires the exact Watch assent, completed-care receipt and pending return duty. Onward Kian transfer is refused.</p>${care}<button id="local-fresh">Use fresh local play</button><label>Open current playtest file <input id="cast-file" type="file" accept="application/json"></label>${current() ? '<button id="checkpoint-cast">Save eligible people to the browser shelf</button><button id="record-history">Allow recording this continuing run</button>' : ''}<a href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">Inspect browser people</a></details>`;
 }
 export async function fresh(seed: number): Promise<Game> {
   const token = ++generation;
@@ -204,7 +208,10 @@ export async function checkpoint(): Promise<void> {
           }
           continue;
         }
-        if (p.id === 'kian') throw new Error('Ada-care outbound adapter pending.');
+        if (p.id === 'kian')
+          throw new Error(
+            'Onward Kian/Ada transfer is unsupported here. Keep the full care notebook and exact return duty.',
+          );
         const captured = await project(p);
         if (new TextEncoder().encode(JSON.stringify(captured.raw)).length > 1024 * 1024)
           throw new Error('Source archive exceeds this host’s bound. Keep the full local export.');
@@ -298,6 +305,21 @@ export function bind(host: HTMLElement, onFile: (game: Game) => void) {
     const status = host.querySelector('.continuity p');
     if (status) status.textContent = continuityStatus;
   });
+  for (const [id, verb] of [
+    ['ada-care', 'care-ada'],
+    ['ada-end', 'end-ada-visit'],
+  ] as const)
+    host.querySelector(`#${id}`)?.addEventListener('click', () => {
+      const game = current();
+      if (!game) return;
+      const ok = act(game, { verb });
+      continuityStatus = ok
+        ? `${verb === 'care-ada' ? 'Invitation queued; the actual 30-minute care action must finish with grain/water and no threat. ' : ''}${adaWords(game.s)}`
+        : 'This care/end choice is unavailable.';
+      const status = host.querySelector('[data-cast-status]');
+      if (status) status.textContent = continuityStatus;
+      void persistAccepted(game);
+    });
   host.querySelector('#checkpoint-cast')?.addEventListener('click', () => void checkpoint());
   host.querySelector('#record-history')?.addEventListener('click', () => {
     if (

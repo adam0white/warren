@@ -17,6 +17,7 @@ import {
   type PersonaEnvelope,
   preparePersonaLife,
 } from '@adam0white/lab-client';
+import { shiftWatchCare, validateWatchCare } from './ada-care.ts';
 import { SITE_CAST_NORMS } from './cast-norms.ts';
 import { idx, SURF, surfaceCell } from './grid.ts';
 import { CAST_IDS } from './people.ts';
@@ -59,6 +60,7 @@ const ACTIONS = new Set([
   'carry-spoil',
   'make-lamp',
   'carve-door',
+  'return-with-ada',
 ]);
 const SKILLS: Record<string, Record<string, string>> = {
   warren: { digging: 'digging', farming: 'farming' },
@@ -93,11 +95,19 @@ export function admit(input: LifePreparation, opening: Person): Person {
         ? 'valley-cast/1'
         : 'site-cast/1';
   if (parent.transfer.castPassport !== dialect) throw new Error('Unsupported passport dialect.');
-  if (id === 'kian')
-    throw new Error(
-      'Watch Ada-care adapter pending. Keep this source chapter; do not clear the care promise.',
-    );
   const portable = validateCalendarPersona(parent.transfer.person);
+  if (id === 'kian' && !parent.transfer.watchCare)
+    throw new Error('Missing actual Watch Ada-care agreement.');
+  const care =
+    id === 'kian'
+      ? validateWatchCare(
+          parent.transfer.watchCare,
+          portable.person.source.now,
+          portable.calendar.commitments,
+        )
+      : undefined;
+  if (care && (parent.source.game !== 'watch' || parent.source.rules !== 'cast-1'))
+    throw new Error('Unsupported Watch care source.');
   if (portable.person.source.id !== sourceRole) throw new Error('Source identity mismatch.');
   const checkpoint = parent.transfer.checkpoint as
     | { schema?: unknown; sourceMinute?: unknown; rng?: unknown; sha256?: unknown }
@@ -126,7 +136,9 @@ export function admit(input: LifePreparation, opening: Person): Person {
     portable.calendar.owed.length ||
     portable.calendar.lapse ||
     portable.calendar.commitments.some(
-      (c) => c.kind !== 'worship' || c.normId !== 'salah' || c.actions.some((a) => a !== 'pray'),
+      (c) =>
+        !(care && c.id === care.agreement.returnCommitmentId) &&
+        (c.kind !== 'worship' || c.normId !== 'salah' || c.actions.some((a) => a !== 'pray')),
     )
   )
     throw new Error('Source care/work/owed duty has no supported handover here.');
@@ -181,6 +193,17 @@ export function applyLife(s: WarrenState, input: LifePreparation) {
   const id = role(input.parent.castId),
     p = s.people.find((p) => p.id === id)!;
   const facts = lifeAdmission(input, 'warren');
+  if (id === 'kian') {
+    const portable = validateCalendarPersona(input.parent.transfer.person);
+    s.adaVisit = shiftWatchCare(
+      validateWatchCare(
+        input.parent.transfer.watchCare,
+        portable.person.source.now,
+        portable.calendar.commitments,
+      ),
+      p.now - portable.person.source.now,
+    );
+  }
   const h = s.houses.find((h) => h.members.includes(id))!;
   s.pos[id] = facts.startsAtHome ? surfaceCell(h.x) : idx(17, SURF + 3);
   s.flags[`routine:${id}`] = input.life.assignment + 1;
