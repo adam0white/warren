@@ -25,6 +25,8 @@ self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
+  // Mutable release identity and explicit fresh reads must reach the network, including on an old cache.
+  if (url.pathname === '/release.json' || req.cache === 'no-store') return;
   if (url.pathname.startsWith('/api/')) return;
   const isPage = req.mode === 'navigate';
   if (isPage) {

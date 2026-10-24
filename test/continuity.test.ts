@@ -242,6 +242,7 @@ describe('selected native Watch publication from genuine care run', () => {
     await checkpointNative('kian');
     const e = current.nativeReturnHeads!['hf.cast.kian.watch']!;
     expect(e.parentRevision).toBe(saved.ownedHeads['hf.cast.kian.watch'].revision);
+    expect(e.source.build).toMatch(/^[a-f0-9]{40}$/); // A stale SDK release lookup cannot stamp the loaded source.
     expect(e.transfer.warrenCare).toMatchObject({
       version: 'warren-watch-ada/1',
       capturedMinute: 600,

@@ -20,6 +20,7 @@ import { act, fingerprint, type Game, load, newGame, replay, type Saved, stateJs
 import { type NativeReturnId, nativeReturnCurrent, projectNativeReturn } from '../sim/native-return.ts';
 import { CAST_IDS } from '../sim/people.ts';
 import { lab } from './lab.ts';
+import { sourceBuild } from './source-build.ts';
 
 const shelf = personaChannel();
 let generation = 0;
@@ -29,7 +30,7 @@ let persistAccepted: (game: Game) => Promise<boolean> = async () => true;
 export let continuityStatus = 'Continuity is separate from recording. Loaded hills stay pinned.';
 const stamps = () => ({
   game: 'warren',
-  build: lab.build().c ?? 'local',
+  build: sourceBuild(),
   engine: ENGINE_VERSION,
   rules: 'warren-0.6.0',
 });
