@@ -31,6 +31,7 @@ import {
   type SimEvent,
   type Suggestion,
   type SuggestionResolution,
+  type snapshot,
   stepCommunity,
   type World,
 } from '@adam0white/human-framework';
@@ -173,6 +174,15 @@ export interface WarrenState {
   /** Absent in legacy saves; never added when continuing them. */
   edition?: '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0';
   adaVisit?: AdaVisit;
+  nativeDepartures?: Record<
+    string,
+    {
+      person: ReturnType<typeof snapshot>;
+      care?: AdaVisit;
+      preparedAt: number;
+      guard: ReturnType<typeof snapshot>;
+    }
+  >;
   recoveries?: { who: string; injury: string; part: string; severity: number }[];
   seed: number;
   minute: number;
@@ -1976,7 +1986,7 @@ export function syncCommunity(s: WarrenState) {
 
 // ---------- the step loop ----------
 
-export function advanceTo(s: WarrenState, to: number): SimEvent[] {
+export function advanceTo(s: WarrenState, to: number, observeIdle?: (person: Person) => void): SimEvent[] {
   const events: SimEvent[] = [];
   while (s.minute < to) {
     const next = Math.min(to, (Math.floor(s.minute / QUANTUM) + 1) * QUANTUM);
@@ -1985,7 +1995,18 @@ export function advanceTo(s: WarrenState, to: number): SimEvent[] {
     if (s.bell && s.bell.until > s.minute)
       for (const p of c.people)
         suggestions[p.id] = { voiceId: BELL, action: 'shelter', strength: V.bellStrength, since: s.bell.at };
-    const ev = stepCommunity(c, worldOf(s), next, {
+    const baseWorld = worldOf(s);
+    const world = observeIdle
+      ? {
+          ...baseWorld,
+          affordancesFor: (p: Person) => {
+            const offers = baseWorld.affordancesFor(p);
+            if (!p.activity) observeIdle(p);
+            return offers;
+          },
+        }
+      : baseWorld;
+    const ev = stepCommunity(c, world, next, {
       suggestions,
       lifecourse: { mortality: true },
       maxEvents: 2000,

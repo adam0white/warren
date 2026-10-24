@@ -17,6 +17,7 @@ import {
 import { adaWords } from '../sim/ada-care.ts';
 import { admit, applyLife, project } from '../sim/cast.ts';
 import { act, fingerprint, type Game, load, newGame, replay, type Saved, stateJson } from '../sim/game.ts';
+import { type NativeReturnId, nativeReturnCurrent, projectNativeReturn } from '../sim/native-return.ts';
 import { CAST_IDS } from '../sim/people.ts';
 import { lab } from './lab.ts';
 
@@ -68,7 +69,7 @@ export function controls() {
   const care = current()?.s.adaVisit
     ? `<p>${esc(adaWords(current()!.s))}</p><button id="ada-care">Invite Kian to share grain, water and rest with Ada</button><button id="ada-end">End Kian’s optional refuge work</button>`
     : '';
-  return `<details class="continuity"><summary>People between chapters</summary><label><input id="continuity" type="checkbox" ${shelf.enabled ? 'checked' : ''}> Continue people between games in this browser</label><p data-cast-status role="status">${esc(continuityStatus)}</p>${provenance}<p>Departure projects, injuries and duties can refuse a new chapter. Local play and export remain available. Kian requires the exact Watch assent, completed-care receipt and pending return duty. Onward Kian transfer is refused.</p>${care}<button id="local-fresh">Use fresh local play</button><label>Open current playtest file <input id="cast-file" type="file" accept="application/json"></label>${current() ? '<button id="checkpoint-cast">Save eligible people to the browser shelf</button>' : ''}<a href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">Inspect browser people</a></details>`;
+  return `<details class="continuity"><summary>People between chapters</summary><label><input id="continuity" type="checkbox" ${shelf.enabled ? 'checked' : ''}> Continue people between games in this browser</label><p data-cast-status role="status">${esc(continuityStatus)}</p>${provenance}<p>Departure projects, injuries and duties can refuse a new chapter. Local play and export remain available. Kian requires the exact Watch assent, completed-care receipt and pending return duty. Only the finite native Watch return is supported for Kian; other onward transfer refuses.</p>${care}<button id="local-fresh">Use fresh local play</button><label>Open current playtest file <input id="cast-file" type="file" accept="application/json"></label>${current() ? '<button id="checkpoint-cast">Save eligible people to the browser shelf</button><fieldset style="min-inline-size:0"><legend>Native Watch handoff</legend><label>Person <select id="native-person" style="max-width:100%"><option value="kian">Kian and Ada’s bounded care record</option><option value="meryem">Meryem</option></select></label><p>Prepare finishes only this person’s optional work and observes a quiet boundary through ordinary play, at most ten hill hours. Other people keep living. A file stays nonowned. A new history replaces only the selected active head and retains earlier history. Another game could change that head between the check and replacement. Coordinate with other open games.</p><button id="native-prepare">Prepare selected native checkpoint</button><button id="native-save">Save selected owned checkpoint</button><button id="native-fork">Start a new history for selected person…</button></fieldset>' : ''}<a href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">Inspect browser people</a></details>`;
 }
 export async function fresh(seed: number): Promise<Game> {
   const token = ++generation;
@@ -118,6 +119,11 @@ export async function localLoad(saved: Saved): Promise<Game> {
       await validatePersona(p);
       if (p.castId !== castId) throw new Error('Invalid local ownership.');
     }
+  for (const [castId, p] of Object.entries(saved.nativeReturnHeads ?? {})) {
+    await validatePersona(p);
+    if (p.castId !== castId || ![CAST_IDS.kian, CAST_IDS.meryem].includes(castId))
+      throw Error('Invalid selected native ownership.');
+  }
   const game = load(saved);
   if (token !== generation) throw new Error('Load replaced.');
   if (fingerprint(game.s) !== saved.fingerprint) throw new Error('Saved state fingerprint differs.');
@@ -178,27 +184,21 @@ export async function fileLoad(file: File): Promise<Game> {
   if (fingerprint(game.s) !== saved.fingerprint) throw new Error('File state differs from its replay.');
   if (token !== generation) throw new Error('File load replaced.');
   delete game.ownedHeads;
+  delete game.nativeReturnHeads;
   game.fileOrigin = true;
   return game;
 }
 export async function checkpoint(): Promise<void> {
   const game = current();
-  if (
-    busy ||
-    !game ||
-    !shelf.enabled ||
-    game.fileOrigin ||
-    game.s.edition !== '0.6.0' ||
-    game.s.minute <= 300
-  )
-    return;
+  if (busy || !game || !shelf.enabled || game.s.edition !== '0.6.0' || game.s.minute <= 300) return;
   busy = true;
   const token = generation;
   try {
     for (const p of game.s.people) {
       const castId = CAST_IDS[p.id];
       if (!castId) continue;
-      const parent = game.ownedHeads?.[castId];
+      const parent = game.fileOrigin ? game.nativeReturnHeads?.[castId] : game.ownedHeads?.[castId];
+      if (game.fileOrigin && !parent) continue;
       try {
         if (!p.body.alive) {
           if (parent && !parent.terminal) {
@@ -206,17 +206,21 @@ export async function checkpoint(): Promise<void> {
             if (token !== generation || current() !== game) return;
             await shelf.request({ action: 'put', envelope: terminal });
             if (token === generation && current() === game) {
-              game.ownedHeads ??= {};
-              game.ownedHeads[castId] = terminal;
+              if (!game.fileOrigin) {
+                game.ownedHeads ??= {};
+                game.ownedHeads[castId] = terminal;
+              }
+              if (game.nativeReturnHeads?.[castId]) game.nativeReturnHeads[castId] = terminal;
               if (!(await persistAccepted(game)))
                 throw new Error('Branch closed, but local ownership save failed. Export this hill now.');
             }
           }
           continue;
         }
+        if (game.fileOrigin) continue; // Only explicit selected native receipts can close; imports cannot publish life.
         if (p.id === 'kian')
           throw new Error(
-            'Onward Kian/Ada transfer is unsupported here. Keep the full care notebook and exact return duty.',
+            'Use the selected finite native Watch handoff for Kian/Ada. Other onward transfer is unsupported; keep the full care notebook and exact return duty.',
           );
         const captured = await project(p);
         if (new TextEncoder().encode(JSON.stringify(captured.raw)).length > 1024 * 1024)
@@ -262,10 +266,111 @@ export async function checkpoint(): Promise<void> {
     if (status) status.textContent = continuityStatus;
   }
 }
+/** Selected native publication only. A file never inherits its embedded ownership receipts. */
+export async function checkpointNative(who: NativeReturnId, alternative = false): Promise<void> {
+  const game = current(),
+    castId = CAST_IDS[who];
+  if (busy || !game || !castId || !['kian', 'meryem'].includes(who) || !shelf.enabled)
+    throw Error('Choose Kian or Meryem with browser continuity enabled.');
+  const parent =
+    game.nativeReturnHeads?.[castId] ?? (!game.fileOrigin ? game.ownedHeads?.[castId] : undefined);
+  if (!alternative && !parent)
+    throw Error('This person has no local ownership. Use the explicit selected new history alternative.');
+  const token = generation,
+    departure = game.s.nativeDepartures?.[who];
+  const stillCurrent = () =>
+    token === generation &&
+    current() === game &&
+    game.s.nativeDepartures?.[who] === departure &&
+    nativeReturnCurrent(game.s, who);
+  busy = true;
+  try {
+    const prior = await shelf.request<PersonaEnvelope | null>({ action: 'get', castId });
+    if (!stillCurrent()) throw Error('Run or prepared source changed.');
+    if (!alternative && prior?.revision !== parent?.revision)
+      throw Error('Current head changed. Keep this source or choose a selected new history.');
+    const captured = await projectNativeReturn(game.s, who);
+    const branchId = alternative ? crypto.randomUUID() : parent!.branchId;
+    const life =
+      !alternative && parent?.transfer.life
+        ? anchorPersonaLife(parent.transfer.life as PersonaLife, castId, Date.now())
+        : initialPersonaLife(castId, branchId, Date.now());
+    const envelope = await createPersona({
+      format: 'hf-persona/1',
+      castId,
+      castRevision: canonicalCast(castId).revision,
+      branchId,
+      parentRevision: alternative ? null : parent!.revision,
+      source: stamps(),
+      transfer: { ...captured.transfer, life },
+      limitations: captured.transfer.person.person.limitations,
+    });
+    const latest = await shelf.request<PersonaEnvelope | null>({ action: 'get', castId });
+    if (!stillCurrent()) throw Error('Run or prepared source changed.');
+    if (latest?.revision !== prior?.revision)
+      throw Error('Head changed during preparation. No retry was made.');
+    // Explicit fork API has no expected-prior-head condition. Cooperating shared-browser lease is required.
+    await shelf.request({ action: 'put', envelope, ...(alternative ? { fork: true } : {}) });
+    if (!stillCurrent())
+      throw Error('Shelf may have accepted; run changed. Inspect current head before recovery.');
+    game.nativeReturnHeads ??= {};
+    game.nativeReturnHeads[castId] = envelope;
+    if (!game.fileOrigin) {
+      game.ownedHeads ??= {};
+      game.ownedHeads[castId] = envelope;
+    }
+    game.sourceArchives ??= {};
+    game.sourceArchives[envelope.revision] = {
+      person: captured.raw,
+      ...(captured.transfer.warrenCare ? { warrenCare: captured.transfer.warrenCare } : {}),
+    };
+    if (!(await persistAccepted(game))) throw Error('Shelf accepted; local receipt save failed. Export now.');
+    continuityStatus = `Saved native ${who} at actual source minute ${captured.raw.now}${alternative ? ' as an explicit new history; earlier history retained' : ''}. No travel or return is marked complete.`;
+  } finally {
+    busy = false;
+  }
+}
 export async function chooseContinuityRecording(_allow: boolean) {
   lab.allowPersonaRecording(true);
 }
 export function bind(host: HTMLElement, onFile: (game: Game) => void) {
+  const selected = () => (host.querySelector('#native-person') as HTMLSelectElement)?.value as NativeReturnId;
+  const status = () => {
+    const el = host.querySelector('[data-cast-status]');
+    if (el) el.textContent = continuityStatus;
+  };
+  host.querySelector('#native-prepare')?.addEventListener('click', () => {
+    const game = current(),
+      who = selected();
+    if (!game || !['kian', 'meryem'].includes(who)) return;
+    continuityStatus = act(game, { verb: 'prepare-native-return', who })
+      ? game.s.nativeDepartures?.[who]
+        ? `Prepared ${who} through ordinary play. Save validates actual body, projects and duties; an unfinished or unsupported source still refuses.`
+        : 'No quiet checkpoint was captured during bounded ordinary play. Continue or keep this notebook; no activity was cleared.'
+      : 'This person cannot prepare a finite native Watch handoff now.';
+    void persistAccepted(game);
+    status();
+  });
+  for (const [id, alternative] of [
+    ['native-save', false],
+    ['native-fork', true],
+  ] as const)
+    host.querySelector(`#${id}`)?.addEventListener('click', async () => {
+      const who = selected();
+      if (
+        alternative &&
+        !window.confirm(
+          `Start a new history for ${who} only from this actual prepared source? Earlier history is retained. Another game could change that head between the check and replacement. Other people remain unchanged and file imports remain nonowned.`,
+        )
+      )
+        return;
+      try {
+        await checkpointNative(who, alternative);
+      } catch (error) {
+        continuityStatus = String(error);
+      }
+      status();
+    });
   host.querySelector('#continuity')?.addEventListener('change', (event) => {
     generation++;
     shelf.setEnabled((event.target as HTMLInputElement).checked);

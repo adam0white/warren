@@ -1,5 +1,6 @@
 /** Protocol controls use an in-memory shelf. They are not browser journey evidence. */
 
+import { readFileSync } from 'node:fs';
 import { snapshot } from '@adam0white/human-framework';
 import {
   acceptPersona,
@@ -56,7 +57,15 @@ vi.mock('@adam0white/lab-client', async (importOriginal) => {
   };
 });
 
-import { attach, bind, checkpoint, fileLoad, fresh, localLoad } from '../src/ui/continuity.ts';
+import {
+  attach,
+  bind,
+  checkpoint,
+  checkpointNative,
+  fileLoad,
+  fresh,
+  localLoad,
+} from '../src/ui/continuity.ts';
 
 const CAST_ID = 'hf.cast.meryem.warren';
 let current: ReturnType<typeof newGame> | null = null;
@@ -199,4 +208,91 @@ it('does not cancel a pending hill when recording identity acknowledges', async 
   window.dispatchEvent(storage);
   release(true);
   await expect(pending).resolves.toHaveProperty('s');
+});
+
+describe('selected native Watch publication from genuine care run', () => {
+  const retained = () =>
+    JSON.parse(readFileSync(new URL('./fixtures/genuine-care-ended.json', import.meta.url), 'utf8'));
+  function shelfOf(saved: ReturnType<typeof retained>) {
+    let state: PersonaShelfState = {
+      revisions: Object.values(saved.ownedHeads),
+      heads: Object.fromEntries(
+        Object.entries(saved.ownedHeads).map(([id, p]) => [id, (p as { revision: string }).revision]),
+      ),
+    };
+    mock.handle = async (raw) => {
+      const q = raw as PersonaRequest;
+      if (q.action === 'get')
+        return state.revisions.find((p) => p.revision === state.heads[q.castId!]) ?? null;
+      if (q.action === 'put') {
+        state = acceptPersona(state, q.envelope!, q.fork);
+        return q.envelope;
+      }
+      throw Error('Unexpected protocol call');
+    };
+    return () => state;
+  }
+  it('uses exact local parent and archives actual body/current care without publishing other people', async () => {
+    const saved = retained(),
+      get = shelfOf(saved);
+    mock.enabled = true;
+    current = await localLoad(saved);
+    act(current, { verb: 'prepare-native-return', who: 'kian' });
+    const other = get().heads[CAST_ID];
+    await checkpointNative('kian');
+    const e = current.nativeReturnHeads!['hf.cast.kian.watch']!;
+    expect(e.parentRevision).toBe(saved.ownedHeads['hf.cast.kian.watch'].revision);
+    expect(e.transfer.warrenCare).toMatchObject({
+      version: 'warren-watch-ada/1',
+      capturedMinute: 600,
+      visit: { careCount: 1, endedAt: 570 },
+    });
+    expect(current.sourceArchives![e.revision]).toHaveProperty('person');
+    expect(get().heads[CAST_ID]).toBe(other);
+    expect(mock.requests.filter((q) => (q as PersonaRequest).action === 'put')).toHaveLength(1);
+  });
+  it('keeps file nonownership; an explicit selected alternative grants only its own new branch receipt', async () => {
+    const saved = retained(),
+      get = shelfOf(saved);
+    mock.enabled = true;
+    current = await fileLoad(file(saved));
+    act(current, { verb: 'prepare-native-return', who: 'kian' });
+    await expect(checkpointNative('kian')).rejects.toThrow(/no local ownership/);
+    const other = get().heads[CAST_ID];
+    await checkpointNative('kian', true);
+    expect(current.fileOrigin).toBe(true);
+    expect(current.ownedHeads).toBeUndefined();
+    const e = current.nativeReturnHeads!['hf.cast.kian.watch']!;
+    expect(e.parentRevision).toBeNull();
+    expect(e.branchId).not.toBe(saved.ownedHeads['hf.cast.kian.watch'].branchId);
+    expect(get().heads[CAST_ID]).toBe(other);
+    expect(Object.keys(current.nativeReturnHeads!)).toEqual(['hf.cast.kian.watch']);
+    const loaded = await localLoad(save(current));
+    expect(loaded.nativeReturnHeads).toEqual(current.nativeReturnHeads);
+    const imported = await fileLoad(file(save(current)));
+    expect(imported.nativeReturnHeads).toBeUndefined();
+    expect(imported.ownedHeads).toBeUndefined();
+    current.s.people.find((p) => p.id === 'kian')!.body.alive = false; // Explicit synthetic terminal control.
+    await checkpoint();
+    const terminal = current.nativeReturnHeads!['hf.cast.kian.watch']!;
+    expect(terminal.terminal?.kind).toBe('dead');
+    expect(terminal.parentRevision).toBe(e.revision);
+    expect(current.ownedHeads).toBeUndefined();
+    expect(get().heads[CAST_ID]).toBe(other);
+  });
+  it('refuses a competing head and a changed run before publication', async () => {
+    const saved = retained();
+    shelfOf(saved);
+    mock.enabled = true;
+    current = await localLoad(saved);
+    act(current, { verb: 'prepare-native-return', who: 'kian' });
+    mock.handle = async () => null;
+    await expect(checkpointNative('kian')).rejects.toThrow(/head changed/);
+    expect(mock.requests.some((q) => (q as PersonaRequest).action === 'put')).toBe(false);
+    mock.handle = async () => {
+      current = null;
+      return null;
+    };
+    await expect(checkpointNative('kian', true)).rejects.toThrow(/Run or prepared/);
+  });
 });

@@ -7,6 +7,7 @@ import type { PersonaEnvelope } from '@adam0white/lab-client';
 import { requestAdaEnd } from './ada-care.ts';
 import type { Chapter } from './cast.ts';
 import { USE, type UseName } from './grid.ts';
+import { prepareNativeReturn } from './native-return.ts';
 import { seedRoleGoals } from './roles.ts';
 import { releaseVisit, visit } from './visits.ts';
 import {
@@ -44,7 +45,8 @@ export type Input =
   | { at: number; verb: 'bell' }
   | { at: number; verb: 'visit'; who: string }
   | { at: number; verb: 'release'; who: string }
-  | { at: number; verb: 'care-ada' | 'end-ada-visit' };
+  | { at: number; verb: 'care-ada' | 'end-ada-visit' }
+  | { at: number; verb: 'prepare-native-return'; who: 'kian' | 'meryem' };
 
 export type Order = Input extends infer I ? (I extends Input ? Omit<I, 'at'> : never) : never;
 
@@ -53,6 +55,7 @@ export interface Game {
   inputs: Input[];
   chapter?: Chapter;
   ownedHeads?: Record<string, PersonaEnvelope>;
+  nativeReturnHeads?: Record<string, PersonaEnvelope>;
   sourceArchives?: Record<string, unknown>;
   fileOrigin?: boolean;
 }
@@ -83,6 +86,8 @@ export function act(g: Game, o: Order): boolean {
 
 function apply(s: WarrenState, i: Input): boolean {
   switch (i.verb) {
+    case 'prepare-native-return':
+      return prepareNativeReturn(s, i.who);
     case 'end-ada-visit':
       return requestAdaEnd(s);
     case 'care-ada':
@@ -132,6 +137,7 @@ export interface Saved {
   fingerprint: string;
   chapter?: Chapter;
   ownedHeads?: Record<string, PersonaEnvelope>;
+  nativeReturnHeads?: Record<string, PersonaEnvelope>;
   sourceArchives?: Record<string, unknown>;
   fileOrigin?: boolean;
 }
@@ -190,6 +196,7 @@ export function save(g: Game): Saved {
     fingerprint: fingerprint(g.s),
     ...(g.chapter ? { chapter: structuredClone(g.chapter) } : {}),
     ...(g.ownedHeads ? { ownedHeads: structuredClone(g.ownedHeads) } : {}),
+    ...(g.nativeReturnHeads ? { nativeReturnHeads: structuredClone(g.nativeReturnHeads) } : {}),
     ...(g.sourceArchives ? { sourceArchives: structuredClone(g.sourceArchives) } : {}),
     ...(g.fileOrigin ? { fileOrigin: true } : {}),
   };
@@ -204,6 +211,7 @@ export function load(saved: Saved): Game {
     inputs: structuredClone(saved.inputs),
     ...(saved.chapter ? { chapter: structuredClone(saved.chapter) } : {}),
     ...(saved.ownedHeads ? { ownedHeads: structuredClone(saved.ownedHeads) } : {}),
+    ...(saved.nativeReturnHeads ? { nativeReturnHeads: structuredClone(saved.nativeReturnHeads) } : {}),
     ...(saved.sourceArchives ? { sourceArchives: structuredClone(saved.sourceArchives) } : {}),
     ...(saved.fileOrigin ? { fileOrigin: true } : {}),
   };

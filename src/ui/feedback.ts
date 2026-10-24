@@ -30,6 +30,7 @@ function feedbackRun(getRun: () => unknown, linked: boolean): unknown {
     if (linked || !run || typeof run !== 'object') return run;
     const unlinked = { ...run } as Record<string, unknown>;
     delete unlinked.ownedHeads;
+    delete unlinked.nativeReturnHeads;
     delete unlinked.sourceArchives;
     return unlinked;
   } catch {
