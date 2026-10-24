@@ -82,8 +82,7 @@ export function openFeedback(
   let pending = false;
   let sent = false;
   let active = true;
-  const recordingOff = lab.telemetryOn === false;
-  const privacyConsentRequired = lab.privacySignalOn && !lab.privacyOverride;
+
   const verdicts = element('div', '', 'feedback-verdicts');
   verdicts.setAttribute('role', 'group');
   verdicts.setAttribute('aria-label', 'How was this run? Optional');
@@ -131,21 +130,14 @@ export function openFeedback(
   if (name.value) nameDetails.open = true;
 
   const recording = element('div', '', 'feedback-recording');
-  const recordingMessage = element(
-    'p',
-    'Recording is off. Your note and verdict can still be sent without a run or history linkage.',
-  );
-  recording.append(recordingMessage);
-  recording.hidden = !recordingOff;
+  recording.hidden = true;
 
   const disclosure = element('details', '', 'feedback-disclosure');
   disclosure.append(element('summary', 'What is sent'));
   disclosure.append(
     element(
       'p',
-      privacyConsentRequired
-        ? 'Your verdict, note and optional name are sent without a run or linked player id.'
-        : 'Your verdict, note and optional name are sent. Recording on may include an available run and continuing character state. Recorded play is linked across games on this device.',
+      'Recording on or Share includes an available run and links play across games on this device. Otherwise only your verdict, note and optional name are sent.',
     ),
   );
   const versions = element('p');
@@ -177,7 +169,7 @@ export function openFeedback(
   const back = element('button', 'Back to the game', 'feedback-secondary');
   back.type = 'button';
   back.addEventListener('click', onBack);
-  const send = element('button', 'Send', 'feedback-primary');
+  const send = element('button', 'Submit', 'feedback-primary');
   send.type = 'button';
   actions.append(copy, back, send);
   screen.append(body, actions);
@@ -243,7 +235,7 @@ export function openFeedback(
 
   function updateSend(): void {
     send.disabled = !sent && pending;
-    send.textContent = sent ? 'Back to the game' : pending ? 'Sending…' : 'Send';
+    send.textContent = sent ? 'Back to the game' : pending ? 'Sending…' : 'Submit';
   }
 
   function markSent(submittedName: string, noteOnly: boolean): void {

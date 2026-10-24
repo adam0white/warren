@@ -13,6 +13,7 @@ import { act, newGame, save } from '../src/sim/game.ts';
 
 const mock = vi.hoisted(() => ({
   enabled: false,
+  ready: Promise.resolve(true),
   gate: null as string | null,
   allowed: false,
   requests: [] as unknown[],
@@ -39,7 +40,9 @@ vi.mock('@adam0white/lab-client', async (importOriginal) => {
       get enabled() {
         return mock.enabled;
       },
-      ready: Promise.resolve(true),
+      get ready() {
+        return mock.ready;
+      },
       setEnabled: (v: boolean) => {
         mock.enabled = v;
       },
@@ -59,6 +62,7 @@ const CAST_ID = 'hf.cast.meryem.warren';
 let current: ReturnType<typeof newGame> | null = null;
 beforeEach(() => {
   mock.enabled = false;
+  mock.ready = Promise.resolve(true);
   mock.allowed = false;
   mock.gate = null;
   mock.requests = [];
@@ -167,4 +171,32 @@ describe('continuity privacy and source receipts', () => {
     expect(terminal.terminal?.kind).toBe('dead');
     expect(() => preparePersonaLife(terminal, Date.now())).toThrow(/closed/);
   });
+});
+
+it('does not cancel a pending hill when recording identity acknowledges', async () => {
+  vi.stubGlobal('window', new EventTarget());
+  attach(() => current);
+  mock.enabled = true;
+  const { castForGame } = await import('@adam0white/lab-client');
+  mock.handle = async (raw) => {
+    const request = raw as PersonaRequest;
+    return request.action === 'prepareBatch'
+      ? {
+          expectedHeads: Object.fromEntries(castForGame('warren').map((c) => [c.castId, null])),
+          inputs: [],
+          blocked: [],
+        }
+      : {};
+  };
+  let release!: (value: boolean) => void;
+  mock.ready = new Promise<boolean>((resolve) => {
+    release = resolve;
+  });
+  const pending = fresh(42);
+  window.dispatchEvent(new Event('hf-lab-preference'));
+  const storage = new Event('storage');
+  Object.defineProperty(storage, 'key', { value: 'hf-lab-player' });
+  window.dispatchEvent(storage);
+  release(true);
+  await expect(pending).resolves.toHaveProperty('s');
 });

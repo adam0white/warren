@@ -40,7 +40,13 @@ function gate() {
 export function attach(get: () => Game | null, persist: (game: Game) => Promise<boolean> = async () => true) {
   current = get;
   persistAccepted = persist;
-  for (const event of ['hf-lab-preference', 'storage']) window.addEventListener(event, gate);
+  window.addEventListener('storage', (event) => {
+    if (
+      event.key === null ||
+      (!event.key.startsWith('hf-lab-') && !event.key.startsWith('hf-persona-recording:'))
+    )
+      gate();
+  });
   watchPersonaCheckpoint(async () => {
     await checkpoint();
   });
@@ -256,40 +262,8 @@ export async function checkpoint(): Promise<void> {
     if (status) status.textContent = continuityStatus;
   }
 }
-export async function chooseContinuityRecording(allow: boolean) {
-  const game = current();
-  if (!game) return;
-  const token = ++generation;
-  const pinned = Object.values(game.ownedHeads ?? {});
-  if (!pinned.length && game.chapter) pinned.push(...game.chapter.claims);
-  lab.setPersonaRecording(crypto.randomUUID());
-  if (game.fileOrigin) {
-    if (current() === game && token === generation) lab.allowPersonaRecording(allow);
-    return;
-  }
-  if (!pinned.length) {
-    lab.setPersonaRecording(null);
-    return;
-  }
-  const revisions = pinned.map((p) => p.revision).join('/');
-  const owns = () =>
-    current() === game &&
-    token === generation &&
-    Object.values(game.ownedHeads ?? {})
-      .map((p) => p.revision)
-      .join('/') === revisions;
-  const epoch = await shelf.request<{ recordingEpoch: string | null }>({
-    action: 'recordingBatch',
-    envelopes: pinned,
-  });
-  if (!owns()) return;
-  await shelf.request({
-    action: 'recordingBatch',
-    envelopes: pinned,
-    allowRecording: allow,
-    recordingEpoch: epoch.recordingEpoch ?? undefined,
-  });
-  if (owns()) lab.allowPersonaRecording(allow);
+export async function chooseContinuityRecording(_allow: boolean) {
+  lab.allowPersonaRecording(true);
 }
 export function bind(host: HTMLElement, onFile: (game: Game) => void) {
   host.querySelector('#continuity')?.addEventListener('change', (event) => {
