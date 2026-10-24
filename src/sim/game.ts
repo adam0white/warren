@@ -6,6 +6,7 @@ import { FRAMEWORK_VERSION, restore, snapshot } from '@adam0white/human-framewor
 import type { PersonaEnvelope } from '@adam0white/lab-client';
 import type { Chapter } from './cast.ts';
 import { USE, type UseName } from './grid.ts';
+import { seedRoleGoals } from './roles.ts';
 import { releaseVisit, visit } from './visits.ts';
 import {
   advanceTo,
@@ -22,13 +23,14 @@ import {
   type WarrenState,
 } from './warren.ts';
 
-export const GAME_VERSION = '0.5.0';
+export const GAME_VERSION = '0.6.0';
 export const DEFAULT_EDITION = GAME_VERSION;
-export type Edition = '0.2.0' | '0.3.0' | '0.4.0' | '0.5.0';
+export type Edition = '0.2.0' | '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0';
 
 export function editionOf(version: string): Edition {
   if (/^0\.2\.\d+$/.test(version)) return '0.2.0';
-  if (version === '0.3.0' || version === '0.4.0' || version === '0.5.0') return version;
+  if (version === '0.3.0' || version === '0.4.0' || version === '0.5.0' || version === '0.6.0')
+    return version;
   throw new Error(`Unsupported Warren edition: ${version}`);
 }
 
@@ -56,10 +58,16 @@ export interface Game {
 export function newGame(seed: number, edition: string = DEFAULT_EDITION, chapter?: Chapter): Game {
   resetCaches();
   const rules = editionOf(edition);
-  const s = chapter ? restoreState(chapter.initial) : newWarren(seed, rules === '0.5.0');
-  if (chapter && (chapter.version !== 'warren-cast/1' || s.seed !== seed || rules !== '0.5.0'))
+  const s = chapter ? restoreState(chapter.initial) : newWarren(seed, rules === '0.5.0' || rules === '0.6.0');
+  if (
+    chapter &&
+    (chapter.version !== (rules === '0.6.0' ? 'warren-cast/2' : 'warren-cast/1') ||
+      s.seed !== seed ||
+      (rules !== '0.5.0' && rules !== '0.6.0'))
+  )
     throw new Error('Unsupported pinned chapter.');
   if (rules !== '0.2.0') s.edition = rules;
+  if (!chapter && rules === '0.6.0') seedRoleGoals(s);
   return { s, inputs: [], ...(chapter ? { chapter: structuredClone(chapter) } : {}) };
 }
 

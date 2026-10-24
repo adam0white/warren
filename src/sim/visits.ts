@@ -24,7 +24,13 @@ const CLUES: Record<string, string> = {
 };
 export function visit(s: WarrenState, id: string): boolean {
   const p = s.people.find((p) => p.id === id);
-  if (s.edition !== '0.5.0' || !CAST_IDS[id] || !p?.body.alive || s.flags[`visit:${id}`]) return false;
+  if (
+    (s.edition !== '0.5.0' && s.edition !== '0.6.0') ||
+    !CAST_IDS[id] ||
+    !p?.body.alive ||
+    s.flags[`visit:${id}`]
+  )
+    return false;
   if (p.activity || s.raids.some((r) => r.stage === 'riders')) {
     s.flags[`invitation-pending:${id}`] = s.minute + 1;
     s.notes.push({
@@ -46,7 +52,7 @@ export function visit(s: WarrenState, id: string): boolean {
 export function releaseVisit(s: WarrenState, id: string): boolean {
   const p = s.people.find((p) => p.id === id);
   if (
-    s.edition !== '0.5.0' ||
+    (s.edition !== '0.5.0' && s.edition !== '0.6.0') ||
     !CAST_IDS[id] ||
     !p?.body.alive ||
     p.projects?.currentGoalId ||
@@ -56,7 +62,8 @@ export function releaseVisit(s: WarrenState, id: string): boolean {
   if (id === 'kian') return false; // Source care adapter is still required.
   if (
     p.agenda.goals.some(
-      (g) => g.status === 'active' && !['refuge', 'between-games-assignment'].includes(g.id),
+      (g) =>
+        g.status === 'active' && !['refuge', 'between-games-assignment', 'canonical-role'].includes(g.id),
     )
   )
     return false;
@@ -66,7 +73,10 @@ export function releaseVisit(s: WarrenState, id: string): boolean {
   }
   delete s.flags[`release-pending:${id}`];
   for (const goal of p.agenda.goals)
-    if (goal.status === 'active' && ['refuge', 'between-games-assignment'].includes(goal.id))
+    if (
+      goal.status === 'active' &&
+      ['refuge', 'between-games-assignment', 'canonical-role'].includes(goal.id)
+    )
       goal.status = 'abandoned';
   s.flags[`released:${id}`] = s.minute + 1;
   s.notes.push({

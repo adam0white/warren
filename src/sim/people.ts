@@ -33,6 +33,8 @@ export interface House {
   came: number;
   /** Grain in the house jars on the surface, kile. */
   jars: number;
+  /** Cooked grain reserved to this household, in the same units as jars. */
+  prepared?: number;
 }
 
 export interface Who {

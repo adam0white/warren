@@ -20,6 +20,7 @@ import {
 import { SITE_CAST_NORMS } from './cast-norms.ts';
 import { idx, SURF, surfaceCell } from './grid.ts';
 import { CAST_IDS } from './people.ts';
+import { roleTask } from './roles.ts';
 import type { WarrenState } from './warren.ts';
 
 const TRUSTED_NORMS = [
@@ -37,7 +38,7 @@ const TRUSTED_NORMS = [
   },
 ];
 export interface Chapter {
-  version: 'warren-cast/1';
+  version: 'warren-cast/1' | 'warren-cast/2';
   inputs: LifePreparation[];
   claims: PersonaEnvelope[];
   initial: WarrenState;
@@ -182,11 +183,15 @@ export function applyLife(s: WarrenState, input: LifePreparation) {
   const facts = lifeAdmission(input, 'warren');
   const h = s.houses.find((h) => h.members.includes(id))!;
   s.pos[id] = facts.startsAtHome ? surfaceCell(h.x) : idx(17, SURF + 3);
+  s.flags[`routine:${id}`] = input.life.assignment + 1;
+  p.agenda.goals = p.agenda.goals.filter((goal) => goal.id !== 'canonical-role');
+  const task = roleTask(id, input.life.assignment);
+  if (!task) throw new Error('Unsupported local assignment.');
   p.agenda.goals.push({
     id: 'between-games-assignment',
     label: facts.assignment,
     serves: ['competence'],
-    advancedBy: [{ action: input.life.assignment === 0 ? 'rest' : 'dig', amount: 0.02 }],
+    advancedBy: [{ action: task.action, amount: 0.1 }],
     importance: facts.availableForExtraWork ? 0.35 : 0.15,
     progress: 0,
     status: 'active',

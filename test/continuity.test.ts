@@ -141,6 +141,7 @@ describe('continuity privacy and source receipts', () => {
     current = newGame(7);
     current.s.minute = 305; // explicit protocol fixture
     expect(act(current, { verb: 'release', who: 'meryem' })).toBe(true);
+    expect(act(current, { verb: 'release', who: 'yusuf' })).toBe(true);
     mock.enabled = true;
     await checkpoint();
     const first = current.ownedHeads![CAST_ID]!;

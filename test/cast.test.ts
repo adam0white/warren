@@ -35,12 +35,12 @@ describe('bounded Warren calendar mapping', () => {
     expect(target.s.people[i]!.rng).toEqual(p.rng);
     expect(target.s.people[i]!.agenda.goals.some((g) => g.id === 'between-games-assignment')).toBe(true);
     const chapter = {
-      version: 'warren-cast/1' as const,
+      version: 'warren-cast/2' as const,
       inputs: [input],
       claims: [],
       initial: stateJson(target.s),
     };
-    const run = newGame(8, '0.5.0', chapter),
+    const run = newGame(8, '0.6.0', chapter),
       saved = save(run);
     expect(fingerprint(load(saved).s)).toBe(saved.fingerprint);
     expect(fingerprint(replay(8, saved.inputs, saved.minute, saved.game, saved.chapter).s)).toBe(

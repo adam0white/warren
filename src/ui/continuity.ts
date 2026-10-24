@@ -29,7 +29,7 @@ const stamps = () => ({
   game: 'warren',
   build: lab.build().c ?? 'local',
   engine: ENGINE_VERSION,
-  rules: 'warren-0.5.0',
+  rules: 'warren-0.6.0',
 });
 function gate() {
   generation++;
@@ -90,12 +90,12 @@ export async function fresh(seed: number): Promise<Game> {
     return base;
   }
   const chapter = {
-    version: 'warren-cast/1' as const,
+    version: 'warren-cast/2' as const,
     inputs: batch.inputs,
     claims: batch.claims,
     initial: batch.initial,
   };
-  const game = newGame(seed, '0.5.0', chapter);
+  const game = newGame(seed, '0.6.0', chapter);
   game.ownedHeads = Object.fromEntries(batch.claims.map((p) => [p.castId, p]));
   continuityStatus = `Pinned ${batch.inputs.length} continuing people; all six roles preflighted atomically. Recording remains local until explicitly allowed.`;
   return game;
@@ -121,7 +121,7 @@ export async function fileLoad(file: File): Promise<Game> {
   lab.setPersonaRecording(crypto.randomUUID());
   if (file.size > 16 * 1024 * 1024) throw new Error('File exceeds local import limit.');
   const saved = JSON.parse(await file.text()) as Saved;
-  if (saved.game !== '0.5.0') throw new Error('Older file. Start fresh.');
+  if (saved.game !== '0.6.0') throw new Error('Older file. Start fresh.');
   if (saved.chapter) {
     const chapter = saved.chapter;
     if (
@@ -138,7 +138,7 @@ export async function fileLoad(file: File): Promise<Game> {
       await validatePersona(claim);
       if (
         claim.source.game !== 'warren' ||
-        claim.source.rules !== 'warren-0.5.0' ||
+        claim.source.rules !== 'warren-0.6.0' ||
         claim.source.engine !== ENGINE_VERSION
       )
         throw new Error('Unsupported pinned claim host.');
@@ -178,7 +178,7 @@ export async function checkpoint(): Promise<void> {
     !game ||
     !shelf.enabled ||
     game.fileOrigin ||
-    game.s.edition !== '0.5.0' ||
+    game.s.edition !== '0.6.0' ||
     game.s.minute <= 300
   )
     return;

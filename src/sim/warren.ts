@@ -79,6 +79,7 @@ import {
 } from './grid.ts';
 import { arrivingFamily, BELL, founders, type House, USTA_ID } from './people.ts';
 import { DRAW, hashUnit, strHash } from './rng.ts';
+import { assignmentFor, finishRoleWork, ROLE_TASKS, roleTask, supervised } from './roles.ts';
 import { releaseVisit, visit } from './visits.ts';
 
 export const QUANTUM = 30;
@@ -169,7 +170,7 @@ export interface Answer {
 
 export interface WarrenState {
   /** Absent in legacy saves; never added when continuing them. */
-  edition?: '0.3.0' | '0.4.0' | '0.5.0';
+  edition?: '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0';
   recoveries?: { who: string; injury: string; part: string; severity: number }[];
   seed: number;
   minute: number;
@@ -571,16 +572,46 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
   const { rise, set } = daylight(doy);
   const light = mod >= rise && mod < set - 20;
   const threat = underThreat(s);
-  const preferProtectedBed = (s.edition === '0.4.0' || s.edition === '0.5.0') && !!activeRaid(s);
+  const preferProtectedBed =
+    (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') && !!activeRaid(s);
   const outside = riskOutside(s);
   const house = houseOf(s, p.id);
   const sleepy = !light || p.body.sleepPressure > 0.7 || p.body.sleepDebt > 0.5 || p.body.health < 0.5;
   const winter = season === 'winter';
   const hearth = hearthCell(s);
   const below = yOf(from) >= SURF;
-  const isAdult = adult(p);
+  const isAdult = s.edition === '0.6.0' ? ageYears(p) >= 18 : adult(p);
   const old = elder(p);
 
+  if (
+    s.edition === '0.6.0' &&
+    !s.flags[`released:${p.id}`] &&
+    s.flags[`role-note:${p.id}`] !== Math.floor(s.minute / DAY) + 1 &&
+    light &&
+    !threat
+  ) {
+    const task = roleTask(p.id, assignmentFor(s, p.id));
+    const destination = ['maryam', 'tamar', 'kian'].includes(p.id) && house ? homeCell(house) : hearth;
+    const enough =
+      task?.action !== 'cook' ||
+      (house && house.jars > V.ration && (house.prepared ?? 0) < V.ration * house.members.length * 2);
+    if (task && enough && supervised(s, p.id, destination, (id) => positionAt(s, id, s.minute)))
+      offer(
+        {
+          id: `role-${task.action}`,
+          action: task.action,
+          label: task.label,
+          placeId: house && destination === homeCell(house) ? `house:${house.id}` : 'hearth',
+          duration: 0,
+          effort: 0.12,
+          advertises: { competence: 0.12, belonging: 0.08 },
+          advances: ['canonical-role', 'between-games-assignment'],
+          tags: ['work', 'bounded-role'],
+        },
+        plan(s, f, at, destination, task.minutes, lit),
+        task.minutes,
+      );
+  }
   // Sleep: at home on the surface, or below if there are beds there.
   if (sleepy) {
     const untilDawn = light ? 120 : Math.max(60, Math.min(540, ((rise + DAY - mod) % DAY) + 15));
@@ -604,7 +635,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
       );
     }
     const beds = cellsWithUse(h, USE.beds).filter((c) =>
-      s.edition === '0.4.0' || s.edition === '0.5.0'
+      s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0'
         ? bedAvailable(s, c, p.id)
         : sleepersAt(s, c) < BEDS_PER_CELL,
     );
@@ -754,8 +785,10 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
     (mod >= 12 * HOUR && mod < 14 * HOUR) ||
     (mod >= set - 30 && mod < set + 150);
   if (meal || p.body.satiety < 0.35) {
-    const lean = s.people.length * V.ration * 20 > grainBelow(h) + s.houses.reduce((a, x) => a + x.jars, 0);
-    if (house && house.jars > 0.05 && !(threat === 'riders' && below)) {
+    const lean =
+      s.people.length * V.ration * 20 >
+      grainBelow(h) + s.houses.reduce((a, x) => a + x.jars + (x.prepared ?? 0), 0);
+    if (house && house.jars + (house.prepared ?? 0) > 0.05 && !(threat === 'riders' && below)) {
       offer(
         {
           id: 'eat-home',
@@ -969,7 +1002,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
     );
   }
   // Gleaning and the goats: a thin living from the hills when the jars run low. It keeps people alive, not fed.
-  const jarsNow = grainBelow(h) + s.houses.reduce((a, x) => a + x.jars, 0);
+  const jarsNow = grainBelow(h) + s.houses.reduce((a, x) => a + x.jars + (x.prepared ?? 0), 0);
   if (light && working && !threat && house && jarsNow < s.people.length * V.ration * 12) {
     offer(
       {
@@ -1208,7 +1241,8 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
       const dest = nearestStoreWithSpace(s, sf);
       if (dest >= 0) {
         const lean =
-          s.people.length * V.ration * 30 > grainBelow(h) + s.houses.reduce((a, x) => a + x.jars, 0);
+          s.people.length * V.ration * 30 >
+          grainBelow(h) + s.houses.reduce((a, x) => a + x.jars + (x.prepared ?? 0), 0);
         const going = people(s, (_t, q) => q.activity?.action === 'take').slice(0, 2);
         offer(
           {
@@ -1232,11 +1266,18 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
       }
     }
   }
+  const scoped =
+    s.edition === '0.6.0' && ['tariq', 'kian'].includes(p.id)
+      ? out.filter(
+          (a) =>
+            a.tags?.includes('bounded-role') || (!a.tags?.includes('work') && !a.tags?.includes('risky')),
+        )
+      : out;
   return s.flags[`released:${p.id}`]
-    ? out.filter((a) =>
+    ? scoped.filter((a) =>
         ['eat', 'drink', 'sleep', 'rest', 'pray', 'shelter', 'hide', 'shut-door'].includes(a.action),
       )
-    : out;
+    : scoped;
 }
 
 function seedAvailable(s: WarrenState): number {
@@ -1251,7 +1292,7 @@ function deepestSafe(s: WarrenState, f: Field, who: string): number {
   let score = -1;
   for (let i = 0; i < h.kind.length; i++) {
     if (h.kind[i] !== K.open || !Number.isFinite(f.dist[i] ?? Number.POSITIVE_INFINITY)) continue;
-    if (s.edition === '0.4.0' || s.edition === '0.5.0') {
+    if (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') {
       if (h.use[i] === USE.beds && !bedAvailable(s, i, who)) continue;
       const { air } = airAndLight(s);
       if (route(f, i).some((c) => yOf(c) >= SURF && (air[c] ?? 32000) > AIR_REACH)) continue;
@@ -1344,6 +1385,16 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
   // Where they are now.
   s.pos[p.id] = done ? (t?.end ?? s.pos[p.id] ?? 0) : positionAt(s, p.id, now);
   const house = houseOf(s, p.id);
+  if (
+    s.edition === '0.6.0' &&
+    ROLE_TASKS[p.id]?.some((task) => task.action === act.action) &&
+    !supervised(s, p.id, s.pos[p.id] ?? 0, (id) => positionAt(s, id, p.now))
+  )
+    return { ...base, status: 'interrupted' };
+  if (s.edition === '0.6.0' && done && act.action === 'cook' && (!house || house.jars <= 0))
+    return { ...base, status: 'interrupted' };
+  if (s.edition === '0.6.0' && finishRoleWork(s, p, act.action, done, V.ration))
+    return { ...base, needs: { competence: done ? 0.05 : 0, belonging: done ? 0.03 : 0 } };
   switch (act.action) {
     case 'dig': {
       const face = Number(act.targetId);
@@ -1414,8 +1465,11 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
       let got = 0;
       const want = V.ration / 3;
       if (act.affordanceId === 'eat-home' && house) {
-        got = Math.min(want, house.jars);
-        house.jars -= got;
+        const prepared = Math.min(want, house.prepared ?? 0);
+        if (house.prepared !== undefined) house.prepared -= prepared;
+        const raw = Math.min(want - prepared, house.jars);
+        house.jars -= raw;
+        got = prepared + raw;
       } else got = takeGrain(s, hearthCell(s), want);
       const share = got / want;
       return { ...base, needs: { food: 0.6 * share * (done ? 1 : 0.5), water: 0.35 * (done ? 1 : 0.5) } };
@@ -1969,8 +2023,9 @@ function raidStep(s: WarrenState) {
         let took = s.fields.floor;
         s.fields.floor = 0;
         for (const h of s.houses) {
-          took += h.jars;
+          took += h.jars + (h.prepared ?? 0);
           h.jars = 0;
+          if (h.prepared !== undefined) h.prepared = 0;
         }
         const trampled = s.fields.standing * 0.35 * r.force;
         s.fields.standing -= trampled;
@@ -2053,7 +2108,7 @@ function raidStep(s: WarrenState) {
         r.stage = 'gone';
         const lost = r.took;
         const held = r.hurt.length === 0 && lost < s.people.length * V.ration * 30;
-        if (!((s.edition === '0.4.0' || s.edition === '0.5.0') && scare)) {
+        if (!((s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') && scare)) {
           if (held) {
             s.heldAt = s.minute;
             s.word = Math.min(1, s.word + 0.25);
@@ -2323,7 +2378,10 @@ function wordStep(s: WarrenState, day: number) {
   const h = s.hill;
   const alive = s.people.filter((p) => p.body.alive);
   const food =
-    grainBelow(h) + s.fields.floor + s.houses.reduce((a, x) => a + x.jars, 0) + s.fields.standing * 0.8;
+    grainBelow(h) +
+    s.fields.floor +
+    s.houses.reduce((a, x) => a + x.jars + (x.prepared ?? 0), 0) +
+    s.fields.standing * 0.8;
   const days = food / Math.max(1, alive.length * V.ration);
   const rooms = cellsWithUse(h, USE.beds).length + cellsWithUse(h, USE.store).length;
   const target =
@@ -2589,7 +2647,10 @@ export function ringBell(s: WarrenState): boolean {
   const r = activeRaid(s);
   s.bell = {
     at: s.minute,
-    until: (s.edition === '0.4.0' || s.edition === '0.5.0') && r ? r.leave : s.minute + V.bellHours * HOUR,
+    until:
+      (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') && r
+        ? r.leave
+        : s.minute + V.bellHours * HOUR,
     real: !!r,
   };
   note(s, {

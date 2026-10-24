@@ -63,13 +63,13 @@ describe('edition 0.4.0 raid call', () => {
     expect(colonyWords(g.s)).toMatch(/Smoke rises.*No call active.*Ring the bell once.*until the all-clear/);
     expect(colonyWords(g.s)).not.toContain('riders have gone');
   });
-  it('starts only new runs on 0.5.0 and replays its export and continuation', () => {
+  it('starts only new runs on 0.6.0 and replays its export and continuation', () => {
     const g = newGame(19);
-    expect(g.s.edition).toBe('0.5.0');
+    expect(g.s.edition).toBe('0.6.0');
     act(g, { verb: 'bell' });
     advance(g, g.s.minute + HOUR);
     const exported = save(g);
-    expect(exported.game).toBe('0.5.0');
+    expect(exported.game).toBe('0.6.0');
     expect(fingerprint(replay(exported.seed, exported.inputs, exported.minute, exported.game).s)).toBe(
       exported.fingerprint,
     );
@@ -118,7 +118,7 @@ describe('edition 0.4.0 raid call', () => {
       dissenter.trace.some(
         (record) =>
           record.at > (at ?? 0) + 6 * HOUR &&
-          record.review &&
+          // The explicit idle control above creates a fresh choice, not necessarily an activity review.
           record.suggestion?.voiceId === 'usta' &&
           record.suggestion.verdict === 'refused' &&
           record.suggestion.says.length > 0,

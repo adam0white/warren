@@ -18,7 +18,7 @@ export function colonyWords(s: WarrenState): string {
   const raid = activeRaid(s);
   const ringing = s.bell && s.bell.until > s.minute;
   const renew =
-    hadBellCall(s) || s.edition === '0.4.0' || s.edition === '0.5.0'
+    hadBellCall(s) || s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0'
       ? bellStateWords(s)
       : 'Ring the bell to call the village below. Each call lasts six game hours.';
   if (raid?.stage === 'riders')

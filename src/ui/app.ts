@@ -172,8 +172,7 @@ export async function start() {
 function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
   lab.screen('title');
   feedbackCleanup?.();
-  const compatible =
-    sv && sv.framework === FRAMEWORK_VERSION && sv.game.split('.')[0] === GAME_VERSION.split('.')[0];
+  const compatible = sv && sv.framework === FRAMEWORK_VERSION && sv.game === GAME_VERSION;
   cancelAnimationFrame(raf);
   canvas = null;
   stage?.destroy();
@@ -881,7 +880,7 @@ function card() {
     ${habit ? '<div class="hand">Goes down to the faces every morning now. Nobody asks.</div>' : ''}
     ${trustWords(p) ? `<div class="soft">${esc(p.name)} ${trustWords(p)}.</div>` : ''}
     ${why ? `<div class="hand">“${esc(why)}”</div>` : ''}
-    ${about.map((n) => `<div class="soft small">${esc(n.text)}</div>`).join('')}${s.edition === '0.5.0' && VISIT_TERMS[p.id] ? `<p>${esc(VISIT_TERMS[p.id]!)}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>Invite chapter release</button>` : ''}
+    ${about.map((n) => `<div class="soft small">${esc(n.text)}</div>`).join('')}${(s.edition === '0.5.0' || s.edition === '0.6.0') && VISIT_TERMS[p.id] ? `<p>${esc(VISIT_TERMS[p.id]!)}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>Invite chapter release</button>` : ''}
 </details>`;
   if (el.dataset.html !== html) {
     const focused = document.activeElement?.id;

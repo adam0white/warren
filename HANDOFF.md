@@ -1,6 +1,6 @@
 # Warren canonical cast
 
-Current code edition: 0.5.0. The default hill contains Yusuf Usta, Meryem, Hajja Maryam, Tariq, Kian and Tamar of the Wall. The keeper is a player office. The old Kaya and Demir foregrounds survive only in explicit historical mechanics controls. Seeded arrivals remain incidental households and never become canonical by name.
+Current code edition: 0.6.0. The default hill contains Yusuf Usta, Meryem, Hajja Maryam, Tariq, Kian and Tamar of the Wall. The keeper is a player office. The old Kaya and Demir foregrounds survive only in explicit historical mechanics controls. Seeded arrivals remain incidental households and never become canonical by name.
 
 The bounded delivery contract is [the canonical cast guide](docs/canonical-cast.md). Owner review follows technical delivery. Dynamic review, CI, deployment, browser and remaining integration receipts are in `/Users/abdul/code/.lab-scratch/cast/warren.md`.
 

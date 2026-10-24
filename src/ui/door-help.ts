@@ -36,7 +36,7 @@ export function doorDetailWords(s: WarrenState, cell: number): string {
 export function doorCandidates(s: WarrenState, cell: number) {
   const { lit } = airAndLight(s);
   return s.people.filter((p) => {
-    if (!p.body.alive || ageYears(p) < 14) return false;
+    if (!p.body.alive || ageYears(p) < (s.edition === '0.6.0' ? 18 : 14)) return false;
     const from = s.pos[p.id] ?? surfaceCell(10);
     return (paths(s.hill, from, lit, s.linked).dist[cell] ?? Infinity) <= 40;
   });
