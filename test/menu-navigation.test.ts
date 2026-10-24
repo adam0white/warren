@@ -247,20 +247,19 @@ it('keeps the current hill and shows a warning when returning to the title canno
   }
 });
 
-it('keeps keyboard focus in feedback when Send is disabled and retains the note', async () => {
+it('keeps keyboard focus in feedback with recording off and retains the note', async () => {
   const page = await begin();
   try {
     await page.evaluate(() => localStorage.setItem('hf-lab-recording-off', '1'));
     await page.locator('#book').click();
     await page.locator('#send').click();
     await page.locator('textarea').fill('Keep this unsent note.');
-    expect(await page.locator('.feedback-primary').isDisabled()).toBe(true);
+    expect(await page.locator('.feedback-primary').isEnabled()).toBe(true);
     await page.getByRole('button', { name: 'Back to the game', exact: true }).focus();
     await page.keyboard.press('Tab');
     expect(await page.locator('.feedback-screen').evaluate((el) => el.contains(document.activeElement))).toBe(
       true,
     );
-    await page.keyboard.press('Enter');
     expect(await page.locator('textarea').inputValue()).toBe('Keep this unsent note.');
     for (let i = 0; i < 18; i++) {
       await page.keyboard.press('Tab');

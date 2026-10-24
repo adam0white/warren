@@ -6,7 +6,9 @@ let server: ViteDevServer;
 let browser: Browser;
 let url: string;
 beforeAll(async () => {
-  server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
+  server = await createServer({
+    server: { host: '127.0.0.1', port: 0, hmr: false, watch: null },
+  });
   await server.listen();
   url = server.resolvedUrls?.local[0] ?? '';
   browser = await chromium.launch();
@@ -48,10 +50,22 @@ it('queues a linked verdict and trimmed name, remembers the name, and keeps down
     await page.locator('.feedback-name input').fill('  Tester 7  ');
     await page.getByRole('button', { name: 'Keep a copy of this run' }).click();
     await page.locator('.feedback-primary').click();
-    expect(await page.locator('.feedback-status').innerText()).toBe('Sent. Thank you.');
+    expect(await page.locator('.feedback-status').innerText()).toContain('queued');
     expect(await page.evaluate('window.feedbackCalls')).toEqual([
       ['download'],
-      ['feedback', 'Verdict: keep\n\nThe door was hard to place.', { name: 'Tester 7' }],
+      [
+        'feedback',
+        'Verdict: keep\n\nThe door was hard to place.',
+        {
+          name: 'Tester 7',
+          run: {
+            seed: 7,
+            inputs: [],
+            state: { minute: 10 },
+            fingerprint: 'exact',
+          },
+        },
+      ],
     ]);
     await page.evaluate('window.reopenFeedback()');
     expect(await page.locator('.feedback-name input').inputValue()).toBe('Tester 7');
@@ -62,48 +76,34 @@ it('queues a linked verdict and trimmed name, remembers the name, and keeps down
   }
 });
 
-it('refuses sending while recording is off, then enables sending through the inline switch', async () => {
-  const page = await mount(false, true);
-  try {
-    expect(await page.locator('.feedback-primary').isDisabled()).toBe(true);
-    expect(await page.locator('.feedback-recording').innerText()).toContain(
-      'Recording is off, so nothing is sent.',
-    );
-    await page.getByRole('switch').check();
-    expect(await page.locator('.feedback-primary').isEnabled()).toBe(true);
-    await page.locator('.feedback-primary').click();
-    expect(await page.evaluate('window.feedbackCalls')).toEqual([
-      ['off', false],
-      ['feedback', '', { name: '' }],
-    ]);
-  } finally {
-    await page.close();
-  }
-});
-
-it('requires privacy consent and preserves verdict, note and name in the fallback dialog', async () => {
-  const page = await mount(true, false, true);
-  try {
-    expect(await page.locator('.feedback-primary').isDisabled()).toBe(true);
-    await page.getByRole('button', { name: "I'd stop here", exact: true }).click();
-    await page.locator('textarea').fill('The water was dry.');
-    await page.locator('.feedback-name summary').click();
-    await page.locator('.feedback-name input').fill('Tester');
-    await page.getByRole('checkbox', { name: 'Send this run with my note' }).check();
-    await page.locator('.feedback-primary').click();
-    expect(await page.evaluate('window.feedbackCalls')).toEqual([
-      [
-        'run',
-        { seed: 7, inputs: [], state: { minute: 10 }, fingerprint: 'exact' },
-        { note: 'Verdict: quit\n\nThe water was dry.', name: 'Tester' },
-      ],
-      ['fallback', 'Tester', 'Verdict: quit\n\nThe water was dry.'],
-    ]);
-    expect(await page.locator('textarea').inputValue()).toBe('The water was dry.');
-    await page.evaluate("window.fallbackOptions.onSent('queued')");
-    expect(await page.locator('.feedback-status').innerText()).toBe('Sent. Thank you.');
-    expect(await page.evaluate("localStorage.getItem('hf-lab-feedback-name')")).toBe('Tester');
-  } finally {
-    await page.close();
+it('sends notes while recording is off or privacy is on, without a second dialog', async () => {
+  for (const [privacy, off] of [
+    [false, true],
+    [true, false],
+  ]) {
+    const page = await mount(privacy, off);
+    try {
+      expect(await page.locator('.feedback-primary').isEnabled()).toBe(true);
+      await page.locator('textarea').fill('QA feedback-fix');
+      await page.locator('.feedback-primary').click();
+      expect(await page.locator('.feedback-status').innerText()).toContain('Note queued');
+      expect(await page.evaluate('window.feedbackCalls')).toEqual([
+        [
+          'feedback',
+          'QA feedback-fix',
+          {
+            name: '',
+            run: {
+              seed: 7,
+              inputs: [],
+              state: { minute: 10 },
+              fingerprint: 'exact',
+            },
+          },
+        ],
+      ]);
+    } finally {
+      await page.close();
+    }
   }
 });

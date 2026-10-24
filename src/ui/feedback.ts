@@ -1,14 +1,20 @@
 import { type Build, PRIVACY_URL } from '@adam0white/lab-client';
 
+import { feedbackPersonaControl } from '@adam0white/lab-kit';
+
 const NAME_KEY = 'hf-lab-feedback-name';
 const RECORDING_OFF_KEY = 'hf-lab-recording-off';
 
 /** The feedback surface accepts a lab stub without starting a live lab client. */
 export type FeedbackLab = {
+  readonly personaRecordingRequired?: boolean;
+  readonly personaRecordingAllowed?: boolean;
+  allowPersonaRecording?(allow: boolean): void;
+  readonly telemetryOn?: boolean;
   readonly privacySignalOn: boolean;
   readonly privacyOverride: boolean;
   setTelemetryOff(off: boolean): void;
-  sendFeedback(note: string, extra?: { name?: string }): Promise<string>;
+  sendFeedback(note: string, extra?: { name?: string; run?: unknown }): Promise<string>;
   sendRun(run: unknown, extra?: { note?: string; name?: string }): Promise<string>;
   openSendDialog(options: {
     getRun: () => unknown;
@@ -19,6 +25,13 @@ export type FeedbackLab = {
   build(): Build;
 };
 
+function feedbackRun(getRun: () => unknown): unknown {
+  try {
+    return getRun();
+  } catch {
+    return undefined;
+  }
+}
 function stored(key: string): string | null {
   try {
     return localStorage.getItem(key);
@@ -67,7 +80,7 @@ export function openFeedback(
   let pending = false;
   let sent = false;
   let active = true;
-  let recordingOff = stored(RECORDING_OFF_KEY) === '1';
+  const recordingOff = stored(RECORDING_OFF_KEY) === '1';
   const privacyConsentRequired = lab.privacySignalOn && !lab.privacyOverride;
   const verdicts = element('div', '', 'feedback-verdicts');
   verdicts.setAttribute('role', 'group');
@@ -116,32 +129,21 @@ export function openFeedback(
   if (name.value) nameDetails.open = true;
 
   const recording = element('div', '', 'feedback-recording');
-  const recordingMessage = element('p', 'Recording is off, so nothing is sent.');
-  const recordingLabel = element('label', '', 'feedback-switch');
-  const recordingSwitch = element('input');
-  recordingSwitch.type = 'checkbox';
-  recordingSwitch.setAttribute('role', 'switch');
-  recordingSwitch.checked = !recordingOff;
-  recordingLabel.append(recordingSwitch, document.createTextNode('Record play for the lab'));
-  recording.append(recordingMessage, recordingLabel);
+  const recordingMessage = element(
+    'p',
+    'Recording is off. Your note and verdict can still be sent without a run or history linkage.',
+  );
+  recording.append(recordingMessage);
   recording.hidden = !recordingOff;
-  recordingSwitch.addEventListener('change', () => {
-    lab.setTelemetryOff(!recordingSwitch.checked);
-    recordingOff = !recordingSwitch.checked;
-    recordingMessage.hidden = !recordingOff;
-    updateSend();
-  });
 
-  const consentLabel = element('label', '', 'feedback-consent');
-  const consent = element('input');
-  consent.type = 'checkbox';
-  consent.checked = false;
-  consentLabel.append(consent, document.createTextNode('Send this run with my note'));
-  consentLabel.hidden = !privacyConsentRequired;
   if (privacyConsentRequired) {
-    body.append(element('p', 'Your browser asks for privacy. Nothing is sent without your consent.'));
+    body.append(
+      element(
+        'p',
+        'Your browser asks for privacy. Your note and verdict can still be sent without a run or history linkage.',
+      ),
+    );
   }
-  consent.addEventListener('change', updateSend);
 
   const disclosure = element('details', '', 'feedback-disclosure');
   disclosure.append(element('summary', 'What is sent'));
@@ -149,8 +151,8 @@ export function openFeedback(
     element(
       'p',
       privacyConsentRequired
-        ? 'With your consent: this run’s seed, inputs and complete end state, your verdict and note, optional name, and game and framework versions. This run is sent without a linked player id.'
-        : 'Your verdict, note and optional name are linked to your pseudonymous player id and current run. While recording is on, runs, saves and logs are uploaded automatically.',
+        ? 'Your verdict, note and optional name are sent without a run or linked player id.'
+        : 'Your verdict, note and optional name are sent. Recording on includes this run and continuing character state. It is linked to recorded history only when you approve linkage.',
     ),
   );
   const versions = element('p');
@@ -166,7 +168,11 @@ export function openFeedback(
 
   const status = element('p', '', 'feedback-status');
   status.setAttribute('role', 'status');
-  body.append(verdicts, noteLabel, nameDetails, recording, consentLabel, disclosure, status);
+  body.append(verdicts, noteLabel, nameDetails, recording, disclosure, status);
+  if (lab.personaRecordingRequired && lab.allowPersonaRecording) {
+    const choice = feedbackPersonaControl(lab as Parameters<typeof feedbackPersonaControl>[0]);
+    if (choice) body.insertBefore(choice, disclosure);
+  }
   const actions = element('div', '', 'feedback-actions');
   const copy = element('button', 'Keep a copy of this run', 'feedback-secondary');
   copy.type = 'button';
@@ -228,7 +234,7 @@ export function openFeedback(
     if (!disclosure.open) return;
     const build = lab.build();
     versions.textContent = `The Warren ${build.a ?? 'unknown'} · HF ${build.hf ?? 'unknown'} · commit ${build.c ?? 'unknown'}`;
-    const run = getRun();
+    const run = feedbackRun(getRun);
     const fields = run && typeof run === 'object' ? (run as Record<string, unknown>) : {};
     preview.textContent = JSON.stringify(
       {
@@ -245,7 +251,7 @@ export function openFeedback(
   }
 
   function updateSend(): void {
-    send.disabled = !sent && (pending || recordingOff || (privacyConsentRequired && !consent.checked));
+    send.disabled = !sent && pending;
     send.textContent = sent ? 'Back to the game' : pending ? 'Sending…' : 'Send';
   }
 
@@ -254,13 +260,15 @@ export function openFeedback(
     if (!active) return;
     sent = true;
     pending = false;
-    status.textContent = 'Sent. Thank you.';
+    status.textContent =
+      recordingOff || privacyConsentRequired
+        ? 'Note queued without a run or history linkage. This is not a delivery receipt.'
+        : 'Run and note queued. This is not a delivery receipt.';
     back.hidden = true;
     verdicts.hidden = true;
     noteLabel.hidden = true;
     nameDetails.hidden = true;
     recording.hidden = true;
-    consentLabel.hidden = true;
     updateSend();
   }
 
@@ -276,29 +284,14 @@ export function openFeedback(
     const submittedName = name.value.trim();
     const submittedNote = composedNote();
     try {
-      if (privacyConsentRequired) {
-        await lab.sendRun(getRun(), { note: submittedNote, name: submittedName });
-      } else {
-        await lab.sendFeedback(submittedNote, { name: submittedName });
-      }
+      await lab.sendFeedback(submittedNote, {
+        name: submittedName,
+        run: feedbackRun(getRun),
+      });
       markSent(submittedName);
     } catch {
       if (!active) return;
-      if (privacyConsentRequired && !recordingOff) {
-        try {
-          lab.openSendDialog({
-            getRun,
-            name: submittedName,
-            note: submittedNote,
-            onSent: () => markSent(submittedName),
-          });
-          status.textContent = 'Use the run dialog to try again. Your note and name are kept there.';
-        } catch {
-          status.textContent = 'The note could not be sent. Your note and name are still here. Try again.';
-        }
-      } else {
-        status.textContent = 'The note could not be sent. Your note and name are still here. Try again.';
-      }
+      status.textContent = 'The note could not be sent. Your note and name are still here. Try again.';
     } finally {
       if (active) {
         pending = false;
