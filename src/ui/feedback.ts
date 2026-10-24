@@ -152,7 +152,7 @@ export function openFeedback(
       'p',
       privacyConsentRequired
         ? 'Your verdict, note and optional name are sent without a run or linked player id.'
-        : 'Your verdict, note and optional name are sent. Recording on includes this run and continuing character state. It is linked to recorded history only when you approve linkage.',
+        : 'Your verdict, note and optional name are sent. Recording on may include an available run and continuing character state. It is linked to recorded history only when you approve linkage.',
     ),
   );
   const versions = element('p');
@@ -255,15 +255,14 @@ export function openFeedback(
     send.textContent = sent ? 'Back to the game' : pending ? 'Sending…' : 'Send';
   }
 
-  function markSent(submittedName: string): void {
+  function markSent(submittedName: string, noteOnly: boolean): void {
     rememberName(submittedName);
     if (!active) return;
     sent = true;
     pending = false;
-    status.textContent =
-      recordingOff || privacyConsentRequired
-        ? 'Note queued without a run or history linkage. This is not a delivery receipt.'
-        : 'Run and note queued. This is not a delivery receipt.';
+    status.textContent = noteOnly
+      ? 'Note queued without a run or history linkage. This is not a delivery receipt.'
+      : 'Note queued. An available run may also be included. This is not a delivery receipt.';
     back.hidden = true;
     verdicts.hidden = true;
     noteLabel.hidden = true;
@@ -284,11 +283,12 @@ export function openFeedback(
     const submittedName = name.value.trim();
     const submittedNote = composedNote();
     try {
+      const noteOnly = lab.telemetryOn === false || (lab.privacySignalOn && !lab.privacyOverride);
       await lab.sendFeedback(submittedNote, {
         name: submittedName,
         run: feedbackRun(getRun),
       });
-      markSent(submittedName);
+      markSent(submittedName, noteOnly);
     } catch {
       if (!active) return;
       status.textContent = 'The note could not be sent. Your note and name are still here. Try again.';
