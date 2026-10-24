@@ -35,6 +35,7 @@ async function mount(privacy = false, off = false, failRun = false): Promise<Pag
       openSendDialog: options => {window.fallbackOptions=options;calls.push(['fallback',options.name,options.note]);},
       build: () => ({a:'0.4.0',hf:'2.8.0',c:'test-commit'}),
     };
+    window.testFeedbackLab = lab;
     window.reopenFeedback = () => openFeedback(document.body, lab, () => ({seed:7,inputs:[],state:{minute:10},fingerprint:'exact'}), () => calls.push(['download']), () => calls.push(['back']));
     window.reopenFeedback();
   })()`);
@@ -105,5 +106,43 @@ it('sends notes while recording is off or privacy is on, without a second dialog
     } finally {
       await page.close();
     }
+  }
+});
+
+it('routes optional linkage through the host and keeps an unlinked export replayable without local ownership', async () => {
+  const page = await mount();
+  try {
+    const result = await page.evaluate(`(async () => {
+      const {openFeedback} = await import('/src/ui/feedback.ts');
+      const {newGame,save,load,replay,fingerprint} = await import('/src/sim/game.ts');
+      const original = {...save(newGame(7)), ownedHeads: {}, sourceArchives: {privateOwner: 'browser-only'}};
+      const lab = window.testFeedbackLab;
+      const choices = [], direct = [];
+      lab.personaRecordingRequired = true;
+      lab.personaRecordingAllowed = false;
+      lab.allowPersonaRecording = value => direct.push(value);
+      let exported;
+      lab.sendFeedback = async (_note, extra) => {exported=extra.run; return 'queued';};
+      openFeedback(document.body, lab, () => original, () => {}, () => {}, async value => {choices.push(value);});
+      const checkbox = document.querySelector('label input[type=checkbox]');
+      checkbox.click();
+      await Promise.resolve();
+      checkbox.checked=false;
+      checkbox.dispatchEvent(new Event('change'));
+      await Promise.resolve();
+      document.querySelector('.feedback-primary').click();
+      await new Promise(resolve => setTimeout(resolve,10));
+      return {choices,direct,hasOwned: 'ownedHeads' in exported,hasArchive:'sourceArchives' in exported, originalIntact: 'ownedHeads' in original && 'sourceArchives' in original, same:fingerprint(load(exported).s)===fingerprint(load(original).s) && fingerprint(replay(exported.seed,exported.inputs,exported.minute,exported.game).s)===exported.fingerprint};
+    })()`);
+    expect(result).toEqual({
+      choices: [true, false],
+      direct: [],
+      hasOwned: false,
+      hasArchive: false,
+      originalIntact: true,
+      same: true,
+    });
+  } finally {
+    await page.close();
   }
 });

@@ -1427,7 +1427,7 @@ function menuRows() {
 let feedbackCleanup: (() => void) | undefined;
 function showFeedback(host: HTMLElement, onBack: () => void) {
   feedbackCleanup?.();
-  feedbackCleanup = openFeedback(host, lab, runOf, download, onBack);
+  feedbackCleanup = openFeedback(host, lab, runOf, download, onBack, continuity.chooseContinuityRecording);
 }
 function bindMenu(host: HTMLElement, close: () => void) {
   continuity.bind(host, (game) => {

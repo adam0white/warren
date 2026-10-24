@@ -25,9 +25,14 @@ export type FeedbackLab = {
   build(): Build;
 };
 
-function feedbackRun(getRun: () => unknown): unknown {
+function feedbackRun(getRun: () => unknown, linked: boolean): unknown {
   try {
-    return getRun();
+    const run = getRun();
+    if (linked || !run || typeof run !== 'object') return run;
+    const unlinked = { ...run } as Record<string, unknown>;
+    delete unlinked.ownedHeads;
+    delete unlinked.sourceArchives;
+    return unlinked;
   } catch {
     return undefined;
   }
@@ -67,6 +72,7 @@ export function openFeedback(
   getRun: () => unknown,
   download: () => void,
   onBack: () => void,
+  chooseRecording?: (allow: boolean) => Promise<void>,
 ): () => void {
   const screen = element('section', '', 'feedback-screen');
   screen.setAttribute('aria-label', 'Send word');
@@ -169,9 +175,24 @@ export function openFeedback(
   const status = element('p', '', 'feedback-status');
   status.setAttribute('role', 'status');
   body.append(verdicts, noteLabel, nameDetails, recording, disclosure, status);
-  if (lab.personaRecordingRequired && lab.allowPersonaRecording) {
-    const choice = feedbackPersonaControl(lab as Parameters<typeof feedbackPersonaControl>[0]);
-    if (choice) body.insertBefore(choice, disclosure);
+  if (lab.personaRecordingRequired && chooseRecording) {
+    const scoped = Object.create(lab) as Parameters<typeof feedbackPersonaControl>[0];
+    scoped.allowPersonaRecording = (allow) => {
+      void chooseRecording(allow)
+        .then(() => {
+          const checkbox = choice?.querySelector('input');
+          if (checkbox) checkbox.checked = lab.personaRecordingAllowed === true;
+        })
+        .catch(() => {
+          status.textContent = 'History choice could not be applied. Your note can still send.';
+        });
+    };
+    const choice = feedbackPersonaControl(scoped);
+    if (choice) {
+      if (choice.lastChild)
+        choice.lastChild.textContent = ' Link all continuing people in this run to lab recording (optional)';
+      body.insertBefore(choice, disclosure);
+    }
   }
   const actions = element('div', '', 'feedback-actions');
   const copy = element('button', 'Keep a copy of this run', 'feedback-secondary');
@@ -234,7 +255,7 @@ export function openFeedback(
     if (!disclosure.open) return;
     const build = lab.build();
     versions.textContent = `The Warren ${build.a ?? 'unknown'} · HF ${build.hf ?? 'unknown'} · commit ${build.c ?? 'unknown'}`;
-    const run = feedbackRun(getRun);
+    const run = feedbackRun(getRun, lab.personaRecordingAllowed === true);
     const fields = run && typeof run === 'object' ? (run as Record<string, unknown>) : {};
     preview.textContent = JSON.stringify(
       {
@@ -286,7 +307,7 @@ export function openFeedback(
       const noteOnly = lab.telemetryOn === false || (lab.privacySignalOn && !lab.privacyOverride);
       await lab.sendFeedback(submittedNote, {
         name: submittedName,
-        run: feedbackRun(getRun),
+        run: feedbackRun(getRun, lab.personaRecordingAllowed === true),
       });
       markSent(submittedName, noteOnly);
     } catch {

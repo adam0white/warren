@@ -256,7 +256,7 @@ export async function checkpoint(): Promise<void> {
     if (status) status.textContent = continuityStatus;
   }
 }
-async function allowRecording() {
+export async function chooseContinuityRecording(allow: boolean) {
   const game = current();
   if (!game) return;
   const token = ++generation;
@@ -264,7 +264,7 @@ async function allowRecording() {
   if (!pinned.length && game.chapter) pinned.push(...game.chapter.claims);
   lab.setPersonaRecording(crypto.randomUUID());
   if (game.fileOrigin) {
-    if (current() === game && token === generation) lab.allowPersonaRecording(true);
+    if (current() === game && token === generation) lab.allowPersonaRecording(allow);
     return;
   }
   if (!pinned.length) {
@@ -286,10 +286,10 @@ async function allowRecording() {
   await shelf.request({
     action: 'recordingBatch',
     envelopes: pinned,
-    allowRecording: true,
+    allowRecording: allow,
     recordingEpoch: epoch.recordingEpoch ?? undefined,
   });
-  if (owns()) lab.allowPersonaRecording(true);
+  if (owns()) lab.allowPersonaRecording(allow);
 }
 export function bind(host: HTMLElement, onFile: (game: Game) => void) {
   host.querySelector('#continuity')?.addEventListener('change', (event) => {
@@ -327,7 +327,7 @@ export function bind(host: HTMLElement, onFile: (game: Game) => void) {
         'Recording this continuing run can link it to earlier games. Allow recording all carried histories for this identity?',
       )
     )
-      void allowRecording();
+      void chooseContinuityRecording(true);
   });
   host.querySelector('#cast-file')?.addEventListener('change', (event) => {
     const file = (event.target as HTMLInputElement).files?.[0];
