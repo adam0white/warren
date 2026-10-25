@@ -120,7 +120,7 @@ export function bellStateWords(s: WarrenState): string {
     s.bell?.real &&
     s.bell.until > s.minute
   )
-    return 'The call stays active until the riders leave. People decide whether to come below. They can refuse at any time.';
+    return 'The bell keeps ringing until the riders leave. People decide whether to come below. They can refuse at any time.';
   if (s.bell && s.bell.until > s.minute)
     return `The call lasts six game hours. It has ${gameTimeWords(s.bell.until - s.minute)} left. People choose whether to come below.`;
   if (

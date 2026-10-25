@@ -13,10 +13,28 @@ export function speechWords(text: string): string {
   return displayWords(text);
 }
 export function displayWords(text: string): string {
-  return settingWords(text).replace(
-    /heard the bell and kept on with ([^.]+)\./g,
-    'heard the bell and continued to $1.',
-  );
+  return settingWords(text)
+    .replace(
+      /([^.!?]+) and others gave the same reply\. \1 said: “(?:I cannot do it now\. )?After I (?:finish this task \(([^)]+)\)|([^().”]+)), I will do it\.”/gu,
+      (_, name: string, task: string | undefined, action: string | undefined) =>
+        `${name} and the others will come after they ${task ?? action}.`,
+    )
+    .replace(
+      /([^.!?]+) and others gave the same reply\. \1 said: “([^”]+)”/gu,
+      '$1 and the others said: “$2”',
+    )
+    .replaceAll(
+      'In this new story, Ada agrees to come with him. He remains responsible for her care, and they return together. This does not describe any care agreement brought from the Watch.',
+      'Ada comes with him for the visit. He looks after her, and they go back together.',
+    )
+    .replaceAll(' This temporary visit does not make her his guardian.', '')
+    .replaceAll('Her son Yusuf remains at the Well.', 'Her son Yusuf stayed behind at the well settlement.')
+    .replace(/([^.!?]+) was still in view there\./gu, '$1 could still be seen from there.')
+    .replaceAll(
+      'came up under the open sky. Air will come down this shaft now, and so could riders.',
+      'dug through to the surface. Air can now come down this shaft, but riders could too.',
+    )
+    .replace(/heard the bell and kept on with ([^.]+)\./g, 'heard the bell and continued to $1.');
 }
 export function activityWords(label: string, walking = false, name = 'This person'): string {
   label = displayWords(label);

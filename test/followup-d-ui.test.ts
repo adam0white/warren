@@ -95,13 +95,13 @@ for (const [width, height] of [
       await page.locator('#raid-bell').click();
       await page.clock.runFor(300);
       expect(await words.innerText()).toMatch(
-        /The call stays active until the riders leave.*can refuse at any time/s,
+        /The bell keeps ringing until the riders leave.*can refuse at any time/s,
       );
       expect(await words.innerText()).not.toMatch(/renew|six game hours/);
       if (process.env.WARREN_SCREENSHOTS === '1')
         await page.screenshot({ path: `${shots}/after-${width}-smoke-call-d.png` });
       await advanceTo('g.s.bell.at + 7 * 60');
-      expect(await words.innerText()).toContain('The call stays active until the riders leave');
+      expect(await words.innerText()).toContain('The bell keeps ringing until the riders leave');
       expect(await page.locator('#bell-state').getAttribute('aria-label')).not.toMatch(
         /renew|six game hours/,
       );
@@ -127,7 +127,7 @@ for (const [width, height] of [
         await page.screenshot({ path: `${shots}/after-${width}-standing-call-d.png` });
       await advanceTo('g.s.raids[0].riders');
       expect(await page.locator('#goal').innerText()).toMatch(
-        /Riders are at the hill.*The call stays active until the riders leave/s,
+        /Riders are at the hill.*The bell keeps ringing until the riders leave/s,
       );
       await advanceTo('g.s.raids[0].leave');
       expect(await words.innerText()).toMatch(/The call has ended.*riders have gone, so the call has ended/s);

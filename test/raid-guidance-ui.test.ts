@@ -48,7 +48,7 @@ for (const [width, height] of [
       await page.clock.runFor(500);
       const goal = page.locator('#goal');
       expect(await goal.innerText()).toBe(
-        'Riders are at the hill. The call stays active until the riders leave. People decide whether to come below. They can refuse at any time. Tap the people count above to see who riders can reach.',
+        'Riders are at the hill. The bell keeps ringing until the riders leave. People decide whether to come below. They can refuse at any time. Tap the people count above to see who riders can reach.',
       );
       const goalBox = await goal.boundingBox();
       const bodyBox = await page.locator('#inspection-body').boundingBox();
