@@ -39,11 +39,11 @@ let current: () => Game | null = () => null;
 let persistAccepted: (game: Game) => Promise<boolean> = async () => true;
 export let continuityStatus =
   'People can continue between games separately from play recording. A loaded hill keeps the people and history saved in it.';
-const stamps = () => ({
+const stamps = (edition = current()?.s.edition ?? '0.6.0') => ({
   game: 'warren',
   build: sourceBuild(),
   engine: ENGINE_VERSION,
-  rules: 'warren-0.6.0',
+  rules: `warren-${edition}`,
 });
 function gate() {
   generation++;
@@ -89,10 +89,10 @@ export function controls() {
     : '';
   return `<details class="continuity"><summary>People between chapters</summary><label><input id="continuity" type="checkbox" ${shelf.enabled ? 'checked' : ''}> Continue people between games in this browser</label><p data-cast-status role="status">${esc(continuityStatus)}</p>${provenance}<p>A person’s projects, injuries or duties may prevent them from continuing in another game. You can still play locally and export a file. Kian needs the recorded agreement from Watch, a record of completed care and the duty to return. Kian can return only through the supported Watch handoff. Other transfers are not supported.</p>${care}<button id="local-fresh">Use fresh local play</button><label>Open current playtest file <input id="cast-file" type="file" accept="application/json"></label>${current() ? '<button id="checkpoint-cast">Save eligible people to the browser shelf</button><fieldset style="min-inline-size:0"><legend>Native Watch handoff</legend><label>Person <select id="native-person" style="max-width:100%"><option value="kian">Kian and Ada’s supported care record</option><option value="meryem">Meryem</option></select></label><p>Prepare ends only this person’s optional work. It then runs ordinary play for up to ten game hours to find a quiet time to save. Other people continue their activities. An imported file does not gain permission to update shared history. A new history replaces only the selected person’s latest shared record. Earlier history is kept. Another open game could change that record after the check. Avoid updating this person in another open game at the same time.</p><button id="native-prepare">Prepare selected native checkpoint</button><button id="native-save">Save selected owned checkpoint</button><button id="native-fork">Start a new history for selected person…</button></fieldset>' : ''}<a href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">Inspect browser people</a></details>`;
 }
-export async function fresh(seed: number): Promise<Game> {
+export async function fresh(seed: number, edition: '0.6.0' | '0.7.0' = '0.6.0'): Promise<Game> {
   const token = ++generation;
   await shelf.ready;
-  const base = newGame(seed);
+  const base = newGame(seed, edition);
   if (!shelf.enabled && new URLSearchParams(location.search).get('lab') === '1') {
     lab.setPersonaRecording(null);
     return base;
@@ -101,7 +101,7 @@ export async function fresh(seed: number): Promise<Game> {
   const batch = await claimCastChapterBatch(
     shelf,
     castForGame('warren').map((c) => c.castId),
-    stamps(),
+    stamps(edition),
     async (inputs) => {
       for (const input of inputs) {
         const index = base.s.people.findIndex((p) => CAST_IDS[p.id] === input.parent.castId);
@@ -124,7 +124,7 @@ export async function fresh(seed: number): Promise<Game> {
     claims: batch.claims,
     initial: batch.initial,
   };
-  const game = newGame(seed, '0.6.0', chapter);
+  const game = newGame(seed, edition, chapter);
   game.ownedHeads = Object.fromEntries(batch.claims.map((p) => [p.castId, p]));
   continuityStatus = `This hill now keeps the saved records for ${batch.inputs.length} continuing ${batch.inputs.length === 1 ? 'person' : 'people'}. All six roles were checked together. Recording stays on this device until you allow sharing.`;
   return game;
@@ -158,7 +158,8 @@ export async function fileLoad(file: File): Promise<Game> {
   const saved = JSON.parse(await file.text()) as Saved;
   if (saved.textVersion !== TEXT_VERSION)
     throw new Error('This file uses a different version. Start a new game.');
-  if (saved.game !== '0.6.0') throw new Error('This file uses an older version. Start a new game.');
+  if (saved.game !== '0.6.0' && saved.game !== '0.7.0')
+    throw new Error('This file uses an older version. Start a new game.');
   if (saved.chapter) {
     const chapter = saved.chapter;
     if (
@@ -167,7 +168,7 @@ export async function fileLoad(file: File): Promise<Game> {
       new Set(chapter.inputs.map((input) => input.parent.castId)).size !== chapter.inputs.length
     )
       throw new Error('The saved group of continuing people is invalid.');
-    const opening = newGame(saved.seed);
+    const opening = newGame(saved.seed, saved.game);
     for (const input of chapter.inputs) {
       await validatePersona(input.parent);
       const claim = chapter.claims.find((p) => p.castId === input.parent.castId);
@@ -176,7 +177,7 @@ export async function fileLoad(file: File): Promise<Game> {
       await validatePersona(claim);
       if (
         claim.source.game !== 'warren' ||
-        claim.source.rules !== 'warren-0.6.0' ||
+        claim.source.rules !== `warren-${saved.game}` ||
         (claim.source.engine !== ENGINE_VERSION &&
           claim.source.engine !== '2.17.0' &&
           claim.source.engine !== '2.21.0')
@@ -217,7 +218,14 @@ export async function fileLoad(file: File): Promise<Game> {
 }
 export async function checkpoint(): Promise<void> {
   const game = current();
-  if (busy || !game || !shelf.enabled || game.s.edition !== '0.6.0' || game.s.minute <= 300) return;
+  if (
+    busy ||
+    !game ||
+    !shelf.enabled ||
+    (game.s.edition !== '0.6.0' && game.s.edition !== '0.7.0') ||
+    game.s.minute <= 300
+  )
+    return;
   busy = true;
   const token = generation;
   try {

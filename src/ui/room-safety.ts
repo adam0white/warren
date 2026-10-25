@@ -116,14 +116,17 @@ export function bellThreatWords(s: WarrenState): string {
 
 export function bellStateWords(s: WarrenState): string {
   if (
-    (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') &&
+    (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') &&
     s.bell?.real &&
     s.bell.until > s.minute
   )
     return 'The call stays active until the riders leave. People decide whether to come below. They can refuse at any time.';
   if (s.bell && s.bell.until > s.minute)
     return `The call lasts six game hours. It has ${gameTimeWords(s.bell.until - s.minute)} left. People choose whether to come below.`;
-  if ((s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') && activeRaid(s))
+  if (
+    (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') &&
+    activeRaid(s)
+  )
     return 'No call is active. Ring the bell once to call people below until the riders leave. People choose whether to come.';
   if (hadBellCall(s)) {
     const travelling = s.people.some(
@@ -133,7 +136,7 @@ export function bellStateWords(s: WarrenState): string {
     const bellAt = s.notes.findLast((n) => /^You rang the bell[.,]/.test(n.text))?.at;
     const deadline = s.bell?.until ?? (bellAt === undefined ? undefined : bellAt + V.bellHours * HOUR);
     const raidCall =
-      (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') &&
+      (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') &&
       s.raids.some(
         (r) => r.stage === 'gone' && bellAt !== undefined && r.smoke <= bellAt && bellAt < r.leave,
       );
@@ -147,13 +150,13 @@ export function bellStateWords(s: WarrenState): string {
       : sheltering
         ? 'The call has ended. Some people are still sheltering below.'
         : 'The call has ended.';
-    return `${ended}${reason}${activeRaid(s) && (s.edition !== '0.4.0' && s.edition !== '0.5.0' && s.edition !== '0.6.0') ? ' Ring the bell to renew the call.' : ''}`;
+    return `${ended}${reason}${activeRaid(s) && (s.edition !== '0.4.0' && s.edition !== '0.5.0' && s.edition !== '0.6.0' && s.edition !== '0.7.0') ? ' Ring the bell to renew the call.' : ''}`;
   }
   return activeRaid(s)
-    ? s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0'
+    ? s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0'
       ? 'No call is active. Ring the bell once to call people below until the riders leave. People choose whether to come.'
       : 'No call is active. Ring the bell to call people below for six game hours.'
-    : s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0'
+    : s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0'
       ? 'The bell is quiet. During a raid, one call lasts until the riders leave. Calls without a raid last six game hours. False alarms can weaken trust. People choose whether to come below.'
       : 'The bell is quiet. Each call lasts six game hours. People choose whether to come below.';
 }

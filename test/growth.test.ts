@@ -38,3 +38,12 @@ describe('the village growth record', () => {
     expect(growthWords(s)).toBe(words);
   });
 });
+it('keeps a bounded account of real simulated events and says that absence does not run the hill', () => {
+  const s = newGame(7, '0.7.0').s;
+  s.notes.push({ at: s.minute, kind: 'find', text: 'Meryem found water under the hill.', weight: 2 });
+  const before = JSON.stringify(s);
+  expect(growthWords(s)).toContain('During simulated play');
+  expect(growthWords(s)).toContain('Meryem found water under the hill.');
+  expect(growthWords(s)).toContain('saved hill waits while you are away');
+  expect(JSON.stringify(s)).toBe(before);
+});

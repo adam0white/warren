@@ -171,7 +171,7 @@ export interface Answer {
 
 export interface WarrenState {
   /** Absent in legacy saves; never added when continuing them. */
-  edition?: '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0';
+  edition?: '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0' | '0.7.0';
   adaVisit?: AdaVisit;
   nativeDepartures?: Record<
     string,
@@ -211,6 +211,12 @@ export interface WarrenState {
   notes: Note[];
   /** Each person's last account of why they chose what they are doing (HF narration). */
   why?: Record<string, string>;
+  /** Opt-in 0.7 host outcomes. Absent from all earlier editions. */
+  refuge?: {
+    slept: Record<string, number>;
+    raids: Record<string, { present: string[]; exposed: string[]; behindDoor: boolean }>;
+    forage: { day: number; gathered: number };
+  };
   goals: Record<string, number>;
   flags: Record<string, number>;
   stats: {
@@ -591,18 +597,19 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
   const light = mod >= rise && mod < set - 20;
   const threat = underThreat(s);
   const preferProtectedBed =
-    (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') && !!activeRaid(s);
+    (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') &&
+    !!activeRaid(s);
   const outside = riskOutside(s);
   const house = houseOf(s, p.id);
   const sleepy = !light || p.body.sleepPressure > 0.7 || p.body.sleepDebt > 0.5 || p.body.health < 0.5;
   const winter = season === 'winter';
   const hearth = hearthCell(s);
   const below = yOf(from) >= SURF;
-  const isAdult = s.edition === '0.6.0' ? ageYears(p) >= 18 : adult(p);
+  const isAdult = s.edition === '0.6.0' || s.edition === '0.7.0' ? ageYears(p) >= 18 : adult(p);
   const old = elder(p);
 
   if (
-    s.edition === '0.6.0' &&
+    (s.edition === '0.6.0' || s.edition === '0.7.0') &&
     !s.flags[`released:${p.id}`] &&
     s.flags[`role-note:${p.id}`] !== Math.floor(s.minute / DAY) + 1 &&
     light &&
@@ -680,7 +687,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
       );
     }
     const beds = cellsWithUse(h, USE.beds).filter((c) =>
-      s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0'
+      s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0'
         ? bedAvailable(s, c, p.id)
         : sleepersAt(s, c) < BEDS_PER_CELL,
     );
@@ -756,6 +763,12 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
   const breakTime = !light || mod < rise + 60 || (mod >= 12 * HOUR && mod < 13 * HOUR) || mod >= set - 90;
   if (breakTime || !isAdult || old || winter) {
     const there = people(s, (t, q) => q.activity?.action === 'chat' && t.end === hearth);
+    const partner =
+      s.edition === '0.7.0' && positionAt(s, p.id, at) === hearth
+        ? s.people.find(
+            (q) => q.id !== p.id && q.body.alive && !q.body.asleep && positionAt(s, q.id, at) === hearth,
+          )
+        : undefined;
     offer(
       {
         id: 'chat',
@@ -765,7 +778,8 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
         duration: 0,
         effort: 0.05,
         advertises: { belonging: 0.25, leisure: 0.15, ...(s.people.length > 1 ? {} : {}) },
-        tags: ['social', 'leisure'],
+        tags: ['social', 'leisure', ...(partner ? ['conversation'] : [])],
+        ...(partner ? { targetId: partner.id } : {}),
         ...(there.length ? { alongside: there.slice(0, 4) } : {}),
       },
       plan(s, f, at, hearth, 75, lit),
@@ -1048,7 +1062,17 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
   }
   // Gleaning and the goats: a thin living from the hills when the jars run low. It keeps people alive, not fed.
   const jarsNow = grainBelow(h) + s.houses.reduce((a, x) => a + x.jars + (x.prepared ?? 0), 0);
-  if (light && working && !threat && house && jarsNow < s.people.length * V.ration * 12) {
+  if (
+    light &&
+    working &&
+    !threat &&
+    house &&
+    jarsNow < s.people.length * V.ration * 12 &&
+    (s.edition !== '0.7.0' ||
+      !s.refuge ||
+      s.refuge.forage.day !== Math.floor(at / DAY) ||
+      s.refuge.forage.gathered < (season === 'winter' ? 0.03 : 0.06))
+  ) {
     offer(
       {
         id: 'forage',
@@ -1319,7 +1343,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
     }
   }
   const scoped =
-    s.edition === '0.6.0' && ['tariq', 'kian'].includes(p.id)
+    (s.edition === '0.6.0' || s.edition === '0.7.0') && ['tariq', 'kian'].includes(p.id)
       ? out.filter(
           (a) =>
             a.tags?.includes('bounded-role') || (!a.tags?.includes('work') && !a.tags?.includes('risky')),
@@ -1344,7 +1368,7 @@ function deepestSafe(s: WarrenState, f: Field, who: string): number {
   let score = -1;
   for (let i = 0; i < h.kind.length; i++) {
     if (h.kind[i] !== K.open || !Number.isFinite(f.dist[i] ?? Number.POSITIVE_INFINITY)) continue;
-    if (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') {
+    if (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') {
       if (h.use[i] === USE.beds && !bedAvailable(s, i, who)) continue;
       const { air } = airAndLight(s);
       if (route(f, i).some((c) => yOf(c) >= SURF && (air[c] ?? 32000) > AIR_REACH)) continue;
@@ -1387,6 +1411,27 @@ function workDone(t: Trip | undefined, act: Activity, now: number): number {
   const from = t?.workFrom ?? act.startedAt;
   const span = Math.max(1, act.endsAt - from);
   return Math.max(0, Math.min(1, (now - from) / span)) * ((act.endsAt - from) / 60);
+}
+
+/** Host work only: the same earned cut used by resolution and by the read-only drawing. */
+function cutProgress(s: WarrenState, p: Person, act: Activity, now: number): number {
+  const skill = p.skills.digging?.level ?? 0.4;
+  const cap = readBody(p).capacity;
+  const rate = (0.55 + 0.9 * skill) * (0.4 + 0.6 * cap) * (act.protest ? 0.6 : 1);
+  const per = DIG_HOURS[s.hill.kind[Number(act.targetId)] ?? K.rock] ?? 5;
+  return (workDone(s.trips[p.id], act, now) * rate) / per;
+}
+
+/** Approximate visible cut during an ongoing pick stroke. Does not award or save work. */
+export function digProgress(s: WarrenState, face: number, at = s.minute): number {
+  let progress = s.hill.dig[face] ?? 0;
+  if (s.edition === '0.7.0')
+    for (const p of s.people) {
+      const act = p.activity;
+      if (p.body.alive && act?.action === 'dig' && Number(act.targetId) === face && s.trips[p.id])
+        progress += cutProgress(s, p, act, Math.min(at, act.endsAt));
+    }
+  return Math.max(0, Math.min(1, progress));
 }
 
 function storeGrain(s: WarrenState, cell: number, kile: number): number {
@@ -1438,14 +1483,19 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
   s.pos[p.id] = done ? (t?.end ?? s.pos[p.id] ?? 0) : positionAt(s, p.id, now);
   const house = houseOf(s, p.id);
   if (
-    s.edition === '0.6.0' &&
+    (s.edition === '0.6.0' || s.edition === '0.7.0') &&
     ROLE_TASKS[p.id]?.some((task) => task.action === act.action) &&
     !supervised(s, p.id, s.pos[p.id] ?? 0, (id) => positionAt(s, id, p.now))
   )
     return { ...base, status: 'interrupted' };
-  if (s.edition === '0.6.0' && done && act.action === 'cook' && (!house || house.jars <= 0))
+  if (
+    (s.edition === '0.6.0' || s.edition === '0.7.0') &&
+    done &&
+    act.action === 'cook' &&
+    (!house || house.jars <= 0)
+  )
     return { ...base, status: 'interrupted' };
-  if (s.edition === '0.6.0' && finishRoleWork(s, p, act.action, done, V.ration))
+  if ((s.edition === '0.6.0' || s.edition === '0.7.0') && finishRoleWork(s, p, act.action, done, V.ration))
     return { ...base, needs: { competence: done ? 0.05 : 0, belonging: done ? 0.03 : 0 } };
   if (act.action === 'care-ada')
     return { ...base, status: completeAdaCare(s, p, done, hearthCell(s)) ? 'completed' : 'interrupted' };
@@ -1453,16 +1503,32 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
     const cell = s.pos[p.id] ?? 0;
     s.adaVisit.protection = yOf(cell) >= SURF && !riderCells(s).has(cell) ? 'protected' : 'exposed';
   }
+  if (
+    s.edition === '0.7.0' &&
+    s.refuge &&
+    done &&
+    act.action === 'sleep' &&
+    hours >= 1 &&
+    yOf(s.pos[p.id] ?? 0) >= SURF &&
+    h.use[s.pos[p.id] ?? 0] === USE.beds
+  ) {
+    const first = s.refuge.slept[p.id] === undefined;
+    s.refuge.slept[p.id] = now;
+    if (first)
+      note(s, {
+        kind: 'story',
+        who: p.id,
+        cell: s.pos[p.id],
+        text: `${p.name} slept in the marked beds below the hill.`,
+        weight: 1,
+      });
+  }
   switch (act.action) {
     case 'dig': {
       const face = Number(act.targetId);
       const k = h.kind[face] ?? K.rock;
       if (!diggable(k)) return { ...base, needs: { competence: 0.02 } };
-      const skill = p.skills.digging?.level ?? 0.4;
-      const cap = readBody(p).capacity;
-      const rate = (0.55 + 0.9 * skill) * (0.4 + 0.6 * cap) * (act.protest ? 0.6 : 1);
-      const per = DIG_HOURS[k] ?? 5;
-      h.dig[face] = (h.dig[face] ?? 0) + (hours * rate) / per;
+      h.dig[face] = (h.dig[face] ?? 0) + cutProgress(s, p, act, now);
       s.stats.firstPick ??= act.startedAt;
       if ((h.dig[face] ?? 0) >= 1) return { ...base, ...openCell(s, p, face, t?.end ?? face) };
       return { ...base, needs: { competence: 0.03 } };
@@ -1545,7 +1611,18 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
     case 'forage': {
       const season = seasonOf(doyOf(s.minute));
       const rate = season === 'winter' ? 0.012 : season === 'spring' ? 0.03 : 0.022;
-      const amt = rate * hours * (act.protest ? 0.6 : 1);
+      let amt = rate * hours * (act.protest ? 0.6 : 1);
+      if (s.edition === '0.7.0' && s.refuge) {
+        const day = Math.floor(now / DAY);
+        const forage = s.refuge.forage;
+        if (forage.day !== day) {
+          forage.day = day;
+          forage.gathered = 0;
+        }
+        const available = season === 'winter' ? 0.03 : 0.06;
+        amt = Math.min(amt, Math.max(0, available - forage.gathered));
+        forage.gathered += amt;
+      }
       if (house) house.jars += amt;
       return { ...base, needs: { competence: 0.02 }, material: amt * 4 };
     }
@@ -1672,6 +1749,37 @@ function openCell(s: WarrenState, p: Person, face: number, stand: number): Parti
     h.dig[face] = 0;
     h.spoil[stand] = (h.spoil[stand] ?? 0) + 2;
     for (const j of neighbours(face)) if (h.kind[j] === K.rock && yOf(j) > SURF) h.kind[j] = K.loose;
+    if (
+      s.edition === '0.7.0' &&
+      s.flags[`loose-warning:${face}`] !== undefined &&
+      h.use[stand] !== USE.hearth &&
+      h.use[stand] !== USE.well
+    ) {
+      const broken = [
+        h.lamp[stand] ? 'the lamp' : '',
+        h.use[stand] === USE.beds
+          ? 'the beds'
+          : h.use[stand] === USE.store
+            ? 'the grain jars'
+            : h.use[stand] === USE.door
+              ? 'the stone door'
+              : '',
+      ].filter(Boolean);
+      if (broken.length) {
+        h.lamp[stand] = 0;
+        h.use[stand] = USE.none;
+        h.shut[stand] = 0;
+        h.doorWork[stand] = 0;
+        delete s.flags[`door:${stand}`];
+        h.grain[stand] = Math.max(0, (h.grain[stand] ?? 0) - 2);
+        note(s, {
+          kind: 'dig',
+          cell: stand,
+          text: `Falling loose stone broke ${broken.join(' and ')} beside the cut wall. The passage is still open. These furnishings can be replaced.`,
+          weight: 2,
+        });
+      }
+    }
     s.stats.hurt++;
     note(s, {
       kind: 'hurt',
@@ -1936,6 +2044,14 @@ function queue(s: WarrenState, pid: string, pc: Percept) {
 
 export function makeWorld(s: WarrenState): World {
   return {
+    converse: (speaker, listener) =>
+      s.edition === '0.7.0' &&
+      !speaker.body.asleep &&
+      !listener.body.asleep &&
+      positionAt(s, speaker.id, speaker.now) === hearthCell(s) &&
+      positionAt(s, listener.id, speaker.now) === hearthCell(s)
+        ? { placeId: 'hearth' }
+        : false,
     now: () => s.minute,
     affordancesFor: (p) => offersFor(s, p),
     perceptsFor: (p, since, until) => {
@@ -2030,11 +2146,68 @@ export function advanceTo(s: WarrenState, to: number, observeIdle?: (person: Per
   return events;
 }
 
+/** Sample actual positions each quantum, including entry and departure boundaries. No forecasts. */
+function observeRefuge(s: WarrenState) {
+  if (!s.refuge) return;
+  for (const { face } of faces(s.hill))
+    if (
+      s.hill.kind[face] === K.loose &&
+      s.hill.known[face] &&
+      s.flags[`loose-warning:${face}`] === undefined
+    ) {
+      s.flags[`loose-warning:${face}`] = s.minute;
+      note(s, {
+        kind: 'story',
+        cell: face,
+        text: 'Loose stone can fall when people cut it. A fall can break a lamp, beds, jars or a stone door beside the wall. The passage will stay open.',
+        weight: 2,
+      });
+    }
+  const reach = riderCells(s);
+  const openDoors = riderCells({ ...s, hill: { ...s.hill, shut: s.hill.shut.map(() => 0) } });
+  for (const r of s.raids.slice(1)) {
+    if (r.stage !== 'riders') continue;
+    const record = s.refuge.raids[String(r.riders)] ?? { present: [], exposed: [], behindDoor: false };
+    s.refuge.raids[String(r.riders)] = record;
+    for (const p of s.people.filter((p) => p.body.alive)) {
+      if (!record.present.includes(p.id)) record.present.push(p.id);
+      const cell = positionAt(s, p.id, s.minute);
+      if ((yOf(cell) < SURF || reach.has(cell)) && !record.exposed.includes(p.id)) record.exposed.push(p.id);
+      if (yOf(cell) >= SURF && !reach.has(cell) && openDoors.has(cell)) record.behindDoor = true;
+    }
+  }
+}
+
 function afterQuantum(s: WarrenState, ev: SimEvent[]) {
+  if (s.edition === '0.7.0')
+    for (const e of ev) {
+      if (e.kind !== 'converse' || !e.withId) continue;
+      const speaker = personOf(s, e.personId),
+        listener = personOf(s, e.withId);
+      if (!speaker || !listener) continue;
+      const key = `conversation:${[speaker.id, listener.id].sort().join(':')}`;
+      const day = Math.floor(e.at / DAY) + 1;
+      if (s.flags[key] === day) continue;
+      s.flags[key] = day;
+      note(s, {
+        at: e.at,
+        kind: 'story',
+        who: speaker.id,
+        cell: positionAt(s, speaker.id, e.at),
+        text: `${speaker.name} spoke with ${listener.name}.`,
+        weight: 1,
+      });
+    }
   for (const e of ev) {
     if (e.kind !== 'died') continue;
     const p = personOf(s, e.personId);
     if (!p) continue;
+    if (s.edition === '0.7.0' && s.refuge)
+      for (const r of s.raids) {
+        const record = s.refuge.raids[String(r.riders)];
+        if (r.stage === 'riders' && record?.present.includes(p.id) && !record.exposed.includes(p.id))
+          record.exposed.push(p.id);
+      }
     s.stats.died++;
     note(s, {
       kind: 'story',
@@ -2043,7 +2216,9 @@ function afterQuantum(s: WarrenState, ev: SimEvent[]) {
       weight: 3,
     });
   }
+  if (s.edition === '0.7.0') observeRefuge(s);
   raidStep(s);
+  if (s.edition === '0.7.0') observeRefuge(s);
   if (s.edition) recoveryWords(s);
   if (s.bell && s.bell.until <= s.minute) {
     if (!s.bell.real) falseAlarm(s, s.bell.at);
@@ -2180,7 +2355,15 @@ function raidStep(s: WarrenState) {
         r.stage = 'gone';
         const lost = r.took;
         const held = r.hurt.length === 0 && lost < s.people.length * V.ration * 30;
-        if (!((s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') && scare)) {
+        if (
+          !(
+            (s.edition === '0.4.0' ||
+              s.edition === '0.5.0' ||
+              s.edition === '0.6.0' ||
+              s.edition === '0.7.0') &&
+            scare
+          )
+        ) {
           if (held) {
             s.heldAt = s.minute;
             s.word = Math.min(1, s.word + 0.25);
@@ -2608,8 +2791,43 @@ const TOLD: Record<string, string> = {
   lamp: 'People stop digging where daylight no longer reaches. A lamp beside a stone wall lets them dig there.',
 };
 
+export function goalsFor(s: WarrenState): Goal[] {
+  if (s.edition !== '0.7.0') return GOALS;
+  const protectedVisit = (state: WarrenState) =>
+    state.raids.slice(1).some((r) => {
+      const seen = state.refuge?.raids[String(r.riders)];
+      return r.stage === 'gone' && !!seen?.present.length && seen.exposed.length === 0;
+    });
+  return GOALS.map((g) =>
+    g.id === 'beds'
+      ? {
+          ...g,
+          text: 'Let everyone sleep in the marked beds below ground.',
+          done: (state: WarrenState) =>
+            state.people.some((p) => p.body.alive) &&
+            state.people.filter((p) => p.body.alive).every((p) => state.refuge?.slept[p.id] !== undefined),
+        }
+      : g.id === 'raid'
+        ? {
+            ...g,
+            text: 'Shelter everyone beyond the riders’ reach through a real raid.',
+            done: protectedVisit,
+          }
+        : g.id === 'door'
+          ? {
+              ...g,
+              text: 'Shelter behind a closed stone door while riders search.',
+              done: (state: WarrenState) =>
+                state.raids
+                  .slice(1)
+                  .some((r) => r.stage === 'gone' && state.refuge?.raids[String(r.riders)]?.behindDoor),
+            }
+          : g,
+  );
+}
+
 function goalsStep(s: WarrenState) {
-  for (const g of GOALS) {
+  for (const g of goalsFor(s)) {
     const told = TOLD[g.id];
     if (told && !s.flags[`told:${g.id}`] && s.goals[g.id] === undefined && g.shown(s)) {
       s.flags[`told:${g.id}`] = s.minute;
@@ -2624,7 +2842,7 @@ function goalsStep(s: WarrenState) {
 }
 
 export function currentGoal(s: WarrenState): Goal | undefined {
-  return GOALS.find((g) => s.goals[g.id] === undefined && g.shown(s));
+  return goalsFor(s).find((g) => s.goals[g.id] === undefined && g.shown(s));
 }
 
 // ---------- the keeper's marks ----------
@@ -2647,6 +2865,18 @@ export function setChalk(s: WarrenState, cells: number[], on: boolean): number {
       text: 'You marked stone under the ridge. Beyond the ridge, the stone belongs to the neighbours. Yusuf Usta looked at the mark for a long time. He said only that people can hear digging through stone.',
       weight: 1.5,
     });
+  }
+  if (n && on && s.edition === '0.7.0') {
+    for (const cell of cells)
+      if (h.kind[cell] === K.loose && h.known[cell] && !s.flags[`loose-warning:${cell}`]) {
+        s.flags[`loose-warning:${cell}`] = s.minute;
+        note(s, {
+          kind: 'story',
+          cell,
+          text: 'Loose stone can fall when people cut it. A fall can break a lamp, beds, jars or a stone door beside the wall. The passage will stay open.',
+          weight: 2,
+        });
+      }
   }
   if (n && on) {
     s.stats.firstChalk ??= s.minute;
@@ -2725,7 +2955,7 @@ export function ringBell(s: WarrenState): boolean {
   s.bell = {
     at: s.minute,
     until:
-      (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') && r
+      (s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') && r
         ? r.leave
         : s.minute + V.bellHours * HOUR,
     real: !!r,

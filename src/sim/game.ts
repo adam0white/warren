@@ -28,11 +28,17 @@ import {
 export const GAME_VERSION = '0.6.0';
 export const TEXT_VERSION = 'plain3';
 const DEFAULT_EDITION = GAME_VERSION;
-export type Edition = '0.2.0' | '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0';
+export type Edition = '0.2.0' | '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0' | '0.7.0';
 
 export function editionOf(version: string): Edition {
   if (/^0\.2\.\d+$/.test(version)) return '0.2.0';
-  if (version === '0.3.0' || version === '0.4.0' || version === '0.5.0' || version === '0.6.0')
+  if (
+    version === '0.3.0' ||
+    version === '0.4.0' ||
+    version === '0.5.0' ||
+    version === '0.6.0' ||
+    version === '0.7.0'
+  )
     return version;
   throw new Error(`This version of Warren cannot load game version ${version}. Start a new game.`);
 }
@@ -64,16 +70,19 @@ export interface Game {
 export function newGame(seed: number, edition: string = DEFAULT_EDITION, chapter?: Chapter): Game {
   resetCaches();
   const rules = editionOf(edition);
-  const s = chapter ? restoreState(chapter.initial) : newWarren(seed, rules === '0.5.0' || rules === '0.6.0');
+  const s = chapter
+    ? restoreState(chapter.initial)
+    : newWarren(seed, rules === '0.5.0' || rules === '0.6.0' || rules === '0.7.0');
   if (
     chapter &&
-    (chapter.version !== (rules === '0.6.0' ? 'warren-cast/2' : 'warren-cast/1') ||
+    (chapter.version !== (rules === '0.6.0' || rules === '0.7.0' ? 'warren-cast/2' : 'warren-cast/1') ||
       s.seed !== seed ||
-      (rules !== '0.5.0' && rules !== '0.6.0'))
+      (rules !== '0.5.0' && rules !== '0.6.0' && rules !== '0.7.0'))
   )
     throw new Error('This version cannot load the saved starting state. Start a new game.');
   if (rules !== '0.2.0') s.edition = rules;
-  if (!chapter && rules === '0.6.0') seedRoleGoals(s);
+  if (!chapter && (rules === '0.6.0' || rules === '0.7.0')) seedRoleGoals(s);
+  if (!chapter && rules === '0.7.0') s.refuge = { slept: {}, raids: {}, forage: { day: -1, gathered: 0 } };
   return { s, inputs: [], ...(chapter ? { chapter: structuredClone(chapter) } : {}) };
 }
 

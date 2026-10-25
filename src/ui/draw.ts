@@ -12,6 +12,7 @@ import {
   activeRaid,
   airAndLight,
   carrying,
+  digProgress,
   drawPosition,
   faceState,
   riderCells,
@@ -283,7 +284,7 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
         }
       }
       // Half-dug: cracks.
-      const d = h.dig[i] ?? 0;
+      const d = digProgress(s, i, t);
       if (d > 0.02) {
         c.strokeStyle = ink.ink;
         c.lineWidth = 1;

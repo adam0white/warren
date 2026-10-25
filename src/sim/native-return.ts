@@ -55,7 +55,8 @@ export function returnCare(
 export function prepareNativeReturn(s: WarrenState, who: NativeReturnId): boolean {
   const invalidated = !!s.nativeDepartures?.[who];
   if (s.nativeDepartures) delete s.nativeDepartures[who];
-  if (s.edition !== '0.6.0' || !['kian', 'meryem'].includes(who)) return invalidated;
+  if ((s.edition !== '0.6.0' && s.edition !== '0.7.0') || !['kian', 'meryem'].includes(who))
+    return invalidated;
   const p = s.people.find((p) => p.id === who);
   if (!p?.body.alive || s.raids.some((r) => r.stage === 'riders')) return invalidated;
   if (who === 'kian') {

@@ -23,7 +23,8 @@ import { INVITATIONS } from '../sim/visits.ts';
 import {
   activeRaid,
   airAndLight,
-  GOALS,
+  digProgress,
+  goalsFor,
   houseOf,
   type Note,
   personOf,
@@ -205,7 +206,10 @@ function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
   lab.screen('title');
   feedbackCleanup?.();
   const compatible =
-    sv && sv.framework === FRAMEWORK_VERSION && sv.game === GAME_VERSION && sv.textVersion === TEXT_VERSION;
+    sv &&
+    sv.framework === FRAMEWORK_VERSION &&
+    (sv.game === GAME_VERSION || sv.game === '0.7.0') &&
+    sv.textVersion === TEXT_VERSION;
   cancelAnimationFrame(raf);
   canvas = null;
   stage?.destroy();
@@ -215,6 +219,7 @@ function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
     <p class="title-goal">${PURPOSE}</p>
     ${sv && !compatible ? '<p class="soft">This saved game comes from an older version and cannot be loaded. Start a new game.</p>' : ''}
     <div class="title-actions">${compatible ? `<button class="primary" id="cont">Resume <span class="soft">· ${esc(hillDate(sv.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
+      <label class="edition-choice"><input id="refuge-edition" type="checkbox"> New rules for this new hill: sleep and shelter outcomes, limited wild food, and warned damage to furnishings. Existing hills keep their rules.</label>
       <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'New game' : 'Begin'}</button>
       <div id="new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="new-yes">Yes, begin</button><button id="new-no">No</button></div>
       ${footer}</div><div id="title-drawer" hidden></div></div>`;
@@ -256,7 +261,15 @@ function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
 
 async function beginNewHill(errorHost?: HTMLElement): Promise<boolean> {
   try {
-    const prepared = await continuity.fresh((Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0);
+    const opted =
+      (
+        errorHost?.querySelector<HTMLInputElement>('#menu-refuge-edition') ??
+        document.querySelector<HTMLInputElement>('#refuge-edition')
+      )?.checked ?? false;
+    const prepared = await continuity.fresh(
+      (Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0,
+      opted ? '0.7.0' : '0.6.0',
+    );
     await store.drop(SAVE_KEY);
     g = prepared;
   } catch (error) {
@@ -373,8 +386,12 @@ function enter() {
     if (picker) picker.hidden = !picker.hidden;
     document.getElementById('furnish')?.setAttribute('aria-expanded', String(!picker?.hidden));
   });
-  document.getElementById('book')?.addEventListener('click', () => openBook());
-  document.getElementById('shelter-check')?.addEventListener('click', () => openBook('p'));
+  document
+    .getElementById('book')
+    ?.addEventListener('click', (event) => openBook('s', event.currentTarget as HTMLElement));
+  document
+    .getElementById('shelter-check')
+    ?.addEventListener('click', (event) => openBook('p', event.currentTarget as HTMLElement));
   document.getElementById('zoom-in')?.addEventListener('click', () => zoomView(2.2));
   document.getElementById('zoom-out')?.addEventListener('click', () => zoomView(1 / 2.2));
   document.getElementById('fit-hill')?.addEventListener('click', () => {
@@ -567,6 +584,10 @@ function order(o: Order): boolean {
 
 // ---------- the loop ----------
 
+function sEditionLegacy() {
+  return g?.s.edition !== '0.7.0';
+}
+
 function raidDecision() {
   const raid = g && activeRaid(g.s);
   return raid && !answeredRaids.has(raid.smoke) ? raid : null;
@@ -574,6 +595,10 @@ function raidDecision() {
 
 /** Menu pages, their person pages and notebook/privacy dialogs hold only playback. */
 function menuHoldsTime(): boolean {
+  if (g?.s.edition === '0.7.0')
+    return !!document.querySelector(
+      '#drawer[data-kind="s"]:not([hidden]), #drawer[data-kind="feedback"]:not([hidden]), .hflab-veil, #feedback-host:not([hidden])',
+    );
   return (
     !!document.querySelector('#drawer:not([hidden]), .hflab-veil, #feedback-host:not([hidden])') ||
     !!document.querySelector(':popover-open') ||
@@ -586,18 +611,21 @@ function frame(now: number) {
   if (!g || !ctx) return;
   const elapsed = Math.max(0, now - last);
   const dt = Math.min(250, elapsed);
-  const held = menuHoldsTime() || isReading() || !!raidDecision();
+  const held = menuHoldsTime() || (sEditionLegacy() && (isReading() || !!raidDecision()));
   if (held && readUntil > last) readUntil += elapsed;
   last = now;
   const s = g.s;
   const menuHeld = menuHoldsTime();
   const reading = isReading();
-  const rate = playbackRate(
-    reading || menuHeld,
-    !!raidDecision(),
-    now < readUntil,
-    ((SPEEDS[speedIx] ?? 1) * 1000) / MS_PER_MIN,
-  );
+  const rate = menuHeld
+    ? 0
+    : playbackRate(
+        reading || !!document.querySelector(':popover-open'),
+        !!raidDecision(),
+        now < readUntil,
+        ((SPEEDS[speedIx] ?? 1) * 1000) / MS_PER_MIN,
+        s.edition === '0.7.0',
+      );
   if (rate === 0) disp = s.minute;
   else disp += (dt * rate) / 1000;
   const t0 = performance.now();
@@ -713,13 +741,15 @@ function chrome() {
   const rate = document.getElementById('clock-rate');
   if (rate)
     rate.textContent =
-      menuHoldsTime() || reading0
+      menuHoldsTime() || (sEditionLegacy() && reading0)
         ? 'Time is paused for reading.'
-        : pending
-          ? 'Time is paused for your choice.'
-          : performance.now() < readUntil
-            ? 'Time slows for new text.'
-            : '';
+        : !sEditionLegacy() && (reading0 || pending)
+          ? 'Time slows while you read.'
+          : pending
+            ? 'Time is paused for your choice.'
+            : performance.now() < readUntil
+              ? 'Time slows for new text.'
+              : '';
   // New notes: heavy ones take the ticker.
   const firstNew = lastSeenNote ? s.notes.indexOf(lastSeenNote) + 1 : Math.max(0, s.notes.length - 1);
   for (const n of s.notes.slice(firstNew)) {
@@ -916,7 +946,7 @@ function card() {
     ${habit ? `<div class="hand">${esc(p.name)} goes down to the marked walls every morning now. Nobody needs to ask.</div>` : ''}
     ${trustWords(p) ? `<div class="soft">${esc(p.name)} ${trustWords(p)}.</div>` : ''}
     ${why ? `<div class="hand">“${esc(speechWords(why))}”</div>` : ''}
-    ${about.map((n) => `<div class="soft small">${esc(displayWords(n.text))}</div>`).join('')}${(s.edition === '0.5.0' || s.edition === '0.6.0') && VISIT_TERMS[p.id] ? `<p>${esc(displayWords(VISIT_TERMS[p.id]!))}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>End optional work</button>` : ''}
+    ${about.map((n) => `<div class="soft small">${esc(displayWords(n.text))}</div>`).join('')}${(s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') && VISIT_TERMS[p.id] ? `<p>${esc(displayWords(VISIT_TERMS[p.id]!))}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>End optional work</button>` : ''}
 </details>${p.id === 'kian' ? continuity.careControls() : ''}`;
   if (el.dataset.html !== html) {
     const focused = document.activeElement?.id;
@@ -1267,10 +1297,23 @@ function describeCell(c: number) {
       k === K.hard
         ? 'This stone is hard and slow to cut.'
         : k === K.loose
-          ? 'This loose stone is quick to dig, but it can fall.'
+          ? g.s.edition === '0.7.0'
+            ? 'Loose stone can fall and break furnishings beside the wall. The passage will stay open.'
+            : 'This loose stone is quick to dig, but it can fall.'
           : k === K.seam
             ? 'Water seeps through this damp stone.'
             : 'This soft stone is easy to cut when freshly exposed.';
+  if (g.s.edition === '0.7.0' && k !== K.open && h.chalk[c]) {
+    const progress = digProgress(g.s, c);
+    text +=
+      progress > 0.7
+        ? ' The cut is nearly through.'
+        : progress > 0.25
+          ? ' The cut is deepening.'
+          : progress > 0.02
+            ? ' Pick marks are opening the face.'
+            : ' Nobody has cut into this wall yet.';
+  }
   if (k !== K.open && h.chalk[c]) {
     const stand = neighbours(c).find((j) => h.kind[j] === K.open && yOf(j) >= SURF);
     if (stand !== undefined) text += airWords(stand);
@@ -1461,7 +1504,7 @@ function closeBook() {
 }
 
 function menuRows() {
-  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div>${labTools ? continuity.controls() : ''}<div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label></div><button class="primary" id="resume">Resume</button>`;
+  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><label class="edition-choice"><input id="menu-refuge-edition" type="checkbox"> Use new sleep and shelter goals, limited wild food, and warned damage to furnishings.</label><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div>${labTools ? continuity.controls() : ''}<div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label></div><button class="primary" id="resume">Resume</button>`;
 }
 let feedbackCleanup: (() => void) | undefined;
 function showFeedback(host: HTMLElement, onBack: () => void) {
@@ -1469,6 +1512,32 @@ function showFeedback(host: HTMLElement, onBack: () => void) {
   feedbackCleanup = openFeedback(host, lab, runOf, download, onBack, continuity.chooseContinuityRecording);
 }
 function bindMenu(host: HTMLElement, close: () => void) {
+  host.onkeydown = (event) => {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      close();
+      return;
+    }
+    if (event.key !== 'Tab') return;
+    const controls = [
+      ...host.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), a[href], input:not(:disabled), textarea, select, summary, [tabindex="0"]',
+      ),
+    ].filter((el) => el.getClientRects().length > 0 && !el.closest('[hidden]'));
+    const first = controls[0];
+    const last = controls.at(-1);
+    if (!first || !last) return;
+    if (
+      (event.shiftKey && document.activeElement === first) ||
+      (!event.shiftKey && document.activeElement === last) ||
+      !host.contains(document.activeElement)
+    ) {
+      event.preventDefault();
+      (event.shiftKey ? last : first).focus();
+    }
+  };
+
   continuity.bind(host, (game) => {
     g = game;
     speedIx = 0;
@@ -1528,9 +1597,11 @@ function titleMenu() {
   host.innerHTML = `<div class="sheet"><div class="who"><b>Game menu</b><button id="title-menu-x" aria-label="Close menu">×</button></div>${menuRows()}</div>`;
   const close = () => {
     host.hidden = true;
+    document.getElementById('book')?.focus();
   };
   host.querySelector('#title-menu-x')?.addEventListener('click', close);
   bindMenu(host, close);
+  host.querySelector<HTMLElement>('#title-menu-x')?.focus();
   // Reading rows belong to the current hill; enter it before opening a reading.
   for (const b of host.querySelectorAll<HTMLElement>('[data-open]'))
     b.addEventListener('click', async () => {
@@ -1543,14 +1614,14 @@ function titleMenu() {
       }
     });
 }
-function openBook(tab = 's') {
+function openBook(tab = 's', opener?: HTMLElement) {
   feedbackCleanup?.();
   closeCell(false);
   bellReading = false;
   const d = document.getElementById('drawer');
   if (!d || !g) return;
   if (tab === 's') void writeSave();
-  menuOpener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  menuOpener = opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
   paint.selected = null;
   personOpener = null;
   const s = g.s;
@@ -1565,7 +1636,7 @@ function openBook(tab = 's') {
     `<p class="${n.weight >= 2 ? 'heavy' : ''}"><span class="soft small">${esc(hillDate(n.at))}</span><br>${esc(displayWords(n.text))}</p>`;
   const alive = s.people.filter((p) => p.body.alive);
   const below = alive.filter((p) => yOf(positionAt(s, p.id, s.minute)) >= SURF);
-  const done = GOALS.filter((x) => s.goals[x.id] !== undefined);
+  const done = goalsFor(s).filter((x) => s.goals[x.id] !== undefined);
   const householdRows = (members: Person[]) =>
     s.houses
       .map((hs) => {

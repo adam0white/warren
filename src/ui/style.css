@@ -1721,3 +1721,83 @@ body {
     min-height: 56px;
   }
 }
+
+/* Keep a working scene above its reading. Short screens scroll as one page. */
+@media (max-width: 767px) {
+  .game.lk-stage {
+    grid-template-rows: 44px 80px minmax(120px, 1fr) 360px;
+    overflow-y: auto;
+  }
+  .game.lk-stage .panel {
+    position: relative;
+    overflow: hidden;
+  }
+  .game.lk-stage #inspection-body {
+    position: relative;
+    inset: auto;
+    flex: 1;
+    min-height: 0;
+    box-shadow: none;
+  }
+  .game.lk-stage .panel:has(#inspection-body > :not(#journal-tail):not([hidden])) .reading-actions {
+    display: none;
+  }
+  .game.lk-stage #hill-controls {
+    flex: 0 0 auto;
+  }
+  .game.lk-stage[data-reflow="true"] {
+    grid-template-rows: 44px 80px 240px 300px;
+    align-content: start;
+  }
+  .game.lk-stage[data-raid="true"] {
+    grid-template-rows: 44px 80px minmax(120px, 1fr) 440px;
+  }
+  .game.lk-stage #inspection-body:has(#drawer[data-kind="s"]:not([hidden])),
+  .game.lk-stage #inspection-body:has(#drawer[data-kind="feedback"]:not([hidden])) {
+    position: fixed;
+    inset: 44px 0 0;
+    height: calc(100dvh - 44px);
+    z-index: 20;
+  }
+}
+@media (min-width: 600px) and (max-width: 767px) and (max-height: 599px) {
+  .game.lk-stage,
+  .game.lk-stage[data-reflow="true"],
+  .game.lk-stage[data-raid="true"] {
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-rows: 44px 80px minmax(240px, 1fr);
+  }
+  .game.lk-stage > .topbar {
+    grid-column: 1 / -1;
+  }
+  .game.lk-stage .state-strip {
+    grid-column: 1 / -1;
+  }
+  .game.lk-stage .scene {
+    grid-column: 1;
+    grid-row: 3;
+  }
+  .game.lk-stage .panel {
+    grid-column: 2;
+    grid-row: 3;
+  }
+  .game.lk-stage > .goal-slot {
+    width: calc(100% - 340px);
+  }
+}
+
+@media (max-width: 767px) {
+  .game.lk-stage[data-raid="true"] #raid-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-height: 0;
+    padding: 8px 12px 12px;
+  }
+  .game.lk-stage[data-raid="true"] #raid-words {
+    grid-column: 1 / -1;
+    min-height: 0;
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.3;
+  }
+}

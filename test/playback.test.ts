@@ -25,3 +25,10 @@ it('detects an arrival and a new note even after the bounded log fills', () => {
   s.notes.push({ ...note, at: note.at + 30, text: 'A new reply.' });
   expect(eventStamp(s)).not.toBe(full);
 });
+it('slows opted play for readings and danger without stopping the simulation clock', () => {
+  expect(playbackRate(true, false, false, 1152, true)).toBe(18);
+  expect(playbackRate(false, true, false, 1152, true)).toBe(18);
+  expect(playbackRate(false, false, true, 72, true)).toBe(18);
+  expect(playbackRate(false, false, false, 1152, true)).toBe(1152);
+  expect(playbackRate(true, false, false, 9, true)).toBe(9);
+});

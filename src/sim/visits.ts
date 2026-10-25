@@ -25,7 +25,7 @@ const CLUES: Record<string, string> = {
 export function visit(s: WarrenState, id: string): boolean {
   const p = s.people.find((p) => p.id === id);
   if (
-    (s.edition !== '0.5.0' && s.edition !== '0.6.0') ||
+    (s.edition !== '0.5.0' && s.edition !== '0.6.0' && s.edition !== '0.7.0') ||
     !CAST_IDS[id] ||
     !p?.body.alive ||
     s.flags[`visit:${id}`]
@@ -52,7 +52,7 @@ export function visit(s: WarrenState, id: string): boolean {
 export function releaseVisit(s: WarrenState, id: string): boolean {
   const p = s.people.find((p) => p.id === id);
   if (
-    (s.edition !== '0.5.0' && s.edition !== '0.6.0') ||
+    (s.edition !== '0.5.0' && s.edition !== '0.6.0' && s.edition !== '0.7.0') ||
     !CAST_IDS[id] ||
     !p?.body.alive ||
     p.projects?.currentGoalId ||
