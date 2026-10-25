@@ -1302,6 +1302,7 @@ function closeCell(focus = true) {
   if (!detail || detail.hidden) return;
   detail.hidden = true;
   restoreActions();
+  chrome();
   if (focus) canvas?.focus();
 }
 

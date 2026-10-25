@@ -95,6 +95,7 @@ describe('F-233 raid playback', () => {
       expect(await page.evaluate('window.__warren.game.s.minute')).toBe(minuteAtBell);
       expect(await page.locator('#clock-rate').innerText()).toBe('Time waits while you read');
       await page.locator('#cellx').click();
+      expect(await page.locator('#clock-rate').innerText()).toBe('Reading the latest word');
       // chrome refreshes the clock label at 250ms boundaries.
       await page.clock.runFor(250);
       expect(await page.locator('#clock-rate').innerText()).toBe('Reading the latest word');
