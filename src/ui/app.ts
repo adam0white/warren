@@ -41,7 +41,7 @@ import { openFeedback } from './feedback.ts';
 import { growthWords } from './growth.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
-import { activityWords, displayWords, speechWords } from './words.ts';
+import { activityWords, displayWords, settingWords, speechWords } from './words.ts';
 
 const labTools = new URLSearchParams(location.search).get('lab') === '1';
 
@@ -116,7 +116,10 @@ if (notice) {
 }
 const app = () => document.getElementById('app') as HTMLElement;
 const esc = (x: string) =>
-  x.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
+  settingWords(x).replace(
+    /[&<>"]/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string,
+  );
 const NUM = [
   'no one',
   'one',
@@ -148,7 +151,7 @@ document.body.append(noticeFooter);
 const footer = `<div class="footer">${'<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>'}<br>People by the Human Framework.${labTools ? ` Version ${FRAMEWORK_VERSION}.` : ''}</div>`;
 const playInfo = `<p>Chalk a dashed outline. People choose when to dig it. People need air and light to dig a marked wall.</p><p>Furnish open ground: a store for jars, beds for sleeping, a lamp, or a door.</p><p>A door needs one cell wide, open on two opposite sides. You can mark up to three doors.</p><p>Filled figures count marked sleeping places. Hollow figures show missing places. Tap souls to check each person’s exposure.</p>`;
 function topbar(titlePage = false) {
-  return `<header class="topbar"><div class="bar-words">${titlePage ? '<a target="_top" href="https://human.adamwhite.work/games/">All games</a>' : '<span id="when"></span>'}</div><button class="info" aria-label="Information" popovertarget="hill-info">i</button><button id="book" aria-label="Game menu">≡<span class="menu-label"> Menu</span></button></header><div id="hill-info" class="info-popover" popover="auto"><div class="who"><b>${titlePage ? 'The hill' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${titlePage ? '<p>Riders burned two villages. The cellar under Yusuf Usta’s house is the start.</p><p>You have the chalk and the bell. You mark where work is needed. Each person chooses what to do.</p><p>One finger chalks or looks. Two fingers move the hill.</p><p>A year has 365 days. Year 1 begins on 19 August.</p>' : playInfo}</div>`;
+  return `<header class="topbar"><div class="bar-words">${titlePage ? '<a target="_top" href="https://human.adamwhite.work/games/">All games</a>' : '<span id="when"></span>'}</div><button class="info" aria-label="Information" popovertarget="hill-info">i</button><button id="book" aria-label="Game menu">≡<span class="menu-label"> Menu</span></button></header><div id="hill-info" class="info-popover" popover="auto"><div class="who"><b>${titlePage ? 'The hill' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${titlePage ? '<p>Riders burned two villages. The cellar under Master Yusuf’s house is the start.</p><p>You have the chalk and the bell. You mark where work is needed. Each person chooses what to do.</p><p>One finger chalks or looks. Two fingers move the hill.</p><p>A year has 365 days. Year 1 begins on 19 August.</p>' : playInfo}</div>`;
 }
 
 // ---------- start ----------
@@ -692,7 +695,7 @@ function chrome() {
     const words = document.getElementById('raid-words');
     const below = s.people.filter((p) => p.body.alive && yOf(positionAt(s, p.id, s.minute)) >= SURF);
     if (words)
-      words.textContent = `${pending?.stage === 'smoke' ? 'Smoke rises on the ridge. Riders may arrive in half a day.' : 'Riders are at the hill.'} People choose whether to come. Currently below: ${below.length <= 4 ? below.map((p) => p.name).join(', ') || 'no one' : souls(below.length)}. Above: ${s.people.filter((p) => p.body.alive).length - below.length}.`;
+      words.textContent = `${pending?.stage === 'smoke' ? 'Smoke rises on the ridge. Riders may arrive in half a day.' : 'Riders are at the hill.'} People choose whether to come. Currently below: ${below.length <= 4 ? below.map((p) => settingWords(p.name)).join(', ') || 'no one' : souls(below.length)}. Above: ${s.people.filter((p) => p.body.alive).length - below.length}.`;
   }
   const info = document.getElementById('hill-info');
   if (info && !info.matches(':popover-open')) {
@@ -776,13 +779,13 @@ function showReading(title: string, words: string, remember = true, preserveScro
   pendingEntrance = null;
   const choice = document.getElementById('entrance-choice');
   if (choice) choice.hidden = true;
-  const sameReading = preserveScroll && !detail.hidden && heading.textContent === title;
+  const sameReading = preserveScroll && !detail.hidden && heading.textContent === settingWords(title);
   if (!sameReading) document.getElementById('inspection-body')?.scrollTo(0, 0);
-  heading.textContent = title;
+  heading.textContent = settingWords(title);
   words = displayWords(words);
-  if (text.textContent !== words) {
+  if (text.textContent !== settingWords(words)) {
     const scroll = sameReading ? text.scrollTop : 0;
-    text.textContent = words;
+    text.textContent = settingWords(words);
     text.scrollTop = scroll;
   }
   detail.hidden = false;
@@ -809,7 +812,7 @@ function readingContext(words: string) {
     label.textContent = 'More ▸';
     label.setAttribute('aria-label', 'More about these routes');
   }
-  if (text) text.textContent = words;
+  if (text) text.textContent = settingWords(words);
 }
 
 function flash(text: string, contextWords = '') {
@@ -832,7 +835,7 @@ function receipt(text: string) {
   if (reopen) reopen.disabled = false;
   hintUntil = performance.now() + 6000;
   const peek = document.getElementById('event-sentence');
-  if (peek) peek.textContent = text;
+  if (peek) peek.textContent = settingWords(text);
 }
 
 function hint(key: string, text: string) {
@@ -840,7 +843,7 @@ function hint(key: string, text: string) {
   seenHint.add(key);
   const peek = document.getElementById('event-sentence');
   hintUntil = performance.now() + 6000;
-  if (peek) peek.textContent = text;
+  if (peek) peek.textContent = settingWords(text);
 }
 let hintUntil = 0;
 
@@ -1322,8 +1325,8 @@ function updateDoor() {
     g.s.hill.use[doorCell] === USE.beds
       ? sleepingRoomWords(g.s, doorCell)
       : doorWords(g.s, doorCell, lightAt(doorCell));
-  if (text && text.textContent !== words) {
-    text.textContent = words;
+  if (text && text.textContent !== settingWords(words)) {
+    text.textContent = settingWords(words);
     lastReading = { title: g.s.hill.use[doorCell] === USE.beds ? 'Sleeping room' : 'Stone door', words };
   }
   updateDoorContext(doorCell);
@@ -1340,7 +1343,7 @@ function updateDoorContext(cell: number) {
     label.setAttribute('aria-label', 'More about this door');
   }
   if (context) context.hidden = !words;
-  if (text) text.textContent = words;
+  if (text) text.textContent = settingWords(words);
 }
 
 function showPlan(cell: number) {
@@ -1375,7 +1378,7 @@ function showDoor(cell: number) {
   const detail = document.getElementById('cell-detail');
   const text = document.getElementById('cell-words');
   if (detail && text) {
-    text.textContent = words;
+    text.textContent = settingWords(words);
     detail.hidden = false;
     document.getElementById('cellx')?.focus();
   }
@@ -1402,7 +1405,7 @@ function showBellReading() {
   }
   if (text)
     text.textContent = replies.length
-      ? replies.map((p) => `${p.name}: ${exposureWords(s, p)}`).join('\n\n')
+      ? replies.map((p) => settingWords(`${p.name}: ${exposureWords(s, p)}`)).join('\n\n')
       : 'No one has replied yet.';
 }
 
@@ -1430,11 +1433,12 @@ function updateShelter() {
     bellState.setAttribute('aria-label', ringing ? 'Bell ringing' : low ? 'Bell trust is low' : 'Bell quiet');
   }
   const summary = document.getElementById('shelter-summary');
-  if (summary) summary.textContent = bellShelterWords(g.s).replace(bellStateWords(g.s), '').trim();
+  if (summary)
+    summary.textContent = settingWords(bellShelterWords(g.s).replace(bellStateWords(g.s), '').trim());
   for (const row of document.querySelectorAll<HTMLElement>('[data-shelter-person]')) {
     const person = personOf(g.s, row.dataset.shelterPerson ?? '');
     const words = person?.body.alive ? exposureWords(g.s, person) : 'This person has died. See the journal.';
-    if (row.textContent !== words) row.textContent = words;
+    if (row.textContent !== settingWords(words)) row.textContent = settingWords(words);
   }
 }
 

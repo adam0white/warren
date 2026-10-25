@@ -78,6 +78,14 @@ const phrases: Record<string, string> = {
   'No riders again.': 'No riders came again.',
   'No riders.': 'No riders came.',
 };
+/** Translate setting titles only at the display boundary. */
+export function settingWords(text: string): string {
+  return text
+    .replaceAll('Yusuf Usta', 'Master Yusuf')
+    .replaceAll('Hajja Maryam', 'Maryam')
+    .replace(/\bUsta\b/gu, 'Master');
+}
+
 export function speechWords(text: string): string {
   return displayWords(text)
     .replace(/Not now\. (After [^.]+)\./g, 'I cannot come now. I will come $1.')
@@ -90,7 +98,7 @@ export function speechWords(text: string): string {
 export function displayWords(text: string): string {
   let result = text;
   for (const [from, to] of Object.entries(phrases)) result = result.replaceAll(from, to);
-  return result
+  return settingWords(result)
     .replace(/heard the bell and kept on with ([^.]+)\./g, 'heard the bell and continued to $1.')
     .replace(/“([^”]+)”/g, (_, speech: string) => `“${speechWords(speech)}”`);
 }
