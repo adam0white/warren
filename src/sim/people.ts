@@ -87,6 +87,7 @@ export function makePerson(w: Who, seed: number, now: number, house: string): Pe
     },
     voices: [{ voiceId: BELL, trust: w.trust ?? 0.55 }],
     retention: { trace: 0, chronicleDays: 14 },
+    lexicon: { plainEnglish: true },
     enable: adult ? { fatigueStore: true } : {},
     // They live with the raids in mind: safety is not felt as met (engineering assumption).
     needs: { safety: 0.55 },

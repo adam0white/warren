@@ -12,7 +12,7 @@ function ringing() {
   s.notes.push({ at: s.minute, kind: 'story', text: 'You rang the bell.', weight: 1 });
   const p = s.people[0];
   if (!p) throw new Error('Missing person');
-  s.answers.push({ at: s.minute, who: p.id, verdict: 'assented', says: 'Fine.' });
+  s.answers.push({ at: s.minute, who: p.id, verdict: 'assented', says: 'I agree.' });
   p.activity = {
     action: 'carve',
     affordance: { label: 'carve the rolling stone' },

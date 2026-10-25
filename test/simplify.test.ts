@@ -15,13 +15,13 @@ afterAll(async () => {
   await server?.close();
 });
 
-it('glosses HF replies and composes current activity text without changing its input', () => {
-  const original = 'There is smoke in the south again. Yusuf: “Good idea. On it.”';
+it('keeps HF sentences and composes current activity text without changing its input', () => {
+  const original = 'There is smoke in the south again. Yusuf Usta: “That is a good idea. I will do it.”';
   expect(displayWords(original)).toBe(
-    'There is smoke in the south again. Yusuf: “That is a good idea. I will do it.”',
+    'There is smoke in the south again. Master Yusuf: “That is a good idea. I will do it.”',
   );
-  expect(speechWords('Not now. After I pray.')).toBe('I cannot come now. I will come after I pray.');
-  expect(original).toContain('Good idea. On it.');
+  expect(speechWords('After I pray, I will do it.')).toBe('After I pray, I will do it.');
+  expect(original).toContain('Yusuf Usta');
   expect(activityWords('carry loose stone up to the pile above ground')).toBe(
     'Their current task is to carry loose stone up to the pile above ground.',
   );

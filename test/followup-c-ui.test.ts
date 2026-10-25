@@ -156,7 +156,7 @@ for (const [width, height] of [
       await page.evaluate(`(() => {
         const s=window.__warren.game.s;
         for (const p of s.people) {
-          s.answers.push({at:s.minute,who:p.id,verdict:'assented',says:'Fine.'});
+          s.answers.push({at:s.minute,who:p.id,verdict:'assented',says:'I agree.'});
           p.activity={action:'carve',affordance:{id:'carve',action:'carve',label:'carve the rolling stone',duration:90,effort:0.1,advertises:{}},startedAt:s.minute-20,endsAt:s.minute+90,reviewAt:s.minute+12};
           delete s.trips[p.id];
         }

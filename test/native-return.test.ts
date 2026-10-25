@@ -15,7 +15,7 @@ describe('finite native return from actual played Warren care', () => {
     const k = await projectNativeReturn(g.s, 'kian');
     expect(k.raw).toEqual(before);
     expect(k.transfer.checkpoint.sha256).toBe(
-      'f8dc20cd2eff854f47bca2f30743ad84b1702066250c88253548f4cdc6a20a75',
+      'ea1f749715683553dd85d37021b00e3e2fb31b9d4cea5af7c1b442b40f1b2f8b',
     );
     expect(k.transfer.warrenCare?.visit.dependent.sleepPressure).toBe(0.18374932648343162);
     expect(k.transfer.warrenCare?.visit.source.dependent.sleepPressure).toBe(0.2337493264834316);

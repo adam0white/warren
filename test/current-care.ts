@@ -25,6 +25,14 @@ export function currentCareSaved(): Saved & { ownedHeads: NonNullable<Saved['own
   // opening rumour; compare its queued structure while allowing its prose to change.
   const rules = (s: typeof oldRules) => {
     const copy = structuredClone(s);
+    // Engine stamps and the explicit host narration opt-in are the only new metadata.
+    for (const person of copy.people) {
+      if (person.lexicon?.plainEnglish === true) {
+        delete person.lexicon.plainEnglish;
+        if (!Object.keys(person.lexicon).length) delete person.lexicon;
+      }
+      person.engine = '2.21.0';
+    }
     for (const events of Object.values(copy.queued)) {
       for (const event of events) event.summary = '';
     }

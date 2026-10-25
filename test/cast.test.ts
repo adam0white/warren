@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { ENGINE_VERSION, snapshot } from '@adam0white/human-framework';
 import { createPersona, initialPersonaLife, preparePersonaLife } from '@adam0white/lab-client';
 import { describe, expect, it } from 'vitest';
@@ -32,6 +33,7 @@ describe('bounded Warren calendar mapping', () => {
     const i = target.s.people.findIndex((p) => p.id === 'meryem');
     target.s.people[i] = admit(input, target.s.people[i]!);
     applyLife(target.s, input);
+    expect(target.s.people[i]!.lexicon?.plainEnglish).toBe(true);
     expect(target.s.people[i]!.rng).toEqual(p.rng);
     expect(target.s.people[i]!.agenda.goals.some((g) => g.id === 'between-games-assignment')).toBe(true);
     const chapter = {
@@ -78,4 +80,32 @@ describe('bounded Warren calendar mapping', () => {
     expect(captured.transfer.person.calendar.heldNorms.some((n) => n.normId === 'dues')).toBe(true);
     expect(g.s.people).toContain(p);
   });
+});
+
+it('admits a real current Watch checkpoint with finite identity and dialect checks', async () => {
+  const fixture = JSON.parse(readFileSync(new URL('./fixtures/watch-hf-2.21.json', import.meta.url), 'utf8'));
+  expect(fixture.raw.engine).toBe('2.21.0');
+  expect(fixture.transfer.person.person.source.engine).toBe('2.21.0');
+  const castId = 'hf.cast.meryem.warren';
+  const parent = await createPersona({
+    format: 'hf-persona/1',
+    castId,
+    castRevision: '1',
+    branchId: 'real-watch-221',
+    parentRevision: null,
+    source: { game: 'watch', build: fixture.peerCommit, engine: fixture.raw.engine, rules: 'cast-1' },
+    transfer: { ...fixture.transfer, life: initialPersonaLife(castId, 'real-watch-221', 0) },
+    limitations: [],
+  });
+  const input = preparePersonaLife(parent, 0);
+  const opening = newGame(7).s.people.find((p) => p.id === 'meryem')!;
+  const admitted = admit(input, opening);
+  expect(admitted.rng).toEqual(fixture.raw.rng);
+  expect(admitted.lexicon?.plainEnglish).toBe(true);
+  const wrongRole = structuredClone(input);
+  wrongRole.parent.transfer.sourceRole = 'tamar';
+  expect(() => admit(wrongRole, opening)).toThrow(/role/);
+  const wrongEngine = structuredClone(input);
+  wrongEngine.parent.source.engine = '99.0.0';
+  expect(() => admit(wrongEngine, opening)).toThrow(/version/);
 });
