@@ -34,7 +34,7 @@ export function editionOf(version: string): Edition {
   if (/^0\.2\.\d+$/.test(version)) return '0.2.0';
   if (version === '0.3.0' || version === '0.4.0' || version === '0.5.0' || version === '0.6.0')
     return version;
-  throw new Error(`Unsupported Warren edition: ${version}`);
+  throw new Error(`This version of Warren cannot load game version ${version}. Start a new game.`);
 }
 
 export type Input =
@@ -71,7 +71,7 @@ export function newGame(seed: number, edition: string = DEFAULT_EDITION, chapter
       s.seed !== seed ||
       (rules !== '0.5.0' && rules !== '0.6.0'))
   )
-    throw new Error('Unsupported pinned chapter.');
+    throw new Error('This version cannot load the saved starting state. Start a new game.');
   if (rules !== '0.2.0') s.edition = rules;
   if (!chapter && rules === '0.6.0') seedRoleGoals(s);
   return { s, inputs: [], ...(chapter ? { chapter: structuredClone(chapter) } : {}) };
@@ -211,9 +211,10 @@ export function load(saved: Saved): Game {
       'This saved game uses an older version of the Human Framework. Start fresh with a new game.',
     );
   if (saved.textVersion !== TEXT_VERSION)
-    throw new Error('This saved game comes from before the text rewrite. Start a new game.');
+    throw new Error('This saved game uses a different version. Start a new game.');
   const edition = editionOf(saved.game);
-  if ((saved.state.edition ?? '0.2.0') !== edition) throw new Error('Save edition does not match its state');
+  if ((saved.state.edition ?? '0.2.0') !== edition)
+    throw new Error('The saved game’s version does not match its recorded state. Start a new game.');
   return {
     s: restoreState(saved.state),
     inputs: structuredClone(saved.inputs),

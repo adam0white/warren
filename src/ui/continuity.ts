@@ -157,7 +157,7 @@ export async function fileLoad(file: File): Promise<Game> {
   if (file.size > 16 * 1024 * 1024) throw new Error('The file is too large to import on this device.');
   const saved = JSON.parse(await file.text()) as Saved;
   if (saved.textVersion !== TEXT_VERSION)
-    throw new Error('This file comes from before the text rewrite. Start a new game.');
+    throw new Error('This file uses a different version. Start a new game.');
   if (saved.game !== '0.6.0') throw new Error('This file uses an older version. Start a new game.');
   if (saved.chapter) {
     const chapter = saved.chapter;
