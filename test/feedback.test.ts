@@ -42,7 +42,7 @@ async function mount(privacy = false, off = false, failRun = false): Promise<Pag
   return page;
 }
 
-it('queues a linked verdict and trimmed name, remembers the name, and keeps downloading available', async () => {
+it('sends a linked verdict and trimmed name, remembers the name, and keeps downloading available', async () => {
   const page = await mount();
   try {
     await page.getByRole('button', { name: "I'd keep playing", exact: true }).click();
@@ -51,7 +51,7 @@ it('queues a linked verdict and trimmed name, remembers the name, and keeps down
     await page.locator('.feedback-name input').fill('  Tester 7  ');
     await page.getByRole('button', { name: 'Keep a copy of this run' }).click();
     await page.locator('.feedback-primary').click();
-    expect(await page.locator('.feedback-status').innerText()).toContain('queued');
+    expect(await page.locator('.feedback-status').innerText()).toContain('Sent. Your note is stored.');
     expect(await page.evaluate('window.feedbackCalls')).toEqual([
       ['download'],
       [
@@ -88,7 +88,7 @@ it('sends notes while recording is off or privacy is on, without a second dialog
       expect(await page.locator('.feedback-primary').isEnabled()).toBe(true);
       await page.locator('textarea').fill('QA feedback-fix');
       await page.locator('.feedback-primary').click();
-      expect(await page.locator('.feedback-status').innerText()).toContain('Your note is queued');
+      expect(await page.locator('.feedback-status').innerText()).toContain('Sent. Your note is stored.');
       expect(await page.evaluate('window.feedbackCalls')).toEqual([
         [
           'feedback',
@@ -129,3 +129,30 @@ for (const checked of [false, true]) {
     }
   });
 }
+
+it.each([true, false])('reports stored only after acknowledgement (accepted=%s)', async (accepted) => {
+  const page = await mount();
+  try {
+    await page.evaluate(`window.testFeedbackLab.sendFeedback = () => new Promise((resolve, reject) => {
+      window.finishFeedback = () => ${accepted} ? resolve('stored') : reject(new Error('not stored'));
+    });`);
+    await page.locator('textarea').fill('Keep this note until it is stored.');
+    await page.locator('.feedback-primary').click();
+    expect(await page.locator('.feedback-status').innerText()).not.toContain('Sent.');
+    expect(await page.locator('.feedback-primary').isDisabled()).toBe(true);
+    expect(await page.locator('textarea').inputValue()).toBe('Keep this note until it is stored.');
+    await page.evaluate('window.finishFeedback()');
+    if (accepted) {
+      await expect
+        .poll(() => page.locator('.feedback-status').innerText())
+        .toBe('Sent. Your note is stored.');
+    } else {
+      await expect.poll(() => page.locator('.feedback-status').innerText()).toContain('could not be sent');
+      expect(await page.locator('.feedback-status').innerText()).not.toContain('Sent.');
+      expect(await page.locator('textarea').inputValue()).toBe('Keep this note until it is stored.');
+      expect(await page.locator('.feedback-primary').isEnabled()).toBe(true);
+    }
+  } finally {
+    await page.close();
+  }
+});

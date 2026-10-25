@@ -242,14 +242,12 @@ export function openFeedback(
     send.textContent = sent ? 'Back to the game' : pending ? 'Sending…' : 'Submit';
   }
 
-  function markSent(submittedName: string, noteOnly: boolean): void {
+  function markSent(submittedName: string): void {
     rememberName(submittedName);
     if (!active) return;
     sent = true;
     pending = false;
-    status.textContent = noteOnly
-      ? 'Your note is queued without a run or linked play history. This is not a delivery receipt.'
-      : 'Your note is queued. An available run may also be included. This is not a delivery receipt.';
+    status.textContent = 'Sent. Your note is stored.';
     back.hidden = true;
     verdicts.hidden = true;
     noteLabel.hidden = true;
@@ -271,13 +269,12 @@ export function openFeedback(
     const submittedNote = composedNote();
     try {
       const sharePlay = feedbackSharePlay(choice);
-      const noteOnly = lab.telemetryOn === false && !sharePlay;
       await lab.sendFeedback(submittedNote, {
         name: submittedName,
         run: feedbackRun(getRun, true),
         sharePlay,
       });
-      markSent(submittedName, noteOnly);
+      markSent(submittedName);
     } catch {
       if (!active) return;
       status.textContent = 'The note could not be sent. Your note and name are still here. Try again.';
