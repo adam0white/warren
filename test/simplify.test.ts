@@ -192,6 +192,10 @@ for (const engine of [chromium, webkit]) {
             text = range.getBoundingClientRect();
           return {
             font: parseFloat(getComputedStyle(el).fontSize),
+            fontFamily: getComputedStyle(el).fontFamily,
+            paddingInline: getComputedStyle(el).paddingInline,
+            textWidth: text.width,
+            lineRects: Array.from(range.getClientRects()).map((r) => ({ width: r.width, height: r.height })),
             node: box.height,
             host: host.getBoundingClientRect().height,
             textHeight: text.height,
@@ -212,6 +216,7 @@ for (const engine of [chromium, webkit]) {
       expect(enlarged.node).toBeGreaterThan(normal.node);
       expect(enlarged.full && !enlarged.overflow).toBe(true);
       expect(enlarged.host).toBeCloseTo(enlarged.node, 0);
+      console.log(JSON.stringify({ engine: engine.name(), normal, enlarged }));
     } finally {
       await browser.close();
     }

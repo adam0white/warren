@@ -29,3 +29,7 @@ Technical completion requires one independent review, focused regressions and th
 ## Compact shared notice adoption — 2026-10-24
 
 The final shared footer uses immutable kit0.5.7 with unchanged client0.4.6. It says “We record and link play across games on this device.” The actual SDK node stays in the stable body footer; no local text or Dismiss control is added. Obsolete local notice styling is removed. Normal phone text remains at least14px and fits one line with node and host at most40px; enlarged text wraps without a height cap. Reviewed copy, simulation, rules and cultural terms are unchanged. The existing independent review remains complete. Delivery still requires the lane, signed source, exact green CI, a fresh latest-origin deployment, eight live cases, footer/navigation proof and prompt managed-worktree cleanup. Evidence stays in the existing external Warren worker report.
+
+## Portable compact notice metrics — 2026-10-24
+
+The first kit0.5.7 adoption passed Mac checks but Linux CI wrapped the wider system-ui text to47.78px. The SDK notice alone now uses Arial with Liberation Sans and sans-serif fallbacks and2px horizontal padding. Body typography, immutable kit/client bytes, exact disclosure, Recording, rules and simulation stay unchanged. The existing one-line,≥14px,≤40px node/host and enlarged full-wrapping assertions remain. No extra review or playtest is needed for this narrow portability correction.

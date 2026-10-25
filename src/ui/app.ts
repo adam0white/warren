@@ -109,6 +109,11 @@ let lastReading: { title: string; words: string; context?: string } | null = nul
 let pendingEntrance: number[] | null = null;
 
 const notice = telemetryNotice();
+// Keep the shared notice readable on platforms with wider system font metrics.
+if (notice) {
+  notice.style.fontFamily = 'Arial, "Liberation Sans", sans-serif';
+  notice.style.paddingInline = '2px';
+}
 const app = () => document.getElementById('app') as HTMLElement;
 const esc = (x: string) =>
   x.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
