@@ -28,7 +28,7 @@ describe('plain person help', () => {
     const { s, p } = fixture();
     sicken(p, { kind: 'fever', severity: 0.4, trendPerDay: 0.1, contagious: false });
     expect(personHelpWords(s, p)).toContain('ill');
-    expect(personHelpWords(s, p)).not.toContain('No immediate bodily need');
+    expect(personHelpWords(s, p)).not.toContain('They show no sign of an immediate need');
     p.body.illnesses = [];
     p.body.health = 0.4;
     expect(personHelpWords(s, p)).toContain('poor health');
@@ -49,7 +49,9 @@ describe('plain person help', () => {
   it('does not turn ordinary above-ground work into a rescue alert', () => {
     const { s, p } = fixture();
     s.pos[p.id] = idx(17, SURF - 1);
-    expect(personHelpWords(s, p)).toBe('No immediate bodily need is showing.');
+    expect(personHelpWords(s, p)).toBe(
+      'They show no sign of an immediate need for food, water, rest or care.',
+    );
     const raid = s.raids[0];
     if (!raid) throw new Error('Missing raid');
     raid.stage = 'riders';
@@ -65,7 +67,9 @@ describe('plain person help', () => {
     s.hill.shut[idx(18, SURF + 1)] = 1;
     s.pos[p.id] = idx(17, SURF + 3);
     const before = JSON.stringify(s);
-    expect(personHelpWords(s, p)).toBe('No immediate bodily need is showing.');
+    expect(personHelpWords(s, p)).toBe(
+      'They show no sign of an immediate need for food, water, rest or care.',
+    );
     expect(personHelpWords(s, p)).not.toMatch(/safe|guarantee/i);
     expect(JSON.stringify(s)).toBe(before);
   });

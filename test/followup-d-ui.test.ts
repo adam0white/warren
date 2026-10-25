@@ -64,7 +64,7 @@ for (const [width, height] of [
       await page.clock.runFor(300);
       const words = page.locator('#cell-words');
       const doorWords = await words.innerText();
-      expect(doorWords).toMatch(/quiet-time call.*six game hours/is);
+      expect(doorWords).toMatch(/Calls without raids.*six game hours/is);
       expect(doorWords).toMatch(/false alarm.*trust/is);
       expect(doorWords.indexOf('Ring the bell')).toBeLessThan(doorWords.toLowerCase().indexOf('false alarm'));
       if (process.env.WARREN_SCREENSHOTS === '1')
@@ -91,17 +91,17 @@ for (const [width, height] of [
         await page.clock.runFor(300);
       };
       await advanceTo('g.s.raids[0].smoke');
-      expect(await page.locator('#goal').innerText()).toMatch(/Smoke.*Ring the bell once.*all-clear/s);
+      expect(await page.locator('#goal').innerText()).toMatch(/Smoke.*Ring the bell once.*riders leave/s);
       await page.locator('#raid-bell').click();
       await page.clock.runFor(300);
       expect(await words.innerText()).toMatch(
-        /The call stays active until the all-clear.*may refuse throughout/s,
+        /The call stays active until the riders leave.*can refuse at any time/s,
       );
       expect(await words.innerText()).not.toMatch(/renew|six game hours/);
       if (process.env.WARREN_SCREENSHOTS === '1')
         await page.screenshot({ path: `${shots}/after-${width}-smoke-call-d.png` });
       await advanceTo('g.s.bell.at + 7 * 60');
-      expect(await words.innerText()).toContain('The call stays active until the all-clear');
+      expect(await words.innerText()).toContain('The call stays active until the riders leave');
       expect(await page.locator('#bell-state').getAttribute('aria-label')).not.toMatch(
         /renew|six game hours/,
       );
@@ -127,18 +127,18 @@ for (const [width, height] of [
         await page.screenshot({ path: `${shots}/after-${width}-standing-call-d.png` });
       await advanceTo('g.s.raids[0].riders');
       expect(await page.locator('#goal').innerText()).toMatch(
-        /Riders are at the hill.*The call stays active until the all-clear/s,
+        /Riders are at the hill.*The call stays active until the riders leave/s,
       );
       await advanceTo('g.s.raids[0].leave');
-      expect(await words.innerText()).toMatch(/The call has ended.*all-clear ended the call/s);
-      expect(await words.innerText()).not.toMatch(/renew|six game hours elapsed/);
+      expect(await words.innerText()).toMatch(/The call has ended.*riders have gone, so the call has ended/s);
+      expect(await words.innerText()).not.toMatch(/renew|call ended after six game hours/);
       await words.evaluate((e) => {
         e.scrollTop = 0;
       });
       if (process.env.WARREN_SCREENSHOTS === '1')
         await page.screenshot({ path: `${shots}/after-${width}-all-clear-d.png` });
       await advanceTo('g.s.raids[1].smoke');
-      expect(await words.innerText()).toMatch(/No call is active.*Ring the bell once.*all-clear/s);
+      expect(await words.innerText()).toMatch(/No call is active.*Ring the bell once.*riders leave/s);
       expect(await words.innerText()).not.toMatch(/riders have gone|ended the call|renew/i);
       expect(await page.locator('#goal').innerText()).toMatch(
         /Smoke.*No call is active.*Ring the bell once/s,

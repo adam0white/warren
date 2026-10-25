@@ -26,6 +26,7 @@ import {
 } from './warren.ts';
 
 export const GAME_VERSION = '0.6.0';
+export const TEXT_VERSION = 'plain2';
 export const DEFAULT_EDITION = GAME_VERSION;
 export type Edition = '0.2.0' | '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0';
 
@@ -128,6 +129,7 @@ export function advance(g: Game, to: number) {
 // ---------- saves and export ----------
 
 export interface Saved {
+  textVersion?: string;
   game: string;
   framework: string;
   seed: number;
@@ -187,6 +189,7 @@ export function fingerprint(s: WarrenState): string {
 
 export function save(g: Game): Saved {
   return {
+    textVersion: TEXT_VERSION,
     game: g.s.edition ?? '0.2.0',
     framework: FRAMEWORK_VERSION,
     seed: g.s.seed,
@@ -203,7 +206,12 @@ export function save(g: Game): Saved {
 }
 
 export function load(saved: Saved): Game {
-  if (saved.framework !== FRAMEWORK_VERSION) throw new Error('Older framework notebook. Start fresh.');
+  if (saved.framework !== FRAMEWORK_VERSION)
+    throw new Error(
+      'This saved game uses an older version of the Human Framework. Start fresh with a new game.',
+    );
+  if (saved.textVersion !== TEXT_VERSION)
+    throw new Error('This saved game comes from before the text rewrite. Start a new game.');
   const edition = editionOf(saved.game);
   if ((saved.state.edition ?? '0.2.0') !== edition) throw new Error('Save edition does not match its state');
   return {

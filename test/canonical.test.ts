@@ -2,6 +2,7 @@ import { ageYears } from '@adam0white/human-framework';
 import { castForGame } from '@adam0white/lab-client';
 import { describe, expect, it } from 'vitest';
 import { act, advance, fingerprint, load, newGame, replay, save } from '../src/sim/game.ts';
+import { ROLE_TASKS } from '../src/sim/roles.ts';
 import { QUANTUM } from '../src/sim/warren.ts';
 
 describe('canonical Warren chapter', () => {
@@ -22,6 +23,13 @@ describe('canonical Warren chapter', () => {
     expect(
       g.s.people.find((p) => p.id === 'kian')?.social.relationships.find((r) => r.otherId === 'tamar')?.roles,
     ).toContain('mentor');
+  });
+  it('keeps goal memory-tag identity while activity prose becomes clearer', () => {
+    const maryam = newGame(7).s.people.find((p) => p.id === 'maryam');
+    expect(maryam?.agenda.goals.find((goal) => goal.id === 'canonical-role')?.label).toBe(
+      'prepare a household pot from its own grain',
+    );
+    expect(ROLE_TASKS.maryam?.[0]?.label).toBe('cook a household meal from its own grain');
   });
   it('only reveals private clues after an invitation and preserves them through replay and load', () => {
     const g = newGame(7);

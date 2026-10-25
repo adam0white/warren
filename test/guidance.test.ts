@@ -10,7 +10,7 @@ describe('the keeper’s next line', () => {
     expect(colonyWords(s)).toMatch(/Choose chalk.*drag.*cellar/);
     s.hill.chalk[idx(15, SURF + 3)] = 1;
     s.goals.chalk = s.minute;
-    expect(colonyWords(s)).toMatch(/choose.*pick/);
+    expect(colonyWords(s)).toMatch(/decide.*digging/);
   });
 
   it('keeps a useful next step between early goals and the first riders', () => {
@@ -22,7 +22,7 @@ describe('the keeper’s next line', () => {
     // An achievement is history: empty jars now must not be described as a harvest below.
     s.hill.grain.fill(0);
     expect(colonyWords(s)).toMatch(/store|harvest/);
-    expect(colonyWords(s)).not.toMatch(/[Jj]ars are filling/);
+    expect(colonyWords(s)).not.toMatch(/People are filling the jars/);
     s.hill.grain[idx(16, SURF + 3)] = 60;
     for (let x = 16; x <= 19; x++) s.hill.use[idx(x, SURF + 3)] = USE.beds;
     expect(colonyWords(s)).toMatch(/room|door/);

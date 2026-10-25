@@ -24,7 +24,7 @@ describe('sleeping capacity words', () => {
     const s = withBeds([16, 17, 20]);
     const words = sleepingRoomWords(s, idx(16, SURF + 3));
     expect(words).toMatch(/room has about six/i);
-    expect(words).toContain('All rooms have about nine.');
+    expect(words).toContain('Together, all sleeping rooms have about nine places.');
     expect(words).not.toMatch(/\d/);
     expect(sleepingRoomWords(s, idx(20, SURF + 3))).toMatch(/about three/);
     expect(sleepingRoomWords(s, idx(19, SURF + 3))).toBe('');
@@ -35,7 +35,9 @@ describe('sleeping capacity words', () => {
     expect(sleepingCapacity(s)).toEqual({ places: 9, people: 9, enough: true });
     const words = sleepingRoomWords(s, idx(16, SURF + 3));
     expect(words).toContain('This room has about six sleeping places.');
-    expect(words).toContain('All rooms have about nine. There is space for everyone.');
+    expect(words).toContain(
+      'Together, all sleeping rooms have about nine places. There is space for everyone.',
+    );
     expect(words).not.toContain('The village needs more sleeping places');
     const person = s.people[0];
     if (!person) throw new Error('Missing villager');
@@ -89,7 +91,9 @@ describe('compact shelter words', () => {
   it('reports zero capacity and zero exposed people without a safety claim', () => {
     const s = withBeds([]);
     s.people = [];
-    expect(compactShelterWords(s)).toBe('Sleeping room for about zero · zero exposed');
+    expect(compactShelterWords(s)).toBe(
+      'There is sleeping space for about zero people. Riders can reach zero people.',
+    );
   });
 
   it('keeps sleeping capacity separate from exposure and counts hiding separately', () => {
@@ -105,7 +109,9 @@ describe('compact shelter words', () => {
     s.pos[hiding.id] = idx(17, SURF - 1);
     hiding.activity = { ...hiding.activity, action: 'hide' } as NonNullable<typeof hiding.activity>;
     const words = compactShelterWords(s);
-    expect(words).toBe('Sleeping room for about six · two exposed · one hiding');
+    expect(words).toBe(
+      'There is sleeping space for about six people. Riders can reach two people. One person is hiding.',
+    );
     expect(words).not.toMatch(/safe|secure/);
   });
 
@@ -124,7 +130,7 @@ describe('compact shelter words', () => {
     };
     s.pos[traveller.id] = idx(17, SURF + 11);
     const before = JSON.stringify(s);
-    expect(compactShelterWords(s)).toContain('one exposed');
+    expect(compactShelterWords(s)).toContain('Riders can reach one person.');
     expect(JSON.stringify(s)).toBe(before);
   });
 });

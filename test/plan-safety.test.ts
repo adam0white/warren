@@ -27,7 +27,7 @@ describe('plan safety preview', () => {
     expect(p.protectedCapacity).toBe(9);
     expect(p.words).toContain('If dug');
     expect(p.words).toContain('about thirty');
-    expect(p.words).toContain('twenty-one are exposed');
+    expect(p.words).toContain('Riders can reach twenty-one places');
     expect(fingerprint(s)).toBe(before);
   });
   it('reports disconnected plans as unreachable rather than protected', () => {
@@ -108,7 +108,7 @@ it('keeps mixed protection and an open-door remedy compact without hiding capaci
   expect(p.protectedCapacity).toBeGreaterThan(0);
   expect(p.exposedCapacity).toBeGreaterThan(0);
   expect(p.words).toContain('beyond riders’ reach');
-  expect(p.words).toContain('exposed');
+  expect(p.words).toContain('Riders can reach');
   expect(p.words).toContain(
     'Ring the bell so a nearby adult can choose to shut open stone doors. Check other routes.',
   );
@@ -135,11 +135,11 @@ it('keeps compound route conditions and unreachable capacity essential, with ful
   selected.push(isolated);
   const p = planSafety(s, selected, 'chalk');
   expect(p.words).toBe(
-    'If dug, this space would have about 45 places. 21 places are protected, 21 are exposed, and 3 cannot be reached. Dig deeper or shut route doors. Keep protective doors shut. Connect unreachable space. People choose when to dig.',
+    'If dug, this space would have about 45 places. 21 places are protected, 21 are exposed, and 3 cannot be reached. Dig deeper or shut doors on every open route. Keep the doors that block riders shut. Dig a passage to the space people cannot reach. People choose when to dig.',
   );
   expect(p.words.length).toBeLessThanOrEqual(300);
-  expect(p.context).toContain('The entrance admits riders.');
+  expect(p.context).toContain('Riders can come through the entrance.');
   expect(p.context).toContain('Check other routes');
-  expect(p.context).toContain('keep protective stone doors shut');
-  expect(p.context).toContain('three places cannot be reached. Connect a passage');
+  expect(p.context).toContain('Keep the stone doors that block riders shut');
+  expect(p.context).toContain('Three places cannot be reached. Dig a connecting passage');
 });

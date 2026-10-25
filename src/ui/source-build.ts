@@ -2,6 +2,8 @@
 declare const __WARREN_SOURCE_COMMIT__: string;
 export function sourceBuild(): string {
   if (typeof __WARREN_SOURCE_COMMIT__ !== 'string' || !/^[a-f0-9]{40}$/.test(__WARREN_SOURCE_COMMIT__))
-    throw Error('Loaded source build is unavailable. Keep this notebook; do not publish a guessed stamp.');
+    throw Error(
+      'The loaded source build is unknown. Keep this notebook. Do not publish a guessed build identifier.',
+    );
   return __WARREN_SOURCE_COMMIT__;
 }

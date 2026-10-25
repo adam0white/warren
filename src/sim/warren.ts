@@ -285,7 +285,7 @@ export function newWarren(seed: number, canonical = false): WarrenState {
   };
   note(s, {
     kind: 'story',
-    text: 'The barley stood ripe. Riders had burned two villages to the south in spring, and the cellar under Yusuf’s house held one jar.',
+    text: 'The barley was ripe. Riders had burned two villages to the south in spring. The cellar under Yusuf’s house held one jar.',
     weight: 3,
   });
   // Everyone has heard about the burned villages: a fear the season keeps alive.
@@ -298,7 +298,7 @@ export function newWarren(seed: number, canonical = false): WarrenState {
       salience: 0.8,
       valence: -0.6,
       threat: { severity: 0.5, chance: 0.5, sourceId: 'riders' },
-      summary: 'riders burned two villages to the south this spring',
+      summary: 'Riders burned two villages to the south this spring.',
     });
   return s;
 }
@@ -1007,7 +1007,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
         {
           id: 'show',
           action: 'show',
-          label: 'go down and show them the stroke',
+          label: 'go underground and show them how to swing the pick',
           placeId: 'face',
           duration: 0,
           effort: 0.3,
@@ -1032,7 +1032,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
       {
         id: 'reap',
         action: 'reap',
-        label: 'reap the barley',
+        label: 'harvest the barley',
         placeId: 'field',
         duration: 0,
         effort: 0.7,
@@ -1054,7 +1054,10 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
       {
         id: 'forage',
         action: 'forage',
-        label: season === 'winter' ? 'walk the goats out' : 'glean and gather in the hills',
+        label:
+          season === 'winter'
+            ? 'take the goats out to feed'
+            : 'gather leftover grain and wild food in the hills',
         placeId: 'hills',
         duration: 0,
         effort: 0.6,
@@ -1079,7 +1082,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
       {
         id: 'sow',
         action: 'sow',
-        label: 'plough and sow',
+        label: 'plough the fields and plant grain',
         placeId: 'field',
         duration: 0,
         effort: 0.6,
@@ -1097,7 +1100,11 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
   if (!(threat === 'riders')) {
     const srcs: { cell: number; id: string; label: string }[] = [];
     if (s.fields.floor > 0.3)
-      srcs.push({ cell: floorCell(s), id: 'carry-floor', label: 'carry sheaves down to the store' });
+      srcs.push({
+        cell: floorCell(s),
+        id: 'carry-floor',
+        label: 'carry bundles of harvested grain down to the store',
+      });
     if (house && house.jars > 0.3)
       srcs.push({ cell: homeCell(house), id: 'carry-jars', label: 'carry our jars down' });
     for (const src of srcs) {
@@ -1156,7 +1163,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
       {
         id: 'make-lamp',
         action: 'make-lamp',
-        label: 'shape and fire a clay lamp',
+        label: 'shape a clay lamp and bake it in a fire',
         placeId: 'hearth',
         duration: 0,
         effort: 0.2,
@@ -1177,7 +1184,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
       {
         id: `carve-${d}`,
         action: 'carve-door',
-        label: 'carve the rolling stone',
+        label: 'carve the stone door',
         targetId: String(d),
         placeId: 'door',
         duration: 0,
@@ -1217,8 +1224,8 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
             k === K.hard
               ? 'cut at the hard rock'
               : k === K.loose
-                ? 'dig at the loose face'
-                : 'dig at the chalked face',
+                ? 'dig at the loose stone wall'
+                : 'dig at the wall marked with chalk',
           targetId: String(x.face),
           placeId: 'face',
           duration: 0,
@@ -1263,7 +1270,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
         {
           id: `spoil-${c}`,
           action: 'carry-spoil',
-          label: 'carry spoil up to the heap',
+          label: 'carry loose stone up to the pile above ground',
           targetId: String(c),
           placeId: 'heap',
           duration: 0,
@@ -1572,7 +1579,7 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
         note(s, {
           kind: 'story',
           who: p.id,
-          text: `${p.name} fired a lamp and hung it where you had marked.`,
+          text: `${p.name} baked a clay lamp in a fire and hung it where you had marked.`,
           cell: at,
           weight: 1,
         });
@@ -1592,7 +1599,7 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
           note(s, {
             kind: 'dig',
             who: p.id,
-            text: `The rolling stone stood in its groove. ${p.name} rolled it once to see.`,
+            text: `The stone door was ready in its groove. ${p.name} rolled it once to test it.`,
             cell: d,
             weight: 1.5,
           });
@@ -1641,7 +1648,7 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
             salience: 0.5,
             valence: 0.2,
             demonstrates: { skill: 'digging', level: p.skills.digging?.level ?? 0.9, minutes: 50 },
-            summary: `${p.name} showed me the stroke at the face`,
+            summary: `${p.name} showed me how to swing the pick at the stone wall`,
           });
       }
       return { ...base, needs: { meaning: 0.1, esteem: 0.05 } };
@@ -1671,7 +1678,7 @@ function openCell(s: WarrenState, p: Person, face: number, stand: number): Parti
       kind: 'hurt',
       who: p.id,
       cell: face,
-      text: `The roof came down at the loose face. They dug ${p.name} out with a hurt shoulder.`,
+      text: `The roof fell where the stone was loose. They dug ${p.name} out. ${p.name} had hurt a shoulder.`,
       weight: 3,
     });
     touch(s);
@@ -1713,7 +1720,7 @@ function openCell(s: WarrenState, p: Person, face: number, stand: number): Parti
         kind: 'find',
         who: p.id,
         cell: face,
-        text: `Water. ${p.name}’s pick went into the damp layer and it seeped, then ran. A well under the hill.`,
+        text: `${p.name}’s pick entered the damp stone. Water came out slowly, then began to flow. There is now a well under the hill.`,
         weight: 3,
       });
     }
@@ -1730,7 +1737,7 @@ function openCell(s: WarrenState, p: Person, face: number, stand: number): Parti
       kind: 'find',
       who: p.id,
       cell: face,
-      text: `${p.name}’s pick went through into a room nobody alive had dug: soot on the ceiling, a trough cut in the wall, two clay lamps in a niche.`,
+      text: `${p.name}’s pick opened an old room that nobody alive had dug. The ceiling was black with smoke. A long basin was cut into the wall. Two clay lamps stood in a small hollow in the wall.`,
       weight: 3,
     });
   }
@@ -1751,8 +1758,8 @@ function link(s: WarrenState, at: number, who: string | null) {
     kind: 'find',
     cell: at,
     text: who
-      ? `${who} broke through into someone else’s dark: a swept floor, a lamp niche, jars along a wall. The next village has been digging too.`
-      : 'The knocking in the east wall stopped. Then a lamp came through it: the next village’s diggers had reached ours.',
+      ? `${who} broke through into a dark passage belonging to the next village. Its floor was swept. A lamp stood in a hollow in the wall, with jars nearby. The next village has been digging too.`
+      : 'The knocking in the east wall stopped. Then someone carrying a lamp came through. The next village’s diggers had reached our passages.',
     weight: 3,
   });
 }
@@ -1825,19 +1832,19 @@ function beginTrip(s: WarrenState, p: Person, offer: Affordance) {
  * become the work's own reason (see docs/hf-requests.md, item 6).
  */
 const WORK_WHY: Record<string, string> = {
-  dig: 'The hill needs room before the frost.',
-  'carry-spoil': 'Somebody has to clear it, or nobody digs.',
+  dig: 'We need more room under the hill before the frost.',
+  'carry-spoil': 'Someone must clear the loose stone so people can keep digging.',
   'fetch-water': 'The jars at the hearth were low.',
-  reap: 'The barley will not wait.',
-  sow: 'Next year’s bread goes in now.',
-  'carve-door': 'A door, before they come again.',
+  reap: 'The barley must be harvested before it is ruined.',
+  sow: 'We must plant grain now for next year’s bread.',
+  'carve-door': 'We need a door before the riders come again.',
   'make-lamp': 'They need light down there.',
-  forage: 'There is food in the hills if you know where.',
-  'carry-grain': 'Better below than above when they come.',
+  forage: 'There is food in the hills if you know where to look.',
+  'carry-grain': 'Grain is harder for riders to reach below ground.',
 };
 function whyLine(narration: string, action: string): string {
   if (!/money|pays|paid|wage|coin/i.test(narration)) return narration;
-  return WORK_WHY[action] ?? 'It needs doing.';
+  return WORK_WHY[action] ?? 'This work needs to be done.';
 }
 
 /** Why a raid went as it did, in a sentence the keeper would write: where people were caught, what the door did. */
@@ -1849,16 +1856,18 @@ function raidWhy(s: WarrenState, r: Raid): string {
   const why: string[] = [];
   if (above)
     why.push(
-      above === 1 ? 'One was still above ground.' : `${NUMW[above] ?? above} were still above ground.`,
+      above === 1
+        ? 'One person was still above ground.'
+        : `${NUMW[above] ?? above} people were still above ground.`,
     );
   if (entrance)
     why.push(
       doors.length
         ? 'The rest were caught on the near side of the door, where the riders could still reach.'
-        : 'Below, they were caught within reach of the entrance; nothing stood between.',
+        : 'Below ground, they were caught near the entrance. Nothing blocked the riders.',
     );
   if (lost(r) > 3 && !doors.length && grainBelow(s.hill) > 0)
-    why.push('The near jars were found; the far ones were not.');
+    why.push('The riders found the jars near the entrance. They did not find the jars farther inside.');
   return why.length ? ` ${why.join(' ')}` : '';
 }
 const lost = (r: Raid) => r.took;
@@ -1873,12 +1882,12 @@ function falseAlarm(s: WarrenState, at: number) {
   const name = one?.name.split(' ')[0];
   const text =
     k === 1
-      ? 'No riders came. They climbed back up blinking and looked at the bell, and then at you.'
+      ? 'No riders came. People climbed back above ground, blinking in the light. They looked at the bell, then at you.'
       : k === 2
-        ? `No riders again. ${name ? `${name} hung a wet shawl on the bell rope to dry.` : 'Someone hung a wet shawl on the bell rope to dry.'}`
+        ? `Again, no riders came. ${name ? `${name} hung a wet shawl on the bell rope to dry.` : 'Someone hung a wet shawl on the bell rope to dry.'}`
         : came.length
-          ? `No riders. ${came.length === 1 ? 'Only one' : `Only ${came.length}`} went down this time, and came up quickly.`
-          : 'No riders. Nobody went down. The children ring the bell now, for fun.';
+          ? `No riders came. ${came.length === 1 ? 'Only one person' : `Only ${came.length} people`} went underground this time and came back up quickly.`
+          : 'No riders came. Nobody went underground. The children ring the bell now, for fun.';
   note(s, { kind: 'answer', ...(one ? { who: one.id } : {}), text, weight: 1.5 });
 }
 
@@ -1901,7 +1910,7 @@ function captureAnswer(s: WarrenState, p: Person, offer: Affordance, record: Dec
   const trust = p.will.voices.find((v) => v.voiceId === BELL)?.trust ?? 0.5;
   const doubting = s.bell.real && (s.flags.falseBells ?? 0) > 0 && trust < 0.4;
   const text = doubting
-    ? `${p.name} heard the bell and kept on with ${offer.label.replace(/^(the|a) /, 'the ')}. ${p.life.sex === 'female' ? 'She' : 'He'} had heard it before.`
+    ? `${p.name} heard the bell and continued to ${offer.label.replace(/^(the|a) /, 'the ')}. ${p.life.sex === 'female' ? 'She' : 'He'} had heard it before.`
     : `${p.name}: “${res.says}”`;
   // One stock answer once per ringing: the second person to say "After I pray" joins the first line.
   const bellAt = s.bell.at;
@@ -2060,8 +2069,8 @@ function raidStep(s: WarrenState) {
       note(s, {
         kind: 'raid',
         text: first
-          ? 'Smoke on the southern hills, more than a field fire makes. Riders, then. Half a day, maybe less.'
-          : 'Smoke again in the south.',
+          ? 'There is smoke on the southern hills, more than a field fire makes. Riders may arrive in half a day or less.'
+          : 'There is smoke in the south again.',
         weight: 3,
       });
       everyone(
@@ -2073,7 +2082,7 @@ function raidStep(s: WarrenState) {
           valence: -0.6,
           near: true,
           threat: { severity: 0.6 * r.force + 0.2, chance: 0.7, sourceId: 'riders' },
-          summary: 'smoke in the south: riders coming',
+          summary: 'There is smoke in the south. Riders are coming.',
         },
         true,
       );
@@ -2110,8 +2119,8 @@ function raidStep(s: WarrenState) {
       note(s, {
         kind: 'raid',
         text: scare
-          ? 'Riders searched the entrances and looked in. They were scouting; no one was struck. They may return in force.'
-          : 'Riders on the hill. Hooves over our heads, voices at the entrance.',
+          ? 'Riders searched the entrances and looked in. They were checking the village. No one was struck. They may return with more riders.'
+          : 'Riders are on the hill. We hear horses above us and voices at the entrance.',
         weight: 3,
       });
       everyone(
@@ -2123,7 +2132,7 @@ function raidStep(s: WarrenState) {
           valence: -0.8,
           near: true,
           threat: { severity: 0.8 * r.force, chance: 0.8, sourceId: 'riders' },
-          summary: 'riders on the hill',
+          summary: 'Riders are on the hill.',
         },
         true,
       );
@@ -2155,7 +2164,7 @@ function raidStep(s: WarrenState) {
               actorId: 'riders',
               salience: 1,
               valence: -0.9,
-              summary: 'a rider struck me',
+              summary: 'A rider struck me.',
             });
             note(s, {
               kind: 'hurt',
@@ -2182,8 +2191,8 @@ function raidStep(s: WarrenState) {
           text: scare
             ? 'The scouts rode off north. No one was struck and nothing was taken. The pale tracks show where they searched. Next time they may strike.'
             : held
-              ? `They rode off north. They found ${lost > 1 ? 'a little' : 'nothing'} above ground and nothing below. The hill held.`
-              : `They rode off north with ${lost > 0.5 * (lost + grainBelow(s.hill)) ? 'much of our grain' : lost > 3 ? 'some of our grain' : 'little'}${r.hurt.length ? `, and ${r.hurt.length === 1 ? 'one of us was' : `${r.hurt.length} of us were`} hurt` : ''}.${raidWhy(s, r)}`,
+              ? `They rode off north. They found ${lost > 1 ? 'a little' : 'nothing'} above ground and nothing below. The refuge protected the village.`
+              : `They rode off north with ${lost > 0.5 * (lost + grainBelow(s.hill)) ? 'much of our grain' : lost > 3 ? 'some of our grain' : 'very little grain'}${r.hurt.length ? `, and ${r.hurt.length === 1 ? 'one of us was' : `${r.hurt.length} of us were`} hurt` : ''}.${raidWhy(s, r)}`,
           weight: 3,
         });
         everyone(
@@ -2194,7 +2203,7 @@ function raidStep(s: WarrenState) {
             salience: 0.7,
             valence: 0.5,
             near: true,
-            summary: 'the riders have gone',
+            summary: 'The riders have gone.',
           },
           true,
         );
@@ -2208,9 +2217,11 @@ function scoutPlace(s: WarrenState, cell: number): string {
   if (yOf(cell) < SURF) return 'the ground above the hill';
   const dx = xOf(cell) - s.hill.surface.entrance;
   const side =
-    dx === 0 ? 'under the entrance' : `${Math.abs(dx)} paces ${dx < 0 ? 'west' : 'east'} of the entrance`;
+    dx === 0
+      ? 'under the entrance'
+      : `${Math.abs(dx)} ${Math.abs(dx) === 1 ? 'step' : 'steps'} ${dx < 0 ? 'west' : 'east'} of the entrance`;
   const place = s.hill.use[cell] === USE.beds ? 'sleeping place' : 'passage';
-  return `the ${place} ${side}, ${yOf(cell) - SURF} levels down`;
+  return `the ${place} ${side}, ${yOf(cell) - SURF} ${yOf(cell) - SURF === 1 ? 'level' : 'levels'} down`;
 }
 
 function scout(s: WarrenState, r: Raid) {
@@ -2249,8 +2260,8 @@ function recoveryWords(s: WarrenState) {
         kind: 'hurt',
         who: p.id,
         text: injury
-          ? `${p.name}: “The wound on my ${tracked.part} is easier today. It still aches.”`
-          : `${p.name}: “The wound on my ${tracked.part} has mended.”`,
+          ? `${p.name}: “The wound on my ${tracked.part} hurts less today. It still aches.”`
+          : `${p.name}: “The wound on my ${tracked.part} has healed.”`,
         weight: 1.5,
       });
       if (injury) tracked.severity = injury.severity;
@@ -2270,7 +2281,7 @@ function recoveryWords(s: WarrenState) {
       note(s, {
         kind: 'hurt',
         who: p.id,
-        text: `${p.name}: “My ${injury.part} hurts. It will take days.”`,
+        text: `${p.name}: “My ${injury.part} hurts. It will take days to heal.”`,
         weight: 1.5,
       });
     }
@@ -2292,7 +2303,7 @@ function endOfDay(s: WarrenState, day: number) {
         note(s, {
           kind: 'path',
           cell: i,
-          text: 'The floor is worn smooth now along the busiest passage, and they walk it quicker for that.',
+          text: 'People have worn the floor smooth along the busiest passage. They walk faster there now.',
           weight: 1.5,
         });
         break;
@@ -2308,7 +2319,7 @@ function endOfDay(s: WarrenState, day: number) {
         note(s, {
           kind: 'habit',
           who: p.id,
-          text: `${p.name} goes down to the faces every morning now. Nobody asks.`,
+          text: `${p.name} goes down to dig at the stone walls every morning now. Nobody has to ask.`,
           weight: 2,
         });
         break;
@@ -2327,7 +2338,7 @@ function endOfDay(s: WarrenState, day: number) {
     s.fields.standing = 0; // what was not reaped by winter is gone
     note(s, {
       kind: 'story',
-      text: 'First frost. The houses on top are cold at night now; below the hill it is as warm as it was in autumn.',
+      text: 'The first frost has come. The houses above ground are cold at night now. Below the hill, it is as warm as it was in autumn.',
       weight: 1.5,
     });
   }
@@ -2354,7 +2365,7 @@ function endOfDay(s: WarrenState, day: number) {
                 note(s, {
                   kind: 'find',
                   cell: n,
-                  text: 'A knocking in the east wall at night, regular as a pick. Someone is digging toward us.',
+                  text: 'At night, we hear steady knocking in the east wall, like a pick hitting stone. Someone is digging toward us.',
                   weight: 2.5,
                 });
               }
@@ -2376,7 +2387,7 @@ function endOfDay(s: WarrenState, day: number) {
         note(s, {
           kind: 'theft',
           cell: store,
-          text: 'Jars half empty in the store this morning, and the dust by the east passage scuffed. They came back for theirs, and more.',
+          text: 'The jars in the store were half empty this morning. Footprints marked the dust by the east passage. The neighbours took back their grain and some of ours.',
           weight: 2.5,
         });
         everyone(
@@ -2387,7 +2398,7 @@ function endOfDay(s: WarrenState, day: number) {
             actorId: 'neighbours',
             salience: 0.6,
             valence: -0.5,
-            summary: 'someone from the next village took from our store',
+            summary: 'Someone from the next village took grain from our store.',
           },
           false,
         );
@@ -2402,7 +2413,7 @@ function endOfDay(s: WarrenState, day: number) {
       note(s, {
         kind: 'theft',
         cell: s.linkCell,
-        text: 'They walled the east passage from their side, and in the market they say what we are.',
+        text: 'The neighbours blocked their side of the east passage with a wall. They are telling people in the market that we are thieves.',
         weight: 3,
       });
       touch(s);
@@ -2431,8 +2442,8 @@ function stallStep(s: WarrenState) {
   note(s, {
     kind: 'story',
     text: st.every((x) => x === 'stale')
-      ? 'The picks have stopped. At every chalked face the air is stale and the lamps gutter. A shaft to the sky would bring air down.'
-      : 'The picks have stopped. Every chalked face is in the dark. A lamp hung beside one would start them again.',
+      ? 'People have stopped digging. Every wall marked with chalk has too little fresh air, and the lamps burn weakly. A shaft to the surface would bring air down.'
+      : 'People have stopped digging. Every wall marked with chalk is dark. A lamp beside one would let people dig there again.',
     weight: 2,
   });
 }
@@ -2495,7 +2506,7 @@ function wordStep(s: WarrenState, day: number) {
   note(s, {
     kind: 'arrival',
     who: head?.id,
-    text: `${fam.house.name.replace(/^the /, 'The ')} came up the road with a donkey and ${fam.people.length - 1 > 0 ? `${fam.people.length - 1 === 1 ? 'one other' : `${fam.people.length - 1} others`}` : 'nobody else'}. ${s.heldAt >= 0 ? 'They had heard the hill held.' : s.flags.water ? 'They had heard there was water under the hill.' : 'They had heard there was room.'}`,
+    text: `A member of ${fam.house.name} came up the road with a donkey and ${fam.people.length - 1 > 0 ? `${fam.people.length - 1 === 1 ? 'one other' : `${fam.people.length - 1} others`}` : 'nobody else'}. ${s.heldAt >= 0 ? 'They had heard the refuge protected the village.' : s.flags.water ? 'They had heard there was water under the hill.' : 'They had heard there was room.'}`,
     weight: 2,
     cell: surfaceCell(x),
   });
@@ -2513,67 +2524,67 @@ export interface Goal {
 export const GOALS: Goal[] = [
   {
     id: 'chalk',
-    text: 'Chalk a wall where you would dig.',
+    text: 'Mark a stone wall with chalk where you want people to dig.',
     done: (s) => s.hill.chalk.some((c) => c) || s.stats.dug > 0,
     shown: () => true,
   },
   {
     id: 'first',
-    text: 'Wait for someone to take up a pick.',
+    text: 'Wait for someone to start digging.',
     done: (s) => s.stats.dug > 0,
     shown: () => true,
   },
   {
     id: 'store',
-    text: 'Mark a room for jars, and get the harvest below.',
+    text: 'Mark a storage room so people can carry the harvested grain below ground.',
     done: (s) => grainBelow(s.hill) >= 45,
     shown: () => true,
   },
   {
     id: 'lamp',
-    text: 'Hang a lamp where the dark stops the picks.',
+    text: 'Hang a lamp where people cannot dig because it is dark.',
     done: (s) => s.hill.lamp.filter((l) => l).length >= 2,
     shown: (s) => s.stats.dug >= 3,
   },
   {
     id: 'raid',
-    text: 'Live through the first riders.',
+    text: 'Live through the first visit from the riders.',
     done: (s) => s.raids[0]?.stage === 'gone',
     shown: (s) => s.raids[0]?.stage !== 'coming',
   },
   {
     id: 'door',
-    text: 'A stone door the riders cannot pass.',
+    text: 'Build a stone door that can block the riders.',
     done: (s) => cellsWithUse(s.hill, USE.door).some((d) => !s.hill.doorWork[d]),
     shown: (s) => s.raids[0]?.stage === 'gone',
   },
   {
     id: 'beds',
-    text: 'Beds below for everyone before the frost.',
+    text: 'Make sleeping space below ground for everyone before the frost.',
     done: (s) => bedsBelow(s) >= s.people.filter((p) => p.body.alive).length,
     shown: (s) => s.raids[0]?.stage === 'gone',
   },
   {
     id: 'water',
-    text: 'Water under the hill.',
+    text: 'Find water under the hill.',
     done: (s) => !!s.flags.water,
     shown: (s) => s.stats.dug >= 12,
   },
   {
     id: 'grow',
-    text: 'Room for those who hear of us: thirty souls.',
+    text: 'Grow the village to thirty people.',
     done: (s) => s.people.filter((p) => p.body.alive).length >= 30,
     shown: (s) => s.arrivals > 0,
   },
   {
     id: 'deep',
-    text: 'Below the hard band.',
+    text: 'Dig below the layer of hard stone.',
     done: (s) => deepest(s) >= SURF + 16,
     shown: (s) => deepest(s) >= SURF + 10,
   },
   {
     id: 'year',
-    text: 'A year under the hill.',
+    text: 'Spend a year under the hill.',
     done: (s) => s.minute >= 365 * DAY,
     shown: (s) => s.minute > 60 * DAY,
   },
@@ -2589,9 +2600,9 @@ export function deepest(s: WarrenState): number {
 /** What Yusuf Usta says when a goal first shows: where to look, in the fiction. */
 const TOLD: Record<string, string> = {
   water:
-    'Yusuf Usta said his father struck water once, under the fields to the west, a good way below the hard band. Damp stone shows first.',
-  deep: 'Below here the stone turns hard and slow. Yusuf Usta says it softens again further down.',
-  lamp: 'Where the daylight stops, the picks stop. A lamp hung beside a face lets them work it.',
+    'Yusuf Usta said his father once found water under the fields to the west, far below the layer of hard stone. Damp stone appears first.',
+  deep: 'The stone below here is hard and takes longer to dig. Yusuf Usta says it becomes softer again farther down.',
+  lamp: 'People stop digging where daylight no longer reaches. A lamp beside a stone wall lets them dig there.',
 };
 
 function goalsStep(s: WarrenState) {
@@ -2630,7 +2641,7 @@ export function setChalk(s: WarrenState, cells: number[], on: boolean): number {
     note(s, {
       kind: 'story',
       who: USTA_ID,
-      text: 'Chalk under the ridge. Past it the stone is the neighbours’. Yusuf Usta looked at the mark a long time and said only that sound carries in stone.',
+      text: 'You marked stone under the ridge. Beyond the ridge, the stone belongs to the neighbours. Yusuf Usta looked at the mark for a long time. He said only that people can hear digging through stone.',
       weight: 1.5,
     });
   }
@@ -2730,19 +2741,19 @@ export function ringBell(s: WarrenState): boolean {
 export function storesWords(s: WarrenState): string {
   const alive = s.people.filter((p) => p.body.alive).length;
   const days = grainBelow(s.hill) / Math.max(1, alive * V.ration);
-  if (days < 3) return 'the jars below are empty';
-  if (days < 20) return 'a few jars below';
-  if (days < 60) return 'jars below for a month or so';
-  if (days < 150) return 'jars below for the winter, just';
-  return 'jars below for the year';
+  if (days < 3) return 'The jars below ground are empty.';
+  if (days < 20) return 'There are a few jars of grain below ground.';
+  if (days < 60) return 'The grain below ground will last about a month.';
+  if (days < 150) return 'The grain below ground will only just last through winter.';
+  return 'The grain below ground will last a year.';
 }
 
 export function waterWords(s: WarrenState): string {
-  if (s.flags.water) return 'a well below';
+  if (s.flags.water) return 'There is a well below ground.';
   const w = s.hill.water[hearthCell(s)] ?? 0;
-  if (w < 0.3) return 'the water jars are dry';
-  if (w < 3) return 'a little water at the hearth';
-  return 'water jars full at the hearth';
+  if (w < 0.3) return 'The water jars are dry.';
+  if (w < 3) return 'There is a little water at the hearth.';
+  return 'The water jars at the hearth are full.';
 }
 
 export function walkableCell(s: WarrenState, i: number): boolean {

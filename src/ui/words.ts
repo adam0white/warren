@@ -1,4 +1,4 @@
-/** Display-only language. Saved notes, HF decisions and replay hashes keep their original bytes. */
+/** Glosses for HF narration and historical saves. New game prose is written at its source. */
 const phrases: Record<string, string> = {
   "I'm starving — eating first.": 'I am very hungry. I need to eat first.',
   'Food first.': 'I need food first.',
@@ -24,45 +24,7 @@ const phrases: Record<string, string> = {
   "I'm down.": 'I cannot get up.',
   'Not now, not here.': 'I cannot do that here now.',
   'I haven’t the strength.': 'I do not have the strength.',
-  'carry spoil up to the heap': 'carry loose rock up to the heap',
-  'dig at the chalked face': 'dig at the marked wall',
-  'dig at the loose face': 'dig at the loose stone',
-  'go down and show them the stroke': 'go below and show others how to cut stone',
-  'Then a lamp came through it: the next village’s diggers had reached ours.':
-    'Then diggers from the next village broke through with a lamp.',
-  'broke through into someone else’s dark: a swept floor, a lamp niche, jars along a wall.':
-    'broke through into a dark room with a swept floor, a lamp niche and jars along a wall.',
-  'Fresh local fiction:': 'In a new hill,',
 
-  'Smoke on the southern hills, more than a field fire makes. Riders, then. Half a day, maybe less.':
-    'Smoke rises from the southern hills. It is too much for a field fire. Riders may arrive in half a day or less.',
-  'Smoke again in the south.': 'Smoke rises in the south again.',
-  'Riders on the hill. Hooves over our heads, voices at the entrance.':
-    'Riders are on the hill. We hear hooves above us and voices at the entrance.',
-  'First frost.': 'The first frost has come.',
-  'A knocking in the east wall at night, regular as a pick.':
-    'Someone knocks against the east wall at night, as regularly as a pick strikes.',
-  'Jars half empty in the store this morning, and the dust by the east passage scuffed.':
-    'The jars in the store were half empty this morning. Footprints marked the dust by the east passage.',
-  'Water.': 'Water flows from the stone.',
-  'A well under the hill.': 'There is a well under the hill.',
-  'Chalk under the ridge.': 'You marked stone under the ridge.',
-  'Past it the stone is the neighbours’.': 'Beyond the ridge, the stone belongs to the neighbours.',
-  'A stone door the riders cannot pass.': 'Build a stone door that riders cannot pass.',
-  'Beds below for everyone before the frost.': 'Mark sleeping places below for everyone before the frost.',
-  'Water under the hill.': 'Find water under the hill.',
-  'Room for those who hear of us: thirty souls.': 'Make room for thirty people as families arrive.',
-  'Below the hard band.': 'Dig below the layer of hard stone.',
-  'A year under the hill.': 'Live through a year under the hill.',
-  'A door, before they come again.': 'We need a door before they come again.',
-  'Better below than above when they come.': 'The grain is better stored below when riders come.',
-  'Retired well-digger and adviser.': 'He is a retired well-digger and adviser.',
-  'Apprentice surveyor, living with her grandfather Yusuf Usta.':
-    'She is an apprentice surveyor and lives with her grandfather Yusuf Usta.',
-  'Widowed cook and seed-store organiser.': 'She is a widowed cook and organises the seed store.',
-  'Sixteen-year-old building apprentice.': 'He is a sixteen-year-old building apprentice.',
-  'Sixteen-year-old watcher.': 'He is a sixteen-year-old watcher.',
-  'Fifty-four-year-old perimeter adviser.': 'She is a fifty-four-year-old perimeter adviser.',
   'Fine.': 'I agree.',
   'Time to pray.': 'It is time to pray.',
   'Prayer first; the rest can wait.': 'I will pray first. The rest can wait.',
@@ -73,10 +35,6 @@ const phrases: Record<string, string> = {
   'Why not.': 'I see no reason not to.',
   'Might as well.': 'I may as well do this.',
   'Nothing for it but to wait.': 'I can only wait.',
-  'Away from drinking water, and after the work is put away.':
-    'I will try it away from drinking water, after I put the work away.',
-  'No riders again.': 'No riders came again.',
-  'No riders.': 'No riders came.',
 };
 /** Translate setting titles only at the display boundary. */
 export function settingWords(text: string): string {

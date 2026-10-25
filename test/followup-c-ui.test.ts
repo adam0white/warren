@@ -188,7 +188,7 @@ for (const [width, height] of [
       );
       await page.locator('#last-reading').click();
       await page.clock.runFor(300);
-      expect(await words.innerText()).toMatch(/The call has ended.*six game hours elapsed/s);
+      expect(await words.innerText()).toMatch(/The call has ended.*call ended after six game hours/s);
       await assertStage(page, width, height);
       await words.evaluate((e) => {
         e.scrollTop = 0;

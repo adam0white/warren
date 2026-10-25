@@ -38,7 +38,7 @@ describe('the keeper’s shelter check', () => {
     expect(exposureWords(s, p)).toMatch(/They are exposed above ground.*They are still travelling below/);
     expect(exposureWords(s, p)).not.toContain('An old answer');
     s.answers.push({ at: s.minute, who: p.id, verdict: 'deferred', says: 'I will follow.' });
-    expect(exposureWords(s, p)).toContain('At the bell: “I will follow.”');
+    expect(exposureWords(s, p)).toContain('When the bell rang, they said: “I will follow.”');
     s.minute += 60;
     expect(exposureWords(s, p)).toContain('They are exposed near');
     expect(exposureWords(s, p)).not.toContain('They are still travelling below');

@@ -41,7 +41,7 @@ for (const width of [360, 1280]) {
         await page.clock.runFor(300);
         expect(await page.locator('#cell-detail').isVisible()).toBe(false);
         expect(await page.locator('#event-sentence').innerText()).toContain(
-          tool === 'store' ? 'The store is marked' : 'The lamp is hung',
+          tool === 'store' ? 'The store is marked' : 'The lamp is hanging here now.',
         );
         const before = await page.evaluate<number>(`window.__warren.game.s.minute`);
         await page.clock.runFor(8000);
@@ -49,7 +49,7 @@ for (const width of [360, 1280]) {
         expect(after).toBeGreaterThan(before);
         await page.locator('#last-reading').click();
         expect(await page.locator('#cell-words').innerText()).toContain(
-          tool === 'store' ? 'The store is marked' : 'The lamp is hung',
+          tool === 'store' ? 'The store is marked' : 'The lamp is hanging here now.',
         );
         await page.locator('#cellx').click();
       }

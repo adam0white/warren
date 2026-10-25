@@ -186,7 +186,7 @@ it('pauses the Game menu and village person sheets without changing inputs or sp
     const before = await state();
     await page.clock.runFor(2000);
     expect(await state()).toEqual(before);
-    expect(await page.locator('#clock-rate').innerText()).toBe('Time waits while you read');
+    expect(await page.locator('#clock-rate').innerText()).toBe('Time is paused for reading.');
     await page.locator('#bookx').click();
     await page.locator('#shelter-check').click();
     await page.locator('[data-who]').first().click();

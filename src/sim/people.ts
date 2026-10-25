@@ -457,15 +457,16 @@ export const CAST_IDS: Record<string, string> = {
 };
 export const VISIT_TERMS: Record<string, string> = {
   yusuf:
-    'Retired well-digger and adviser. Meryem is his granddaughter. The keeper holds the chalk and bell, not his identity.',
-  meryem: 'Apprentice surveyor, living with her grandfather Yusuf Usta. Her parents live elsewhere.',
+    'Yusuf Usta is a retired well-digger and adviser. Meryem is his granddaughter. You are the keeper and hold the chalk and bell. You do not play as Yusuf Usta.',
+  meryem:
+    'Meryem is learning to measure and map land. She lives with her grandfather Yusuf Usta. Her parents live elsewhere.',
   maryam:
-    'Widowed cook and seed-store organiser. Her son Yusuf remains at the Well. This kitchen visit is bounded; she has agreed the household meal rota before leaving.',
+    'Maryam is a widowed cook who organises the seed store. Her son Yusuf remains at the Well. Her kitchen visit is temporary. She agreed who would prepare each household meal before she left.',
   tariq:
-    'Sixteen-year-old building apprentice. Maryam is his grandmother. His father Yusuf and stepmother Zehra agreed this supervised visit; he sleeps in her guest household and returns with her.',
-  kian: 'Sixteen-year-old watcher. Ada is his sister and ward. Fresh local fiction: Ada accompanies him with her assent; he retains her care and they return together. This is no claim about an imported Watch arrangement.',
+    'Tariq is sixteen and is learning building work. Maryam is his grandmother. His father Yusuf and stepmother Zehra agreed to this supervised visit. He sleeps in Maryam’s guest household and returns with her.',
+  kian: 'Kian is a sixteen-year-old watcher. His sister Ada is in his care. In this new story, Ada agrees to come with him. He remains responsible for her care, and they return together. This does not describe any care agreement brought from the Watch.',
   tamar:
-    'Fifty-four-year-old perimeter adviser. Kian is her mentee, not her child. Her bounded off-duty refuge visit grants no guardian role.',
+    'Tamar is fifty-four and advises on watching the village boundary. She teaches Kian, who is not her child. She is visiting the refuge during time off. This temporary visit does not make her his guardian.',
 };
 export function founders(
   seed: number,

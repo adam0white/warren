@@ -45,7 +45,7 @@ export function sleepingRoomWords(s: WarrenState, cell: number): string {
   if (s.hill.use[cell] !== USE.beds || s.hill.kind[cell] !== K.open) return '';
   const places = roomOf(s.hill, cell).length * BEDS_PER_CELL;
   const { places: total, enough } = sleepingCapacity(s);
-  return `${roomSafetyWords(s, cell)} This room has about ${numberWords(places)} sleeping places. All rooms have about ${numberWords(total)}. ${enough ? 'There is space for everyone.' : 'The village needs more sleeping places.'}`;
+  return `${roomSafetyWords(s, cell)} This room has about ${numberWords(places)} sleeping places. Together, all sleeping rooms have about ${numberWords(total)} places. ${enough ? 'There is space for everyone.' : 'The village needs more sleeping places.'}`;
 }
 
 export function sleepingCapacityWords(s: WarrenState): string {
@@ -69,5 +69,5 @@ export function compactShelterWords(s: WarrenState): string {
     const cell = positionAt(s, p.id, s.minute);
     if (yOf(cell) < SURF || reached.has(cell)) exposed++;
   }
-  return `Sleeping room for about ${numberWords(places)} · ${numberWords(exposed)} exposed${hiding ? ` · ${numberWords(hiding)} hiding` : ''}`;
+  return `There is sleeping space for about ${numberWords(places)} people. Riders can reach ${numberWords(exposed)} ${exposed === 1 ? 'person' : 'people'}.${hiding ? ` ${numberWords(hiding).replace(/^./, (c) => c.toUpperCase())} ${hiding === 1 ? 'person is' : 'people are'} hiding.` : ''}`;
 }

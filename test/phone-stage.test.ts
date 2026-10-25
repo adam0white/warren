@@ -94,7 +94,9 @@ it('shows known poor health without a contradictory healthy label', async () => 
     await page.locator('[data-who="meryem"]').click();
     expect(await page.locator('#person-help').innerText()).toContain('poor health');
     expect(await page.locator('#person-help').innerText()).toContain('illness');
-    expect(await page.locator('#card').innerText()).not.toMatch(/well enough|No immediate bodily need/i);
+    expect(await page.locator('#card').innerText()).not.toMatch(
+      /well enough|They show no sign of an immediate need/i,
+    );
   } finally {
     await page.close();
   }

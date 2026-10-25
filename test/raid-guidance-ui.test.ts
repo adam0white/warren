@@ -48,7 +48,7 @@ for (const [width, height] of [
       await page.clock.runFor(500);
       const goal = page.locator('#goal');
       expect(await goal.innerText()).toBe(
-        'Riders are at the hill. The call stays active until the all-clear. People choose whether to come below and may refuse throughout. Tap souls above to check exposure.',
+        'Riders are at the hill. The call stays active until the riders leave. People decide whether to come below. They can refuse at any time. Tap the people count above to see who riders can reach.',
       );
       const goalBox = await goal.boundingBox();
       const bodyBox = await page.locator('#inspection-body').boundingBox();
@@ -73,7 +73,7 @@ for (const [width, height] of [
         expect(box.x + box.width).toBeLessThanOrEqual(width);
       }
       await page.locator('#shelter-check').click();
-      expect(await page.locator('#shelter-summary').innerText()).toContain('villagers');
+      expect(await page.locator('#shelter-summary').innerText()).toContain('people');
       await page.locator('#bookx').click();
       await page.locator('#book').click();
       await page.locator('#resume').click();

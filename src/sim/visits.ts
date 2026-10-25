@@ -2,23 +2,23 @@
 import { CAST_IDS } from './people.ts';
 import type { WarrenState } from './warren.ts';
 export const INVITATIONS: Record<string, string> = {
-  yusuf: 'Ask to compare the old map with today’s stop line',
-  meryem: 'Invite her to label a short survey together',
-  maryam: 'Offer a smooth scrap during the kitchen wait',
-  tariq: 'Offer a spare offcut for his own experiment',
+  yusuf: 'Ask to compare the old map with the line where work must stop today',
+  meryem: 'Invite her to mark a short route you have examined together',
+  maryam: 'Offer a smooth leftover piece of material while she waits in the kitchen',
+  tariq: 'Offer a spare piece of leftover material for his own experiment',
   kian: 'Ask whether he would like to share a road story',
-  tamar: 'Invite her to check the perimeter by daylight',
+  tamar: 'Invite her to check the village boundary by daylight',
 };
 const CLUES: Record<string, string> = {
   yusuf:
-    'Yusuf Usta chooses to show a crossed-out passage. “The ground was unstable. I also kept a shift past its agreed stop. A mark must let somebody stop me.” The injured worker’s response remains their own.',
+    'Yusuf Usta chooses to show a crossed-out passage. “The ground was unstable. I also kept people working past the agreed time. A mark must show others when they can stop me.” The injured worker’s response remains their own.',
   meryem:
-    'Meryem agrees to show only the short section she walked. Two ink marks distinguish observed ground from inherited lines. “I left those marks off the clean map. I need to put them back.”',
+    'Meryem agrees to show only the short section she walked. Two ink marks show which ground she saw herself and which lines came from older maps. “I left those marks off the clean map. I need to put them back.”',
   maryam:
-    'Maryam accepts the smooth scrap and brings out a wooden ring and string. “Some are impossible knots. I keep the mistakes too.” She offers a puzzle, not the contents of her private notebook.',
+    'Maryam accepts the smooth leftover piece and brings out a wooden ring and string. “Some are impossible knots. I keep the mistakes too.” She offers a puzzle, not the contents of her private notebook.',
   tariq:
-    'Tariq accepts an offcut for a tiny boat. He shows one drawing of a failed sail. “Away from drinking water, and after the work is put away.” This is an experiment, not boatbuilding qualification.',
-  kian: 'Kian chooses to unfold a story map. “The Very Small King admits nobody taller than the proprietor. Ada invented that one.” He keeps the map; sharing the joke does not settle his care duty.',
+    'Tariq accepts the leftover piece to make a tiny boat. He shows one drawing of a failed sail. “I will test it away from drinking water, after I put the work away.” This experiment does not qualify him to build boats.',
+  kian: 'Kian chooses to unfold a story map. “The Very Small King lets nobody in who is taller than the owner. Ada invented that one.” He keeps the map; sharing the joke does not settle his care duty.',
   tamar:
     'Tamar agrees to a daylight check. She demonstrates a hand signal twice. “I once changed a gesture without checking everyone understood. A younger watcher took the blame.” She asks Kian to demonstrate it back. The public correction remains unfinished.',
 };
@@ -37,7 +37,7 @@ export function visit(s: WarrenState, id: string): boolean {
       at: s.minute,
       kind: 'story',
       who: id,
-      text: `${p.name} leaves the invitation for a quieter moment.`,
+      text: `${p.name} waits for a quieter moment to answer the invitation.`,
       weight: 1,
     });
     return true;
@@ -83,7 +83,7 @@ export function releaseVisit(s: WarrenState, id: string): boolean {
     at: s.minute,
     kind: 'story',
     who: id,
-    text: `${p.name} agrees to end this optional refuge assignment at a quiet boundary. Optional refuge work is withdrawn after the current activity. All promises and household duties remain in force; this is not a travel or duty-completion receipt.`,
+    text: `${p.name} agrees to stop optional work on the refuge after the current activity. All promises and household duties still apply. This does not record a journey or a completed duty.`,
     weight: 2,
   });
   return true;

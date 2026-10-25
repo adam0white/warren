@@ -10,6 +10,11 @@ describe('current engine with historical mechanics controls', () => {
     old.framework = '2.8.0';
     expect(() => load(old)).toThrow(/Start fresh/);
   });
+  it('refuses a saved game from before the source-text rewrite', () => {
+    const old = save(newGame(7)) as ReturnType<typeof save> & { textVersion?: string };
+    delete old.textVersion;
+    expect(() => load(old)).toThrow(/Start a new game/);
+  });
   it('makes the first raid a named, drawn scare and preserves the new edition in replay and continuation', () => {
     const g = newGame(7, '0.3.0');
     expect(g.s.edition).toBe('0.3.0');
@@ -41,7 +46,7 @@ describe('current engine with historical mechanics controls', () => {
     const severity = injured.flatMap((p) => p?.body.injuries.map((i) => i.severity) ?? []);
     expect(severity.length).toBeGreaterThan(0);
     advance(g, g.s.minute + 20 * DAY);
-    expect(g.s.notes.some((n) => n.kind === 'hurt' && /“.*(easier|mended)/.test(n.text))).toBe(true);
+    expect(g.s.notes.some((n) => n.kind === 'hurt' && /“.*(hurts less|healed)/.test(n.text))).toBe(true);
     expect(injured.every((p) => !p?.body.alive || p.body.injuries.length === 0)).toBe(true);
     const third = g.s.raids[2];
     if (!third) throw new Error('Missing third raid');
@@ -65,8 +70,8 @@ describe('current engine with historical mechanics controls', () => {
       .filter((n) => n.who === p.id)
       .map((n) => n.text)
       .join(' ');
-    expect(words).not.toContain('My arm has mended');
-    expect(words).toContain('The wound on my arm has mended');
+    expect(words).not.toContain('My arm has healed');
+    expect(words).toContain('The wound on my arm has healed');
   });
 
   it('continues healing narration exactly after loading, and gives no recovery voice to the dead', () => {

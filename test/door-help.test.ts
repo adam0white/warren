@@ -37,7 +37,7 @@ describe('door responses', () => {
     expect(canShut(adult)).toBe(false);
     s.pos[adult.id] = idx(17, SURF + 1);
     s.hill.doorWork[door] = 14;
-    expect(doorWords(s, door, true)).toContain('must be finished');
+    expect(doorWords(s, door, true)).toContain('must finish it');
     expect(canShut(adult)).toBe(false);
     s.hill.doorWork[door] = 0;
     expect(canShut(adult)).toBe(true);
@@ -50,14 +50,14 @@ describe('door responses', () => {
   it('explains how the keeper can suggest shutting a rolled-back door', () => {
     const s = state();
     const words = doorWords(s, door, true);
-    expect(words).toContain('rolled back');
+    expect(words).toContain('open door');
     expect(words).toContain('Ring the bell');
     expect(words).toContain('adult');
     expect(words).toContain('can reach');
     expect(words).toContain('choose');
     expect(words.startsWith('Ring the bell.')).toBe(true);
     expect(words.indexOf('Ring the bell')).toBeLessThan(words.indexOf('False alarm'));
-    expect(words).toContain('Quiet-time calls last six game hours');
+    expect(words).toContain('Calls without raids last six game hours');
     expect(words).not.toContain('Nearby adults:');
     expect(words).not.toMatch(/will shut|tap.*shut/i);
   });
@@ -82,7 +82,7 @@ describe('door responses', () => {
     const s = state();
     s.hill.doorWork[door] = 14;
     expect(doorWords(s, door, false)).toContain('lamp near');
-    expect(doorWords(s, door, true)).toContain('choose to carve');
+    expect(doorWords(s, door, true)).toContain('decide whether to carve');
     expect(doorWords(s, door, true)).not.toContain('Ring the bell');
     s.hill.doorWork[door] = 0;
     s.hill.shut[door] = 1;

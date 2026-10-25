@@ -86,11 +86,11 @@ export function openFeedback(
 
   const verdicts = element('div', '', 'feedback-verdicts');
   verdicts.setAttribute('role', 'group');
-  verdicts.setAttribute('aria-label', 'How was this run? Optional');
+  verdicts.setAttribute('aria-label', 'How was this game? Answering is optional.');
   for (const [label, value] of [
-    ["I'd keep playing", 'keep'],
-    ['Not sure', 'mixed'],
-    ["I'd stop here", 'quit'],
+    ['I would keep playing', 'keep'],
+    ['I am not sure', 'mixed'],
+    ['I would stop here', 'quit'],
   ] as const) {
     const chip = element('button', label, 'feedback-chip');
     chip.type = 'button';
@@ -125,7 +125,7 @@ export function openFeedback(
     nameLabel,
     element(
       'p',
-      'A name labels your linked play history on this device, past and future. Leave it empty to stay pseudonymous. It is remembered on this device after you send.',
+      'This name labels your linked play history on this device, including past and future play. Leave it empty to use an unnamed identity. This device remembers the name after you send.',
     ),
   );
   if (name.value) nameDetails.open = true;
@@ -138,7 +138,7 @@ export function openFeedback(
   disclosure.append(
     element(
       'p',
-      'Recording on or Share includes an available run and links play across games on this device. Otherwise only your verdict, note and optional name are sent.',
+      'If Recording is on or you choose to share your play, we include an available run and link play across games on this device. Otherwise, we send only your answer, note and optional name.',
     ),
   );
   const diagnostic = new URLSearchParams(location.search).get('lab') === '1';

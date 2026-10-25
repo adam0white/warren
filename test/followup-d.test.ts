@@ -61,7 +61,7 @@ describe('edition 0.4.0 raid call', () => {
     second.stage = 'smoke';
     g.s.minute = second.smoke;
     expect(colonyWords(g.s)).toMatch(
-      /Smoke rises.*No call is active.*Ring the bell once.*until the all-clear/,
+      /Smoke rises.*No call is active.*Ring the bell once.*until the riders leave/,
     );
     expect(colonyWords(g.s)).not.toContain('riders have gone');
   });
@@ -108,7 +108,7 @@ describe('edition 0.4.0 raid call', () => {
       }
       expect(g.s.bell?.at).toBe(at);
       expect(g.s.bell?.until).toBe(raid.leave);
-      expect(bellStateWords(g.s)).toContain('until the all-clear');
+      expect(bellStateWords(g.s)).toContain('until the riders leave');
       expect(bellStateWords(g.s)).not.toMatch(/renew|six game hours/);
       const before = fingerprint(g.s);
       expect(act(g, { verb: 'bell' })).toBe(false);
@@ -129,7 +129,7 @@ describe('edition 0.4.0 raid call', () => {
     advance(g, raid.leave);
     expect(raid.stage).toBe('gone');
     expect(g.s.bell).toBeNull();
-    expect(bellStateWords(g.s)).not.toMatch(/renew|six game hours elapsed/);
+    expect(bellStateWords(g.s)).not.toMatch(/renew|call ended after six game hours/);
   });
 
   it('still expires a quiet call as a false alarm and states the cost at a quiet door', () => {
@@ -142,7 +142,7 @@ describe('edition 0.4.0 raid call', () => {
     advance(g, g.s.minute + 6 * HOUR);
     expect(g.s.bell).toBeNull();
     expect(g.s.flags.falseBells).toBe(1);
-    expect(bellStateWords(g.s)).toContain('six game hours elapsed');
+    expect(bellStateWords(g.s)).toContain('call ended after six game hours');
   });
 });
 

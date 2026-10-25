@@ -19,7 +19,7 @@ export function personHelpWords(s: WarrenState, p: Person): string {
   if (felt.hunger > 0.5) words.push('They need food.');
   if (felt.thirst > 0.6) words.push('They need water.');
   if (felt.sleepiness > 0.75 || felt.fatigue > 0.65) words.push('They need rest.');
-  if (!words.length) words.push('No immediate bodily need is showing.');
+  if (!words.length) words.push('They show no sign of an immediate need for food, water, rest or care.');
 
   if (activeRaid(s)) {
     const cell = positionAt(s, p.id, s.minute);

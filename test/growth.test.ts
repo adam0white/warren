@@ -9,7 +9,7 @@ describe('the village growth record', () => {
     s.arrivals = 2;
     const words = growthWords(s);
     expect(words).toMatch(/twenty-seven cells/);
-    expect(words).toMatch(/two families/);
+    expect(words).toMatch(/Two families/);
     expect(words).not.toMatch(/two people/);
   });
 
@@ -23,7 +23,7 @@ describe('the village growth record', () => {
     const words = growthWords(s);
     expect(words).toMatch(/Riders have come and gone once/);
     expect(words).not.toMatch(/\b(safe|protected|held|survived)\b|two raids|three raids/);
-    expect(words).toMatch(/history.*current safety/i);
+    expect(words).toMatch(/past events.*check who riders can reach now/i);
   });
 
   it('keeps a fresh hill honest about zero growth and absence without changing the run', () => {
@@ -31,7 +31,7 @@ describe('the village growth record', () => {
     const before = JSON.stringify(s);
     const words = growthWords(s);
     expect(words).toMatch(/zero cells/);
-    expect(words).toMatch(/zero families/);
+    expect(words).toMatch(/Zero families/);
     expect(words).toMatch(/Riders have not yet come and gone/);
     expect(words).toMatch(/saved hill waits while you are away/i);
     expect(JSON.stringify(s)).toBe(before);

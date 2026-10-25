@@ -1,14 +1,12 @@
 /** Actual retained browser run, not generated healthy source state. */
-import { readFileSync } from 'node:fs';
 import { snapshot } from '@adam0white/human-framework';
 import { describe, expect, it } from 'vitest';
-import { act, advance, fingerprint, load, replay, type Saved, save } from '../src/sim/game.ts';
+import { act, advance, fingerprint, load, replay, save } from '../src/sim/game.ts';
 import { projectNativeReturn } from '../src/sim/native-return.ts';
 
-const actual = () =>
-  load(
-    JSON.parse(readFileSync(new URL('./fixtures/genuine-care-ended.json', import.meta.url), 'utf8')) as Saved,
-  );
+import { currentCareSaved } from './current-care.ts';
+
+const actual = () => load(currentCareSaved());
 describe('finite native return from actual played Warren care', () => {
   it('captures actual Kian and releases Meryem only at a natural boundary, with exact replay', async () => {
     const g = actual();
@@ -17,7 +15,7 @@ describe('finite native return from actual played Warren care', () => {
     const k = await projectNativeReturn(g.s, 'kian');
     expect(k.raw).toEqual(before);
     expect(k.transfer.checkpoint.sha256).toBe(
-      '352243d6aa3b248784cff3088b146cd55a66e9dd956c633b4e8f097a3714b726',
+      'f8dc20cd2eff854f47bca2f30743ad84b1702066250c88253548f4cdc6a20a75',
     );
     expect(k.transfer.warrenCare?.visit.dependent.sleepPressure).toBe(0.18374932648343162);
     expect(k.transfer.warrenCare?.visit.source.dependent.sleepPressure).toBe(0.2337493264834316);
@@ -54,12 +52,16 @@ describe('finite native return from actual played Warren care', () => {
     const g = actual();
     act(g, { verb: 'prepare-native-return', who: 'kian' });
     advance(g, 630);
-    await expect(projectNativeReturn(g.s, 'kian')).rejects.toThrow(/source changed/);
+    await expect(projectNativeReturn(g.s, 'kian')).rejects.toThrow(
+      /person has changed since the return was prepared/,
+    );
     act(g, { verb: 'prepare-native-return', who: 'kian' });
     expect(g.s.nativeDepartures?.kian?.person.activity).toBeNull();
     await expect(projectNativeReturn(g.s, 'kian')).resolves.toBeDefined();
     g.s.people.find((p) => p.id === 'kian')!.body.alive = false; // Declared terminal refusal control.
-    await expect(projectNativeReturn(g.s, 'kian')).rejects.toThrow(/source changed/);
+    await expect(projectNativeReturn(g.s, 'kian')).rejects.toThrow(
+      /person has changed since the return was prepared/,
+    );
     expect(act(g, { verb: 'prepare-native-return', who: 'kian' })).toBe(true); // Logs invalidation, not a new capture.
     expect(g.s.nativeDepartures?.kian).toBeUndefined();
     const expired = actual();

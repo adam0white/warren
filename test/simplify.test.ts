@@ -15,15 +15,15 @@ afterAll(async () => {
   await server?.close();
 });
 
-it('projects historical fragments and bell replies without changing stored text', () => {
-  const original = 'Smoke again in the south. Yusuf: “Good idea. On it.”';
+it('glosses HF replies and composes current activity text without changing its input', () => {
+  const original = 'There is smoke in the south again. Yusuf: “Good idea. On it.”';
   expect(displayWords(original)).toBe(
-    'Smoke rises in the south again. Yusuf: “That is a good idea. I will do it.”',
+    'There is smoke in the south again. Yusuf: “That is a good idea. I will do it.”',
   );
   expect(speechWords('Not now. After I pray.')).toBe('I cannot come now. I will come after I pray.');
-  expect(original).toContain('Smoke again');
-  expect(activityWords('carry spoil up to the heap')).toBe(
-    'Their current task is to carry loose rock up to the heap.',
+  expect(original).toContain('Good idea. On it.');
+  expect(activityWords('carry loose stone up to the pile above ground')).toBe(
+    'Their current task is to carry loose stone up to the pile above ground.',
   );
 });
 

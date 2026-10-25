@@ -6,15 +6,15 @@ import { xOf, yOf } from './grid.ts';
 import type { WarrenState } from './warren.ts';
 export const ROLE_TASKS: Record<string, readonly { action: string; label: string; minutes: number }[]> = {
   yusuf: [
-    { action: 'digging-advice', label: 'compare a visible digging line with the workers', minutes: 90 },
-    { action: 'well-advice', label: 'discuss a bounded water investigation', minutes: 90 },
+    { action: 'digging-advice', label: 'discuss the visible digging marks with the workers', minutes: 90 },
+    { action: 'well-advice', label: 'discuss a limited search for water', minutes: 90 },
   ],
   meryem: [
     { action: 'survey-route', label: 'walk and label an already visible route', minutes: 45 },
-    { action: 'household-work', label: 'check the guest household’s provisions', minutes: 30 },
+    { action: 'household-work', label: 'check the guest household’s food and supplies', minutes: 30 },
   ],
   maryam: [
-    { action: 'cook', label: 'prepare a household pot from its own grain', minutes: 60 },
+    { action: 'cook', label: 'cook a household meal from its own grain', minutes: 60 },
     { action: 'store-check', label: 'check the household seed jars', minutes: 30 },
   ],
   tariq: [
@@ -23,14 +23,22 @@ export const ROLE_TASKS: Record<string, readonly { action: string; label: string
       label: 'prepare light building materials with Yusuf Usta',
       minutes: 30,
     },
-    { action: 'building-assistance', label: 'assist Yusuf Usta with a bounded building check', minutes: 30 },
+    { action: 'building-assistance', label: 'help Yusuf Usta with a limited building check', minutes: 30 },
   ],
   tamar: [
-    { action: 'perimeter-watch', label: 'check the near approach in daylight', minutes: 45 },
-    { action: 'equipment-check', label: 'check the agreed watch signals and personal kit', minutes: 30 },
+    { action: 'perimeter-watch', label: 'check the nearby route to the village in daylight', minutes: 45 },
+    {
+      action: 'equipment-check',
+      label: 'check the agreed watch signals and personal equipment',
+      minutes: 30,
+    },
   ],
   kian: [
-    { action: 'watch-running', label: 'rehearse a short message route with Tamar', minutes: 20 },
+    {
+      action: 'watch-running',
+      label: 'practise carrying a message along a short route with Tamar',
+      minutes: 20,
+    },
     { action: 'stores-assistance', label: 'check the guest stores with Tamar', minutes: 25 },
   ],
 };
@@ -61,13 +69,23 @@ export function supervised(
   const cell = getPosition(supervisor);
   return cell !== undefined && Math.abs(xOf(cell) - xOf(at)) + Math.abs(yOf(cell) - yOf(at)) <= 4;
 }
+// Goal labels also become memory-retrieval tags in HF. Preserve their stored identity.
+// These labels are not used to render the current activity; ROLE_TASKS supplies that prose.
+const ROLE_GOAL_LABELS: Record<string, string> = {
+  yusuf: 'compare a visible digging line with the workers',
+  meryem: 'walk and label an already visible route',
+  maryam: 'prepare a household pot from its own grain',
+  tariq: 'prepare light building materials with Yusuf Usta',
+  tamar: 'check the near approach in daylight',
+  kian: 'rehearse a short message route with Tamar',
+};
 export function seedRoleGoals(s: WarrenState) {
   for (const p of s.people) {
     const task = roleTask(p.id, 0);
     if (!task) continue;
     p.agenda.goals.push({
       id: 'canonical-role',
-      label: task.label,
+      label: ROLE_GOAL_LABELS[p.id] ?? task.label,
       serves: ['competence'],
       advancedBy: [{ action: task.action, amount: 0.1 }],
       importance: 0.35,
@@ -95,24 +113,27 @@ export function finishRoleWork(
   const day = Math.floor(s.minute / DAY);
   if (s.flags[`role-note:${p.id}`] !== day + 1) {
     const words: Record<string, string> = {
-      'digging-advice': 'compared the visible line with the workers; the ground remains uncertain',
-      'well-advice': 'discussed a bounded water investigation; no water strike was promised',
-      'survey-route': 'walked a visible route and labelled what was actually observed',
-      'household-work': 'checked the household provisions without taking another house’s grain',
-      cook: 'prepared a household portion; its grain remains real food in those jars',
-      'store-check': 'checked the household seed jars; no stock was created or transferred',
+      'digging-advice': 'discussed the visible digging marks with the workers. The ground remains uncertain',
+      'well-advice': 'discussed a limited search for water. Nobody promised that they would find water',
+      'survey-route': 'walked a visible route and marked what could be seen',
+      'household-work': 'checked the household’s food and supplies without taking another house’s grain',
+      cook: 'prepared a household meal. Its cooked grain remains available to eat from the household jars',
+      'store-check': 'checked the household seed jars. No supplies were added or moved',
       'building-preparation': 'prepared light materials under Yusuf Usta’s supervision',
-      'building-assistance': 'completed a bounded check with Yusuf Usta; this grants no building licence',
-      'perimeter-watch': 'checked the near approach in daylight without claiming future safety',
-      'equipment-check': 'checked the agreed signals and personal kit without creating equipment',
-      'watch-running': 'rehearsed a short message route with Tamar; Ada’s care remains Kian’s responsibility',
-      'stores-assistance': 'checked the guest stores with Tamar; no care duty was waived',
+      'building-assistance':
+        'completed a limited check with Yusuf Usta. This does not give a building licence',
+      'perimeter-watch':
+        'checked the nearby route to the village in daylight. This does not promise future safety',
+      'equipment-check': 'checked the agreed signals and personal equipment. No equipment was added',
+      'watch-running':
+        'practised carrying a message along a short route with Tamar. Ada’s care remains Kian’s responsibility',
+      'stores-assistance': 'checked the guest stores with Tamar. All duties to care for others still apply',
     };
     s.notes.push({
       at: s.minute,
       kind: 'story',
       who: p.id,
-      text: `${p.name} ${words[action] ?? 'finished the bounded task'}.`,
+      text: `${p.name} ${words[action] ?? 'finished the limited task'}.`,
       weight: 1,
     });
     s.flags[`role-note:${p.id}`] = day + 1;

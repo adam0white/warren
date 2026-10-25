@@ -14,7 +14,7 @@ export function returnCare(
 ) {
   if (!visit || visit.endedAt === undefined || visit.endedAt > captured || visit.returnBy <= captured)
     throw Error(
-      'Finish optional refuge work before the finite Watch return checkpoint; keep the pending return.',
+      'Finish the optional refuge work before preparing a saved return to the Watch. The duty to return must remain pending.',
     );
   const v = structuredClone(visit);
   validateWatchCare(
@@ -32,7 +32,7 @@ export function returnCare(
     canonicalPersona(v.care) !== canonicalPersona(shifted.care) ||
     v.returnBy !== shifted.returnBy
   )
-    throw Error('Original Watch care provenance differs.');
+    throw Error('The original care record does not match the saved record from the Watch.');
   validateWatchCare({ agreement: v.agreement, care: v.care, dependent: v.dependent }, captured, commitments);
   if (
     !Number.isSafeInteger(v.careCount) ||
@@ -47,7 +47,7 @@ export function returnCare(
     Math.abs(v.dependent.sleepPressure - Math.max(0, v.source.dependent.sleepPressure - 0.05 * v.careCount)) >
       1e-12
   )
-    throw Error('Current bounded Ada care differs from the actual care outcomes.');
+    throw Error('Ada’s current care record does not match the care completed during this visit.');
   return { version: 'warren-watch-ada/1' as const, capturedMinute: captured, visit: v };
 }
 
@@ -92,11 +92,16 @@ export function nativeReturnCurrent(s: WarrenState, who: NativeReturnId): boolea
 export async function projectNativeReturn(s: WarrenState, who: NativeReturnId) {
   const departure = s.nativeDepartures?.[who];
   if (!departure)
-    throw Error('No quiet native checkpoint prepared. Continue ordinary play and prepare this person again.');
+    throw Error(
+      'No saved state is ready for this person’s return. Continue playing, then prepare this person again after their current activity ends.',
+    );
   const p = restore(departure.person);
   if (!nativeReturnCurrent(s, who))
-    throw Error('Prepared source changed. Prepare this actual person again; no old snapshot is reused.');
-  if (p.id !== who || p.now > s.minute) throw Error('Native source identity/clock differs.');
+    throw Error(
+      'The person has changed since the return was prepared. Prepare this person again. The old saved state will not be reused.',
+    );
+  if (p.id !== who || p.now > s.minute)
+    throw Error('The identity or time in the saved return does not match the current person.');
   const care = who === 'kian' ? returnCare(departure.care, p.now, p.agenda.commitments) : undefined;
   const captured = await project(p); // Existing clinical, activity, project, duty and owed guards remain.
   return { ...captured, transfer: { ...captured.transfer, ...(care ? { warrenCare: care } : {}) } };

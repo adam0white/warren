@@ -69,10 +69,10 @@ export function roomSafetyWords(s: WarrenState, cell: number): string {
   if (door && exposed.every((i) => !closed.has(i))) {
     const location = doorLocation(s, room);
     return location.startsWith('stone doors')
-      ? `Every open route needs a shut stone door; one may not suffice. ${partly}Riders can reach these beds.`
-      : `Ring the bell; a nearby adult may shut the open ${location}, blocking riders. ${partly}${activeRaid(s) ? '' : 'False alarms can weaken trust.'}`.trim();
+      ? `Every open route needs a shut stone door. One door may not be enough. ${partly}Riders can reach these beds.`
+      : `Ring the bell. A nearby adult may shut the open ${location} to block riders. ${partly}${activeRaid(s) ? '' : 'False alarms can weaken trust.'}`.trim();
   }
-  return `Dig deeper, or shut stone doors on every open route. ${partly}${shaft ? 'An open shaft reaches these beds.' : 'Riders reach these beds from the entrance.'}${door ? ' An open door leaves another route.' : ''}`;
+  return `Dig deeper, or shut stone doors on every open route. ${partly}${shaft ? 'Riders can reach these beds through an open shaft.' : 'Riders reach these beds from the entrance.'}${door ? ' Riders also have a route through an open door.' : ''}`;
 }
 
 export function bedSafety(s: WarrenState): { safe: number; exposed: number } {
@@ -102,7 +102,7 @@ export function gameTimeWords(minutes: number): string {
   const hours = Math.floor(total / HOUR);
   const rest = total % HOUR;
   return hours
-    ? `${hours} game ${hours === 1 ? 'hour' : 'hours'}${rest ? ` ${rest} minutes` : ''}`
+    ? `${hours} game ${hours === 1 ? 'hour' : 'hours'}${rest ? ` ${rest} ${rest === 1 ? 'minute' : 'minutes'}` : ''}`
     : `${total} game ${total === 1 ? 'minute' : 'minutes'}`;
 }
 
@@ -120,11 +120,11 @@ export function bellStateWords(s: WarrenState): string {
     s.bell?.real &&
     s.bell.until > s.minute
   )
-    return 'The call stays active until the all-clear. People choose whether to come below and may refuse throughout.';
+    return 'The call stays active until the riders leave. People decide whether to come below. They can refuse at any time.';
   if (s.bell && s.bell.until > s.minute)
-    return `The call is active for six game hours; ${gameTimeWords(s.bell.until - s.minute)} left. People choose whether to come below.`;
+    return `The call lasts six game hours. It has ${gameTimeWords(s.bell.until - s.minute)} left. People choose whether to come below.`;
   if ((s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0') && activeRaid(s))
-    return 'No call is active. Ring the bell once to call people below until the all-clear. People choose whether to come.';
+    return 'No call is active. Ring the bell once to call people below until the riders leave. People choose whether to come.';
   if (hadBellCall(s)) {
     const travelling = s.people.some(
       (p) => p.body.alive && s.trips[p.id]?.action === 'shelter' && (s.trips[p.id]?.workFrom ?? 0) > s.minute,
@@ -138,23 +138,23 @@ export function bellStateWords(s: WarrenState): string {
         (r) => r.stage === 'gone' && bellAt !== undefined && r.smoke <= bellAt && bellAt < r.leave,
       );
     const reason = raidCall
-      ? ' The riders have gone; the all-clear ended the call.'
+      ? ' The riders have gone, so the call has ended.'
       : deadline !== undefined && s.minute >= deadline
-        ? ' The call’s six game hours elapsed.'
+        ? ' The call ended after six game hours.'
         : '';
     const ended = travelling
-      ? 'The call has ended; some are still on the way below.'
+      ? 'The call has ended. Some people are still on their way below.'
       : sheltering
-        ? 'The call has ended; some are still sheltering below.'
+        ? 'The call has ended. Some people are still sheltering below.'
         : 'The call has ended.';
-    return `${ended}${reason}${activeRaid(s) && (s.edition !== '0.4.0' && s.edition !== '0.5.0' && s.edition !== '0.6.0') ? ' Ring to renew.' : ''}`;
+    return `${ended}${reason}${activeRaid(s) && (s.edition !== '0.4.0' && s.edition !== '0.5.0' && s.edition !== '0.6.0') ? ' Ring the bell to renew the call.' : ''}`;
   }
   return activeRaid(s)
     ? s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0'
-      ? 'No call is active. Ring the bell once to call people below until the all-clear. People choose whether to come.'
+      ? 'No call is active. Ring the bell once to call people below until the riders leave. People choose whether to come.'
       : 'No call is active. Ring the bell to call people below for six game hours.'
     : s.edition === '0.4.0' || s.edition === '0.5.0' || s.edition === '0.6.0'
-      ? 'The bell is quiet. During a raid, one call stands until the all-clear. Quiet-time calls last six game hours; false alarms can weaken trust. People choose whether to come below.'
+      ? 'The bell is quiet. During a raid, one call lasts until the riders leave. Calls without a raid last six game hours. False alarms can weaken trust. People choose whether to come below.'
       : 'The bell is quiet. Each call lasts six game hours. People choose whether to come below.';
 }
 
@@ -179,7 +179,7 @@ export function bellShelterWords(s: WarrenState): string {
         : 'near the entrance';
   const people = s.people.filter((p) => p.body.alive).length;
   const missing = Math.max(0, people - safe - exposed);
-  return `Sleeping places: ${safe} beyond riders’ reach; ${exposed} exposed${exposed ? ` ${cause}` : ''}. ${people} villagers${missing ? `; ${missing} lack marked space` : ''}. ${bellStateWords(s)}`;
+  return `There ${safe === 1 ? 'is' : 'are'} ${safe} sleeping ${safe === 1 ? 'place' : 'places'} beyond riders’ reach. There ${exposed === 1 ? 'is' : 'are'} ${exposed} exposed sleeping ${exposed === 1 ? 'place' : 'places'}${exposed ? ` ${cause}` : ''}. The village has ${people} ${people === 1 ? 'person' : 'people'}.${missing ? ` There are no marked sleeping places for ${missing} of them.` : ''} ${bellStateWords(s)}`;
 }
 
 /** The first scare's observed search stays visible afterwards, even if a door is later shut. */

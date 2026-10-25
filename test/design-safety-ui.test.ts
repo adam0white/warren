@@ -167,7 +167,7 @@ describe('safety before calling people below', () => {
           await page.locator('#cellx').click();
           await page.locator('#bell').click();
           await page.clock.runFor(100);
-          expect(await page.locator('#cell-words').innerText()).toContain('The call is active');
+          expect(await page.locator('#cell-words').innerText()).toContain('The call lasts six game hours');
           if (process.env.WARREN_SCREENSHOTS === '1')
             await page.screenshot({
               animations: 'disabled',

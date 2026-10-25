@@ -15,6 +15,7 @@ import {
   type Order,
   type Saved,
   save,
+  TEXT_VERSION,
 } from '../sim/game.ts';
 import { AIR_REACH, diggable, H, idx, K, neighbours, SURF, THEIR_X, USE, W, xOf, yOf } from '../sim/grid.ts';
 import { BELL, VISIT_TERMS } from '../sim/people.ts';
@@ -136,22 +137,24 @@ const NUM = [
   'twelve',
 ];
 const souls = (n: number) =>
-  n < NUM.length
-    ? `${NUM[n]} ${n === 1 ? 'soul' : 'souls'}`
-    : n < 20
-      ? 'under twenty souls'
-      : n < 40
-        ? `some ${Math.round(n / 5) * 5} souls`
-        : `${Math.round(n / 10) * 10} souls and more`;
+  n === 0
+    ? 'no people'
+    : n < NUM.length
+      ? `${NUM[n]} ${n === 1 ? 'person' : 'people'}`
+      : n < 20
+        ? 'under twenty people'
+        : n < 40
+          ? `about ${Math.round(n / 5) * 5} people`
+          : `${Math.round(n / 10) * 10} people or more`;
 // Keep the actual notice and its host outside app rerenders. SDK suppression stays final.
 const noticeFooter = document.createElement('footer');
 noticeFooter.id = 'notice-footer';
 if (notice) noticeFooter.append(notice);
 document.body.append(noticeFooter);
 const footer = `<div class="footer">${'<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>'}<br>People by the Human Framework.${labTools ? ` Version ${FRAMEWORK_VERSION}.` : ''}</div>`;
-const playInfo = `<p>Chalk a dashed outline. People choose when to dig it. People need air and light to dig a marked wall.</p><p>Furnish open ground: a store for jars, beds for sleeping, a lamp, or a door.</p><p>A door needs one cell wide, open on two opposite sides. You can mark up to three doors.</p><p>Filled figures count marked sleeping places. Hollow figures show missing places. Tap souls to check each person’s exposure.</p>`;
+const playInfo = `<p>Draw a dashed outline with chalk to mark stone for digging. People choose when to dig. They need fresh air and light.</p><p>Use the Furnish menu to mark open ground for grain stores, sleeping places, lamps or doors.</p><p>A door needs a passage one square wide, with open ground on two opposite sides. You can mark up to three doors.</p><p>Filled circles show marked sleeping places. Empty circles show how many more places are needed. Tap the people count to check who riders could reach.</p>`;
 function topbar(titlePage = false) {
-  return `<header class="topbar"><div class="bar-words">${titlePage ? '<a target="_top" href="https://human.adamwhite.work/games/">All games</a>' : '<span id="when"></span>'}</div><button class="info" aria-label="Information" popovertarget="hill-info">i</button><button id="book" aria-label="Game menu">≡<span class="menu-label"> Menu</span></button></header><div id="hill-info" class="info-popover" popover="auto"><div class="who"><b>${titlePage ? 'The hill' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${titlePage ? '<p>Riders burned two villages. The cellar under Master Yusuf’s house is the start.</p><p>You have the chalk and the bell. You mark where work is needed. Each person chooses what to do.</p><p>One finger chalks or looks. Two fingers move the hill.</p><p>A year has 365 days. Year 1 begins on 19 August.</p>' : playInfo}</div>`;
+  return `<header class="topbar"><div class="bar-words">${titlePage ? '<a target="_top" href="https://human.adamwhite.work/games/">All games</a>' : '<span id="when"></span>'}</div><button class="info" aria-label="Information" popovertarget="hill-info">i</button><button id="book" aria-label="Game menu">≡<span class="menu-label"> Menu</span></button></header><div id="hill-info" class="info-popover" popover="auto"><div class="who"><b>${titlePage ? 'The hill' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${titlePage ? '<p>Riders burned two villages. Your refuge starts in the cellar under Master Yusuf’s house.</p><p>You have the chalk and the bell. You mark where work is needed. Each person chooses what to do.</p><p>Use one finger to draw chalk marks or inspect the hill. Use two fingers to move the view.</p><p>A year has 365 days. Year 1 begins on 19 August.</p>' : playInfo}</div>`;
 }
 
 // ---------- start ----------
@@ -200,7 +203,8 @@ export async function start() {
 function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
   lab.screen('title');
   feedbackCleanup?.();
-  const compatible = sv && sv.framework === FRAMEWORK_VERSION && sv.game === GAME_VERSION;
+  const compatible =
+    sv && sv.framework === FRAMEWORK_VERSION && sv.game === GAME_VERSION && sv.textVersion === TEXT_VERSION;
   cancelAnimationFrame(raf);
   canvas = null;
   stage?.destroy();
@@ -208,7 +212,7 @@ function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
   app().innerHTML = `<div class="page">${topbar(true)}
     <div class="title-art"><canvas id="title-cv" aria-label="The village above its cellar"></canvas><h1>The Warren</h1></div>
     <p class="title-goal">${PURPOSE}</p>
-    ${sv && !compatible ? '<p class="soft">An older notebook was put away; this version cannot read it.</p>' : ''}
+    ${sv && !compatible ? '<p class="soft">This saved game comes from an older version and cannot be loaded. Start a new game.</p>' : ''}
     <div class="title-actions">${compatible ? `<button class="primary" id="cont">Resume <span class="soft">· ${esc(hillDate(sv.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
       <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'New game' : 'Begin'}</button>
       <div id="new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="new-yes">Yes, begin</button><button id="new-no">No</button></div>
@@ -301,7 +305,7 @@ function enter() {
     <div class="goal-slot"><div class="goal" id="goal"></div><div class="goal" id="raid-warning" hidden></div></div>
     <div class="scene lk-scene" id="scene"><canvas id="cv" tabindex="0" aria-label="The hill"></canvas>
       <div class="view-controls" role="group" aria-label="Hill view"><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><button id="fit-hill" aria-label="Fit hill">⤢</button></div>
-      <div class="lag soft" id="lag" hidden>the days pass as fast as they can</div>
+      <div class="lag soft" id="lag" hidden>The game is running as fast as this device allows.</div>
     </div>
     <div class="panel lk-sheet" aria-label="Hill actions"><div class="lk-sheet-body" id="inspection-body">
       <div class="card" id="card" hidden></div>
@@ -313,7 +317,7 @@ function enter() {
     <div class="lk-commit" id="hill-controls"><div class="tools" role="toolbar" aria-label="Tools">
       ${toolBtn('look', 'look', '◎')}${toolBtn('chalk', 'chalk', '□')}${toolBtn('erase', 'rub out', '⌫')}
       <button id="furnish" aria-expanded="false">furnish ▾</button><button class="bell" id="bell">bell</button></div>
-      <div id="furnish-picker" hidden>${(['store', 'beds', 'lamp', 'door'] as const).map((t) => `<button data-tool="${t}">${t}<small>${{ store: 'Open ground for jars', beds: 'Open ground for sleeping', lamp: 'Light on open ground', door: 'one cell wide, open on two opposite sides' }[t]}</small></button>`).join('')}</div>
+      <div id="furnish-picker" hidden>${(['store', 'beds', 'lamp', 'door'] as const).map((t) => `<button data-tool="${t}">${t}<small>${{ store: 'Mark open ground for grain jars.', beds: 'Mark open ground for sleeping.', lamp: 'Hang a lamp over open ground.', door: 'Use a passage one square wide, open on two opposite sides.' }[t]}</small></button>`).join('')}</div>
       <div id="raid-actions" hidden></div>
     </div></div></div>`;
   stage?.destroy();
@@ -461,11 +465,11 @@ function setTool(t: Tool) {
   syncButtons();
   const hints: Partial<Record<Tool, string>> = {
     chalk: 'A dashed outline marks where people can dig. Each person chooses when to work.',
-    erase: 'Drag to rub out chalk or a room’s mark.',
-    store: 'Drag over open ground to make it a store. Grain goes where the jars are.',
-    beds: 'Drag over open ground for sleeping places below.',
+    erase: 'Drag to erase chalk marks or room markings.',
+    store: 'Drag over open ground to mark a grain store. People can bring grain to its jars.',
+    beds: 'Drag over open ground to mark sleeping places below.',
     lamp: 'Tap open ground to hang a lamp. Tap it again to take it down.',
-    door: 'Tap a lit, one-cell passage with two opposite openings. You can mark up to three doors.',
+    door: 'Tap a lit passage one square wide, with two opposite openings. You can mark up to three doors.',
   };
   const h = hints[t];
   if (h) hint(`tool:${t}`, h);
@@ -633,7 +637,7 @@ function chrome() {
   const when = document.getElementById('when');
   if (when)
     when.textContent = `${hourWords(paint.t).replace(/^./, (c) => c.toUpperCase())} · ${hillDate(paint.t)
-      .replace(' under the hill', '')
+      .replace(' at the hill', '')
       .replace('Year', 'year')
       .replace(/(January|February|March|April|August|September|October|November|December)/g, (m) =>
         m.slice(0, 3),
@@ -648,7 +652,7 @@ function chrome() {
   const goal = document.getElementById('goal');
   if (goal)
     goal.textContent = waterWords(s).includes('dry')
-      ? 'The water jars are dry. A well or water carried below is needed.'
+      ? 'The water jars are dry. People need a well or water carried below.'
       : tool === 'beds' && !activeRaid(s)
         ? sleepingCapacityWords(s)
         : colonyWords(s);
@@ -695,25 +699,25 @@ function chrome() {
     const words = document.getElementById('raid-words');
     const below = s.people.filter((p) => p.body.alive && yOf(positionAt(s, p.id, s.minute)) >= SURF);
     if (words)
-      words.textContent = `${pending?.stage === 'smoke' ? 'Smoke rises on the ridge. Riders may arrive in half a day.' : 'Riders are at the hill.'} People choose whether to come. Currently below: ${below.length <= 4 ? below.map((p) => settingWords(p.name)).join(', ') || 'no one' : souls(below.length)}. Above: ${s.people.filter((p) => p.body.alive).length - below.length}.`;
+      words.textContent = `${pending?.stage === 'smoke' ? 'Smoke rises on the ridge. Riders may arrive in half a day.' : 'Riders are at the hill.'} People choose whether to come. People below ground: ${below.length <= 4 ? below.map((p) => settingWords(p.name)).join(', ') || 'no one' : souls(below.length)}. People above ground: ${s.people.filter((p) => p.body.alive).length - below.length}.`;
   }
   const info = document.getElementById('hill-info');
   if (info && !info.matches(':popover-open')) {
     const raidInfo = !!pending;
     if (info.dataset.raid !== String(raidInfo)) {
       info.dataset.raid = String(raidInfo);
-      info.innerHTML = `<div class="who"><b>${raidInfo ? 'Smoke and riders' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${raidInfo ? '<p>Smoke warns that riders may arrive in about half a day.</p><p>The bell calls whoever hears it.</p><p>A bell without riders weakens trust, person by person.</p>' : playInfo}`;
+      info.innerHTML = `<div class="who"><b>${raidInfo ? 'Smoke and riders' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${raidInfo ? '<p>Smoke warns that riders may arrive in about half a day.</p><p>The bell calls whoever hears it.</p><p>If you ring the bell when no riders come, people may trust it less.</p>' : playInfo}`;
     }
   }
   const rate = document.getElementById('clock-rate');
   if (rate)
     rate.textContent =
       menuHoldsTime() || reading0
-        ? 'Time waits while you read'
+        ? 'Time is paused for reading.'
         : pending
-          ? 'Smoke: time waits for you'
+          ? 'Time is paused for your choice.'
           : performance.now() < readUntil
-            ? 'Reading the latest word'
+            ? 'Time slows for new text.'
             : '';
   // New notes: heavy ones take the ticker.
   const firstNew = lastSeenNote ? s.notes.indexOf(lastSeenNote) + 1 : Math.max(0, s.notes.length - 1);
@@ -913,13 +917,13 @@ function card() {
   const about = s.notes.filter((n) => n.who === p.id).slice(-2);
   const habit = p.habits.some((h) => h.action === 'dig' && h.strength > 0.25);
   const html = `
-    <div class="who">${personOpener ? `<button id="cardback" aria-label="Back to The village">← ${esc(p.name)}</button>` : `<b>${esc(p.name)}</b>`} <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'come from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
+    <div class="who">${personOpener ? `<button id="cardback" aria-label="Back to The village">← ${esc(p.name)}</button>` : `<b>${esc(p.name)}</b>`} <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
         <p id="person-help">${esc(personHelpWords(s, p))}</p>
     <div>${esc(activityWords(doing, walking))}</div>
     <details id="person-context"><summary id="person-context-toggle">Activity and words</summary>
     <div class="shelter-person">${esc(exposureWords(s, p))}</div>
     ${feeling(p) ? `<div class="soft">${esc(feeling(p))}</div>` : ''}
-    ${habit ? `<div class="hand">${esc(p.name)} goes down to the marked walls every morning now. Nobody asks.</div>` : ''}
+    ${habit ? `<div class="hand">${esc(p.name)} goes down to the marked walls every morning now. Nobody needs to ask.</div>` : ''}
     ${trustWords(p) ? `<div class="soft">${esc(p.name)} ${trustWords(p)}.</div>` : ''}
     ${why ? `<div class="hand">“${esc(speechWords(why))}”</div>` : ''}
     ${about.map((n) => `<div class="soft small">${esc(displayWords(n.text))}</div>`).join('')}${(s.edition === '0.5.0' || s.edition === '0.6.0') && VISIT_TERMS[p.id] ? `<p>${esc(displayWords(VISIT_TERMS[p.id]!))}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>End optional work</button>` : ''}
@@ -1143,7 +1147,7 @@ function commitPaint(entranceConfirmed = false) {
         flash(`The dig is marked. ${reading.words}`, reading.context);
       } else
         flash(
-          'Nobody can get at that stone yet. Chalk a way to it from open ground, and they will dig toward it.',
+          'Nobody can reach that stone yet. Mark a path to it with chalk from open ground so people can dig toward it.',
         );
       return;
     }
@@ -1151,12 +1155,12 @@ function commitPaint(entranceConfirmed = false) {
     // Every refusal says why, in the village's words.
     else if (cells.some((c) => xOf(c) >= THEIR_X))
       flash(
-        '“That is the neighbours’ ground, Usta. Only a passage that reaches it would show what is in it.”',
+        '“That ground belongs to the neighbours, Master. We need a passage to it before we can see what is there.”',
       );
-    else if (cells.every((c) => h.kind[c] === K.open)) flash('That is open already. Chalk goes on stone.');
-    else if (cells.some((c) => h.kind[c] === K.bedrock))
-      flash('“Nothing cuts that, Usta. It is the old grey rock.”');
-    else flash('Chalk goes on stone the picks can reach.');
+    else if (cells.every((c) => h.kind[c] === K.open))
+      flash('That ground is already open. Use chalk on stone.');
+    else if (cells.some((c) => h.kind[c] === K.bedrock)) flash('“We cannot cut that old grey rock, Master.”');
+    else flash('Use chalk on stone that people can reach with their picks.');
   } else if (kind === 'erase') {
     order({ verb: 'chalk', cells, on: false });
     order({ verb: 'use', cells, use: 'none' });
@@ -1189,8 +1193,8 @@ function tap(px: number, py: number) {
         flash(
           'There is no spare lamp. The dashed ring marks its place. Someone may choose to make one at the hearth.',
         );
-      else receipt('The lamp is hung.');
-    } else flash('A lamp hangs in open ground, below the surface.');
+      else receipt('The lamp is hanging here now.');
+    } else flash('You can hang a lamp over open ground below the surface.');
     return;
   }
   if (tool === 'door') {
@@ -1199,8 +1203,8 @@ function tap(px: number, py: number) {
       flash('The door is marked. Someone may carve it when they have time and light.');
     else if (s.hill.use[c] === USE.door) showDoor(c);
     else if (s.hill.use.filter((u) => u === USE.door).length >= 3)
-      flash('“Three doors are all we can keep rolled, Usta.”');
-    else flash('A door fits a narrow passage: open on two opposite sides only.');
+      flash('“We can only keep three doors ready to roll shut, Master.”');
+    else flash('A door fits a narrow passage with open ground on only two opposite sides.');
     return;
   }
   // Plans and sleeping marks take priority over people standing on them.
@@ -1236,7 +1240,7 @@ function airWords(c: number): string {
   if (!g) return '';
   const { lit, air } = airAndLight(g.s);
   if (yOf(c) >= SURF && (air[c] ?? 32000) > AIR_REACH)
-    return ' The air is stale: no lamp burns and nobody will cut here. Air comes down an opening to the sky; it carries a long way straight down a shaft, not far sideways.';
+    return ' The air is stale. Lamps cannot burn here, and nobody will dig. Fresh air comes through an opening to the sky. It travels far down a vertical shaft but only a short way sideways.';
   if (!lit[c]) return ' It is dark here. A lamp would let people work.';
   return '';
 }
@@ -1260,7 +1264,7 @@ function describeCell(c: number) {
           : u === USE.hearth
             ? 'Yusuf Usta sits at this hearth.'
             : u === USE.well
-              ? 'Cold water flows into this well from the seam.'
+              ? 'Cold water flows into this well through a layer of damp stone.'
               : u === USE.door
                 ? doorWords(g.s, c, lightAt(c))
                 : (h.wear[c] ?? 0) > 6
@@ -1315,7 +1319,7 @@ function updateDoor() {
   if (planCell !== null) {
     showReading(
       'Excavated plan',
-      `${planSafety(g.s, [doorCell], 'beds').words} This ground is open now; beds still need marking.`,
+      `${planSafety(g.s, [doorCell], 'beds').words} This ground is open now. You still need to mark sleeping places.`,
     );
     doorCell = null;
     planCell = null;
@@ -1423,7 +1427,7 @@ function updateShelter() {
         (p, i) =>
           `<span class="soul ${i < places ? 'sheltered' : 'exposed'} ${p.activity?.action === 'hide' ? 'hiding' : ''}" aria-label="${esc(p.name)}">${i < places ? '●' : '○'}</span>`,
       )
-      .join('')}${alive.length > 20 ? ' and more' : ''}<span class="small"> souls</span>`;
+      .join('')}${alive.length > 20 ? ' and more' : ''}<span class="small"> people</span>`;
   }
   const bellState = document.getElementById('bell-state');
   if (bellState) {
@@ -1467,7 +1471,7 @@ function closeBook() {
 }
 
 function menuRows() {
-  return `<p>The hill waits while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div>${labTools ? continuity.controls() : ''}<div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label></div><button class="primary" id="resume">Resume</button>`;
+  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div>${labTools ? continuity.controls() : ''}<div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label></div><button class="primary" id="resume">Resume</button>`;
 }
 let feedbackCleanup: (() => void) | undefined;
 function showFeedback(host: HTMLElement, onBack: () => void) {
@@ -1597,7 +1601,7 @@ function openBook(tab = 's') {
         ? `<button data-open="d">What the village has done</button>${newestSafety ? `<p id="newest-safety"><b>Latest safety entry</b><br>${esc(displayWords(newestSafety.text))}</p>` : ''}${notes.slice(0, 8).map(entry).join('')}<details><summary>Earlier journal entries</summary>${notes.slice(8).map(entry).join('')}</details>`
         : tab === 'd'
           ? `<p id="growth-record">${esc(growthWords(s))}</p><p>${done.map((x) => `✓ ${esc(displayWords(x.text))}`).join('<br>') || 'No goals are complete yet.'}</p>`
-          : `<h3>Below now</h3>${householdRows(below) || '<p>No one is below yet.</p>'}<h3>Exposed</h3><p id="shelter-summary"></p>${householdRows(alive.filter((p) => !below.includes(p))) || '<p>No one is above ground.</p>'}<p class="soft">${souls(alive.length)} in the village. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} people have died.` : 'No one has died.'}</p>`
+          : `<h3>People below ground</h3>${householdRows(below) || '<p>No one is below yet.</p>'}<h3>People above ground</h3><p id="shelter-summary"></p>${householdRows(alive.filter((p) => !below.includes(p))) || '<p>No one is above ground.</p>'}<p class="soft">There ${alive.length === 1 ? 'is' : 'are'} ${souls(alive.length)} in the village. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} ${s.stats.died === 1 ? 'person has' : 'people have'} died.` : 'No one has died.'}</p>`
   }</div></div>`;
   hideOtherSheets('drawer');
   d.hidden = false;

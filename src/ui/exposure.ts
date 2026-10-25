@@ -11,7 +11,7 @@ export function exposureWords(s: WarrenState, p: Person): string {
   const reached = above || riderCells(s).has(cell);
   const hiding = p.activity?.action === 'hide';
   const where = hiding
-    ? `They are hiding ${above ? 'above ground' : reached ? 'near an entrance' : 'deeper below'}; they are out of sight for now.`
+    ? `They are hiding ${above ? 'above ground' : reached ? 'near an entrance' : 'deeper below'}. They are out of sight for now.`
     : above
       ? 'They are exposed above ground.'
       : reached
@@ -51,8 +51,8 @@ export function exposureWords(s: WarrenState, p: Person): string {
       response +=
         due <= s.minute
           ? ' Their next choice is due now.'
-          : ` Their next choice is due in ${gameTimeWords(due - s.minute)}; they may choose again sooner.`;
+          : ` Their next choice is due in ${gameTimeWords(due - s.minute)}. They may choose again sooner.`;
     }
   }
-  return `${where} ${doing}${answer ? ` At the bell: “${speechWords(answer.says)}”` : ''}${response}`;
+  return `${where} ${doing}${answer ? ` When the bell rang, they said: “${speechWords(answer.says)}”` : ''}${response}`;
 }

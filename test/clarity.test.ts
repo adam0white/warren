@@ -46,7 +46,7 @@ describe('F-213 first-minute clarity', () => {
           .map((node) => node.textContent)
           .join(' '),
       );
-      expect(title).toContain('Dig a refuge');
+      expect(title).toContain('Dig a shelter');
       expect(title).not.toContain('Choose chalk');
       await begin(page);
       const play = await page.locator('.purpose, .goal').allTextContents();
@@ -72,7 +72,7 @@ describe('F-213 first-minute clarity', () => {
       await page.keyboard.press('Escape');
       await begin(page);
       await page.getByRole('button', { name: 'Information', exact: true }).click();
-      expect(await page.locator('#hill-info').innerText()).toContain('People choose when to dig it.');
+      expect(await page.locator('#hill-info').innerText()).toContain('People choose when to dig.');
     } finally {
       await page.close();
     }
@@ -90,7 +90,7 @@ describe('F-213 first-minute clarity', () => {
       expect(box && box.y + box.height <= 690).toBe(true);
       await ticker.click();
       expect(await page.locator('#drawer[data-kind="j"]').isVisible()).toBe(true);
-      expect(await page.locator('#drawer[data-kind="j"]').innerText()).toContain('The barley stood ripe.');
+      expect(await page.locator('#drawer[data-kind="j"]').innerText()).toContain('The barley was ripe.');
     } finally {
       await page.close();
     }

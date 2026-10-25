@@ -76,7 +76,7 @@ describe('F-233 raid playback', () => {
     const page = await enter();
     try {
       await page.evaluate('window.__warren.setSpeed(2)');
-      expect(await page.locator('#clock-rate').innerText()).toBe('Smoke: time waits for you');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Time is paused for your choice.');
       expect(await page.locator('#raid-warning').innerText()).toContain('Smoke');
       expect(await page.locator('[data-speed]').count()).toBe(3);
       expect(await page.locator('.speed').isVisible()).toBe(false);
@@ -89,16 +89,16 @@ describe('F-233 raid playback', () => {
       expect(await page.locator('#raid-warning').innerText()).toContain('Smoke');
       await page.locator('#raid-bell').click();
       expect(await page.locator('#cell-title').innerText()).toBe('Bell call');
-      expect(await page.locator('#clock-rate').innerText()).toBe('Time waits while you read');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Time is paused for reading.');
       const minuteAtBell = await page.evaluate('window.__warren.game.s.minute');
       await page.clock.runFor(6000);
       expect(await page.evaluate('window.__warren.game.s.minute')).toBe(minuteAtBell);
-      expect(await page.locator('#clock-rate').innerText()).toBe('Time waits while you read');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Time is paused for reading.');
       await page.locator('#cellx').click();
-      expect(await page.locator('#clock-rate').innerText()).toBe('Reading the latest word');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Time slows for new text.');
       // chrome refreshes the clock label at 250ms boundaries.
       await page.clock.runFor(250);
-      expect(await page.locator('#clock-rate').innerText()).toBe('Reading the latest word');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Time slows for new text.');
       expect(await page.locator('#raid-warning').isVisible()).toBe(false);
       expect(await page.locator('#raid-bell, #watch-raid').count()).toBe(0);
       expect(await page.locator('.speed').isVisible()).toBe(true);
@@ -122,14 +122,14 @@ describe('F-233 raid playback', () => {
     const page = await enter();
     try {
       await page.clock.runFor(500);
-      expect(await page.locator('#clock-rate').innerText()).toContain('Smoke: time waits for you');
+      expect(await page.locator('#clock-rate').innerText()).toContain('Time is paused for your choice.');
       expect(await page.locator('.speed').isVisible()).toBe(false);
       expect(await page.locator('[data-speed="1"]').getAttribute('aria-pressed')).toBe('true');
       await page.locator('#watch-raid').click();
       expect(await page.locator('#watch-raid').count()).toBe(0);
       expect(await page.locator('.speed').isVisible()).toBe(true);
       expect(await page.locator('[data-speed="1"]').getAttribute('aria-pressed')).toBe('true');
-      expect(await page.locator('#clock-rate').innerText()).toBe('Reading the latest word');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Time slows for new text.');
       const run = await exported(page);
       expect(run.inputs).toEqual(saved.inputs);
     } finally {

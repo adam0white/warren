@@ -45,7 +45,7 @@ async function mount(privacy = false, off = false, failRun = false): Promise<Pag
 it('sends a linked verdict and trimmed name, remembers the name, and keeps downloading available', async () => {
   const page = await mount();
   try {
-    await page.getByRole('button', { name: "I'd keep playing", exact: true }).click();
+    await page.getByRole('button', { name: 'I would keep playing', exact: true }).click();
     await page.locator('textarea').fill('The door was hard to place.');
     await page.locator('.feedback-name summary').click();
     await page.locator('.feedback-name input').fill('  Tester 7  ');

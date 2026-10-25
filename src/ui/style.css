@@ -1360,7 +1360,7 @@ button.link {
   block-size: 14px;
   max-height: 14px;
   font-size: 10px;
-  background: transparent;
+  background: var(--paper);
 }
 #inspection-body:has(#drawer[data-kind="feedback"]:not([hidden])),
 #title-drawer[data-kind="feedback"] {

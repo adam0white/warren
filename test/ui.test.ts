@@ -51,7 +51,7 @@ async function enter(page: Page) {
     await put('hill', ${JSON.stringify(save(newGame(7)))});
   })()`);
   await page.reload();
-  expect(await page.locator('.page > p').first().innerText()).toContain('refuge');
+  expect(await page.locator('.page > p').first().innerText()).toContain('shelter');
   await page.locator('#cont').click();
   await page.evaluate(() => (window as unknown as { __warren: Debug }).__warren.setSpeed(0));
   await page.clock.runFor(1000);

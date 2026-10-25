@@ -70,13 +70,13 @@ const SKILLS: Record<string, Record<string, string>> = {
 };
 function role(castId: string) {
   const id = Object.keys(CAST_IDS).find((id) => CAST_IDS[id] === castId);
-  if (!id) throw new Error('No canonical Warren role.');
+  if (!id) throw new Error('This person has no supported Warren role.');
   return id;
 }
 export function admit(input: LifePreparation, opening: Person): Person {
   const parent = input.parent;
   if (canonicalPersona(preparePersonaLife(parent, input.clockMs).life) !== canonicalPersona(input.life))
-    throw new Error('Life differs from pinned clock.');
+    throw new Error('The person’s history does not match the saved time.');
   lifeAdmission(input, 'warren');
   const id = role(parent.castId);
   if (
@@ -84,20 +84,21 @@ export function admit(input: LifePreparation, opening: Person): Person {
     opening.id !== id ||
     parent.source.engine !== ENGINE_VERSION
   )
-    throw new Error('Unsupported identity/engine edition.');
+    throw new Error('This identity or simulation version is not supported.');
   const sourceRole = parent.transfer.sourceRole;
   if (typeof sourceRole !== 'string' || SOURCES[parent.source.game]?.[sourceRole] !== parent.castId)
-    throw new Error('Unsupported source role.');
+    throw new Error('The person’s role in the previous game is not supported.');
   const dialect =
     parent.source.game === 'warren'
       ? 'warren-calendar/1'
       : parent.source.game === 'valley'
         ? 'valley-cast/1'
         : 'site-cast/1';
-  if (parent.transfer.castPassport !== dialect) throw new Error('Unsupported passport dialect.');
+  if (parent.transfer.castPassport !== dialect)
+    throw new Error('This transfer record uses an unsupported format.');
   const portable = validateCalendarPersona(parent.transfer.person);
   if (id === 'kian' && !parent.transfer.watchCare)
-    throw new Error('Missing actual Watch Ada-care agreement.');
+    throw new Error('The agreement for Ada’s care at the Watch is missing.');
   const care =
     id === 'kian'
       ? validateWatchCare(
@@ -107,8 +108,9 @@ export function admit(input: LifePreparation, opening: Person): Person {
         )
       : undefined;
   if (care && (parent.source.game !== 'watch' || parent.source.rules !== 'cast-1'))
-    throw new Error('Unsupported Watch care source.');
-  if (portable.person.source.id !== sourceRole) throw new Error('Source identity mismatch.');
+    throw new Error('This record of care at the Watch is not supported.');
+  if (portable.person.source.id !== sourceRole)
+    throw new Error('The person’s identity does not match the previous game’s record.');
   const checkpoint = parent.transfer.checkpoint as
     | { schema?: unknown; sourceMinute?: unknown; rng?: unknown; sha256?: unknown }
     | undefined;
@@ -120,7 +122,7 @@ export function admit(input: LifePreparation, opening: Person): Person {
     typeof checkpoint.sha256 !== 'string' ||
     !/^[a-f0-9]{64}$/.test(checkpoint.sha256)
   )
-    throw new Error('Missing full-source receipt.');
+    throw new Error('The record needed to verify the full previous state is missing.');
   if (
     portable.person.mappingVersion !==
     (parent.source.game === 'warren'
@@ -129,9 +131,9 @@ export function admit(input: LifePreparation, opening: Person): Person {
         ? 'valley-calendar/1'
         : 'site-cast-calendar/1')
   )
-    throw new Error('Unsupported calendar map.');
+    throw new Error('This method of matching the games’ calendars is not supported.');
   if (parent.source.game === 'valley' && parent.source.rules !== 'valley-cast-3')
-    throw new Error('Unsupported Valley host rules.');
+    throw new Error('These Valley rules are not supported.');
   if (
     portable.calendar.owed.length ||
     portable.calendar.lapse ||
@@ -141,13 +143,15 @@ export function admit(input: LifePreparation, opening: Person): Person {
         (c.kind !== 'worship' || c.normId !== 'salah' || c.actions.some((a) => a !== 'pray')),
     )
   )
-    throw new Error('Source care/work/owed duty has no supported handover here.');
+    throw new Error(
+      'A duty from the previous game cannot be carried here. It may concern care, work or an unfinished obligation.',
+    );
   for (const n of portable.calendar.norms)
     if (!TRUSTED_NORMS.some((k) => canonicalPersona(k) === canonicalPersona(n)))
-      throw new Error('Unsupported norm meaning.');
+      throw new Error('A rule about right and wrong has a meaning this game does not support.');
   for (const duty of [...portable.calendar.commitments, ...portable.calendar.owed])
     if ([...duty.actions, ...(duty.violatedBy ?? [])].some((a) => !ACTIONS.has(a)))
-      throw new Error('Source duty has no supported action.');
+      throw new Error('A duty from the previous game requires an action this game does not support.');
   const shifted = structuredClone(portable);
   const offset = opening.now - portable.person.source.now;
   shifted.calendar.offset = offset;
@@ -168,7 +172,7 @@ export function admit(input: LifePreparation, opening: Person): Person {
     age < canonicalCast(parent.castId).age * 525600 ||
     age > (canonicalCast(parent.castId).age + 200) * 525600
   )
-    throw new Error('Unsupported age provenance.');
+    throw new Error('The recorded age cannot be verified from the previous game’s history.');
   target.life.bornAt = portable.person.life.bornAt + offset;
   // Only fitness is explicitly portable; clinical and circadian compatibility stay exact in HF.
   target.body.fitness = portable.person.health.fitness;
@@ -179,7 +183,10 @@ export function admit(input: LifePreparation, opening: Person): Person {
   for (const [skill, value] of Object.entries(shifted.person.skills)) {
     const mapped = SKILLS[parent.source.game]?.[skill];
     if (mapped) retained[mapped] = value;
-    else shifted.person.limitations.push(`Source archive retains unmapped skill: ${skill}`);
+    else
+      shifted.person.limitations.push(
+        `The previous game’s archive keeps this skill, which cannot be carried here: ${skill}`,
+      );
   }
   shifted.person.skills = retained;
   return admitCalendarPersona(shifted, target, {
@@ -209,7 +216,7 @@ export function applyLife(s: WarrenState, input: LifePreparation) {
   s.flags[`routine:${id}`] = input.life.assignment + 1;
   p.agenda.goals = p.agenda.goals.filter((goal) => goal.id !== 'canonical-role');
   const task = roleTask(id, input.life.assignment);
-  if (!task) throw new Error('Unsupported local assignment.');
+  if (!task) throw new Error('This local work assignment is not supported.');
   p.agenda.goals.push({
     id: 'between-games-assignment',
     label: facts.assignment,

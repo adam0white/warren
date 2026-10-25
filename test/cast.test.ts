@@ -52,11 +52,13 @@ describe('bounded Warren calendar mapping', () => {
     const { envelope } = await source();
     const input = preparePersonaLife(envelope, 0);
     input.life.assignment = (input.life.assignment + 1) % 2;
-    expect(() => admit(input, newGame(8).s.people.find((p) => p.id === 'meryem')!)).toThrow(/Life differs/);
+    expect(() => admit(input, newGame(8).s.people.find((p) => p.id === 'meryem')!)).toThrow(
+      /history does not match the saved time/,
+    );
     const kian = await source('kian');
     expect(() =>
       admit(preparePersonaLife(kian.envelope, 0), newGame(8).s.people.find((p) => p.id === 'kian')!),
-    ).toThrow(/Ada-care/);
+    ).toThrow(/Ada’s care/);
   });
   it('keeps actual source checkpoint separate from the shelf projection', async () => {
     const { p, envelope, captured } = await source();

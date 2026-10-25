@@ -58,9 +58,9 @@ describe('room safety from the actual rider layout', () => {
     s.hill.doorWork[first] = s.hill.doorWork[second] = 0;
     const words = roomSafetyWords(s, near);
     expect(words).toContain('Every open route');
-    expect(words).not.toMatch(/open stone door.*blocking riders/);
+    expect(words).not.toMatch(/open stone door.*to block riders/);
     s.hill.shut[first] = 1;
-    expect(roomSafetyWords(s, near)).toMatch(/open stone door.*blocking riders/);
+    expect(roomSafetyWords(s, near)).toMatch(/open stone door.*to block riders/);
     expect(bedSafety(s).exposed).toBeGreaterThan(0);
     s.hill.shut[second] = 1;
     expect(bedSafety(s).exposed).toBe(0);
@@ -78,23 +78,30 @@ describe('room safety from the actual rider layout', () => {
       s.hill.use[idx(x, SURF + 5)] = USE.beds;
     }
     expect(roomSafetyWords(s, idx(3, SURF + 5))).toContain('Every open route');
-    expect(roomSafetyWords(s, idx(3, SURF + 5))).not.toMatch(/open stone door.*blocking riders/);
+    expect(roomSafetyWords(s, idx(3, SURF + 5))).not.toMatch(/open stone door.*to block riders/);
     for (const x of [3, 17]) s.hill.shut[idx(x, SURF + 2)] = 1;
     expect(roomSafetyWords(s, idx(3, SURF + 5))).toMatch(/while the stone doors .* stay shut/);
+  });
+  it('uses person for one living villager and people for zero villagers', () => {
+    const { s } = layout();
+    s.people = s.people.slice(0, 1);
+    expect(bellShelterWords(s)).toContain('The village has 1 person.');
+    s.people = [];
+    expect(bellShelterWords(s)).toContain('The village has 0 people.');
   });
   it('reports legacy active, ended and renew-call states without an inferred response', () => {
     const { s } = layout();
     s.edition = '0.3.0';
-    expect(bellShelterWords(s)).toContain('Sleeping places: 3');
+    expect(bellShelterWords(s)).toContain('There are 3 sleeping places');
     expect(bellStateWords(s)).toContain('The bell is quiet');
     s.bell = { at: s.minute, until: s.minute + 60, real: false };
-    expect(bellStateWords(s)).toContain('The call is active');
+    expect(bellStateWords(s)).toContain('The call lasts six game hours');
     s.minute += 60;
     expect(bellStateWords(s)).toContain('The call has ended');
     const person = s.people[0];
     if (!person) throw new Error('Missing person');
     s.trips[person.id] = { action: 'shelter', workFrom: s.minute + 60 } as (typeof s.trips)[string];
-    expect(bellStateWords(s)).toContain('still on the way below');
+    expect(bellStateWords(s)).toContain('still on their way below');
     const raid = s.raids[0];
     if (!raid) throw new Error('No raid');
     raid.stage = 'smoke';

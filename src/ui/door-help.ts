@@ -7,15 +7,15 @@ import { displayWords } from './words.ts';
 export function doorWords(s: WarrenState, cell: number, lit: boolean): string {
   if (s.hill.doorWork[cell])
     return lit
-      ? 'People choose to carve this door. It must be finished before anyone can roll it shut.'
-      : 'Hang a lamp near this dark door mark. People choose to carve it; it must be finished before anyone can shut it.';
+      ? 'People decide whether to carve this door. They must finish it before anyone can roll it shut.'
+      : 'Hang a lamp near this dark door mark. People decide whether to carve the door. They must finish it before anyone can shut it.';
   if (s.hill.shut[cell])
-    return 'The door is rolled shut. An adult may reopen it when smoke, riders and the bell are quiet.';
+    return 'The door is rolled shut. An adult may reopen it when there is no smoke, no riders and no bell call.';
   const raid = activeRaid(s);
   const ringing = !!s.bell && s.bell.until > s.minute;
   if (raid || ringing)
-    return `The door is rolled back. A nearby adult who can reach it can choose to roll it shut. ${raid ? 'Smoke or riders make this a choice.' : 'The bell is sounding.'}`;
-  return 'Ring the bell. The door is rolled back; a nearby adult who can reach it may choose to shut it. False alarms can weaken trust. Quiet-time calls last six game hours.';
+    return `The door is open. A nearby adult who can reach it can choose to roll it shut. ${raid ? 'They have this choice because smoke or riders are present.' : 'The bell is sounding.'}`;
+  return 'Ring the bell. A nearby adult who can reach this open door may choose to shut it. Calls without raids last six game hours. False alarms can weaken trust.';
 }
 
 /** Live task details stay available without hiding the immediate door choice. */
@@ -29,7 +29,7 @@ export function doorDetailWords(s: WarrenState, cell: number): string {
           const label = p.activity ? displayWords(p.activity.affordance.label) : undefined;
           return `${p.name}: ${trip && s.minute < trip.workFrom ? `on the way to ${label ?? 'their task'}` : (label ?? 'no task recorded')}`;
         })
-        .join('; ')}. The choice is theirs.`
+        .join('; ')}. Each person decides whether to shut the door.`
     : 'No living adult nearby can reach this door now.';
 }
 

@@ -1,6 +1,5 @@
 /** Protocol controls use an in-memory shelf. They are not browser journey evidence. */
 
-import { readFileSync } from 'node:fs';
 import { snapshot } from '@adam0white/human-framework';
 import {
   acceptPersona,
@@ -11,6 +10,7 @@ import {
 } from '@adam0white/lab-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, newGame, save } from '../src/sim/game.ts';
+import { currentCareSaved } from './current-care.ts';
 
 const mock = vi.hoisted(() => ({
   enabled: false,
@@ -88,7 +88,7 @@ describe('continuity privacy and source receipts', () => {
   it('refuses changed state despite valid replay and fingerprint', async () => {
     const saved = save(newGame(7));
     saved.state.people[0]!.name = 'Changed';
-    await expect(fileLoad(file(saved))).rejects.toThrow(/state differs/);
+    await expect(fileLoad(file(saved))).rejects.toThrow(/state does not match/);
     expect(mock.allowed).toBe(false);
   });
   it('does not return a deferred import after a fresh run supersedes its gate', async () => {
@@ -213,8 +213,7 @@ it('does not cancel a pending hill when recording identity acknowledges', async 
 });
 
 describe('selected native Watch publication from genuine care run', () => {
-  const retained = () =>
-    JSON.parse(readFileSync(new URL('./fixtures/genuine-care-ended.json', import.meta.url), 'utf8'));
+  const retained = currentCareSaved;
   function shelfOf(saved: ReturnType<typeof retained>) {
     let state: PersonaShelfState = {
       revisions: Object.values(saved.ownedHeads),
@@ -243,7 +242,7 @@ describe('selected native Watch publication from genuine care run', () => {
     const other = get().heads[CAST_ID];
     await checkpointNative('kian');
     const e = current.nativeReturnHeads!['hf.cast.kian.watch']!;
-    expect(e.parentRevision).toBe(saved.ownedHeads['hf.cast.kian.watch'].revision);
+    expect(e.parentRevision).toBe(saved.ownedHeads['hf.cast.kian.watch']!.revision);
     expect(e.source.build).toMatch(/^[a-f0-9]{40}$/); // A stale SDK release lookup cannot stamp the loaded source.
     expect(e.transfer.warrenCare).toMatchObject({
       version: 'warren-watch-ada/1',
@@ -260,14 +259,14 @@ describe('selected native Watch publication from genuine care run', () => {
     mock.enabled = true;
     current = await fileLoad(file(saved));
     act(current, { verb: 'prepare-native-return', who: 'kian' });
-    await expect(checkpointNative('kian')).rejects.toThrow(/no local ownership/);
+    await expect(checkpointNative('kian')).rejects.toThrow(/no local permission/);
     const other = get().heads[CAST_ID];
     await checkpointNative('kian', true);
     expect(current.fileOrigin).toBe(true);
     expect(current.ownedHeads).toBeUndefined();
     const e = current.nativeReturnHeads!['hf.cast.kian.watch']!;
     expect(e.parentRevision).toBeNull();
-    expect(e.branchId).not.toBe(saved.ownedHeads['hf.cast.kian.watch'].branchId);
+    expect(e.branchId).not.toBe(saved.ownedHeads['hf.cast.kian.watch']!.branchId);
     expect(get().heads[CAST_ID]).toBe(other);
     expect(Object.keys(current.nativeReturnHeads!)).toEqual(['hf.cast.kian.watch']);
     const loaded = await localLoad(save(current));
@@ -290,13 +289,13 @@ describe('selected native Watch publication from genuine care run', () => {
     current = await localLoad(saved);
     act(current, { verb: 'prepare-native-return', who: 'kian' });
     mock.handle = async () => null;
-    await expect(checkpointNative('kian')).rejects.toThrow(/head changed/);
+    await expect(checkpointNative('kian')).rejects.toThrow(/shared record has changed/);
     expect(mock.requests.some((q) => (q as PersonaRequest).action === 'put')).toBe(false);
     mock.handle = async () => {
       current = null;
       return null;
     };
-    await expect(checkpointNative('kian', true)).rejects.toThrow(/Run or prepared/);
+    await expect(checkpointNative('kian', true)).rejects.toThrow(/game or the prepared/);
   });
 });
 

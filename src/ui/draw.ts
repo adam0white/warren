@@ -343,7 +343,7 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
   for (const f of fs) {
     const st = faceState(s, f.face, f.stand, lit, air);
     if (st === 'ready' || st === 'busy') continue;
-    const word = st === 'dark' ? 'dark' : st === 'stale' ? 'no air' : st === 'spoil' ? 'blocked' : '';
+    const word = st === 'dark' ? 'dark' : st === 'stale' ? 'stale air' : st === 'spoil' ? 'blocked' : '';
     if (!word) continue;
     c.fillStyle = ink.rope;
     c.fillText(word, (xOf(f.face) + 0.5) * cs, (yOf(f.face) + 0.62) * cs);

@@ -1,7 +1,7 @@
 {
   "name": "The Warren",
   "short_name": "The Warren",
-  "description": "A village digs a refuge into soft stone. Nobody obeys; everyone follows the worn path.",
+  "description": "A village digs a refuge into soft stone. Each person chooses when to work and when to rest.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

@@ -36,7 +36,7 @@ describe('bell duration and observed replies', () => {
     expect(bellStateWords(s)).toMatch(/six game hours.*1 game hour 15 minutes left/);
     s.minute += 75;
     s.bell = null;
-    expect(bellStateWords(s)).toMatch(/The call has ended.*six game hours elapsed/);
+    expect(bellStateWords(s)).toMatch(/The call has ended.*call ended after six game hours/);
     s.notes = [];
     expect(bellStateWords(s)).not.toContain('elapsed');
   });
@@ -49,14 +49,14 @@ describe('bell duration and observed replies', () => {
     expect(colonyWords(s)).toContain('6 game hours left');
     s.minute += 360;
     s.bell = null;
-    expect(colonyWords(s)).toContain('six game hours elapsed');
+    expect(colonyWords(s)).toContain('call ended after six game hours');
   });
 
   it('pairs assent with the current task and the next choice time without promising travel', () => {
     const { s, p } = ringing();
     const before = JSON.stringify(s);
     expect(exposureWords(s, p)).toMatch(
-      /carve the rolling stone.*At the bell: “I agree.”.*current task.*12 game minutes/,
+      /carve the rolling stone.*When the bell rang, they said: “I agree.”.*current task.*12 game minutes/,
     );
     expect(exposureWords(s, p)).not.toMatch(/will.*(come|follow|head|go)|They are still travelling below/);
     expect(JSON.stringify(s)).toBe(before);
@@ -115,7 +115,7 @@ it('names only the threat the village can currently see beside the bell', () => 
   raid.stage = 'smoke';
   expect(bellThreatWords(s)).toMatch(/Smoke.*half a day/);
   s.bell = { at: s.minute, until: s.minute + 360, real: true };
-  expect(colonyWords(s)).toContain('Tap souls');
+  expect(colonyWords(s)).toContain('Tap the people count');
   expect(colonyWords(s)).not.toContain('Check shelter');
   raid.stage = 'riders';
   expect(bellThreatWords(s)).toBe('Riders are at the hill.');

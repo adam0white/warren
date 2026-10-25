@@ -231,7 +231,7 @@ it('fits the mixed/open-door plan and longest bed and door readings above contro
     const p = await point(page, 18, 11);
     await page.touchscreen.tap(p.x, p.y);
     await page.clock.runFor(200);
-    expect(await page.locator('#cell-words').innerText()).toContain('exposed');
+    expect(await page.locator('#cell-words').innerText()).toContain('Riders can reach');
     expect(await page.locator('#cell-words').innerText()).toContain('open stone door');
     const fits = () =>
       page.locator('#cell-words').evaluate((el) => {
@@ -333,7 +333,7 @@ it('fits mixed door conditions while marking and keeps full route details on reo
     expect(await page.locator('#reading-context summary').getAttribute('aria-label')).toBe(
       'More about these routes',
     );
-    expect(await page.locator('#cell-words').innerText()).toContain('Keep protective doors shut.');
+    expect(await page.locator('#cell-words').innerText()).toContain('Keep the doors that block riders shut.');
     const essentialFits = () =>
       page.locator('#cell-words').evaluate((el) => {
         const range = document.createRange();
@@ -350,8 +350,12 @@ it('fits mixed door conditions while marking and keeps full route details on reo
     await page.locator('#cellx').click();
     await page.locator('#last-reading').click();
     await page.locator('#reading-context summary').click();
-    expect(await page.locator('#door-context').innerText()).toContain('The entrance admits riders.');
-    expect(await page.locator('#door-context').innerText()).toContain('keep protective stone doors shut');
+    expect(await page.locator('#door-context').innerText()).toContain(
+      'Riders can come through the entrance.',
+    );
+    expect(await page.locator('#door-context').innerText()).toContain(
+      'Keep the stone doors that block riders shut',
+    );
     if (process.env.WARREN_SCREENSHOTS === '1')
       await page.screenshot({ path: `${shots}/after-360-complex-route-details-b.png` });
   } finally {
