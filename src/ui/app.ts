@@ -43,6 +43,7 @@ import { growthWords } from './growth.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
 import { activityWords, displayWords, settingWords, speechWords } from './words.ts';
+import { latestWorkWords } from './work.ts';
 
 const labTools = new URLSearchParams(location.search).get('lab') === '1';
 
@@ -699,14 +700,14 @@ function chrome() {
     const words = document.getElementById('raid-words');
     const below = s.people.filter((p) => p.body.alive && yOf(positionAt(s, p.id, s.minute)) >= SURF);
     if (words)
-      words.textContent = `${pending?.stage === 'smoke' ? 'Smoke rises on the ridge. Riders may arrive in half a day.' : 'Riders are at the hill.'} People choose whether to come. People below ground: ${below.length <= 4 ? below.map((p) => settingWords(p.name)).join(', ') || 'no one' : souls(below.length)}. People above ground: ${s.people.filter((p) => p.body.alive).length - below.length}.`;
+      words.textContent = `${bellThreatWords(s)} People choose whether to come. People below ground: ${below.length <= 4 ? below.map((p) => settingWords(p.name)).join(', ') || 'no one' : souls(below.length)}. People above ground: ${s.people.filter((p) => p.body.alive).length - below.length}.`;
   }
   const info = document.getElementById('hill-info');
   if (info && !info.matches(':popover-open')) {
     const raidInfo = !!pending;
     if (info.dataset.raid !== String(raidInfo)) {
       info.dataset.raid = String(raidInfo);
-      info.innerHTML = `<div class="who"><b>${raidInfo ? 'Smoke and riders' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${raidInfo ? '<p>Smoke warns that riders may arrive in about half a day.</p><p>The bell calls whoever hears it.</p><p>If you ring the bell when no riders come, people may trust it less.</p>' : playInfo}`;
+      info.innerHTML = `<div class="who"><b>${raidInfo ? 'Smoke and riders' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${raidInfo ? '<p>Smoke warns that riders may arrive in half a day or less.</p><p>The bell calls whoever hears it.</p><p>If you ring the bell when no riders come, people may trust it less.</p>' : playInfo}`;
     }
   }
   const rate = document.getElementById('clock-rate');
@@ -743,18 +744,7 @@ function chrome() {
     }
   }
   const event = document.getElementById('event-sentence');
-  const work = [...s.notes]
-    .reverse()
-    .find((n) => (n.kind === 'dig' && n.who) || n.kind === 'arrival' || n.kind === 'raid');
-  if (event) {
-    const sentences = (work ? displayWords(work.text) : undefined)?.match(/[^.!?]+[.!?]/g) ?? [];
-    const name = work?.who ? personOf(s, work.who)?.name : undefined;
-    if (performance.now() > hintUntil)
-      event.textContent =
-        (name ? sentences.find((line) => line.includes(name)) : sentences[0])?.trim() ??
-        (work ? displayWords(work.text) : undefined) ??
-        FIRST_CHALK;
-  }
+  if (event && performance.now() > hintUntil) event.textContent = latestWorkWords(s);
   const bell = document.getElementById('bell') as HTMLButtonElement | null;
   if (bell) bell.classList.toggle('ringing', !!s.bell && s.minute < s.bell.until);
   const tail = document.getElementById('journal-tail');

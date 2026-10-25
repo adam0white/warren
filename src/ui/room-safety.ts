@@ -110,7 +110,7 @@ export function gameTimeWords(minutes: number): string {
 export function bellThreatWords(s: WarrenState): string {
   const raid = activeRaid(s);
   if (raid?.stage === 'riders') return 'Riders are at the hill.';
-  if (raid?.stage === 'smoke') return 'Smoke rises on the ridge. Riders may arrive in half a day.';
+  if (raid?.stage === 'smoke') return 'Smoke rises on the ridge. Riders may arrive in half a day or less.';
   return 'No smoke or riders are in sight.';
 }
 

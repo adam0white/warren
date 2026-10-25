@@ -1,10 +1,11 @@
-import { FRAMEWORK_VERSION } from '@adam0white/human-framework';
+import { ENGINE_VERSION, FRAMEWORK_VERSION } from '@adam0white/human-framework';
 import { expect, it } from 'vitest';
 import { advance, fingerprint, load, newGame, replay, save, stateJson } from '../src/sim/game.ts';
 import { makePerson } from '../src/sim/people.ts';
 
 it('persists plain narration for fresh founders, arrivals and canonical chapters', () => {
-  expect(FRAMEWORK_VERSION).toBe('2.21.0');
+  expect(FRAMEWORK_VERSION).toBe('3.0.0');
+  expect(ENGINE_VERSION).toBe('2.23.0');
   const game = newGame(7);
   expect(game.s.people.every((p) => p.lexicon?.plainEnglish === true)).toBe(true);
   expect(

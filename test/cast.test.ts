@@ -3,7 +3,7 @@ import { ENGINE_VERSION, snapshot } from '@adam0white/human-framework';
 import { createPersona, initialPersonaLife, preparePersonaLife } from '@adam0white/lab-client';
 import { describe, expect, it } from 'vitest';
 import { admit, applyLife, project } from '../src/sim/cast.ts';
-import { act, fingerprint, load, newGame, replay, save, stateJson } from '../src/sim/game.ts';
+import { act, advance, fingerprint, load, newGame, replay, save, stateJson } from '../src/sim/game.ts';
 import { CAST_IDS } from '../src/sim/people.ts';
 
 async function source(id = 'meryem') {
@@ -102,6 +102,25 @@ it('admits a real current Watch checkpoint with finite identity and dialect chec
   const admitted = admit(input, opening);
   expect(admitted.rng).toEqual(fixture.raw.rng);
   expect(admitted.lexicon?.plainEnglish).toBe(true);
+  expect(snapshot(admitted).engine).toBe('2.23.0');
+  const target = newGame(7);
+  const index = target.s.people.findIndex((p) => p.id === admitted.id);
+  target.s.people[index] = admitted;
+  applyLife(target.s, input);
+  const chapter = {
+    version: 'warren-cast/2' as const,
+    inputs: [input],
+    claims: [],
+    initial: stateJson(target.s),
+  };
+  const current = newGame(7, '0.6.0', chapter);
+  advance(current, current.s.minute + 60);
+  const exported = save(current);
+  expect(exported.framework).toBe('3.0.0');
+  expect(fingerprint(load(exported).s)).toBe(exported.fingerprint);
+  expect(fingerprint(replay(exported.seed, exported.inputs, exported.minute, exported.game, chapter).s)).toBe(
+    exported.fingerprint,
+  );
   const wrongRole = structuredClone(input);
   wrongRole.parent.transfer.sourceRole = 'tamar';
   expect(() => admit(wrongRole, opening)).toThrow(/role/);

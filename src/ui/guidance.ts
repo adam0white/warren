@@ -7,8 +7,9 @@ import {
   faceState,
   type WarrenState,
 } from '../sim/warren.ts';
-import { bellStateWords, hadBellCall } from './room-safety.ts';
+import { bellStateWords, bellThreatWords, hadBellCall } from './room-safety.ts';
 import { sleepingCapacityWords } from './shelter.ts';
+import { activityWords, settingWords } from './words.ts';
 
 export const PURPOSE = 'Dig a shelter where the village can survive attacks by riders.';
 export const FIRST_CHALK = 'Choose chalk, then drag across stone beside the cellar.';
@@ -27,8 +28,8 @@ export function colonyWords(s: WarrenState): string {
       : `Riders are at the hill. ${renew}`;
   if (raid?.stage === 'smoke')
     return ringing
-      ? `Smoke rises in the south. ${bellStateWords(s)} Tap the people count above to see who riders can reach.`
-      : `Smoke rises in the south. ${renew}`;
+      ? `${bellThreatWords(s)} ${bellStateWords(s)} Tap the people count above to see who riders can reach.`
+      : `${bellThreatWords(s)} ${renew}`;
 
   const fs = faces(s.hill);
   if (fs.length) {
@@ -46,9 +47,24 @@ export function colonyWords(s: WarrenState): string {
     return 'The chalk marks are beyond the dug space. Mark a path to them from the cellar with chalk.';
   }
 
+  const worker = s.people.find(
+    (p) =>
+      p.body.alive &&
+      p.activity &&
+      p.activity.endsAt > s.minute &&
+      ['dig', 'carve-door', 'make-lamp'].includes(p.activity.action),
+  );
+  const trip = worker && s.trips[worker.id];
+  const task = worker?.activity
+    ? activityWords(
+        worker.activity.affordance.label,
+        !!trip && trip.cells.length > 1 && s.minute < trip.workFrom,
+        settingWords(worker.name),
+      )
+    : undefined;
   if (!s.stats.dug)
     return s.hill.chalk.some(Boolean)
-      ? 'The digging plan is marked. People decide when to start digging.'
+      ? (task ?? 'The digging plan is marked. People decide when to start digging.')
       : FIRST_CHALK;
   if (grainBelow(s.hill) < 45)
     return cellsWithUse(s.hill, USE.store).length * STORE_CAP >= 45
@@ -59,5 +75,5 @@ export function colonyWords(s: WarrenState): string {
   const goal = currentGoal(s);
   if (goal?.id === 'grow') return 'Make room below for families who hear of the hill.';
   if (goal && !['chalk', 'first', 'store', 'lamp', 'beds'].includes(goal.id)) return goal.text;
-  return 'There is room to sleep below. Keep the lamps lit and watch the road for smoke.';
+  return task ?? 'There is room to sleep below. No smoke is visible. You cannot tell when riders will come.';
 }

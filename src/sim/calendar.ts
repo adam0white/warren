@@ -39,29 +39,6 @@ export function isLight(m: number): boolean {
   return mod >= rise && mod < set;
 }
 
-const ORD = (n: number) => {
-  const teen = n % 100 >= 11 && n % 100 <= 13;
-  const s = teen ? 'th' : (['th', 'st', 'nd', 'rd'][n % 10] ?? 'th');
-  return `${n}${s}`;
-};
-
-/** Day of the season, 1-based. */
-export function dayOfSeason(day: number): number {
-  const doy = doyOf(day);
-  const s = seasonOf(doy);
-  const starts: Record<Season, number> = { spring: 60, summer: 152, harvest: 213, autumn: 262, winter: 335 };
-  const st = starts[s];
-  return ((doy - st + YEAR_DAYS) % YEAR_DAYS) + 1;
-}
-
-/** "the 4th day of harvest, first year" */
-export function dateWords(m: number): string {
-  const day = dayOfMinute(m);
-  const y = yearOf(day);
-  const years = ['first', 'second', 'third', 'fourth', 'fifth'];
-  return `the ${ORD(dayOfSeason(day))} day of ${seasonOf(doyOf(day))}, ${years[y - 1] ?? `${ORD(y)}`} year`;
-}
-
 /** "early morning", "midday", "dusk", "night" */
 export function hourWords(m: number): string {
   const { rise, set } = daylight(doyOf(dayOfMinute(m)));

@@ -12,7 +12,7 @@ Tags: **[S]** sourced, **[I]** my inference.
 
 **1. Emergent swarm behaviour and watching it work**
 - [S] Will Wright: the ant simulation was "almost more intelligent than for the guy". He credited pheromone trails in the environment, not smart individual agents. He then wondered whether human behaviour could be modelled the same way. ([Jesper Juul on Wright interview](https://www.jesperjuul.net/ludologist/?p=155))
-- [S] Wright and McCormick built SimAnt from Hölldobler and Wilson's *The Ants*. Wright called the game "self-directed learning". ([Newsweek, 1991](https://www.newsweek.com/war-electronic-ants-197690))
+- [S] Wright and McCormick built SimAnt from Hölldobler and Wilson's _The Ants_. Wright called the game "self-directed learning". ([Newsweek, 1991](https://www.newsweek.com/war-electronic-ants-197690))
 - [S] Ant keepers describe the appeal as a "window into that hidden world" and as calming and meditative. Most of these sources are supplier blogs and forums, so they may be promotional. ([formiculture](https://formiculture.com/topic/21012-what-got-you-interested-in-ants), [Ant-keeping](https://en.wikipedia.org/wiki/Ant-keeping))
 - [I] The pull is that the player can see cause and effect (a trail forms, a crowd follows) with no one in charge.
 
@@ -66,4 +66,5 @@ Tags: **[S]** sourced, **[I]** my inference.
 - [I] These behaviours are plausible because the player is a godlike outsider who can harm what they otherwise nurture. That makes cruelty cheap in anonymous swarms. Treat them as hypotheses to test in playtest, not as findings.
 
 ## Gaps
+
 No GDC talks, flow/emergence papers about players, Reddit threads, Cookie Clicker or Idle Ants evidence, or Dwarf Fortress primary sources. A follow-up could target r/AntKeeping, r/EmpiresOfTheUndergrowth, Steam reviews and Tarn Adams interviews.

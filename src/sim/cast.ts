@@ -82,7 +82,9 @@ export function admit(input: LifePreparation, opening: Person): Person {
   if (
     parent.castRevision !== canonicalCast(parent.castId).revision ||
     opening.id !== id ||
-    (parent.source.engine !== ENGINE_VERSION && parent.source.engine !== '2.17.0')
+    (parent.source.engine !== ENGINE_VERSION &&
+      parent.source.engine !== '2.17.0' &&
+      parent.source.engine !== '2.21.0')
   )
     throw new Error('This identity or simulation version is not supported.');
   const sourceRole = parent.transfer.sourceRole;

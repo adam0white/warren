@@ -27,7 +27,7 @@ import {
 
 export const GAME_VERSION = '0.6.0';
 export const TEXT_VERSION = 'plain3';
-export const DEFAULT_EDITION = GAME_VERSION;
+const DEFAULT_EDITION = GAME_VERSION;
 export type Edition = '0.2.0' | '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0';
 
 export function editionOf(version: string): Edition {

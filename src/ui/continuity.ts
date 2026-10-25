@@ -177,7 +177,9 @@ export async function fileLoad(file: File): Promise<Game> {
       if (
         claim.source.game !== 'warren' ||
         claim.source.rules !== 'warren-0.6.0' ||
-        (claim.source.engine !== ENGINE_VERSION && claim.source.engine !== '2.17.0')
+        (claim.source.engine !== ENGINE_VERSION &&
+          claim.source.engine !== '2.17.0' &&
+          claim.source.engine !== '2.21.0')
       )
         throw new Error('This saved permission record comes from an unsupported game, ruleset or engine.');
       const { revision: _revision, ...body } = input.parent;

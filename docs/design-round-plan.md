@@ -40,7 +40,7 @@ Acceptance: Adam and the lead designer. Shipping status and receipts are maintai
 - [x] Show six-game-hour call duration and lapse reason, plus named observed travel or next-choice timing. Preserve autonomy and quiet faith.
 - [x] Put immediate feedback in the dock and retain Last reading. Keep map/tools stable, full text scrollable, live readings recoverable and scroll position stable.
 - [x] Freeze actual live 0.2.0/0.3.0 downloads, including mid-run continuations; verify exact replay after UI changes. All 36 live state hashes matched; the regression suite repeats the comparisons.
-Shipping procedure: complete final checks and independent reviews, retain phone/desktop renders, commit/push/deploy, then record live/CI receipts in the external report. The two reviews found and resolved live bell scroll reset and stale reopened bell state.
+  Shipping procedure: complete final checks and independent reviews, retain phone/desktop renders, commit/push/deploy, then record live/CI receipts in the external report. The two reviews found and resolved live bell scroll reset and stale reopened bell state.
 
 No simulation or dependency changes. Revert the follow-up UI commit's UI/test edits to restore prior behavior. Retain frozen baseline receipts.
 

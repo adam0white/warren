@@ -113,8 +113,6 @@ export function neighbours(i: number): number[] {
   return out;
 }
 
-export const isSolid = (k: number) =>
-  k === K.rock || k === K.hard || k === K.loose || k === K.seam || k === K.bedrock;
 export const diggable = (k: number) => k === K.rock || k === K.hard || k === K.loose || k === K.seam;
 
 /** Walkable: open ground below the sky line, the surface row, and (once linked) their passages. */

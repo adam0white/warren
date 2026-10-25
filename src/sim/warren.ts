@@ -75,7 +75,6 @@ import {
   THEIR_X,
   USE,
   W,
-  walkable,
   xOf,
   yOf,
 } from './grid.ts';
@@ -2758,8 +2757,4 @@ export function waterWords(s: WarrenState): string {
   if (w < 0.3) return 'The water jars are dry.';
   if (w < 3) return 'There is a little water at the hearth.';
   return 'The water jars at the hearth are full.';
-}
-
-export function walkableCell(s: WarrenState, i: number): boolean {
-  return walkable(s.hill, i, s.linked);
 }

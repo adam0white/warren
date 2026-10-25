@@ -4,7 +4,7 @@
 
 ## The idea
 
-A plateau village digs a refuge into soft tuff, drawn in cross-section like an ant farm. The player keeps the dig-master's chalk and his bell. The people are full Human Framework persons (HF 2.8.0, exact pin). Nobody takes orders. They see chalked faces, lamps, marked rooms and doors as things they could do, and choose by their own needs, goals, habits, fatigue and fear. The only voice is the bell.
+A plateau village digs a refuge into soft tuff, drawn in cross-section like an ant farm. The player keeps the dig-master's chalk and his bell. The people are full Human Framework persons (HF 3.0.0, engine 2.23.0, exact pin). Nobody takes orders. They see chalked faces, lamps, marked rooms and doors as things they could do, and choose by their own needs, goals, habits, fatigue and fear. The only voice is the bell.
 
 The ant-farm frame (actual ants) was rejected after an early consult with a game-design expert and a wildcard persona: it splits into two half-games and shows HF least. People underground keep the pull of an ant farm and let HF do the work. The setting is unnamed ("in the old days"), inspired by the underground cities of central Anatolia. Raiders are never named by people or era.
 
@@ -12,16 +12,16 @@ The ant-farm frame (actual ants) was rejected after an early consult with a game
 
 Research: [research-hooks.md](research-hooks.md) ([S] sourced, [I] inference). Each hook, and the design choice that answers it:
 
-| Hook | Choice in The Warren |
-|---|---|
-| 1. Watching the swarm work [S] | Everyone is visible at once in the cross-section; posture shows what they do (pick swung, load carried, lying asleep, leaning tired). Nothing is scripted; HF picks each action. |
-| 2. Trails and indirect control [S] | Stigmergy, honestly. Chalk, lamps, room marks and doors change what people can do; they do not command. Feet wear the floor: worn cells are walked faster and decay ×0.9 a day (evaporation). A habit of digging forms over weeks (HF habits). Crews form because an offer names who is already doing it (HF 2.8.0 `alongside`). |
-| 3. One-to-many power, without guilt [I] | Transformed rather than copied: these are named people. Danger is advertised (loose stone, smoke) and the people choose; the risk is theirs, not thrown at them. Infrastructure (lamps, doors, rooms) is the expendable part. |
-| 4. Growth and the queen [S] | Yusuf Usta, 74, sits at the hearth and shows the young how to cut stone (the immobile anchor). Word spreads when the hill holds; families arrive if there are beds. Growth is capped at sixty souls. |
-| 5. Cross-section, discovery, digging [S] | Unseen stone is drawn as plain rock until someone digs beside it. Hard bands, loose pockets, a water seam that becomes a well, an old chamber with soot and two lamps, the neighbours' passages. |
-| 6. Wars between colonies [S] | Riders come at set seasons (smoke first, then the hill). The neighbours across the ridge have a store; a tunnel can reach it. Theft is a norm violation people weigh for themselves; if noticed, a grudge grows, they retaliate, then wall the passage, and word of the hill drops. |
-| 7. Compounding, idle pull [S] | Automatic quiet playback; new words and arrivals stop fast batches for reading. Inspections and bell decisions wait. The saved hill waits while you are away. |
-| 8. Stories you retell [S] | The journal records breakthroughs, finds, raids, refusals, habits and deaths in past tense. People answer the bell in their own words. |
+| Hook                                     | Choice in The Warren                                                                                                                                                                                                                                                                                                             |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1. Watching the swarm work [S]           | Everyone is visible at once in the cross-section; posture shows what they do (pick swung, load carried, lying asleep, leaning tired). Nothing is scripted; HF picks each action.                                                                                                                                                 |
+| 2. Trails and indirect control [S]       | Stigmergy, honestly. Chalk, lamps, room marks and doors change what people can do; they do not command. Feet wear the floor: worn cells are walked faster and decay ×0.9 a day (evaporation). A habit of digging forms over weeks (HF habits). Crews form because an offer names who is already doing it (HF 2.8.0 `alongside`). |
+| 3. One-to-many power, without guilt [I]  | Transformed rather than copied: these are named people. Danger is advertised (loose stone, smoke) and the people choose; the risk is theirs, not thrown at them. Infrastructure (lamps, doors, rooms) is the expendable part.                                                                                                    |
+| 4. Growth and the queen [S]              | Yusuf Usta, 74, sits at the hearth and shows the young how to cut stone (the immobile anchor). Word spreads when the hill holds; families arrive if there are beds. Growth is capped at sixty souls.                                                                                                                             |
+| 5. Cross-section, discovery, digging [S] | Unseen stone is drawn as plain rock until someone digs beside it. Hard bands, loose pockets, a water seam that becomes a well, an old chamber with soot and two lamps, the neighbours' passages.                                                                                                                                 |
+| 6. Wars between colonies [S]             | Riders come at set seasons (smoke first, then the hill). The neighbours across the ridge have a store; a tunnel can reach it. Theft is a norm violation people weigh for themselves; if noticed, a grudge grows, they retaliate, then wall the passage, and word of the hill drops.                                              |
+| 7. Compounding, idle pull [S]            | Automatic quiet playback; new words and arrivals stop fast batches for reading. Inspections and bell decisions wait. The saved hill waits while you are away.                                                                                                                                                                    |
+| 8. Stories you retell [S]                | The journal records breakthroughs, finds, raids, refusals, habits and deaths in past tense. People answer the bell in their own words.                                                                                                                                                                                           |
 
 **Naughty edges, by design, a little fun and inside the model:** crying wolf with the bell (false alarms make sheltering a poor outcome, so trust in the bell falls and later the bell is ignored); digging into the neighbours' store (above); peering into everyone's lives through the cross-section; overworking the diggers (fatigue builds over days in HF's slow store; tired people stop, slow down, or get hurt on loose stone).
 
@@ -50,11 +50,11 @@ Research: [research-hooks.md](research-hooks.md) ([S] sourced, [I] inference). E
 
 ## Performance (measured, M-series Mac, machine under heavy parallel load)
 
-| People | ms per sim-day | Notes |
-|---|---|---|
-| 9 | 35–60 | first weeks |
-| 35 | ~135 | day 120 |
-| 81 | ~810 | before the population cap; now capped at 60 |
+| People | ms per sim-day | Notes                                       |
+| ------ | -------------- | ------------------------------------------- |
+| 9      | 35–60          | first weeks                                 |
+| 35     | ~135           | day 120                                     |
+| 81     | ~810           | before the population cap; now capped at 60 |
 
 A pending raid warning holds playback until the keeper rings the bell or chooses Keep watching. Inspections hold time. Quiet playback runs at 72 game minutes per real second, and the first new note, arrival, departure or death stops the current batch for six seconds of reading time. These are UI playback changes; simulation quanta, state, inputs and exports stay unchanged. Keep watching lasts for the current sitting; resuming an unresolved raid shows its warning again.
 
@@ -150,10 +150,12 @@ Rules, simulation sources, HF 2.8.0 pin, save/export format and editions remain 
 Round-2 cost and revert: reserving the reading space keeps a 120 px canvas even when the reading is closed at 360×690; the 156 px strip and 320 px sheet stay fixed. Two Zoom + presses reach at least 44 px cells; deeper building may need deliberate Fit hill or pan. Very short/enlarged-text layouts retain page flow and the existing 2026-11-03 real-device follow-up. Optional lists and disclosures still scroll. Action availability is unchanged: seed 7, 301 one-second samples over five default-speed minutes each had a verified legal direct chalk action, longest sampled unavailable gap zero; replay 9f124635. This does not measure enjoyment or attention. Revert the Round-2 shipping commit to restore the preceding UI; retain edition 0.4.0 and HF 2.8.0. Adam still accepts by playing.
 
 ## Owner pacing update (2026-10-21)
+
 The speed chooser is removed. Automatic playback stops at the first delivered event, waits for reading, and holds during inspections, information, menus and unanswered raid warnings. Menus preserve the remaining reading beat. The existing hill and route/door information remains in native dismissible information popovers; records of people and earlier events keep their gameplay disclosures. No simulation, edition, save format, tally or HF change. Adam accepts feel.
 
 
 ## Owner speed restoration (2026-10-22)
+
 The original speed choices are restored. Inspection, new-event reading time and menu protections remain. Pending raid warnings still hold time. Simulation inputs, saves and replay rules are unchanged.
 
 ## Approved UI sweep (2026-10-22)

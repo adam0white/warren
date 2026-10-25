@@ -4,14 +4,14 @@ The owner-authorized increment replaces the current foreground with six canonica
 
 ## People
 
-| Person | Opening role and household |
-|---|---|
-| Yusuf Usta, 74 | Retired well-digger and adviser, distinct from the keeper office |
-| Meryem, 19 | Apprentice surveyor; Yusuf Usta's granddaughter |
-| Hajja Maryam, 68 | Visiting cook and seed-store organiser; Well Yusuf remains her son |
-| Tariq, 16 | Supervised building apprentice; Maryam's grandson |
-| Kian, 16 | Young watcher and supervised refuge helper; Ada is his sister and ward |
-| Tamar of the Wall, 54 | Visiting perimeter adviser; Kian's mentor, not an invented guardian |
+| Person                | Opening role and household                                             |
+| --------------------- | ---------------------------------------------------------------------- |
+| Yusuf Usta, 74        | Retired well-digger and adviser, distinct from the keeper office       |
+| Meryem, 19            | Apprentice surveyor; Yusuf Usta's granddaughter                        |
+| Hajja Maryam, 68      | Visiting cook and seed-store organiser; Well Yusuf remains her son     |
+| Tariq, 16             | Supervised building apprentice; Maryam's grandson                      |
+| Kian, 16              | Young watcher and supervised refuge helper; Ada is his sister and ward |
+| Tamar of the Wall, 54 | Visiting perimeter adviser; Kian's mentor, not an invented guardian    |
 
 All six opening traits and all ten values come from the released canonical public module. Generated households retain their seeded rules and incidental needs. They have no canonical branch. Old fixed households are historical controls, not extra current protagonists. Referenced relatives are not additional maintained arcs.
 

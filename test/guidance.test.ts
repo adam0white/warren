@@ -1,10 +1,54 @@
 import { describe, expect, it } from 'vitest';
 import { HOUR } from '../src/sim/calendar.ts';
-import { newGame } from '../src/sim/game.ts';
+import { act, advance, newGame } from '../src/sim/game.ts';
 import { idx, K, SURF, USE } from '../src/sim/grid.ts';
 import { colonyWords } from '../src/ui/guidance.ts';
 
 describe('the keeper’s next line', () => {
+  it('names actual digging instead of saying nobody has started yet', () => {
+    const g = newGame(7);
+    act(g, { verb: 'chalk', cells: [idx(15, SURF + 3)], on: true });
+    advance(g, g.s.minute + HOUR);
+    const p = g.s.people.find((p) => p.activity?.action === 'dig');
+    expect(p?.name).toBe('Meryem');
+    expect(colonyWords(g.s)).toMatch(/Meryem.*dig/);
+    expect(colonyWords(g.s)).not.toMatch(/decide when to start/);
+  });
+
+  it('describes the observed warning time without leaking the hidden raid schedule', () => {
+    const s = newGame(7).s;
+    const raid = s.raids[0];
+    if (!raid) throw new Error('Missing raid');
+    raid.stage = 'smoke';
+    expect(colonyWords(s)).toMatch(/half a day/);
+    const before = colonyWords(s);
+    raid.riders += 10000;
+    expect(colonyWords(s)).toBe(before);
+  });
+
+  it('states that the quiet wait is unknown even when the hidden raid date changes', () => {
+    const s = newGame(7).s;
+    s.stats.dug = 8;
+    for (const goal of ['chalk', 'first', 'store', 'lamp']) s.goals[goal] = s.minute;
+    s.hill.grain[idx(16, SURF + 3)] = 60;
+    for (let x = 16; x <= 19; x++) s.hill.use[idx(x, SURF + 3)] = USE.beds;
+    const raid = s.raids[0];
+    if (!raid) throw new Error('Missing raid');
+    expect(colonyWords(s)).toMatch(/cannot tell when riders will come/);
+    const before = colonyWords(s);
+    raid.smoke += 10000;
+    raid.riders += 10000;
+    expect(colonyWords(s)).toBe(before);
+  });
+
+  it('does not promise half a day remains when smoke has been visible for hours', () => {
+    const s = newGame(7).s;
+    const raid = s.raids[0];
+    if (!raid) throw new Error('Missing raid');
+    raid.stage = 'smoke';
+    s.minute = raid.riders - 30;
+    expect(colonyWords(s)).toMatch(/half a day or less/);
+  });
   it('explains the first mark and the wait for someone to choose it', () => {
     const s = newGame(7).s;
     expect(colonyWords(s)).toMatch(/Choose chalk.*drag.*cellar/);

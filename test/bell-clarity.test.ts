@@ -113,7 +113,7 @@ it('names only the threat the village can currently see beside the bell', () => 
   const raid = s.raids[0];
   if (!raid) throw new Error('Missing raid');
   raid.stage = 'smoke';
-  expect(bellThreatWords(s)).toMatch(/Smoke.*half a day/);
+  expect(bellThreatWords(s)).toMatch(/Smoke.*half a day or less/);
   s.bell = { at: s.minute, until: s.minute + 360, real: true };
   expect(colonyWords(s)).toContain('Tap the people count');
   expect(colonyWords(s)).not.toContain('Check shelter');
