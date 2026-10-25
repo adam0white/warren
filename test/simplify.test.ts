@@ -172,3 +172,48 @@ it('keeps the actual notice footer outside rerenders and never restores a remove
     await browser.close();
   }
 });
+
+for (const engine of [chromium, webkit]) {
+  it(`${engine.name()} keeps the complete compact notice on one readable phone line and lets enlarged text wrap`, async () => {
+    const browser = await engine.launch();
+    const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
+    try {
+      await page.goto(url);
+      await page.locator('#new').waitFor();
+      const notice = page.locator('#notice-footer .lk-telemetry-notice');
+      await expect.poll(() => notice.evaluate((el) => getComputedStyle(el).visibility)).toBe('visible');
+      await page.evaluate(() => document.fonts.ready);
+      const read = () =>
+        notice.evaluate((el) => {
+          const host = el.parentElement!;
+          const range = document.createRange();
+          range.selectNodeContents(el);
+          const box = el.getBoundingClientRect(),
+            text = range.getBoundingClientRect();
+          return {
+            font: parseFloat(getComputedStyle(el).fontSize),
+            node: box.height,
+            host: host.getBoundingClientRect().height,
+            textHeight: text.height,
+            full: text.bottom <= box.bottom + 1,
+            overflow: el.scrollWidth > el.clientWidth,
+          };
+        });
+      expect(await notice.innerText()).toBe('We record and link play across games on this device.');
+      expect(await notice.locator('button').count()).toBe(0);
+      const normal = await read();
+      expect(normal.font).toBeGreaterThanOrEqual(14);
+      expect(normal.node).toBeLessThanOrEqual(40);
+      expect(normal.host).toBeLessThanOrEqual(40);
+      expect(normal.textHeight).toBeLessThan(normal.font * 1.8);
+      expect(normal.full && !normal.overflow).toBe(true);
+      await page.evaluate(() => (document.documentElement.style.fontSize = '32px'));
+      const enlarged = await read();
+      expect(enlarged.node).toBeGreaterThan(normal.node);
+      expect(enlarged.full && !enlarged.overflow).toBe(true);
+      expect(enlarged.host).toBeCloseTo(enlarged.node, 0);
+    } finally {
+      await browser.close();
+    }
+  });
+}

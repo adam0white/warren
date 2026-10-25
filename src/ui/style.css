@@ -1512,13 +1512,6 @@ button.link {
 #notice-footer:empty {
   display: none;
 }
-#notice-footer > * {
-  max-width: 100%;
-  font-size: 12px;
-}
-#app > .page > #notice-footer {
-  margin-top: auto;
-}
 
 @media (min-width: 768px) {
   body {

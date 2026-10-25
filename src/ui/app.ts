@@ -109,7 +109,6 @@ let lastReading: { title: string; words: string; context?: string } | null = nul
 let pendingEntrance: number[] | null = null;
 
 const notice = telemetryNotice();
-if (notice) Object.assign(notice.style, { position: 'static', transform: 'none', margin: '0 auto' });
 const app = () => document.getElementById('app') as HTMLElement;
 const esc = (x: string) =>
   x.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c] as string);
@@ -136,7 +135,7 @@ const souls = (n: number) =>
       : n < 40
         ? `some ${Math.round(n / 5) * 5} souls`
         : `${Math.round(n / 10) * 10} souls and more`;
-// Keep the actual notice and its host outside app rerenders. SDK removal and Dismiss stay final.
+// Keep the actual notice and its host outside app rerenders. SDK suppression stays final.
 const noticeFooter = document.createElement('footer');
 noticeFooter.id = 'notice-footer';
 if (notice) noticeFooter.append(notice);
