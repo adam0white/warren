@@ -33,3 +33,7 @@ The final shared footer uses immutable kit0.5.7 with unchanged client0.4.6. It s
 ## Portable compact notice metrics — 2026-10-24
 
 The first kit0.5.7 adoption passed Mac checks but Linux CI wrapped the wider system-ui text to47.78px. The SDK notice alone now uses Arial with Liberation Sans and sans-serif fallbacks and2px horizontal padding. Body typography, immutable kit/client bytes, exact disclosure, Recording, rules and simulation stay unchanged. The existing one-line,≥14px,≤40px node/host and enlarged full-wrapping assertions remain. No extra review or playtest is needed for this narrow portability correction.
+
+## WebKit unload correction — 2026-10-24
+
+Director audit rejected the earlier live completion because errors occurred after the harness's early assertion. The raw failed receipt is retained externally. Compression now reads UTF-8 Response input and returns gzip ArrayBuffer bytes directly. WebKit unload rejected both the prior Blob input stream and the intermediate output Blob read; the input-only fix still failed the controlled reload test. IndexedDB ArrayBuffer rows and legacy Blob decoding remain compatible. Controlled WebKit active-hill reloads with Recording on/off assert no page or console errors and exact saved state. A regression also disables document-owned Blob stream/arrayBuffer access during writes and checks exact values/receipts plus legacy decoding. Existing independent review remains complete; final delivery requires exact CI and fresh live/error-free unload proof. No rules, culture, replay, shared archives or copy changed.

@@ -14,9 +14,12 @@ function open(): Promise<IDBDatabase> {
   });
 }
 
-async function gzip(text: string): Promise<Blob> {
+async function gzip(text: string): Promise<ArrayBuffer> {
   const cs = new CompressionStream('gzip');
-  return new Response(new Blob([text]).stream().pipeThrough(cs)).blob();
+  // WebKit can reject document-owned Blob streams during navigation.
+  const input = new Response(text).body;
+  if (!input) throw new Error('Save compression input is unavailable.');
+  return new Response(input.pipeThrough(cs)).arrayBuffer();
 }
 
 async function gunzip(value: Blob | ArrayBuffer): Promise<string> {
@@ -27,8 +30,7 @@ async function gunzip(value: Blob | ArrayBuffer): Promise<string> {
 
 export async function put(key: string, value: unknown): Promise<boolean> {
   try {
-    const blob = await gzip(JSON.stringify(value));
-    const bytes = await blob.arrayBuffer();
+    const bytes = await gzip(JSON.stringify(value));
     const db = await open();
     await new Promise<void>((res, rej) => {
       const tx = db.transaction(STORE, 'readwrite');
