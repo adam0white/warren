@@ -1678,7 +1678,7 @@ function openCell(s: WarrenState, p: Person, face: number, stand: number): Parti
       kind: 'hurt',
       who: p.id,
       cell: face,
-      text: `The roof fell where the stone was loose. They dug ${p.name} out. ${p.name} had hurt a shoulder.`,
+      text: `The roof fell where the stone was loose. People dug ${p.name} out. ${p.life.sex === 'female' ? 'She' : p.life.sex === 'male' ? 'He' : p.name} had hurt a shoulder.`,
       weight: 3,
     });
     touch(s);
@@ -1919,7 +1919,8 @@ function captureAnswer(s: WarrenState, p: Person, offer: Affordance, record: Dec
       (n) => n.kind === 'answer' && n.at >= bellAt && n.text.endsWith(`“${res.says}”`),
     );
     if (same) {
-      if (!same.text.includes(' and others')) same.text = same.text.replace(/:/, ' and others:');
+      const speaker = personOf(s, same.who ?? '')?.name ?? 'One person';
+      same.text = `${speaker} and others gave the same reply. ${speaker} said: “${res.says}”`;
       return;
     }
   }
@@ -2170,7 +2171,7 @@ function raidStep(s: WarrenState) {
               kind: 'hurt',
               who: p.id,
               cell: c,
-              text: `${p.name} was caught ${yOf(c) < SURF ? 'above ground' : 'near the entrance'} and struck.`,
+              text: `${p.name} was caught ${yOf(c) < SURF ? 'above ground' : 'near the entrance'} and hit.`,
               weight: 3,
             });
           }
@@ -2221,7 +2222,10 @@ function scoutPlace(s: WarrenState, cell: number): string {
       ? 'under the entrance'
       : `${Math.abs(dx)} ${Math.abs(dx) === 1 ? 'step' : 'steps'} ${dx < 0 ? 'west' : 'east'} of the entrance`;
   const place = s.hill.use[cell] === USE.beds ? 'sleeping place' : 'passage';
-  return `the ${place} ${side}, ${yOf(cell) - SURF} ${yOf(cell) - SURF === 1 ? 'level' : 'levels'} down`;
+  const depth = yOf(cell) - SURF;
+  return depth === 0
+    ? `the ${place} ${dx === 0 ? 'just inside the entrance' : side}, at ground level`
+    : `the ${place} ${side}, ${depth} ${depth === 1 ? 'level' : 'levels'} below ground`;
 }
 
 function scout(s: WarrenState, r: Raid) {
@@ -2231,7 +2235,7 @@ function scout(s: WarrenState, r: Raid) {
   for (const c of reach.keys()) {
     if (r.scouted.includes(c)) continue;
     r.scouted.push(c);
-    note(s, { kind: 'raid', cell: c, text: `They looked into ${scoutPlace(s, c)}.`, weight: 1.5 });
+    note(s, { kind: 'raid', cell: c, text: `The scouts searched ${scoutPlace(s, c)}.`, weight: 1.5 });
   }
   for (const p of s.people) {
     if (!p.body.alive || p.activity?.action === 'hide' || r.wouldCatch.includes(p.id)) continue;
@@ -2243,7 +2247,7 @@ function scout(s: WarrenState, r: Raid) {
       kind: 'raid',
       cell: c,
       who: p.id,
-      text: `They looked into ${scoutPlace(s, c)}, where ${p.name} was ${doing}. ${p.name} would have been caught. No one was struck.`,
+      text: `The scouts searched ${scoutPlace(s, c)}. ${p.name} was ${doing} there. If the riders had attacked, ${p.life.sex === 'female' ? 'she' : p.life.sex === 'male' ? 'he' : p.name} would have been caught. Nobody was hurt.`,
       weight: 3,
     });
   }
@@ -2506,7 +2510,7 @@ function wordStep(s: WarrenState, day: number) {
   note(s, {
     kind: 'arrival',
     who: head?.id,
-    text: `A member of ${fam.house.name} came up the road with a donkey and ${fam.people.length - 1 > 0 ? `${fam.people.length - 1 === 1 ? 'one other' : `${fam.people.length - 1} others`}` : 'nobody else'}. ${s.heldAt >= 0 ? 'They had heard the refuge protected the village.' : s.flags.water ? 'They had heard there was water under the hill.' : 'They had heard there was room.'}`,
+    text: `${fam.house.name.replace(/^the /, 'The ').replace(/ house$/, ' family')} came up the road with a donkey. There were ${fam.people.length} people in the family. ${s.heldAt >= 0 ? 'They had heard the refuge protected the village.' : s.flags.water ? 'They had heard there was water under the hill.' : 'They had heard there was room.'}`,
     weight: 2,
     cell: surfaceCell(x),
   });

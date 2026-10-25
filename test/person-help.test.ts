@@ -28,7 +28,7 @@ describe('plain person help', () => {
     const { s, p } = fixture();
     sicken(p, { kind: 'fever', severity: 0.4, trendPerDay: 0.1, contagious: false });
     expect(personHelpWords(s, p)).toContain('ill');
-    expect(personHelpWords(s, p)).not.toContain('They show no sign of an immediate need');
+    expect(personHelpWords(s, p)).not.toContain('does not seem to need');
     p.body.illnesses = [];
     p.body.health = 0.4;
     expect(personHelpWords(s, p)).toContain('poor health');
@@ -49,13 +49,11 @@ describe('plain person help', () => {
   it('does not turn ordinary above-ground work into a rescue alert', () => {
     const { s, p } = fixture();
     s.pos[p.id] = idx(17, SURF - 1);
-    expect(personHelpWords(s, p)).toBe(
-      'They show no sign of an immediate need for food, water, rest or care.',
-    );
+    expect(personHelpWords(s, p)).toBe('He does not seem to need food, water, rest or care right now.');
     const raid = s.raids[0];
     if (!raid) throw new Error('Missing raid');
     raid.stage = 'riders';
-    expect(personHelpWords(s, p)).toContain('They are exposed above ground during the raid.');
+    expect(personHelpWords(s, p)).toContain('He is exposed above ground during the raid.');
   });
 
   it('does not promise safety behind a shut door, and leaves the whole run unchanged', () => {
@@ -67,9 +65,7 @@ describe('plain person help', () => {
     s.hill.shut[idx(18, SURF + 1)] = 1;
     s.pos[p.id] = idx(17, SURF + 3);
     const before = JSON.stringify(s);
-    expect(personHelpWords(s, p)).toBe(
-      'They show no sign of an immediate need for food, water, rest or care.',
-    );
+    expect(personHelpWords(s, p)).toBe('He does not seem to need food, water, rest or care right now.');
     expect(personHelpWords(s, p)).not.toMatch(/safe|guarantee/i);
     expect(JSON.stringify(s)).toBe(before);
   });

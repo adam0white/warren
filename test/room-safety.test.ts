@@ -92,7 +92,7 @@ describe('room safety from the actual rider layout', () => {
   it('reports legacy active, ended and renew-call states without an inferred response', () => {
     const { s } = layout();
     s.edition = '0.3.0';
-    expect(bellShelterWords(s)).toContain('There are 3 sleeping places');
+    expect(bellShelterWords(s)).toContain('3 sleeping places are');
     expect(bellStateWords(s)).toContain('The bell is quiet');
     s.bell = { at: s.minute, until: s.minute + 60, real: false };
     expect(bellStateWords(s)).toContain('The call lasts six game hours');

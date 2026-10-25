@@ -919,7 +919,7 @@ function card() {
   const html = `
     <div class="who">${personOpener ? `<button id="cardback" aria-label="Back to The village">← ${esc(p.name)}</button>` : `<b>${esc(p.name)}</b>`} <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
         <p id="person-help">${esc(personHelpWords(s, p))}</p>
-    <div>${esc(activityWords(doing, walking))}</div>
+    <div>${esc(activityWords(doing, walking, p.name))}</div>
     <details id="person-context"><summary id="person-context-toggle">Activity and words</summary>
     <div class="shelter-person">${esc(exposureWords(s, p))}</div>
     ${feeling(p) ? `<div class="soft">${esc(feeling(p))}</div>` : ''}

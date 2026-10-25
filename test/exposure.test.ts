@@ -10,13 +10,13 @@ describe('the keeper’s shelter check', () => {
     if (!p) throw new Error('Missing person');
     delete s.trips[p.id];
     s.pos[p.id] = idx(17, SURF - 1);
-    expect(exposureWords(s, p)).toContain('They are exposed above ground');
-    expect(exposureWords(s, p)).toContain('reason is not known');
+    expect(exposureWords(s, p)).toContain('Yusuf Usta is above ground');
+    expect(exposureWords(s, p)).toContain('You do not know why he is there');
     s.pos[p.id] = idx(18, SURF + 1);
-    expect(exposureWords(s, p)).toMatch(/They are exposed near.*entrance.*Riders can reach/);
+    expect(exposureWords(s, p)).toMatch(/Yusuf Usta is near.*entrance.*Riders can reach/);
     for (let y = SURF; y < SURF + 12; y++) s.hill.kind[idx(17, y)] = K.open;
     s.pos[p.id] = idx(17, SURF + 11);
-    expect(exposureWords(s, p)).toContain('They are beyond the passages riders search');
+    expect(exposureWords(s, p)).toContain('Yusuf Usta is beyond the passages riders search');
     expect(exposureWords(s, p)).not.toMatch(/safe|guarantee/i);
   });
 
@@ -35,13 +35,13 @@ describe('the keeper’s shelter check', () => {
       workFrom: s.minute + 60,
       end: below,
     };
-    expect(exposureWords(s, p)).toMatch(/They are exposed above ground.*They are still travelling below/);
+    expect(exposureWords(s, p)).toMatch(/Yusuf Usta is above ground.*He is still travelling below/);
     expect(exposureWords(s, p)).not.toContain('An old answer');
     s.answers.push({ at: s.minute, who: p.id, verdict: 'deferred', says: 'I will follow.' });
-    expect(exposureWords(s, p)).toContain('When the bell rang, they said: “I will follow.”');
+    expect(exposureWords(s, p)).toContain('When the bell rang, he said: “I will follow.”');
     s.minute += 60;
-    expect(exposureWords(s, p)).toContain('They are exposed near');
-    expect(exposureWords(s, p)).not.toContain('They are still travelling below');
+    expect(exposureWords(s, p)).toContain('Yusuf Usta is near');
+    expect(exposureWords(s, p)).not.toContain('He is still travelling below');
   });
 
   it('reads a shut door and leaves the entire run unchanged', () => {
@@ -53,7 +53,7 @@ describe('the keeper’s shelter check', () => {
     s.hill.shut[idx(18, SURF + 1)] = 1;
     s.pos[p.id] = idx(17, SURF + 3);
     const before = JSON.stringify(s);
-    expect(exposureWords(s, p)).toContain('They are beyond the passages riders search');
+    expect(exposureWords(s, p)).toContain('Yusuf Usta is beyond the passages riders search');
     expect(exposureWords(s, p)).not.toMatch(/\d/);
     expect(JSON.stringify(s)).toBe(before);
   });

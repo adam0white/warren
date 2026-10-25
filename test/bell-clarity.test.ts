@@ -56,12 +56,12 @@ describe('bell duration and observed replies', () => {
     const { s, p } = ringing();
     const before = JSON.stringify(s);
     expect(exposureWords(s, p)).toMatch(
-      /carve the rolling stone.*When the bell rang, they said: “I agree.”.*current task.*12 game minutes/,
+      /carve the rolling stone.*When the bell rang, he said: “I agree.”.*current task.*12 game minutes/,
     );
-    expect(exposureWords(s, p)).not.toMatch(/will.*(come|follow|head|go)|They are still travelling below/);
+    expect(exposureWords(s, p)).not.toMatch(/will.*(come|follow|head|go)|He is still travelling below/);
     expect(JSON.stringify(s)).toBe(before);
     s.minute += 13;
-    expect(exposureWords(s, p)).toContain('Their next choice is due now');
+    expect(exposureWords(s, p)).toContain('His next choice is due now');
   });
 
   it('distinguishes observed shelter travel from a later different choice', () => {
@@ -73,13 +73,13 @@ describe('bell duration and observed replies', () => {
       workFrom: s.minute + 60,
       end: idx(17, SURF + 3),
     };
-    expect(exposureWords(s, p)).toContain('They are still travelling below');
+    expect(exposureWords(s, p)).toContain('He is still travelling below');
     expect(exposureWords(s, p)).not.toContain('current task first');
     delete s.trips[p.id];
     if (!p.activity) throw new Error('Missing activity');
     p.activity.startedAt = s.minute + 1;
     s.minute += 2;
-    expect(exposureWords(s, p)).toContain('Since that reply, they chose a different task');
+    expect(exposureWords(s, p)).toContain('Since that reply, he chose a different task');
     expect(exposureWords(s, p)).not.toContain('current task first');
   });
 
@@ -92,8 +92,8 @@ describe('bell duration and observed replies', () => {
       workFrom: s.minute + 60,
       end: idx(17, SURF + 3),
     };
-    expect(exposureWords(s, p)).toMatch(/They are on their way to carve.*current task.*12 game minutes/);
-    expect(exposureWords(s, p)).not.toContain('They are still travelling below');
+    expect(exposureWords(s, p)).toMatch(/He is on the way to carve.*current task.*12 game minutes/);
+    expect(exposureWords(s, p)).not.toContain('He is still travelling below');
   });
 
   it('does not turn prayer into a countdown', () => {

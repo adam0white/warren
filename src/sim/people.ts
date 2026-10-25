@@ -405,9 +405,18 @@ export function arrivingFamily(
   const headAge = 24 + Math.floor(r() * 30);
   const headMale = r() < 0.7;
   const mk = (age: number, sex: 'male' | 'female'): Who => {
-    const name = pick(sex === 'male' ? MEN : WOMEN);
+    // Keep the original token for IDs, seeded traits and the used-name ledger.
+    const token = pick(sex === 'male' ? MEN : WOMEN);
+    const first = token.split(' ')[0];
+    let name = /\d/.test(token) ? `${first} ${fam}` : token;
+    if (ws.some((w) => w.name === name)) {
+      const second = (
+        sex === 'male' ? ['Can', 'Eren', 'Deniz', 'Emre', 'Cihan'] : ['Aylin', 'Selin', 'Duru', 'İpek', 'Ece']
+      )[ws.length];
+      name = `${first} ${second} ${fam}`;
+    }
     return {
-      id: `${name.toLowerCase().replace(/[^a-z]/g, '')}${n}`,
+      id: `${token.toLowerCase().replace(/[^a-z]/g, '')}${n}`,
       name,
       age,
       sex,
@@ -460,9 +469,9 @@ export const VISIT_TERMS: Record<string, string> = {
   yusuf:
     'Yusuf Usta is a retired well-digger and adviser. Meryem is his granddaughter. You are the keeper and hold the chalk and bell. You do not play as Yusuf Usta.',
   meryem:
-    'Meryem is learning to measure and map land. She lives with her grandfather Yusuf Usta. Her parents live elsewhere.',
+    'Meryem is Yusuf Usta’s nineteen-year-old granddaughter. She is learning to measure and map land. She lives with him. Her parents live elsewhere.',
   maryam:
-    'Maryam is a widowed cook who organises the seed store. Her son Yusuf remains at the Well. Her kitchen visit is temporary. She agreed who would prepare each household meal before she left.',
+    'Maryam is the visiting cook and Tariq’s grandmother. She is a widow and organises the seed store. Her son Yusuf remains at the Well. Her kitchen visit is temporary. She agreed who would prepare each household meal before she left.',
   tariq:
     'Tariq is sixteen and is learning building work. Maryam is his grandmother. His father Yusuf and stepmother Zehra agreed to this supervised visit. He sleeps in Maryam’s guest household and returns with her.',
   kian: 'Kian is a sixteen-year-old watcher. His sister Ada is in his care. In this new story, Ada agrees to come with him. He remains responsible for her care, and they return together. This does not describe any care agreement brought from the Watch.',
@@ -488,7 +497,7 @@ export function founders(
     },
     {
       id: 'watch-guests',
-      name: 'the Watch guest household (Ada stays with Kian)',
+      name: 'Kian and Tamar’s guest household',
       x: 12,
       jars: 5,
       members: ['kian', 'tamar'],

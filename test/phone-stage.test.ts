@@ -94,9 +94,7 @@ it('shows known poor health without a contradictory healthy label', async () => 
     await page.locator('[data-who="meryem"]').click();
     expect(await page.locator('#person-help').innerText()).toContain('poor health');
     expect(await page.locator('#person-help').innerText()).toContain('illness');
-    expect(await page.locator('#card').innerText()).not.toMatch(
-      /well enough|They show no sign of an immediate need/i,
-    );
+    expect(await page.locator('#card').innerText()).not.toMatch(/well enough|does not seem to need/i);
   } finally {
     await page.close();
   }
@@ -119,7 +117,7 @@ it('preserves an expanded person disclosure and its focus while the condition ch
       p.body.hydration = 0.1;
     });
     await page.clock.runFor(500);
-    expect(await page.locator('#person-help').innerText()).toContain('They need water');
+    expect(await page.locator('#person-help').innerText()).toContain('She needs water');
     expect(await page.locator('#person-context').evaluate((el) => (el as HTMLDetailsElement).open)).toBe(
       true,
     );

@@ -64,18 +64,22 @@ describe('round four shelter clarity', () => {
         expect(box?.height).toBeGreaterThanOrEqual(44);
         expect((box?.y ?? 0) + (box?.height ?? 0)).toBeLessThanOrEqual(height);
         await check.click();
-        expect(await page.locator('#shelter-summary').innerText()).toContain('6 exposed');
+        expect(await page.locator('#shelter-summary').innerText()).toContain(
+          'Riders can reach 6 sleeping places',
+        );
         const rows = page.locator('[data-shelter-person]');
         expect(await rows.count()).toBe(6);
         expect(await rows.allTextContents()).toEqual(
           // People can reach the shallow beds while this live sheet opens.
-          expect.arrayContaining([expect.stringMatching(/exposed (above ground|near an entrance)/)]),
+          expect.arrayContaining([expect.stringMatching(/is (above ground|near an entrance)/)]),
         );
         const person = page.locator('[data-who]').first();
         await person.click();
         expect(await page.locator('#person-help').isVisible()).toBe(true);
         await page.locator('#card details summary').click();
-        expect(await page.locator('#card .shelter-person').innerText()).toMatch(/exposed|beyond|hiding/);
+        expect(await page.locator('#card .shelter-person').innerText()).toMatch(
+          /above ground|near an entrance|beyond|hiding/,
+        );
         await page.locator('#cardx').click();
         expect(await page.locator('#drawer').isVisible()).toBe(true);
         expect(await person.evaluate((el) => el === document.activeElement)).toBe(true);

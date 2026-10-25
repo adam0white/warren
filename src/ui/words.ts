@@ -1,3 +1,5 @@
+import type { Person } from '@adam0white/human-framework';
+
 /** Host wording only. HF supplies complete sentences for fresh games. */
 /** Translate setting titles only at the display boundary. */
 export function settingWords(text: string): string {
@@ -16,11 +18,18 @@ export function displayWords(text: string): string {
     'heard the bell and continued to $1.',
   );
 }
-export function activityWords(label: string, walking = false): string {
+export function activityWords(label: string, walking = false, name = 'This person'): string {
   label = displayWords(label);
   return label === 'deciding what to do'
-    ? 'They are deciding what to do.'
+    ? `${name} is deciding what to do.`
     : walking
-      ? `They are on their way to ${label}.`
-      : `Their current task is to ${label}.`;
+      ? `${name} is on the way to ${label}.`
+      : `${name}’s current task is to ${label}.`;
+}
+
+/** Names are the fallback when an imported person has no recorded sex. */
+export function personWords(p: Person) {
+  const subject = p.life.sex === 'female' ? 'She' : p.life.sex === 'male' ? 'He' : p.name;
+  const possessive = p.life.sex === 'female' ? 'Her' : p.life.sex === 'male' ? 'His' : `${p.name}’s`;
+  return { subject, lower: subject === p.name ? subject : subject.toLowerCase(), possessive };
 }

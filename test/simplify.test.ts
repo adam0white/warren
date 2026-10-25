@@ -23,7 +23,7 @@ it('keeps HF sentences and composes current activity text without changing its i
   expect(speechWords('After I pray, I will do it.')).toBe('After I pray, I will do it.');
   expect(original).toContain('Yusuf Usta');
   expect(activityWords('carry loose stone up to the pile above ground')).toBe(
-    'Their current task is to carry loose stone up to the pile above ground.',
+    'This person’s current task is to carry loose stone up to the pile above ground.',
   );
 });
 

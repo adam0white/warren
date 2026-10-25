@@ -93,7 +93,7 @@ export async function projectNativeReturn(s: WarrenState, who: NativeReturnId) {
   const departure = s.nativeDepartures?.[who];
   if (!departure)
     throw Error(
-      'No saved state is ready for this person’s return. Continue playing, then prepare this person again after their current activity ends.',
+      'No saved state is ready for this person’s return. Continue playing, then prepare this person again after the current activity ends.',
     );
   const p = restore(departure.person);
   if (!nativeReturnCurrent(s, who))

@@ -26,6 +26,17 @@ export function currentCareSaved(): Saved & { ownedHeads: NonNullable<Saved['own
   const rules = (s: typeof oldRules) => {
     const copy = structuredClone(s);
     // Engine stamps and the explicit host narration opt-in are the only new metadata.
+    // Only this household's display name changed; keep IDs/members and all other data exact.
+    for (const house of copy.houses) {
+      if (house.id === 'watch-guests') {
+        assert.ok(
+          ['the Watch guest household (Ada stays with Kian)', 'Kian and Tamar’s guest household'].includes(
+            house.name,
+          ),
+        );
+        house.name = 'Kian and Tamar’s guest household';
+      }
+    }
     for (const person of copy.people) {
       if (person.lexicon?.plainEnglish === true) {
         delete person.lexicon.plainEnglish;

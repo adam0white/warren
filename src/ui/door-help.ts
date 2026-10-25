@@ -14,7 +14,7 @@ export function doorWords(s: WarrenState, cell: number, lit: boolean): string {
   const raid = activeRaid(s);
   const ringing = !!s.bell && s.bell.until > s.minute;
   if (raid || ringing)
-    return `The door is open. A nearby adult who can reach it can choose to roll it shut. ${raid ? 'They have this choice because smoke or riders are present.' : 'The bell is sounding.'}`;
+    return `The door is open. A nearby adult who can reach it can choose to roll it shut. ${raid ? 'Smoke or riders give a reason to shut it.' : 'The bell is sounding.'}`;
   return 'Ring the bell. A nearby adult who can reach this open door may choose to shut it. Calls without raids last six game hours. False alarms can weaken trust.';
 }
 
@@ -27,7 +27,7 @@ export function doorDetailWords(s: WarrenState, cell: number): string {
         .map((p) => {
           const trip = s.trips[p.id];
           const label = p.activity ? displayWords(p.activity.affordance.label) : undefined;
-          return `${p.name}: ${trip && s.minute < trip.workFrom ? `on the way to ${label ?? 'their task'}` : (label ?? 'no task recorded')}`;
+          return `${p.name}: ${trip && s.minute < trip.workFrom ? `on the way to ${label ?? 'the current task'}` : (label ?? 'no task recorded')}`;
         })
         .join('; ')}. Each person decides whether to shut the door.`
     : 'No living adult nearby can reach this door now.';

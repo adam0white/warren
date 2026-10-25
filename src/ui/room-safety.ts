@@ -179,7 +179,15 @@ export function bellShelterWords(s: WarrenState): string {
         : 'near the entrance';
   const people = s.people.filter((p) => p.body.alive).length;
   const missing = Math.max(0, people - safe - exposed);
-  return `There ${safe === 1 ? 'is' : 'are'} ${safe} sleeping ${safe === 1 ? 'place' : 'places'} beyond riders’ reach. There ${exposed === 1 ? 'is' : 'are'} ${exposed} exposed sleeping ${exposed === 1 ? 'place' : 'places'}${exposed ? ` ${cause}` : ''}. The village has ${people} ${people === 1 ? 'person' : 'people'}.${missing ? ` There are no marked sleeping places for ${missing} of them.` : ''} ${bellStateWords(s)}`;
+  if (!safe && !exposed)
+    return `The village has ${people} ${people === 1 ? 'person' : 'people'} and no sleeping places yet. Mark sleeping places below ground, where riders cannot reach them. ${bellStateWords(s)}`;
+  const sheltered = safe
+    ? `${safe} sleeping ${safe === 1 ? 'place is' : 'places are'} beyond riders’ reach.`
+    : 'Riders can reach all marked sleeping places.';
+  const vulnerable = exposed
+    ? ` Riders can reach ${exposed} sleeping ${exposed === 1 ? 'place' : 'places'} ${cause}.`
+    : '';
+  return `${sheltered}${vulnerable} The village has ${people} ${people === 1 ? 'person' : 'people'}.${missing ? ` Mark sleeping places for ${missing} more ${missing === 1 ? 'person' : 'people'}.` : ''} ${bellStateWords(s)}`;
 }
 
 /** The first scare's observed search stays visible afterwards, even if a door is later shut. */

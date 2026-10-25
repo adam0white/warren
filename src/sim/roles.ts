@@ -113,21 +113,20 @@ export function finishRoleWork(
   const day = Math.floor(s.minute / DAY);
   if (s.flags[`role-note:${p.id}`] !== day + 1) {
     const words: Record<string, string> = {
-      'digging-advice': 'discussed the visible digging marks with the workers. The ground remains uncertain',
-      'well-advice': 'discussed a limited search for water. Nobody promised that they would find water',
+      'digging-advice': 'discussed the visible digging marks with the workers. Some stone may still be loose',
+      'well-advice': 'discussed a limited search for water. The search may find no water',
       'survey-route': 'walked a visible route and marked what could be seen',
       'household-work': 'checked the household’s food and supplies without taking another house’s grain',
-      cook: 'prepared a household meal. Its cooked grain remains available to eat from the household jars',
+      cook: 'cooked a meal for her household. The cooked grain is in the household jars',
       'store-check': 'checked the household seed jars. No supplies were added or moved',
       'building-preparation': 'prepared light materials under Yusuf Usta’s supervision',
-      'building-assistance':
-        'completed a limited check with Yusuf Usta. This does not give a building licence',
+      'building-assistance': 'completed a limited check with Yusuf Usta. He is still learning building work',
       'perimeter-watch':
-        'checked the nearby route to the village in daylight. This does not promise future safety',
+        'checked the nearby route to the village in daylight. Riders may use a different route next time',
       'equipment-check': 'checked the agreed signals and personal equipment. No equipment was added',
       'watch-running':
-        'practised carrying a message along a short route with Tamar. Ada’s care remains Kian’s responsibility',
-      'stores-assistance': 'checked the guest stores with Tamar. All duties to care for others still apply',
+        'practised carrying a message along a short route with Tamar. He still needs to care for his sister Ada',
+      'stores-assistance': 'checked the guest stores with Tamar. He still needs to care for his sister Ada',
     };
     s.notes.push({
       at: s.minute,

@@ -11,7 +11,7 @@ export const INVITATIONS: Record<string, string> = {
 };
 const CLUES: Record<string, string> = {
   yusuf:
-    'Yusuf Usta chooses to show a crossed-out passage. “The ground was unstable. I also kept people working past the agreed time. A mark must show others when they can stop me.” The injured worker’s response remains their own.',
+    'Yusuf Usta chooses to show a crossed-out passage. “The ground was unstable. I also kept people working past the agreed time. A mark must show others when they can stop me.” The injured worker decides how to respond.',
   meryem:
     'Meryem agrees to show only the short section she walked. Two ink marks show which ground she saw herself and which lines came from older maps. “I left those marks off the clean map. I need to put them back.”',
   maryam:

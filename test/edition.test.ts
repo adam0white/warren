@@ -23,7 +23,7 @@ describe('current engine with historical mechanics controls', () => {
     advance(g, first.riders);
     expect(first.scouted).toEqual([...riderCells(g.s).keys()]);
     expect(first.wouldCatch?.length).toBeGreaterThan(0);
-    expect(g.s.notes.some((n) => /They looked into.*where.*would have been caught/.test(n.text))).toBe(true);
+    expect(g.s.notes.some((n) => /The scouts searched.*was.*would have been caught/.test(n.text))).toBe(true);
     advance(g, first.leave + HOUR);
     expect(first.hurt).toEqual([]);
     expect(g.s.notes.some((n) => /No one was struck/.test(n.text))).toBe(true);
