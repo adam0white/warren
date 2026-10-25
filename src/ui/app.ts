@@ -344,9 +344,9 @@ function enter() {
     if (order({ verb: 'bell' })) {
       const raid = g && activeRaid(g.s);
       if (raid) answeredRaids.add(raid.smoke);
-      chrome();
       bellReading = true;
       showBellReading();
+      chrome();
     }
   });
   document.getElementById('raid-actions')?.addEventListener('click', (e) => {

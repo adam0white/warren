@@ -88,6 +88,15 @@ describe('F-233 raid playback', () => {
       await page.locator('#bookx').click();
       expect(await page.locator('#raid-warning').innerText()).toContain('Smoke');
       await page.locator('#raid-bell').click();
+      expect(await page.locator('#cell-title').innerText()).toBe('Bell call');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Time waits while you read');
+      const minuteAtBell = await page.evaluate('window.__warren.game.s.minute');
+      await page.clock.runFor(6000);
+      expect(await page.evaluate('window.__warren.game.s.minute')).toBe(minuteAtBell);
+      expect(await page.locator('#clock-rate').innerText()).toBe('Time waits while you read');
+      await page.locator('#cellx').click();
+      // chrome refreshes the clock label at 250ms boundaries.
+      await page.clock.runFor(250);
       expect(await page.locator('#clock-rate').innerText()).toBe('Reading the latest word');
       expect(await page.locator('#raid-warning').isVisible()).toBe(false);
       expect(await page.locator('#raid-bell, #watch-raid').count()).toBe(0);
