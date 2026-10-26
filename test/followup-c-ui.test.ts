@@ -78,8 +78,8 @@ for (const [width, height] of [
       await page.mouse.down();
       await page.mouse.move(b.x, b.y, { steps: 5 });
       await page.clock.runFor(100);
-      expect(await page.locator('#cell-title').innerText()).toBe('Plan preview');
-      expect(await page.locator('#cell-words').innerText()).toMatch(/about six/);
+      expect(await page.locator('#cell-detail').isVisible()).toBe(false);
+      expect(await page.locator('#event-sentence').innerText()).toMatch(/about six/);
       expect(await page.evaluate(`window.__warren.game.s.hill.chalk[${cells[0]}]`)).toBe(0);
       if (process.env.WARREN_SCREENSHOTS === '1')
         await page.screenshot({ path: `${shots}/after-${width}-drag-c.png` });

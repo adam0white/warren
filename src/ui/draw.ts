@@ -22,6 +22,7 @@ import {
 
 import { planGeometry } from './plan-safety.ts';
 import { scoutedCells } from './room-safety.ts';
+import { selectedPlan } from './selected-plan.ts';
 import { speechWords } from './words.ts';
 
 export interface Ink {
@@ -67,6 +68,9 @@ export interface Paint {
   preview: Set<number>;
   previewKind: 'chalk' | 'erase' | 'store' | 'beds' | null;
   selected: string | null;
+  worldCell?: number | null;
+  connectionCell?: number | null;
+  connections?: boolean;
   /** Current pointer target, outlined before release for every tool. */
   target?: number | null;
   /** Display minute (between quanta). */
@@ -375,6 +379,38 @@ export function draw(c: CanvasRenderingContext2D, s: WarrenState, v: View, ink: 
     }
   }
 
+  if (paint.connections && paint.connectionCell != null) {
+    const plan = selectedPlan(s, paint.connectionCell);
+    const line = (cells: number[], dashed: boolean) => {
+      if (!cells.length) return;
+      c.save();
+      c.strokeStyle = ink.rope;
+      c.lineWidth = 3;
+      c.setLineDash(dashed ? [5, 4] : []);
+      c.beginPath();
+      cells.forEach((cell, n) => {
+        const x = (xOf(cell) + 0.5) * cs;
+        const y = (yOf(cell) + 0.5) * cs;
+        if (n) c.lineTo(x, y);
+        else c.moveTo(x, y);
+      });
+      c.stroke();
+      c.restore();
+    };
+    line(plan.current.riskPath, false);
+    line(plan.proposed.riskPath, true);
+    line(plan.connection, true);
+    if (plan.firstFace !== undefined) {
+      c.strokeStyle = ink.rope;
+      c.lineWidth = 3;
+      c.strokeRect(xOf(plan.firstFace) * cs + 3, yOf(plan.firstFace) * cs + 3, cs - 6, cs - 6);
+    }
+  }
+  if (paint.worldCell != null) {
+    c.strokeStyle = ink.rope;
+    c.lineWidth = 2;
+    c.strokeRect(xOf(paint.worldCell) * cs + 1, yOf(paint.worldCell) * cs + 1, cs - 2, cs - 2);
+  }
   if (paint.target !== undefined && paint.target !== null && paint.target >= 0) {
     c.strokeStyle = ink.rope;
     c.lineWidth = 2;

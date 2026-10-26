@@ -68,10 +68,10 @@ it('recognizes a new chalk tap connected through an earlier mark to the cellar',
       }, x);
       await page.mouse.click(point.x, point.y);
       await page.clock.runFor(100);
-      const words = await page.locator('#cell-words').textContent();
-      expect(words).toContain('1 new square');
+      const words = await page.locator('#event-sentence').textContent();
+      expect(words).toContain('1 square marked');
       expect(words).not.toContain('nobody can reach');
-      await page.locator('#cellx').click();
+      expect(await page.locator('#cell-detail').isVisible()).toBe(false);
     }
   } finally {
     await page.close();

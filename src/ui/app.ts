@@ -56,6 +56,7 @@ import { invitationWords, personHelpWords } from './person-help.ts';
 import { type PlanSafety, planSafety } from './plan-safety.ts';
 import { eventStamp, playbackRate } from './playback.ts';
 import { bellShelterWords, bellStateWords, bellThreatWords } from './room-safety.ts';
+import { chalkFeedback, selectedPlan } from './selected-plan.ts';
 import {
   compactShelterWords,
   sleepingCapacity,
@@ -123,7 +124,7 @@ let doorCell: number | null = null;
 let bellReading = false;
 let returnReading = false;
 let planCell: number | null = null;
-let lastReading: { title: string; words: string; context?: string } | null = null;
+let lastReading: { title: string; words: string; context?: string; cell?: number } | null = null;
 let pendingEntrance: number[] | null = null;
 
 const notice = telemetryNotice();
@@ -370,7 +371,7 @@ function enter() {
     </div>
     <div class="panel lk-sheet" aria-label="Hill actions"><div class="lk-sheet-body" id="inspection-body">
       <div class="card" id="card" hidden></div>
-      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Reading</b><button class="x" id="cellx" aria-label="Close reading">×</button></div><p id="cell-words" role="region" aria-label="Full reading"></p><div id="resident-door-controls" hidden></div><div id="entrance-choice" hidden><button id="confirm-entrance">Plan this entrance</button><button id="cancel-entrance">Cancel</button></div><details id="reading-context" hidden><summary>More ▸</summary><div id="door-context"></div></details></div>
+      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Reading</b><button class="x" id="cellx" aria-label="Close reading">×</button></div><p id="cell-words" role="region" aria-label="Full reading"></p><div id="resident-door-controls" hidden></div><div id="entrance-choice" hidden><button id="confirm-entrance">Plan this entrance</button><button id="cancel-entrance">Cancel</button></div><button id="connections" hidden aria-pressed="false">Show connections</button><p id="connection-words" hidden></p><details id="reading-context" hidden><summary>More ▸</summary><div id="door-context"></div></details></div>
       <div class="drawer" id="drawer" hidden></div>
       <div id="journal-tail"></div>
     </div>
@@ -458,6 +459,10 @@ function enter() {
     closeCell();
   });
   document.getElementById('cancel-entrance')?.addEventListener('click', () => closeCell());
+  document.getElementById('connections')?.addEventListener('click', () => {
+    paint.connections = !paint.connections;
+    updateConnections();
+  });
   document.getElementById('confirm-entrance')?.addEventListener('click', () => {
     const cells = pendingEntrance;
     pendingEntrance = null;
@@ -487,7 +492,7 @@ function enter() {
       showBellReading();
     } else if (lastReading) {
       const saved = lastReading;
-      showReading(saved.title, saved.words);
+      showReading(saved.title, saved.words, true, false, saved.cell);
       if (saved.context) {
         readingContext(saved.context);
         if (lastReading) lastReading.context = saved.context;
@@ -890,7 +895,8 @@ function chrome() {
   if (paint.selected) card();
 }
 
-function showReading(title: string, words: string, remember = true, preserveScroll = false) {
+function showReading(title: string, words: string, remember = true, preserveScroll = false, cell?: number) {
+  paint.connectionCell = cell ?? null;
   returnReading = false;
   const detail = document.getElementById('cell-detail');
   const heading = document.getElementById('cell-title');
@@ -914,16 +920,34 @@ function showReading(title: string, words: string, remember = true, preserveScro
     text.scrollTop = scroll;
   }
   detail.hidden = false;
+  updateConnections();
   void preserveScroll;
   if (remember) {
-    lastReading = { title, words };
+    lastReading = { title, words, cell };
     const reopen = document.getElementById('last-reading') as HTMLButtonElement | null;
     if (reopen) reopen.disabled = false;
   }
 }
 
-function planReading(title: string, reading: PlanSafety, remember = true, preserveScroll = false) {
-  showReading(title, reading.words, remember, preserveScroll);
+function updateConnections() {
+  const button = document.getElementById('connections');
+  const text = document.getElementById('connection-words');
+  if (!button || !text || !g) return;
+  button.hidden = paint.connectionCell == null;
+  button.setAttribute('aria-pressed', String(!!paint.connections));
+  button.textContent = paint.connections ? 'Hide connections' : 'Show connections';
+  text.hidden = !paint.connections || paint.connectionCell == null;
+  if (!text.hidden) text.textContent = selectedPlan(g.s, paint.connectionCell ?? -1).words;
+}
+
+function planReading(
+  title: string,
+  reading: PlanSafety,
+  remember = true,
+  preserveScroll = false,
+  cell?: number,
+) {
+  showReading(title, reading.words, remember, preserveScroll, cell);
   readingContext(reading.context ?? '');
   if (remember && lastReading) lastReading.context = reading.context;
 }
@@ -953,9 +977,10 @@ function flash(text: string, contextWords = '') {
 }
 
 /** A successful mark is a receipt, not an inspection. Keep it available through the peek. */
-function receipt(text: string) {
+function receipt(text: string, context?: string, readingWords = text) {
+  const cell = paint.connectionCell ?? undefined;
   closeCell(false);
-  lastReading = { title: 'Reading', words: text };
+  lastReading = { title: 'Reading', words: readingWords, context, cell };
   const reopen = document.getElementById('last-reading') as HTMLButtonElement | null;
   if (reopen) reopen.disabled = false;
   hintUntil = performance.now() + 6000;
@@ -1241,39 +1266,39 @@ function addPaint(px: number, py: number, fresh = false) {
 function updatePlanPreview() {
   if (pendingEntrance) return;
   if (!g || (paint.previewKind !== 'chalk' && paint.previewKind !== 'beds') || !paint.preview.size) return;
-  bellReading = false;
-  doorCell = null;
-  planReading('Plan preview', planSafety(g.s, paint.preview, paint.previewKind), false);
-}
-
-/** Whether the chalk just laid joins open ground through other chalk (so a digger can work toward it). */
-function reachable(cells: number[]): boolean {
-  if (!g) return true;
-  const h = g.s.hill;
-  const open = (j: number) => h.kind[j] === K.open || yOf(j) === SURF - 1;
-  const seen = new Set<number>();
-  const q = h.chalk.flatMap((marked, c) => (marked && neighbours(c).some(open) ? [c] : []));
-  for (const c of q) seen.add(c);
-  for (let i = 0; i < q.length; i++)
-    for (const j of neighbours(q[i] ?? 0))
-      if (!seen.has(j) && h.chalk[j]) {
-        seen.add(j);
-        q.push(j);
-      }
-  return cells.every((c) => !h.chalk[c] || seen.has(c));
+  if (paint.previewKind === 'beds') {
+    planReading('Plan preview', planSafety(g.s, paint.preview, 'beds'), false);
+    return;
+  }
+  const cell = [...paint.preview].at(-1);
+  if (cell === undefined) return;
+  const peek = document.getElementById('event-sentence');
+  const limit =
+    xOf(cell) >= THEIR_X
+      ? 'This is the neighbours’ boundary. Chalk here may be refused.'
+      : g.s.hill.known[cell] && g.s.hill.kind[cell] === K.bedrock
+        ? 'This known grey rock cannot be cut.'
+        : g.s.hill.kind[cell] === K.open
+          ? 'This ground is already open. Chalk marks stone.'
+          : '';
+  if (peek)
+    peek.textContent = `${limit} ${planSafety(g.s, paint.preview, paint.previewKind).words} ${g.s.hill.known[cell] ? markedWorkWords({ ...g.s, hill: { ...g.s.hill, chalk: g.s.hill.chalk.map((v, i) => (paint.preview.has(i) ? 1 : v)) } }, cell) : 'This stone is not yet known. The chalk does not reveal what lies inside.'} Chalk plans work; it supplies no light or air.`;
+  hintUntil = performance.now() + 6000;
 }
 
 function commitPaint(entranceConfirmed = false) {
   if (!g) return;
   const cells = [...paint.preview];
   zoomCell = cells.at(-1) ?? null;
+  paint.worldCell = zoomCell;
+  paint.connectionCell = zoomCell;
   focusCell = null;
   const kind = paint.previewKind;
   paint.preview.clear();
   paint.previewKind = null;
   if (!cells.length || !kind) return;
   const h = g.s.hill;
-  const unmarked = new Set(cells.filter((c) => !h.chalk[c]));
+  const beforeChalk = cells.map((c) => h.chalk[c] ?? 0);
   if (kind === 'chalk') {
     const opensEntrance = cells.some(
       (c) =>
@@ -1295,24 +1320,28 @@ function commitPaint(entranceConfirmed = false) {
       if (choice) choice.hidden = false;
       return;
     }
-    if (order({ verb: 'chalk', cells, on: true })) {
-      const added = cells.filter((c) => unmarked.has(c) && h.chalk[c]).length;
-      if (reachable(cells)) {
-        const reading = planSafety(g.s, cells, 'chalk');
-        flash(
-          `The dig is marked. ${added} new ${added === 1 ? 'square' : 'squares'}. ${reading.words}`,
-          `${markedWorkWords(g.s)} ${reading.context ?? ''}`,
-        );
-      } else
-        flash(
-          'The chalk is marked, but nobody can reach that stone yet. Start at a wall touching the cellar. Tap adjoining stone squares to join this mark, or drag a connected line from the cellar.',
-        );
+    const accepted = order({ verb: 'chalk', cells, on: true });
+    if (accepted) {
+      const reading = planSafety(g.s, cells, 'chalk');
+      const ack = chalkFeedback(
+        accepted,
+        beforeChalk,
+        cells.map((c) => h.chalk[c] ?? 0),
+      );
+      const work = markedWorkWords(g.s, cells.at(-1));
+      receipt(`${ack} ${work}`, `${ack} ${work} ${reading.context ?? ''}`, reading.words);
       return;
     }
     if (cells.length === 1 && h.chalk[cells[0] ?? 0]) {
-      order({ verb: 'chalk', cells, on: false });
-      flash('The chalk mark is removed. Tap the stone again to mark it for digging.');
-    }
+      const removed = order({ verb: 'chalk', cells, on: false });
+      receipt(
+        chalkFeedback(
+          removed,
+          beforeChalk,
+          cells.map((c) => h.chalk[c] ?? 0),
+        ),
+      );
+    } else if (cells.every((c) => h.chalk[c])) receipt('The chalk is unchanged.');
     // Every refusal says why, in the village's words.
     else if (cells.some((c) => xOf(c) >= THEIR_X))
       flash(
@@ -1323,7 +1352,14 @@ function commitPaint(entranceConfirmed = false) {
     else if (cells.some((c) => h.kind[c] === K.bedrock)) flash('“We cannot cut that old grey rock, Master.”');
     else flash('Use chalk on stone that people can reach with their picks.');
   } else if (kind === 'erase') {
-    order({ verb: 'chalk', cells, on: false });
+    const removed = order({ verb: 'chalk', cells, on: false });
+    receipt(
+      chalkFeedback(
+        removed,
+        beforeChalk,
+        cells.map((c) => h.chalk[c] ?? 0),
+      ),
+    );
     order({ verb: 'use', cells, use: 'none' });
   } else {
     const ok = order({ verb: 'use', cells, use: kind });
@@ -1476,6 +1512,8 @@ function closeCell(focus = true) {
   bellReading = false;
   planCell = null;
   doorCell = null;
+  paint.connections = false;
+  paint.connectionCell = null;
   const detail = document.getElementById('cell-detail');
   if (!detail || detail.hidden) return;
   detail.hidden = true;
@@ -1487,13 +1525,18 @@ function closeCell(focus = true) {
 function updateDoor() {
   if (!g || doorCell === null) return;
   if (g.s.hill.chalk[doorCell] && g.s.hill.kind[doorCell] !== K.open) {
-    planReading('Unbuilt plan', planSafety(g.s, [doorCell], 'chalk'), true, true);
+    const reading = planSafety(g.s, [doorCell], 'chalk');
+    reading.words = `${markedWorkWords(g.s, doorCell)} ${reading.words}`;
+    planReading('Unbuilt plan', reading, true, true, doorCell);
     return;
   }
   if (planCell !== null) {
     showReading(
       'Excavated plan',
       `${planSafety(g.s, [doorCell], 'beds').words} This ground is open now. You still need to mark sleeping places.`,
+      true,
+      false,
+      doorCell,
     );
     doorCell = null;
     planCell = null;
@@ -1506,7 +1549,11 @@ function updateDoor() {
       : doorWords(g.s, doorCell, lightAt(doorCell));
   if (text && text.textContent !== settingWords(words)) {
     text.textContent = settingWords(words);
-    lastReading = { title: g.s.hill.use[doorCell] === USE.beds ? 'Sleeping room' : 'Stone door', words };
+    lastReading = {
+      title: g.s.hill.use[doorCell] === USE.beds ? 'Sleeping room' : 'Stone door',
+      words,
+      cell: doorCell,
+    };
   }
   updateDoorContext(doorCell);
 }
@@ -1577,15 +1624,11 @@ function showPlan(cell: number) {
   bellReading = false;
   planCell = cell;
   doorCell = cell;
+  paint.connectionCell = cell;
+  paint.worldCell = cell;
   const reading = planSafety(g.s, [cell], 'chalk');
   reading.words = `${markedWorkWords(g.s, cell)} ${reading.words}`;
-  const stand = neighbours(cell).find((j) => g?.s.hill.kind[j] === K.open);
-  if (stand !== undefined) {
-    const blocked = airWords(stand);
-    if (blocked)
-      reading.words = `A lamp or a second opening may be needed. ${blocked.trim()} ${reading.words}`;
-  }
-  planReading('Unbuilt plan', reading);
+  planReading('Unbuilt plan', reading, true, false, cell);
   document.getElementById('cellx')?.focus();
 }
 
@@ -1593,14 +1636,17 @@ function showDoor(cell: number) {
   if (!g) return;
   closeCard();
   doorCell = cell;
+  paint.connectionCell = cell;
+  paint.worldCell = cell;
   const beds = g.s.hill.use[cell] === USE.beds;
   const title = document.getElementById('cell-title');
   if (title) title.textContent = beds ? 'Sleeping room' : 'Stone door';
   const words = beds ? sleepingRoomWords(g.s, cell) : doorWords(g.s, cell, lightAt(cell));
   flash(words);
   doorCell = cell;
-  showReading(beds ? 'Sleeping room' : 'Stone door', words);
+  showReading(beds ? 'Sleeping room' : 'Stone door', words, true, false, cell);
   updateDoorContext(cell);
+  updateConnections();
   const detail = document.getElementById('cell-detail');
   const text = document.getElementById('cell-words');
   if (detail && text) {

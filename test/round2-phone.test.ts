@@ -110,7 +110,8 @@ for (const [width, height] of [
       await page.mouse.up();
       await page.clock.runFor(500);
       expect(await camera(page)).toEqual(before);
-      expect(await page.locator('#cell-words').innerText()).toContain('The dig is marked');
+      expect(await page.locator('#cell-detail').isVisible()).toBe(false);
+      expect(await page.locator('#event-sentence').innerText()).toContain('square marked');
       if (process.env.WARREN_SCREENSHOTS === '1')
         await page.screenshot({ path: `${shots}/after-${width}-plan-b.png` });
     } finally {
@@ -231,6 +232,8 @@ it('keeps full mixed/open-door, bed and door readings accessible by scrolling ab
     const p = await point(page, 18, 11);
     await page.touchscreen.tap(p.x, p.y);
     await page.clock.runFor(200);
+    expect(await page.locator('#cell-detail').isVisible()).toBe(false);
+    await page.locator('#last-reading').click();
     expect(await page.locator('#cell-words').innerText()).toContain('Riders can reach');
     expect(await page.locator('#cell-words').innerText()).toContain('open stone door');
     const fits = () =>
@@ -330,6 +333,13 @@ it('keeps mixed door conditions scrollable while marking and full route details 
     await page.mouse.move(skyB.x, skyB.y);
     await page.mouse.move(b.x, b.y);
     await page.clock.runFor(100);
+    expect(await page.locator('#cell-detail').isVisible()).toBe(false);
+    expect(await page.locator('#event-sentence').innerText()).toContain(
+      'Keep the doors that block riders shut.',
+    );
+    await page.mouse.up();
+    await page.clock.runFor(100);
+    await page.locator('#last-reading').click();
     expect(await page.locator('#reading-context summary').isVisible()).toBe(true);
     expect(await page.locator('#reading-context summary').getAttribute('aria-label')).toBe(
       'More about these routes',
@@ -346,9 +356,6 @@ it('keeps mixed door conditions scrollable while marking and full route details 
         );
       });
     expect(await essentialFits()).toBe(true);
-    await page.mouse.up();
-    await page.clock.runFor(100);
-    expect(await essentialFits()).toBe(true);
     await page.locator('#cellx').click();
     await page.locator('#last-reading').click();
     await page.locator('#reading-context summary').click();
@@ -360,6 +367,48 @@ it('keeps mixed door conditions scrollable while marking and full route details 
     );
     if (process.env.WARREN_SCREENSHOTS === '1')
       await page.screenshot({ path: `${shots}/after-360-complex-route-details-b.png` });
+  } finally {
+    await page.close();
+  }
+}, 20000);
+
+it('keeps the actual connection cell through repeated Look and compact receipt reopening without lending it to help', async () => {
+  const page = await start();
+  try {
+    await page.locator('[data-tool="chalk"]').click();
+    const p = await point(page, 20, 11);
+    await page.touchscreen.tap(p.x, p.y);
+    expect(await page.locator('#cell-detail').isVisible()).toBe(false);
+    expect(await page.locator('#event-sentence').innerText()).toContain('square marked');
+    const expected = await page.evaluate(`(async()=>{
+      const {selectedPlan}=await import('/src/ui/selected-plan.ts');
+      return selectedPlan(window.__warren.game.s, 11 * 34 + 20).words;
+    })()`);
+    const assertReopen = async () => {
+      for (let n = 0; n < 3; n++) {
+        await page.locator('#last-reading').click();
+        expect(await page.locator('#connections').isVisible()).toBe(true);
+        expect(await page.locator('#connections').getAttribute('aria-pressed')).toBe('false');
+        await page.locator('#connections').click();
+        expect(await page.locator('#connections').getAttribute('aria-pressed')).toBe('true');
+        expect(await page.locator('#connection-words').isVisible()).toBe(true);
+        expect(await page.locator('#connection-words').innerText()).toBe(expected);
+        await page.locator('#cellx').click();
+      }
+    };
+    await assertReopen();
+    await page.locator('[data-tool="look"]').click();
+    await page.touchscreen.tap(p.x, p.y);
+    expect(await page.locator('#cell-title').innerText()).toBe('Unbuilt plan');
+    await page.locator('#cellx').click();
+    await assertReopen();
+    // Open unrelated help while the connection reading is still selected.
+    await page.locator('#last-reading').click();
+    await page.locator('#goal').click();
+    expect(await page.locator('#connections').isVisible()).toBe(false);
+    await page.locator('#cellx').click();
+    await page.locator('#last-reading').click();
+    expect(await page.locator('#connections').isVisible()).toBe(false);
   } finally {
     await page.close();
   }

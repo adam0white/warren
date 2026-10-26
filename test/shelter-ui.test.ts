@@ -134,7 +134,8 @@ describe('round four shelter clarity', () => {
       const chalk = await point(page, 20, SURF + 3);
       await page.mouse.click(chalk.x, chalk.y);
       await page.clock.runFor(300);
-      expect(await page.locator('#cell-words').innerText()).toContain('The dig is marked');
+      expect(await page.locator('#cell-detail').isVisible()).toBe(false);
+      expect(await page.locator('#event-sentence').innerText()).toContain('square marked');
       expect(await page.locator('[data-tool="chalk"]').innerText()).not.toBe('✕');
     } finally {
       await page.close();

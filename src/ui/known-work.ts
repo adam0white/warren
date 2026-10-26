@@ -1,5 +1,5 @@
 /** Visible work and structural rules only. No future threat clock or private decision explanation. */
-import { cellsWithUse, faces, SURF, USE, xOf, yOf } from '../sim/grid.ts';
+import { cellsWithUse, faces, K, SURF, USE, xOf, yOf } from '../sim/grid.ts';
 import { activeRaid, airAndLight, faceState, V, type WarrenState } from '../sim/warren.ts';
 import { activityWords } from './words.ts';
 
@@ -12,6 +12,8 @@ export function waterHelpWords(s: WarrenState): string {
 }
 
 export function markedWorkWords(s: WarrenState, selected?: number): string {
+  if (selected !== undefined && s.hill.kind[selected] === K.open)
+    return 'This ground is open now. Digging here is complete; furnishings need their own marks.';
   const fs = faces(s.hill).filter((f) => selected === undefined || f.face === selected);
   const worker = s.people.find(
     (p) =>
@@ -30,7 +32,7 @@ export function markedWorkWords(s: WarrenState, selected?: number): string {
   const words: string[] = [];
   if (states.includes('ready'))
     words.push(
-      'The mark is available for work. Nobody is digging it now. People may choose another task or rest.',
+      'The mark is available for work. Nobody is digging it now. People may choose another task or rest. The wall has light, air and room for spoil; no work is recorded here now.',
     );
   if (states.includes('dark')) words.push('The marked wall is dark. Hang a lamp on the open side of it.');
   if (states.includes('stale'))
@@ -39,6 +41,8 @@ export function markedWorkWords(s: WarrenState, selected?: number): string {
     );
   if (states.includes('spoil'))
     words.push('Loose rock blocks the marked wall. People must carry it away first.');
+  if (selected !== undefined && (s.hill.dig[selected] ?? 0) > 0)
+    words.unshift('Some stone has already been cut here.');
   return words.join(' ');
 }
 

@@ -90,7 +90,7 @@ describe('round five phone building', () => {
         );
         if (process.env.WARREN_SCREENSHOTS === '1')
           await page.screenshot({ path: `${evidence}/round5-after-${width}-zoom.png` });
-        await page.locator('#cellx').click();
+        expect(await page.locator('#cell-detail').isVisible()).toBe(false);
         await page.getByRole('button', { name: 'Fit hill', exact: true }).tap();
         expect(await page.evaluate<number>('window.__warren.view.cs')).toBeLessThan(size);
       } finally {
