@@ -1,3 +1,29 @@
+# Warren — current handoff, 2026-10-25
+
+Remaining: Adam’s game-feel/readability acceptance and camera/offline preferences, with owner review targeted for 2026-11-03. Games-deferred owns the next offline/quarrel engineering, immutable SDK adoption and design/Deferred reconciliation. Those are future work, not shipped behavior. Lab-panel rounds on HF 3 builds are allowed under the playtest director. Friends’ playtests and Show HN remain paused. Docsweb runs no rounds.
+
+## Current source
+
+At source `43adc501f4c91b93d50bc697c42dcf33014117c6`, the app package and default rules are 0.6.0, HF package is 3.0.0, engine is 2.23.0, lab-client is 0.4.10 and lab-kit is 0.5.11. The client/kit are immutable vendor artifacts. Available client 0.4.11/kit 0.5.12 are not adopted here. The npm SDK route is excluded by the HF owner artifact guardrail; it is not waiting for permission or a registry fix. The contrary design Deferred row belongs to games-deferred.
+
+New game’s unchecked option alone selects rules 0.7.0. Existing hills retain their recorded rules. Implemented opt-in changes include completed-sleep and actual raid-protection outcomes, bounded wild food, warned local furnishing damage, ongoing digging display and slower gameplay readings. Adult helper rules and body needs already exist in 0.6; they are not new 0.7 features. Ordinary play does not advance from elapsed wall time. See [README](README.md) for controls, storage and development commands.
+
+The ordinary menu contains Resume, Feedback, Full screen, All games, Recording and New game. Journal, village and person readings remain in play. Exact `?lab=1` exposes continuity diagnostics, file import, native Watch checkpoints and Feedback’s run download/version preview. Recording links play across games on this device while on; no separate continuing-person consent applies.
+
+Current exports use `plain3` text metadata. plain4 changes display projections without rewriting raw histories. Save loading requires the current HF package and text version. Finite historical source envelopes remain supported only through the existing calendar/identity/role/dialect/duty/care guards. Imports do not acquire browser-shelf ownership. Selected Kian/Meryem native Watch handoffs are bounded routes, not proof of general cross-host ownership or atomic compare-and-swap. Preserve full source archives, raw histories, save and replay contracts.
+
+## Delivered evidence, separate from acceptance
+
+plain4’s final external report records signed 43adc50, exact green [CI 40246763093](https://github.com/adam0white/warren/actions/runs/40246763093), normal 295 tests/50 files and clean deployment CF e9c6995d-0af2-48f2-9c73-10213fd4a4c9. Its live release receipt is app 0.6.0/HF 3.0.0/exact 43adc50/dirty:false. This is the last app deployment receipt, not a claim that later documentation commits were deployed.
+
+That report distinguishes actual Chrome title/menu checks at 360×690 and 1280×800, preserving the owner’s older save, from controlled local gameplay/component checks. Live JS/CSS matched the build bytes; Cloudflare rewrote font links in index HTML, so whole-index byte equality was not established. Technical checks do not establish Adam’s acceptance or ordinary human cross-game continuation.
+
+Reports: `/Users/abdul/code/.lab-scratch/plain4/warren-report.md` and `/Users/abdul/code/.lab-scratch/games-deferred/warren-report.md`. The latter predates plain4 and its SDK npm-blocker wording is superseded by the artifact policy above. Existing general footer already credits HF; no About feature or person-panel change is needed.
+
+## Historical handoff retained in full — archived 2026-10-25
+
+The complete prior handoff follows unchanged. Version, consent, menu, refusal and delivery claims below describe their dated stages. The current summary above supersedes conflicting current-state statements; owner quotes and historical receipts remain evidence.
+
 # HF3 maintenance — 2026-10-25
 
 What remains: Adam’s game-feel/readability acceptance and the explicit owner decisions in [the maintenance dispositions](docs/maintenance-2026-10-25.md). Technical release evidence and cleanup are recorded in `/Users/abdul/code/.lab-scratch/v3/warren/report.md`; source preparation alone is not delivery.
