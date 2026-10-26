@@ -48,6 +48,13 @@ import {
   yearOf,
 } from './calendar.ts';
 import {
+  type CutDiscussion,
+  cutOffers,
+  cutSuggestion,
+  finishCutStatement,
+  observeCutDiscussion,
+} from './cut-discussion.ts';
+import {
   AIR_REACH,
   airSteps,
   BEDS_PER_CELL,
@@ -216,6 +223,19 @@ export interface WarrenState {
     slept: Record<string, number>;
     raids: Record<string, { present: string[]; exposed: string[]; behindDoor: boolean }>;
     forage: { day: number; gathered: number };
+  };
+  /** Unchecked next-slice configuration only; ordinary 0.6/0.7 state never gains this field. */
+  next?: {
+    config: 'warren-next/1';
+    discussion?: CutDiscussion;
+    attention?: string[];
+    away?: {
+      elapsedMs: number;
+      simulatedMinutes: number;
+      remainderMs: number;
+      stopReason: 'attention' | 'event' | 'elapsed' | 'computation';
+      events: string[];
+    };
   };
   goals: Record<string, number>;
   flags: Record<string, number>;
@@ -604,6 +624,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
   const sleepy = !light || p.body.sleepPressure > 0.7 || p.body.sleepDebt > 0.5 || p.body.health < 0.5;
   const winter = season === 'winter';
   const hearth = hearthCell(s);
+  for (const a of cutOffers(s, p)) offer(a, plan(s, f, at, hearth, 30, lit), 30);
   const below = yOf(from) >= SURF;
   const isAdult = s.edition === '0.6.0' || s.edition === '0.7.0' ? ageYears(p) >= 18 : adult(p);
   const old = elder(p);
@@ -1481,6 +1502,8 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
   const hours = workDone(t, act, now);
   // Where they are now.
   s.pos[p.id] = done ? (t?.end ?? s.pos[p.id] ?? 0) : positionAt(s, p.id, now);
+  const cutSpeech = finishCutStatement(s, p, act, done);
+  if (cutSpeech) return { ...base, ...cutSpeech };
   const house = houseOf(s, p.id);
   if (
     (s.edition === '0.6.0' || s.edition === '0.7.0') &&
@@ -2114,9 +2137,14 @@ export function syncCommunity(s: WarrenState) {
 export function advanceTo(s: WarrenState, to: number, observeIdle?: (person: Person) => void): SimEvent[] {
   const events: SimEvent[] = [];
   while (s.minute < to) {
+    const lastNote = s.notes.at(-1);
     const next = Math.min(to, (Math.floor(s.minute / QUANTUM) + 1) * QUANTUM);
     const c = communityOf(s);
     const suggestions: Record<string, Suggestion> = {};
+    for (const p of c.people) {
+      const suggestion = cutSuggestion(s, p);
+      if (suggestion) suggestions[p.id] = suggestion;
+    }
     if (s.bell && s.bell.until > s.minute)
       for (const p of c.people)
         suggestions[p.id] = { voiceId: BELL, action: 'shelter', strength: V.bellStrength, since: s.bell.at };
@@ -2142,6 +2170,10 @@ export function advanceTo(s: WarrenState, to: number, observeIdle?: (person: Per
     s.minute = next;
     afterQuantum(s, ev);
     if (dayOfMinute(s.minute) !== day0) endOfDay(s, day0);
+    if (s.next) {
+      const added = s.notes.slice(lastNote ? s.notes.indexOf(lastNote) + 1 : 0);
+      if (added.length) s.next.attention = added.map((n) => n.text);
+    }
   }
   return events;
 }
@@ -2179,6 +2211,7 @@ function observeRefuge(s: WarrenState) {
 }
 
 function afterQuantum(s: WarrenState, ev: SimEvent[]) {
+  observeCutDiscussion(s);
   if (s.edition === '0.7.0')
     for (const e of ev) {
       if (e.kind !== 'converse' || !e.withId) continue;

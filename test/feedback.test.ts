@@ -156,3 +156,20 @@ it.each([true, false])('reports stored only after acknowledgement (accepted=%s)'
     await page.close();
   }
 });
+
+it('keeps quiet choices local and sends the literal choice with the edited note only on Submit', async () => {
+  const page = await mount(false, true);
+  try {
+    await page.locator('textarea').fill('I could not find the door.');
+    await page.getByRole('button', { name: "I'm confused", exact: true }).click();
+    expect(await page.evaluate('window.feedbackCalls')).toEqual([]);
+    expect(await page.locator('textarea').inputValue()).toBe('I could not find the door.');
+    await page.locator('.feedback-primary').click();
+    const calls = (await page.evaluate('window.feedbackCalls')) as unknown[][];
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.[1]).toBe("I'm confused\n\nI could not find the door.");
+    expect(calls[0]?.[2]).toMatchObject({ sharePlay: false });
+  } finally {
+    await page.close();
+  }
+});

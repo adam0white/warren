@@ -121,7 +121,7 @@ it('uses the edition chosen in the title menu when starting a new local hill', a
     await page.locator('.continuity summary').click();
     await page.locator('#continuity').uncheck();
     await page.locator('#to-title').click();
-    await page.locator('#menu-new-confirm input[type="checkbox"]').check();
+    await page.locator('#menu-refuge-edition').check();
     await page.locator('#menu-new-yes').click();
     await page.locator('#cv').waitFor();
     expect(await page.evaluate('window.__warren.game.s.edition')).toBe('0.7.0');

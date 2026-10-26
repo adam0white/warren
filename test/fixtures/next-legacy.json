@@ -1,0 +1,17 @@
+{
+  "source": "80af9ed039f9999d1fb3ca5fe99d7815de4806a5",
+  "rows": [
+    {
+      "game": "0.6.0",
+      "seed": 7,
+      "minute": 1740,
+      "fingerprint": "6ea9327f"
+    },
+    {
+      "game": "0.7.0",
+      "seed": 7,
+      "minute": 1740,
+      "fingerprint": "2a346279"
+    }
+  ]
+}

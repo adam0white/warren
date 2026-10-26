@@ -322,3 +322,53 @@ it('keeps routine Kian ineligibility separate from failed publication', async ()
   expect(mock.requests).toEqual([]);
   expect(window.dispatchEvent).not.toHaveBeenCalled();
 });
+
+it('invalidates host saves before file import changes the SDK context or awaits file text', async () => {
+  const saved = save(newGame(7));
+  let release!: (text: string) => void;
+  const text = new Promise<string>((done) => {
+    release = done;
+  });
+  let change!: (event: unknown) => void;
+  const host = {
+    querySelector: (selector: string) =>
+      selector === '#cast-file'
+        ? {
+            addEventListener: (_name: string, fn: (event: unknown) => void) => {
+              change = fn;
+            },
+          }
+        : null,
+  } as unknown as HTMLElement;
+  const imported = { size: 100, text: () => text } as File;
+  let complete!: (game: ReturnType<typeof newGame>) => void;
+  const loaded = new Promise<ReturnType<typeof newGame>>((done) => {
+    complete = done;
+  });
+  let invalidated = false;
+  const prior = mock.gate;
+  bind(
+    host,
+    () => {
+      throw Error('The old callback must not install this import.');
+    },
+    () => {
+      expect(mock.gate).toBe(prior);
+      invalidated = true;
+      return {
+        loaded: complete,
+        failed() {
+          throw Error('Import failed');
+        },
+      };
+    },
+  );
+  change({ target: { files: [imported] } });
+  try {
+    expect(invalidated).toBe(true);
+    expect(mock.gate).not.toBe(prior);
+  } finally {
+    release(JSON.stringify(saved));
+  }
+  expect((await loaded).fileOrigin).toBe(true);
+});

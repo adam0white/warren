@@ -5,9 +5,11 @@
 import { ageYears, describePerson, FRAMEWORK_VERSION, type Person } from '@adam0white/human-framework';
 import { type PhoneStage, phoneStage, telemetryNotice } from '@adam0white/lab-kit';
 import { DAY, hourWords } from '../sim/calendar.ts';
+import { discussionWords, markedLooseCut } from '../sim/cut-discussion.ts';
 import {
   act,
   advance,
+  catchUp,
   GAME_VERSION,
   type Game,
   load,
@@ -40,7 +42,7 @@ import { doorDetailWords, doorWords } from './door-help.ts';
 import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from './draw.ts';
 import { exposureWords } from './exposure.ts';
 import { openFeedback } from './feedback.ts';
-import { growthWords } from './growth.ts';
+import { awayWords, growthWords } from './growth.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
 import { lab } from './lab.ts';
 import { activityWords, displayWords, settingWords, speechWords } from './words.ts';
@@ -68,6 +70,15 @@ let speedIx = 0;
 const SAVE_KEY = 'hill';
 
 let g: Game | null = null;
+let generation = 0;
+let gameGeneration = 0;
+function replaceGame(game: Game, expected = ++generation): boolean {
+  if (expected !== generation) return false;
+  g = game;
+  gameGeneration = expected;
+  hiddenAt = null;
+  return true;
+}
 let tool: Tool = 'look';
 let readUntil = 0;
 let disp = 0;
@@ -107,6 +118,7 @@ let menuOpener: HTMLElement | null = null;
 let personOpener: HTMLElement | null = null;
 let doorCell: number | null = null;
 let bellReading = false;
+let returnReading = false;
 let planCell: number | null = null;
 let lastReading: { title: string; words: string; context?: string } | null = null;
 let pendingEntrance: number[] | null = null;
@@ -181,11 +193,9 @@ export async function start() {
   lab.trackRun(
     async () => {
       const current = g;
-      try {
-        const stored = await store.get<Saved>(SAVE_KEY);
-        if (current && g === current && stored?.value.seed === current.s.seed) lab.captureSave(stored.value);
-      } catch {}
-      return runOf();
+      const expected = generation;
+      if (current) await writeSave();
+      return g === current && generation === expected ? runOf() : null;
     },
     {
       runKey: () => g?.s.seed ?? 'title',
@@ -198,11 +208,13 @@ export async function start() {
   matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
     ink = readInk();
   });
+  const expected = generation;
   const sv = await store.get<Saved & { savedAt?: number }>(SAVE_KEY);
+  if (expected !== generation) return;
   title(sv?.value ?? null, sv?.at ?? 0);
 }
 
-function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
+function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
   lab.screen('title');
   feedbackCleanup?.();
   const compatible =
@@ -220,6 +232,7 @@ function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
     ${sv && !compatible ? '<p class="soft">This saved game comes from an older version and cannot be loaded. Start a new game.</p>' : ''}
     <div class="title-actions">${compatible ? `<button class="primary" id="cont">Resume <span class="soft">· ${esc(hillDate(sv.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
       <label class="edition-choice"><input id="refuge-edition" type="checkbox"> New rules for this new hill: sleep and shelter outcomes, limited wild food, and warned damage to furnishings. Existing hills keep their rules.</label>
+      <label class="edition-choice"><input id="next-edition" type="checkbox"> Also let this new hill play quietly while away, until an event needs attention. One real minute plays one game minute. Includes the new rules above and discussions about loose stone.</label>
       <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'New game' : 'Begin'}</button>
       <div id="new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="new-yes">Yes, begin</button><button id="new-no">No</button></div>
       ${footer}</div><div id="title-drawer" hidden></div></div>`;
@@ -237,12 +250,25 @@ function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
   document.getElementById('book')?.addEventListener('click', () => titleMenu());
   document.getElementById('cont')?.addEventListener('click', async () => {
     if (!sv) return;
+    const expected = ++generation;
     try {
       const prepared = await continuity.localLoad(sv);
-      g = prepared;
+      if (!replaceGame(prepared, expected)) return;
+      const stamp = sv.savedAt ?? at;
+      const elapsed = Number.isFinite(stamp) && stamp > 0 ? Math.max(0, Math.floor(Date.now() - stamp)) : 0;
+      catchUp(prepared, elapsed);
       speedIx = 1;
       enter();
+      if (prepared.s.next?.away) {
+        showReading('While you were away', awayWords(prepared.s));
+        returnReading = true;
+        void writeSave();
+      }
     } catch (error) {
+      if (expected === generation) {
+        gameGeneration = expected;
+        dirty = true;
+      }
       startError(error, 'The saved hill could not be opened.');
     }
   });
@@ -260,19 +286,31 @@ function title(sv: (Saved & { savedAt?: number }) | null, _at: number) {
 }
 
 async function beginNewHill(errorHost?: HTMLElement): Promise<boolean> {
+  const expected = ++generation;
   try {
     const opted =
       (
         errorHost?.querySelector<HTMLInputElement>('#menu-refuge-edition') ??
         document.querySelector<HTMLInputElement>('#refuge-edition')
       )?.checked ?? false;
+    const next =
+      (
+        errorHost?.querySelector<HTMLInputElement>('#menu-next-edition') ??
+        document.querySelector<HTMLInputElement>('#next-edition')
+      )?.checked ?? false;
     const prepared = await continuity.fresh(
       (Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0,
-      opted ? '0.7.0' : '0.6.0',
+      opted || next ? '0.7.0' : '0.6.0',
+      next ? 'warren-next/1' : undefined,
     );
+    if (expected !== generation) return false;
     await store.drop(SAVE_KEY);
-    g = prepared;
+    if (!replaceGame(prepared, expected)) return false;
   } catch (error) {
+    if (expected === generation) {
+      gameGeneration = expected;
+      dirty = true;
+    }
     startError(error, 'A new hill could not be started.', errorHost);
     return false;
   }
@@ -342,6 +380,7 @@ function enter() {
     onSceneRect: queueResize,
   });
   lastReading = null;
+  returnReading = false;
   pendingEntrance = null;
   bellReading = false;
   planCell = null;
@@ -399,7 +438,13 @@ function enter() {
     Object.assign(view, baseView(g.s, view.w, view.h));
     clampView();
   });
-  document.getElementById('cellx')?.addEventListener('click', () => closeCell());
+  document.getElementById('cellx')?.addEventListener('click', () => {
+    if (g?.s.next?.attention) {
+      act(g, { verb: 'acknowledge' });
+      dirty = true;
+    }
+    closeCell();
+  });
   document.getElementById('cancel-entrance')?.addEventListener('click', () => closeCell());
   document.getElementById('confirm-entrance')?.addEventListener('click', () => {
     const cells = pendingEntrance;
@@ -617,15 +662,17 @@ function frame(now: number) {
   const s = g.s;
   const menuHeld = menuHoldsTime();
   const reading = isReading();
-  const rate = menuHeld
-    ? 0
-    : playbackRate(
-        reading || !!document.querySelector(':popover-open'),
-        !!raidDecision(),
-        now < readUntil,
-        ((SPEEDS[speedIx] ?? 1) * 1000) / MS_PER_MIN,
-        s.edition === '0.7.0',
-      );
+  const awaitingReading = returnReading;
+  const rate =
+    menuHeld || awaitingReading
+      ? 0
+      : playbackRate(
+          reading || !!document.querySelector(':popover-open'),
+          !!raidDecision(),
+          now < readUntil,
+          ((SPEEDS[speedIx] ?? 1) * 1000) / MS_PER_MIN,
+          s.edition === '0.7.0',
+        );
   if (rate === 0) disp = s.minute;
   else disp += (dt * rate) / 1000;
   const t0 = performance.now();
@@ -634,6 +681,7 @@ function frame(now: number) {
     const before = eventStamp(s);
     const dayBefore = Math.floor(s.minute / DAY);
     const aliveBefore = s.people.filter((p) => p.body.alive).length;
+    if (s.next?.attention && now >= readUntil) act(g, { verb: 'acknowledge' });
     advance(g, s.minute + QUANTUM);
     if (
       s.people.some((p) => (s.flags[`released:${p.id}`] ?? 0) >= s.minute - QUANTUM + 1 && !p.activity) ||
@@ -793,6 +841,7 @@ function chrome() {
 }
 
 function showReading(title: string, words: string, remember = true, preserveScroll = false) {
+  returnReading = false;
   const detail = document.getElementById('cell-detail');
   const heading = document.getElementById('cell-title');
   const text = document.getElementById('cell-words');
@@ -876,6 +925,7 @@ function isReading() {
 }
 
 function hideOtherSheets(keep: string) {
+  if (keep !== 'cell-detail') returnReading = false;
   for (const id of ['drawer', 'card', 'cell-detail']) {
     if (id === keep) continue;
     const el = document.getElementById(id);
@@ -940,6 +990,7 @@ function card() {
     <div class="who">${personOpener ? `<button id="cardback" aria-label="Back to The village">← ${esc(p.name)}</button>` : `<b>${esc(p.name)}</b>`} <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
         <p id="person-help">${esc(personHelpWords(s, p))}</p>
     <div>${esc(activityWords(doing, walking, p.name))}</div>
+    ${s.next && ['yusuf', 'meryem'].includes(p.id) ? `<p>${esc(discussionWords(s))}</p>${!s.next.discussion && markedLooseCut(s) >= 0 ? '<button id="discuss-cut">Invite Yusuf Usta and Meryem to discuss the marked loose cut</button>' : s.next.discussion && s.next.discussion.endedAt === undefined ? '<button id="end-cut-discussion">Stop waiting for this discussion</button>' : ''}` : ''}
     <details id="person-context"><summary id="person-context-toggle">Activity and words</summary>
     <div class="shelter-person">${esc(exposureWords(s, p))}</div>
     ${feeling(p) ? `<div class="soft">${esc(feeling(p))}</div>` : ''}
@@ -954,6 +1005,14 @@ function card() {
     el.dataset.html = html;
     el.innerHTML = html;
     continuity.bind(el, () => {});
+    for (const verb of ['discuss-cut', 'end-cut-discussion'] as const)
+      el.querySelector(`#${verb}`)?.addEventListener('click', () => {
+        if (g) {
+          act(g, { verb });
+          dirty = true;
+          card();
+        }
+      });
     el.querySelector('#release-person')?.addEventListener('click', () => {
       if (g) {
         const ok = act(g, { verb: 'release', who: p.id });
@@ -1325,6 +1384,7 @@ function describeCell(c: number) {
 }
 
 function closeCell(focus = true) {
+  returnReading = false;
   if (pendingEntrance) {
     pendingEntrance = null;
     paint.preview.clear();
@@ -1504,7 +1564,7 @@ function closeBook() {
 }
 
 function menuRows() {
-  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><label class="edition-choice"><input id="menu-refuge-edition" type="checkbox"> Use new sleep and shelter goals, limited wild food, and warned damage to furnishings.</label><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div>${labTools ? continuity.controls() : ''}<div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label></div><button class="primary" id="resume">Resume</button>`;
+  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><label class="edition-choice"><input id="menu-refuge-edition" type="checkbox"> Use new sleep and shelter goals, limited wild food, and warned damage to furnishings.</label><label class="edition-choice"><input id="menu-next-edition" type="checkbox"> Also play quietly while away until an event needs attention, at one game minute per real minute. Includes the new rules above and loose-stone discussions.</label><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div>${labTools ? continuity.controls() : ''}<div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label></div><button class="primary" id="resume">Resume</button>`;
 }
 let feedbackCleanup: (() => void) | undefined;
 function showFeedback(host: HTMLElement, onBack: () => void) {
@@ -1538,10 +1598,25 @@ function bindMenu(host: HTMLElement, close: () => void) {
     }
   };
 
-  continuity.bind(host, (game) => {
-    g = game;
+  const openFile = (game: Game) => {
+    replaceGame(game);
     speedIx = 0;
     enter();
+  };
+  continuity.bind(host, openFile, () => {
+    // Invalidate A before fileLoad can change the SDK recording context or await.
+    const expected = ++generation;
+    return {
+      loaded(game) {
+        if (expected === generation) openFile(game);
+      },
+      failed() {
+        if (expected === generation) {
+          gameGeneration = expected;
+          dirty = true;
+        }
+      },
+    };
   });
   host.querySelector('#resume')?.addEventListener('click', close);
   host.querySelector('#record-play')?.addEventListener('change', (e) => {
@@ -1605,9 +1680,11 @@ function titleMenu() {
   // Reading rows belong to the current hill; enter it before opening a reading.
   for (const b of host.querySelectorAll<HTMLElement>('[data-open]'))
     b.addEventListener('click', async () => {
+      const expected = ++generation;
       const sv = await store.get<Saved>(SAVE_KEY);
-      if (sv) {
-        g = await continuity.localLoad(sv.value);
+      if (sv && expected === generation) {
+        const prepared = await continuity.localLoad(sv.value);
+        if (!replaceGame(prepared, expected)) return;
         speedIx = 1;
         enter();
         openBook(b.dataset.open);
@@ -1682,10 +1759,15 @@ function openBook(tab = 's', opener?: HTMLElement) {
 
 async function writeSave(): Promise<boolean> {
   if (!g) return true;
+  const current = g;
+  const expected = gameGeneration;
+  const owns = () => g === current && expected === generation;
+  if (!owns()) return false;
   lastSaved = performance.now();
   dirty = false;
-  const saved = { ...save(g), savedAt: Date.now() };
-  const stored = await store.put(SAVE_KEY, saved);
+  const saved = { ...save(current), savedAt: Date.now() };
+  const stored = await store.put(SAVE_KEY, saved, owns);
+  if (!owns()) return false;
   if (stored) lab.captureSave(saved);
   else dirty = true;
   return stored;
@@ -1722,12 +1804,20 @@ addEventListener('pagehide', () => {
   if (g) void writeSave();
 });
 
+let hiddenAt: number | null = null;
 document.addEventListener('visibilitychange', () => {
   if (document.hidden) {
+    hiddenAt = Date.now();
     if (g) void writeSave();
     cancelAnimationFrame(raf);
     wake = null;
   } else if (g && canvas) {
+    if (hiddenAt !== null && catchUp(g, Math.max(0, Math.floor(Date.now() - hiddenAt)))) {
+      showReading('While you were away', awayWords(g.s));
+      returnReading = true;
+      void writeSave();
+    }
+    hiddenAt = null;
     last = performance.now();
     raf = requestAnimationFrame(frame);
     requestWake();

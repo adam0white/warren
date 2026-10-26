@@ -1,4 +1,4 @@
-import { type Build, PRIVACY_URL } from '@adam0white/lab-client';
+import { type Build, FEEDBACK_LABELS, PRIVACY_URL } from '@adam0white/lab-client';
 
 import { feedbackPersonaControl, feedbackSharePlay } from '@adam0white/lab-kit';
 
@@ -80,6 +80,7 @@ export function openFeedback(
   body.append(element('h2', 'Feedback'), element('p', 'Send a note about this game.'));
 
   let verdict = '';
+  let quietChoice = '';
   let pending = false;
   let sent = false;
   let active = true;
@@ -104,6 +105,22 @@ export function openFeedback(
     });
     verdicts.append(chip);
   }
+  const quiet = element('div', '', 'feedback-verdicts');
+  quiet.setAttribute('role', 'group');
+  quiet.setAttribute('aria-label', 'You can say why you opened Feedback. Answering is optional.');
+  for (const label of Object.values(FEEDBACK_LABELS)) {
+    const chip = element('button', label, 'feedback-chip');
+    chip.type = 'button';
+    chip.setAttribute('aria-pressed', 'false');
+    chip.addEventListener('click', () => {
+      quietChoice = quietChoice === label ? '' : label;
+      for (const other of quiet.querySelectorAll('button'))
+        other.setAttribute('aria-pressed', String(other === chip && quietChoice === label));
+      updatePreview();
+    });
+    quiet.append(chip);
+  }
+
   const noteLabel = element('label', '', 'feedback-note');
   noteLabel.append(element('span', 'Your note (optional)'));
   const note = element('textarea');
@@ -156,7 +173,7 @@ export function openFeedback(
 
   const status = element('p', '', 'feedback-status');
   status.setAttribute('role', 'status');
-  body.append(verdicts, noteLabel, nameDetails, recording, disclosure, status);
+  body.append(verdicts, quiet, noteLabel, nameDetails, recording, disclosure, status);
   const choice = feedbackPersonaControl({ telemetryOn: lab.telemetryOn !== false });
   if (choice) body.insertBefore(choice, disclosure);
   const actions = element('div', '', 'feedback-actions');
@@ -214,7 +231,9 @@ export function openFeedback(
   screen.addEventListener('keydown', keepFocus);
 
   function composedNote(): string {
-    return [verdict ? `Verdict: ${verdict}` : '', note.value.trim()].filter(Boolean).join('\n\n');
+    return [quietChoice, verdict ? `Verdict: ${verdict}` : '', note.value.trim()]
+      .filter(Boolean)
+      .join('\n\n');
   }
 
   function updatePreview(): void {
@@ -250,6 +269,7 @@ export function openFeedback(
     status.textContent = 'Sent. Your note is stored.';
     back.hidden = true;
     verdicts.hidden = true;
+    quiet.hidden = true;
     noteLabel.hidden = true;
     nameDetails.hidden = true;
     recording.hidden = true;
