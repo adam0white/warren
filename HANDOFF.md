@@ -1,3 +1,50 @@
+# Warren — current handoff, 2026-10-26
+
+Current source is signed `43f18df3c9171f4247d6f5805847c3a294585d6c`.
+Immutable lab-client 0.4.11 and lab-kit 0.5.12 are adopted. HF remains
+3.0.0, engine 2.23.0, app/default rules 0.6.0. Unchecked new-hill choices
+select 0.7.0 or its away/discussion configuration `warren-next/2`.
+Existing hills retain recorded rules/configurations. See [README](README.md)
+for controls and host/HF boundaries. The owner artifact guardrail already
+excludes the npm SDK route in design; no Deferred revision is needed here.
+
+Remaining: games-deferred owns general rest conversation, voluntary
+quiet-time doors, broader quarrel response and every uncovered or unverified
+compound clause in the 117-key reconciliation. Later engineering asks retain
+the 2026-10-27 target; original per-ask dates remain unchanged. Canonical
+final27 IDs/source/history receipts remain open. Adoption closes no ask and
+does not complete all engineering. Adam owns game-feel/readability acceptance
+and camera/offline preferences, with readiness review targeted for 2026-11-03.
+Player cycles remain separate. Lab-panel rounds belong to the playtest
+director. Friends’ playtests and Show HN remain paused. Docsweb runs no rounds.
+
+Existing release evidence records signed 43f, exact-main green
+[CI 40282735920](https://github.com/adam0white/warren/actions/runs/40282735920),
+normal check:lane 320 tests/57 files and build passing. Normal deployment
+repeated those checks. Clean live Cloudflare version is
+`a3ea1717-f606-4ea0-ac59-7d0ae903101c`; release metadata is exact 43f,
+HF 3.0.0, dirty:false. These are existing receipts, not new docs-task checks.
+
+Existing literal-served-byte local-mirror checks used 360×690 and 1280×800.
+The literal **I'm stopping** and **I'm confused** choices changed only the
+local draft, toggled clear and left the note empty. Submit stayed untouched;
+no choice was sent. UI download/import continued natural play from 390 to
+480 with matching full state/history/RNG and replay; a further 60 minutes
+matched. This proves neither production-origin persistence/network behavior,
+physical-device behavior, general cross-host identity, atomic publication/CAS,
+player acceptance nor Adam’s acceptance. Imports gain no browser-shelf ownership.
+
+Full evidence, fingerprints, font differences and download limits:
+`/Users/abdul/code/.lab-scratch/v3/warren-activation-release-report.md` and
+`v3/warren-activation-STATUS`. Remaining asks:
+`/Users/abdul/code/.lab-scratch/games-deferred/warren-r1-117-key-reconciliation.md`.
+Preserve saves, replay and raw histories.
+
+## Earlier documentation retained in full — archived 2026-10-26
+
+The entire previous HANDOFF body follows byte for byte. This prefix supersedes
+its dated current-state claims. Owner/faith directions and receipts remain evidence.
+
 # Warren — current handoff, 2026-10-25
 
 Remaining: Adam’s game-feel/readability acceptance and camera/offline preferences, with owner review targeted for 2026-11-03. Games-deferred owns the next offline/quarrel engineering, immutable SDK adoption and design/Deferred reconciliation. Those are future work, not shipped behavior. Lab-panel rounds on HF 3 builds are allowed under the playtest director. Friends’ playtests and Show HN remain paused. Docsweb runs no rounds.
