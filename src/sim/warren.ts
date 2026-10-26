@@ -226,7 +226,7 @@ export interface WarrenState {
   };
   /** Unchecked next-slice configuration only; ordinary 0.6/0.7 state never gains this field. */
   next?: {
-    config: 'warren-next/1';
+    config: 'warren-next/1' | 'warren-next/2';
     discussion?: CutDiscussion;
     attention?: string[];
     away?: {

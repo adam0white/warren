@@ -11,7 +11,8 @@ import {
   xOf,
   yOf,
 } from '../sim/grid.ts';
-import { riderCells, type WarrenState } from '../sim/warren.ts';
+import { bedsBelow, riderCells, type WarrenState } from '../sim/warren.ts';
+import { cellLocationWords, ROUTE_HELP } from './known-work.ts';
 import { numberWords } from './shelter.ts';
 
 export type PlanKind = 'chalk' | 'beds';
@@ -109,7 +110,7 @@ export function planSafety(s: WarrenState, cells: Iterable<number>, kind: PlanKi
         ? 'If the chalk is dug, this space would have'
         : 'These beds have';
   let words = capacity
-    ? `${prefix} about ${numberWords(capacity)} sleeping places.`
+    ? `${prefix} about ${numberWords(capacity)} ${kind === 'chalk' ? 'potential ' : ''}sleeping places.`
     : 'This selection has no sleeping space.';
   if (exposed && protectedCells)
     words += ` ${numberWords(protectedCapacity).replace(/^./, (c) => c.toUpperCase())} places are beyond riders’ reach. Riders can reach ${numberWords(exposedCapacity)} places.`;
@@ -174,6 +175,12 @@ export function planSafety(s: WarrenState, cells: Iterable<number>, kind: PlanKi
     if (unreachable) words += ' Dig a passage to the space people cannot reach.';
     if (kind === 'chalk') words += ' People choose when to dig.';
   }
+  const exposedLocations = [...room]
+    .filter((i) => exposure.has(i))
+    .slice(0, 3)
+    .map((i) => cellLocationWords(s, i));
+  context =
+    `${context ?? ''} ${kind === 'chalk' ? `Chalk does not place beds. ${bedsBelow(s)} sleeping places are marked in the hill now. After digging, use Furnish, then beds on the open ground.` : ''} ${exposedLocations.length ? `Riders can reach selected squares at: ${exposedLocations.join('; ')}.${exposed > 3 ? ' More selected squares are exposed too.' : ''}` : ''} ${ROUTE_HELP}`.trim();
   return {
     words,
     context,

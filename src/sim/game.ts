@@ -70,7 +70,10 @@ export interface Game {
   fileOrigin?: boolean;
 }
 
-export type NextConfig = 'warren-next/1';
+export type NextConfig = 'warren-next/1' | 'warren-next/2';
+function supportedConfig(config: unknown): config is NextConfig {
+  return config === 'warren-next/1' || config === 'warren-next/2';
+}
 export function newGame(
   seed: number,
   edition: string = DEFAULT_EDITION,
@@ -93,7 +96,7 @@ export function newGame(
   if (!chapter && (rules === '0.6.0' || rules === '0.7.0')) seedRoleGoals(s);
   if (!chapter && rules === '0.7.0') s.refuge = { slept: {}, raids: {}, forage: { day: -1, gathered: 0 } };
   if (config !== undefined) {
-    if (config !== 'warren-next/1' || rules !== '0.7.0')
+    if (!supportedConfig(config) || rules !== '0.7.0')
       throw new Error('This hill configuration is not supported.');
     if (!chapter) s.next = { config };
     else if (s.next?.config !== config) throw new Error('The saved starting configuration does not match.');
@@ -180,7 +183,8 @@ function needsAttention(s: WarrenState): boolean {
 }
 function validAway(s: WarrenState, elapsedMs: number, quanta: number): boolean {
   return (
-    s.next?.config === 'warren-next/1' &&
+    !!s.next &&
+    supportedConfig(s.next.config) &&
     Number.isSafeInteger(elapsedMs) &&
     elapsedMs >= 0 &&
     Number.isSafeInteger(quanta) &&
@@ -332,7 +336,7 @@ export function load(saved: Saved): Game {
   const edition = editionOf(saved.game);
   if (
     saved.config !== saved.state.next?.config ||
-    (saved.config && (saved.config !== 'warren-next/1' || edition !== '0.7.0'))
+    (saved.config && (!supportedConfig(saved.config) || edition !== '0.7.0'))
   )
     throw new Error('The saved configuration does not match its state.');
   if ((saved.state.edition ?? '0.2.0') !== edition)

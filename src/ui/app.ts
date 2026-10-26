@@ -44,13 +44,14 @@ import { exposureWords } from './exposure.ts';
 import { openFeedback } from './feedback.ts';
 import { awayWords, growthWords } from './growth.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
+import { markedWorkWords, ROUTE_HELP, waterHelpWords } from './known-work.ts';
 import { lab } from './lab.ts';
 import { activityWords, displayWords, settingWords, speechWords } from './words.ts';
-import { latestWorkWords } from './work.ts';
+import { journalEntries, latestWorkWords } from './work.ts';
 
 const labTools = new URLSearchParams(location.search).get('lab') === '1';
 
-import { personHelpWords } from './person-help.ts';
+import { invitationWords, personHelpWords } from './person-help.ts';
 import { type PlanSafety, planSafety } from './plan-safety.ts';
 import { eventStamp, playbackRate } from './playback.ts';
 import { bellShelterWords, bellStateWords, bellThreatWords } from './room-safety.ts';
@@ -91,6 +92,7 @@ let ctx: CanvasRenderingContext2D | null = null;
 let sceneObserver: ResizeObserver | null = null;
 let stage: PhoneStage | null = null;
 let focusCell: number | null = null;
+let zoomCell: number | null = null;
 let sceneTop = 0;
 let resizeQueued = false;
 function queueResize() {
@@ -166,9 +168,9 @@ noticeFooter.id = 'notice-footer';
 if (notice) noticeFooter.append(notice);
 document.body.append(noticeFooter);
 const footer = `<div class="footer">${'<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>'}<br>People by the Human Framework.${labTools ? ` Version ${FRAMEWORK_VERSION}.` : ''}</div>`;
-const playInfo = `<p>Draw a dashed outline with chalk to mark stone for digging. People choose when to dig. They need fresh air and light.</p><p>Use the Furnish menu to mark open ground for grain stores, sleeping places, lamps or doors.</p><p>A door needs a passage one square wide, with open ground on two opposite sides. You can mark up to three doors.</p><p>Filled circles show marked sleeping places. Empty circles show how many more places are needed. Tap the people count to check who riders could reach.</p>`;
+const playInfo = `<p>You are the keeper. The hill is the stone beneath the village. Open ground means space already dug out. Furnishings are the stores, beds, lamps and stone doors you mark there.</p><p>Draw a dashed outline with chalk to mark stone for digging. People choose when to dig. They need fresh air and light.</p><p>Tap one stone square touching the cellar, or drag a connected chalk line from it. A dashed mark is a plan, not a finished passage.</p><p>Use the Furnish menu to mark open ground for grain stores, sleeping places, lamps or doors.</p><p>A door needs a passage one square wide, with open ground on two opposite sides. You can mark up to three doors.</p><p>Filled circles show marked sleeping places. Empty circles show how many more places are needed. Tap the people count to check who riders could reach.</p><p>${ROUTE_HELP}</p><p>Water comes from the spring until digging opens a well in damp stone. People choose when to carry water to the hearth jars.</p>`;
 function topbar(titlePage = false) {
-  return `<header class="topbar"><div class="bar-words">${titlePage ? '<a target="_top" href="https://human.adamwhite.work/games/">All games</a>' : '<span id="when"></span>'}</div><button class="info" aria-label="Information" popovertarget="hill-info">i</button><button id="book" aria-label="Game menu">≡<span class="menu-label"> Menu</span></button></header><div id="hill-info" class="info-popover" popover="auto"><div class="who"><b>${titlePage ? 'The hill' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${titlePage ? '<p>Riders burned two villages. Your refuge starts in the cellar under Master Yusuf’s house.</p><p>You have the chalk and the bell. You mark where work is needed. Each person chooses what to do.</p><p>Use one finger to draw chalk marks or inspect the hill. Use two fingers to move the view.</p><p>A year has 365 days. Year 1 begins on 19 August.</p>' : playInfo}</div>`;
+  return `<header class="topbar"><div class="bar-words">${titlePage ? '<a target="_top" href="https://human.adamwhite.work/games/">All games</a>' : '<span id="when"></span>'}</div><button class="info" aria-label="Information" popovertarget="hill-info">i</button><button id="book" aria-label="Game menu">≡<span class="menu-label"> Menu</span></button></header><div id="hill-info" class="info-popover" popover="auto"><div class="who"><b>${titlePage ? 'The hill' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${titlePage ? '<p>Riders burned two villages. Your refuge starts in the cellar under Master Yusuf’s house.</p><p>You are the keeper. You have the chalk and the bell. You mark where work is needed. Each person chooses what to do.</p><p>Use one finger to draw chalk marks or inspect the hill. Use two fingers to move the view.</p><p>A year has 365 days. Year 1 begins on 19 August.</p>' : playInfo}</div>`;
 }
 
 // ---------- start ----------
@@ -232,7 +234,7 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
     ${sv && !compatible ? '<p class="soft">This saved game comes from an older version and cannot be loaded. Start a new game.</p>' : ''}
     <div class="title-actions">${compatible ? `<button class="primary" id="cont">Resume <span class="soft">· ${esc(hillDate(sv.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
       <label class="edition-choice"><input id="refuge-edition" type="checkbox"> New rules for this new hill: sleep and shelter outcomes, limited wild food, and warned damage to furnishings. Existing hills keep their rules.</label>
-      <label class="edition-choice"><input id="next-edition" type="checkbox"> Also let this new hill play quietly while away, until an event needs attention. One real minute plays one game minute. Includes the new rules above and discussions about loose stone.</label>
+      <label class="edition-choice"><input id="next-edition" type="checkbox"> Also let this new hill play quietly while away, until an event needs attention. One real minute plays one game minute. Includes the new rules above and asking for positions on loose stone.</label>
       <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'New game' : 'Begin'}</button>
       <div id="new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="new-yes">Yes, begin</button><button id="new-no">No</button></div>
       ${footer}</div><div id="title-drawer" hidden></div></div>`;
@@ -301,7 +303,7 @@ async function beginNewHill(errorHost?: HTMLElement): Promise<boolean> {
     const prepared = await continuity.fresh(
       (Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0,
       opted || next ? '0.7.0' : '0.6.0',
-      next ? 'warren-next/1' : undefined,
+      next ? 'warren-next/2' : undefined,
     );
     if (expected !== generation) return false;
     await store.drop(SAVE_KEY);
@@ -354,7 +356,7 @@ function enter() {
     ${topbar()}
     <div class="state-strip"><div class="state-drawing"><button id="shelter-check" aria-label="The village"></button><span id="stock"></span><span id="bell-state" aria-label="Bell quiet">🔔</span></div>
     <div class="pace"><span id="clock-rate"></span><div class="speed" role="group" aria-label="Speed">${SPEEDS.map((_, k) => `<button data-speed="${k}">${SPEED_NAMES[k]}</button>`).join('')}</div></div></div>
-    <div class="goal-slot"><div class="goal" id="goal"></div><div class="goal" id="raid-warning" hidden></div></div>
+    <div class="goal-slot"><button class="goal" id="goal" aria-label="Current work and help"></button><div class="goal" id="raid-warning" hidden></div></div>
     <div class="scene lk-scene" id="scene"><canvas id="cv" tabindex="0" aria-label="The hill"></canvas>
       <div class="view-controls" role="group" aria-label="Hill view"><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button><button id="fit-hill" aria-label="Fit hill">⤢</button></div>
       <div class="lag soft" id="lag" hidden>The game is running as fast as this device allows.</div>
@@ -368,7 +370,7 @@ function enter() {
     <div class="reading-actions"><button id="last-reading"><span id="event-sentence" aria-live="polite">${FIRST_CHALK}</span> ▸</button><button class="ticker" id="ticker">Journal ▸</button></div>
     <div class="lk-commit" id="hill-controls"><div class="tools" role="toolbar" aria-label="Tools">
       ${toolBtn('look', 'look', '◎')}${toolBtn('chalk', 'chalk', '□')}${toolBtn('erase', 'rub out', '⌫')}
-      <button id="furnish" aria-expanded="false">furnish ▾</button><button class="bell" id="bell">bell</button></div>
+      <button id="furnish" aria-expanded="false">furnish ▾</button><button class="bell" id="bell" title="Call people below. False alarms can weaken trust." aria-label="Bell. Call people below. False alarms can weaken trust.">bell</button></div>
       <div id="furnish-picker" hidden>${(['store', 'beds', 'lamp', 'door'] as const).map((t) => `<button data-tool="${t}">${t}<small>${{ store: 'Mark open ground for grain jars.', beds: 'Mark open ground for sleeping.', lamp: 'Hang a lamp over open ground.', door: 'Use a passage one square wide, open on two opposite sides.' }[t]}</small></button>`).join('')}</div>
       <div id="raid-actions" hidden></div>
     </div></div></div>`;
@@ -380,6 +382,7 @@ function enter() {
     onSceneRect: queueResize,
   });
   lastReading = null;
+  zoomCell = null;
   returnReading = false;
   pendingEntrance = null;
   bellReading = false;
@@ -435,6 +438,8 @@ function enter() {
   document.getElementById('zoom-out')?.addEventListener('click', () => zoomView(1 / 2.2));
   document.getElementById('fit-hill')?.addEventListener('click', () => {
     if (!g) return;
+    zoomCell = null;
+    focusCell = null;
     Object.assign(view, baseView(g.s, view.w, view.h));
     clampView();
   });
@@ -467,6 +472,7 @@ function enter() {
   document.getElementById('card')?.addEventListener('click', (e) => {
     if ((e.target as HTMLElement).closest('#cardx, #cardback')) closeCard();
   });
+  document.getElementById('goal')?.addEventListener('click', showCurrentHelp);
   document.getElementById('ticker')?.addEventListener('click', () => openBook('j'));
   document.getElementById('last-reading')?.addEventListener('click', () => {
     if (lastReading?.title === 'Bell call') {
@@ -479,7 +485,8 @@ function enter() {
         readingContext(saved.context);
         if (lastReading) lastReading.context = saved.context;
       }
-    } else showReading('Latest word', document.getElementById('event-sentence')?.textContent ?? FIRST_CHALK);
+    } else if (document.getElementById('event-sentence')?.textContent === FIRST_CHALK) showCurrentHelp();
+    else showReading('Latest word', document.getElementById('event-sentence')?.textContent ?? FIRST_CHALK);
   });
   document.querySelector('.game')?.addEventListener('keydown', (e) => {
     if ((e as KeyboardEvent).key !== 'Escape') return;
@@ -515,6 +522,33 @@ function enter() {
 
 function toolBtn(t: Tool, label: string, glyph: string) {
   return `<button data-tool="${t}" aria-label="${label}"><span class="g">${glyph}</span><span class="l">${label}</span></button>`;
+}
+
+function showCurrentHelp() {
+  if (!g) return;
+  const s = g.s;
+  if (!s.stats.dug && !s.hill.chalk.some(Boolean) && !waterWords(s).includes('dry')) {
+    focusCell = idx(17, SURF + 3);
+    view.cs = Math.max(view.cs, Math.min(36, view.w / 10));
+    view.x = 17.5 - view.w / view.cs / 2;
+    view.y = Math.max(0, SURF + 3.5 - view.h / view.cs / 2);
+    clampView();
+    showReading(
+      'Start at the cellar',
+      'You are the keeper. The cellar is the lit room at the bottom of the entrance stair. Choose chalk. Tap a stone square touching that room, or drag a connected line from its wall. Open ground means space already dug out.',
+    );
+    return;
+  }
+  showReading(
+    'Current work and water',
+    `${waterHelpWords(s)} ${s.hill.chalk.some(Boolean) ? markedWorkWords(s) : 'Choose chalk to plan more digging.'}`,
+  );
+  readingContext(
+    `${ROUTE_HELP} First frost begins on 2 December in this game calendar. ${goalsFor(s)
+      .filter((goal) => goal.shown(s) && s.goals[goal.id] === undefined)
+      .map((goal) => displayWords(goal.text))
+      .join(' ')}`,
+  );
 }
 
 function setTool(t: Tool) {
@@ -577,7 +611,12 @@ function resize() {
     );
   }
   const sceneBounds = sc.getBoundingClientRect();
-  const controlsHeight = 0;
+  const guidance = root?.querySelector(':scope > .goal-slot')?.getBoundingClientRect();
+  // Phone help occupies its own strip above the canvas, never a person or chalk target.
+  const controlsHeight =
+    guidance && guidance.left < sceneBounds.right && guidance.right > sceneBounds.left
+      ? Math.max(0, guidance.bottom - sceneBounds.top)
+      : 0;
   const r = {
     width: sceneBounds.width,
     height: Math.max(1, sceneBounds.height - controlsHeight),
@@ -596,6 +635,7 @@ function resize() {
   if (canvas.height !== height) canvas.height = height;
   canvas.style.width = `${r.width}px`;
   canvas.style.height = `${r.height}px`;
+  canvas.style.marginTop = `${controlsHeight}px`;
   view.w = r.width;
   view.h = r.height;
   ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -612,8 +652,9 @@ function clampView() {
 
 /** Keep the centre of the working view fixed; zoom never becomes a simulation input. */
 function zoomView(factor: number) {
-  const cx = view.x + view.w / view.cs / 2;
-  const cy = Math.max(SURF + 3, view.y + view.h / view.cs / 2);
+  const target = focusCell ?? zoomCell;
+  const cx = target === null ? view.x + view.w / view.cs / 2 : xOf(target) + 0.5;
+  const cy = target === null ? Math.max(SURF + 3, view.y + view.h / view.cs / 2) : yOf(target) + 0.5;
   view.cs = Math.max(10, Math.min(72, view.cs * factor));
   view.x = cx - view.w / view.cs / 2;
   view.y = cy - view.h / view.cs / 2;
@@ -713,7 +754,9 @@ function chrome() {
   const s = g.s;
   const when = document.getElementById('when');
   if (when)
-    when.textContent = `${hourWords(paint.t).replace(/^./, (c) => c.toUpperCase())} · ${hillDate(paint.t)
+    when.textContent = `${(hourWords(s.minute) === 'night' && s.minute % DAY < 12 * 60 ? 'before dawn' : hourWords(s.minute)).replace(/^./, (c) => c.toUpperCase())} · ${hillDate(
+      s.minute,
+    )
       .replace(' at the hill', '')
       .replace('Year', 'year')
       .replace(/(January|February|March|April|August|September|October|November|December)/g, (m) =>
@@ -729,7 +772,7 @@ function chrome() {
   const goal = document.getElementById('goal');
   if (goal)
     goal.textContent = waterWords(s).includes('dry')
-      ? 'The water jars are dry. People need a well or water carried below.'
+      ? 'The water jars are dry. People can carry water from the spring. Tap here for water and current work.'
       : tool === 'beds' && !activeRaid(s)
         ? sleepingCapacityWords(s)
         : colonyWords(s);
@@ -827,7 +870,7 @@ function chrome() {
   if (bell) bell.classList.toggle('ringing', !!s.bell && s.minute < s.bell.until);
   const tail = document.getElementById('journal-tail');
   if (tail)
-    tail.innerHTML = s.notes
+    tail.innerHTML = journalEntries(s.notes)
       .filter((n) => n.weight >= 1)
       .slice(-8)
       .reverse()
@@ -991,13 +1034,15 @@ function card() {
         <p id="person-help">${esc(personHelpWords(s, p))}</p>
     <div>${esc(activityWords(doing, walking, p.name))}</div>
     ${s.next && ['yusuf', 'meryem'].includes(p.id) ? `<p>${esc(discussionWords(s))}</p>${!s.next.discussion && markedLooseCut(s) >= 0 ? '<button id="discuss-cut">Invite Yusuf Usta and Meryem to discuss the marked loose cut</button>' : s.next.discussion && s.next.discussion.endedAt === undefined ? '<button id="end-cut-discussion">Stop waiting for this discussion</button>' : ''}` : ''}
-    <details id="person-context"><summary id="person-context-toggle">Activity and words</summary>
     <div class="shelter-person">${esc(exposureWords(s, p))}</div>
+    ${(s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') && VISIT_TERMS[p.id] ? `<p id="invitation-status">${esc(displayWords(invitationWords(s, p)))}</p><p>${esc(displayWords(VISIT_TERMS[p.id]!))}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] || s.flags[`invitation-pending:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>End optional work</button>` : ''}
+
+    <details id="person-context"><summary id="person-context-toggle">More activity and words</summary>
     ${feeling(p) ? `<div class="soft">${esc(feeling(p))}</div>` : ''}
     ${habit ? `<div class="hand">${esc(p.name)} goes down to the marked walls every morning now. Nobody needs to ask.</div>` : ''}
     ${trustWords(p) ? `<div class="soft">${esc(p.name)} ${trustWords(p)}.</div>` : ''}
     ${why ? `<div class="hand">“${esc(speechWords(why))}”</div>` : ''}
-    ${about.map((n) => `<div class="soft small">${esc(displayWords(n.text))}</div>`).join('')}${(s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') && VISIT_TERMS[p.id] ? `<p>${esc(displayWords(VISIT_TERMS[p.id]!))}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>End optional work</button>` : ''}
+    ${about.map((n) => `<div class="soft small">${esc(displayWords(n.text))}</div>`).join('')}
 </details>${p.id === 'kian' ? continuity.careControls() : ''}`;
   if (el.dataset.html !== html) {
     const focused = document.activeElement?.id;
@@ -1179,7 +1224,7 @@ function reachable(cells: number[]): boolean {
   const h = g.s.hill;
   const open = (j: number) => h.kind[j] === K.open || yOf(j) === SURF - 1;
   const seen = new Set<number>();
-  const q = cells.filter((c) => h.chalk[c] && neighbours(c).some(open));
+  const q = h.chalk.flatMap((marked, c) => (marked && neighbours(c).some(open) ? [c] : []));
   for (const c of q) seen.add(c);
   for (let i = 0; i < q.length; i++)
     for (const j of neighbours(q[i] ?? 0))
@@ -1193,12 +1238,14 @@ function reachable(cells: number[]): boolean {
 function commitPaint(entranceConfirmed = false) {
   if (!g) return;
   const cells = [...paint.preview];
+  zoomCell = cells.at(-1) ?? null;
   focusCell = null;
   const kind = paint.previewKind;
   paint.preview.clear();
   paint.previewKind = null;
   if (!cells.length || !kind) return;
   const h = g.s.hill;
+  const unmarked = new Set(cells.filter((c) => !h.chalk[c]));
   if (kind === 'chalk') {
     const opensEntrance = cells.some(
       (c) =>
@@ -1221,16 +1268,23 @@ function commitPaint(entranceConfirmed = false) {
       return;
     }
     if (order({ verb: 'chalk', cells, on: true })) {
+      const added = cells.filter((c) => unmarked.has(c) && h.chalk[c]).length;
       if (reachable(cells)) {
         const reading = planSafety(g.s, cells, 'chalk');
-        flash(`The dig is marked. ${reading.words}`, reading.context);
+        flash(
+          `The dig is marked. ${added} new ${added === 1 ? 'square' : 'squares'}. ${reading.words}`,
+          `${markedWorkWords(g.s)} ${reading.context ?? ''}`,
+        );
       } else
         flash(
-          'Nobody can reach that stone yet. Mark a path to it with chalk from open ground so people can dig toward it.',
+          'The chalk is marked, but nobody can reach that stone yet. Start at a wall touching the cellar. Tap adjoining stone squares to join this mark, or drag a connected line from the cellar.',
         );
       return;
     }
-    if (cells.length === 1 && h.chalk[cells[0] ?? 0]) order({ verb: 'chalk', cells, on: false });
+    if (cells.length === 1 && h.chalk[cells[0] ?? 0]) {
+      order({ verb: 'chalk', cells, on: false });
+      flash('The chalk mark is removed. Tap the stone again to mark it for digging.');
+    }
     // Every refusal says why, in the village's words.
     else if (cells.some((c) => xOf(c) >= THEIR_X))
       flash(
@@ -1286,12 +1340,11 @@ function tap(px: number, py: number) {
     else flash('A door fits a narrow passage with open ground on only two opposite sides.');
     return;
   }
-  // Plans and sleeping marks take priority over people standing on them.
   if (c >= 0 && s.hill.chalk[c] && s.hill.kind[c] !== K.open) {
     showPlan(c);
     return;
   }
-  if (c >= 0 && s.hill.use[c] === USE.beds) {
+  if (c >= 0 && (s.hill.use[c] === USE.beds || s.hill.use[c] === USE.door)) {
     showDoor(c);
     return;
   }
@@ -1434,11 +1487,17 @@ function updateDoorContext(cell: number) {
   if (!g) return;
   const context = document.getElementById('reading-context');
   const text = document.getElementById('door-context');
-  const words = g.s.hill.use[cell] === USE.door ? doorDetailWords(g.s, cell) : '';
+  const words =
+    g.s.hill.use[cell] === USE.door
+      ? doorDetailWords(g.s, cell)
+      : (planSafety(g.s, [cell], 'beds').context ?? ROUTE_HELP);
   const label = context?.querySelector('summary');
   if (label) {
     label.textContent = 'More ▸';
-    label.setAttribute('aria-label', 'More about this door');
+    label.setAttribute(
+      'aria-label',
+      g.s.hill.use[cell] === USE.door ? 'More about this door' : 'Routes and rider reach',
+    );
   }
   if (context) context.hidden = !words;
   if (text) text.textContent = settingWords(words);
@@ -1451,6 +1510,7 @@ function showPlan(cell: number) {
   planCell = cell;
   doorCell = cell;
   const reading = planSafety(g.s, [cell], 'chalk');
+  reading.words = `${markedWorkWords(g.s, cell)} ${reading.words}`;
   const stand = neighbours(cell).find((j) => g?.s.hill.kind[j] === K.open);
   if (stand !== undefined) {
     const blocked = airWords(stand);
@@ -1492,13 +1552,20 @@ function showBellReading() {
     (p) => p.body.alive && at !== undefined && s.answers.some((a) => a.who === p.id && a.at >= at),
   );
   const call = bellStateWords(s);
-  showReading('Bell call', `${bellThreatWords(s)} ${call}`, true, true);
+  const latest = at === undefined ? undefined : s.answers.findLast((a) => a.at >= at);
+  const speaker = latest && s.people.find((p) => p.id === latest.who);
+  showReading(
+    'Bell call',
+    `${bellThreatWords(s)} ${call} The bell asks people to shelter below. A reply does not promise a journey.${speaker ? ` Latest heard reply and current task: ${exposureWords(s, speaker)}` : ' No one has replied yet.'}`,
+    true,
+    true,
+  );
   const context = document.getElementById('reading-context');
   const label = context?.querySelector('summary');
   const text = document.getElementById('door-context');
   if (context) context.hidden = false;
   if (label) {
-    label.textContent = 'More ▸';
+    label.textContent = 'Heard replies and current tasks ▸';
     label.setAttribute('aria-label', 'Replies to the bell');
   }
   if (text)
@@ -1564,7 +1631,7 @@ function closeBook() {
 }
 
 function menuRows() {
-  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><label class="edition-choice"><input id="menu-refuge-edition" type="checkbox"> Use new sleep and shelter goals, limited wild food, and warned damage to furnishings.</label><label class="edition-choice"><input id="menu-next-edition" type="checkbox"> Also play quietly while away until an event needs attention, at one game minute per real minute. Includes the new rules above and loose-stone discussions.</label><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div>${labTools ? continuity.controls() : ''}<div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label></div><button class="primary" id="resume">Resume</button>`;
+  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><label class="edition-choice"><input id="menu-refuge-edition" type="checkbox"> Use new sleep and shelter goals, limited wild food, and warned damage to furnishings.</label><label class="edition-choice"><input id="menu-next-edition" type="checkbox"> Also play quietly while away until an event needs attention, at one game minute per real minute. Includes the new rules above and asking for positions on loose stone.</label><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div>${labTools ? continuity.controls() : ''}<div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label></div><button class="primary" id="resume">Resume</button>`;
 }
 let feedbackCleanup: (() => void) | undefined;
 function showFeedback(host: HTMLElement, onBack: () => void) {
@@ -1702,7 +1769,7 @@ function openBook(tab = 's', opener?: HTMLElement) {
   paint.selected = null;
   personOpener = null;
   const s = g.s;
-  const notes = s.notes
+  const notes = journalEntries(s.notes)
     .filter((n) => n.weight >= 1)
     .slice(-60)
     .reverse();

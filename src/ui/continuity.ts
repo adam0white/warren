@@ -40,7 +40,8 @@ let current: () => Game | null = () => null;
 let persistAccepted: (game: Game) => Promise<boolean> = async () => true;
 export let continuityStatus =
   'People can continue between games separately from play recording. A loaded hill keeps the people and history saved in it.';
-const ruleStamp = (edition: string, config?: NextConfig) => `warren-${edition}${config ? '-next1' : ''}`;
+const ruleStamp = (edition: string, config?: NextConfig) =>
+  `warren-${edition}${config === 'warren-next/2' ? '-next2' : config ? '-next1' : ''}`;
 const stamps = (edition?: string, config?: NextConfig) => ({
   game: 'warren',
   build: sourceBuild(),

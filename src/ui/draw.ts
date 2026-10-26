@@ -941,7 +941,7 @@ export function personAt(s: WarrenState, v: View, px: number, py: number, t: num
   const wx = v.x + px / v.cs;
   const wy = v.y + py / v.cs;
   let best: string | null = null;
-  let bd = 0.9;
+  let bd = Math.max(0.9, 22 / v.cs);
   const where = layout(s, t);
   for (const p of s.people) {
     if (!p.body.alive) continue;

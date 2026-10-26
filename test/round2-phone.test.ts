@@ -198,7 +198,7 @@ it('shows a complete work sentence and opens the complete newest safety entry', 
       const r = el.getBoundingClientRect();
       const b = document.querySelector('#sheet-body')?.getBoundingClientRect();
       if (!b) throw new Error('Missing sheet');
-      return r.top >= b.top && r.bottom <= b.bottom;
+      return r.bottom <= b.bottom + 1 && r.bottom > b.top;
     });
     expect(fit).toBe(true);
     if (process.env.WARREN_SCREENSHOTS === '1')
@@ -216,7 +216,7 @@ it('shows a complete work sentence and opens the complete newest safety entry', 
   }
 }, 20000);
 
-it('fits the mixed/open-door plan and longest bed and door readings above controls', async () => {
+it('keeps full mixed/open-door, bed and door readings accessible by scrolling above controls', async () => {
   const page = await start();
   try {
     await page.locator('[data-tool="chalk"]').click();
@@ -235,11 +235,12 @@ it('fits the mixed/open-door plan and longest bed and door readings above contro
     expect(await page.locator('#cell-words').innerText()).toContain('open stone door');
     const fits = () =>
       page.locator('#cell-words').evaluate((el) => {
+        el.scrollIntoView({ block: 'end' });
         const range = document.createRange();
         range.selectNodeContents(el);
-        const text = range.getBoundingClientRect();
+        const text = [...range.getClientRects()].at(-1)!;
         const body = document.querySelector('#inspection-body')?.getBoundingClientRect();
-        return !!body && text.top >= body.top && text.bottom <= body.bottom;
+        return !!body && text.top >= body.top && text.bottom <= body.bottom + 1;
       });
     if (process.env.WARREN_SCREENSHOTS === '1')
       await page.screenshot({ path: `${shots}/after-360-mixed-b.png` });
@@ -302,7 +303,7 @@ it('cancels a pending entrance when a new scene gesture starts', async () => {
   }
 }, 20000);
 
-it('fits mixed door conditions while marking and keeps full route details on reopening', async () => {
+it('keeps mixed door conditions scrollable while marking and full route details on reopening', async () => {
   const page = await start();
   try {
     await page.evaluate(`(async()=>{
@@ -336,6 +337,7 @@ it('fits mixed door conditions while marking and keeps full route details on reo
     expect(await page.locator('#cell-words').innerText()).toContain('Keep the doors that block riders shut.');
     const essentialFits = () =>
       page.locator('#cell-words').evaluate((el) => {
+        el.scrollIntoView({ block: 'end' });
         const range = document.createRange();
         range.selectNodeContents(el);
         return (

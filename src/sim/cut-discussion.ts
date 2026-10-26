@@ -4,6 +4,8 @@
  * these and ordinary work/rest. The listener must actually attend the spoken percept before
  * an answer can count. Only opposed, mutually heard statements establish disagreement.
  * This is hill encounter logic, not a generic social model, motive reader or anger simulator.
+ * In next/2, elicitation records positions as claims, not instructions to repeat the answer.
+ * next/1 retains its scoped standing advice for exact historical replay. No estimate changes.
  * No statement moves grain, completes excavation, creates a promise or overrides the chalk.
  */
 import type { Activity, Affordance, Outcome, Person, Suggestion } from '@adam0white/human-framework';
@@ -135,8 +137,12 @@ export function finishCutStatement(
       summary: 'The loose-stone discussion did not reach an awake listener at the hearth.',
     };
   const stance = activity.affordanceId === `cut-pause-${d.face}` ? 'pause' : 'continue';
-  const text =
-    stance === 'pause'
+  const eliciting = s.next?.config === 'warren-next/2';
+  const text = eliciting
+    ? stance === 'pause'
+      ? `${p.name} tells ${q.name}, “I think that loose cut should wait. Stone can fall on the person digging.”`
+      : `${p.name} tells ${q.name}, “I think we should keep digging the marked room. We need the space, even with loose stone.”`
+    : stance === 'pause'
       ? `${p.name} tells ${q.name}, “Leave that loose cut alone. Stone can fall on the person digging.”`
       : `${p.name} tells ${q.name}, “Keep digging the marked room. We need the space, even with loose stone.”`;
   d.statements.push({
@@ -161,14 +167,24 @@ export function finishCutStatement(
     placeId: 'hearth',
     salience: 0.8,
     summary: text,
-    claims: [{ prop: `warren-cut:${d.face}:advice:${stance}`, value: true, confidence: 1 }],
-    advice: [
+    claims: [
       {
-        action: stance === 'pause' ? 'discuss-cut' : 'dig',
-        affordanceId: stance === 'pause' ? `cut-pause-${d.face}` : `dig-${d.face}`,
-        strength: 0.7,
+        prop: `warren-cut:${d.face}:${eliciting ? 'position' : 'advice'}:${stance}`,
+        value: true,
+        confidence: 1,
       },
     ],
+    ...(eliciting
+      ? {}
+      : {
+          advice: [
+            {
+              action: stance === 'pause' ? 'discuss-cut' : 'dig',
+              affordanceId: stance === 'pause' ? `cut-pause-${d.face}` : `dig-${d.face}`,
+              strength: 0.7,
+            },
+          ],
+        }),
   });
   note(s, { at: p.now, kind: 'story', who: p.id, cell: d.face, text, weight: 1 });
   return { summary: text, needs: { belonging: 0.1 } };
