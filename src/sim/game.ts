@@ -9,6 +9,7 @@ import type { Chapter } from './cast.ts';
 import { endCutDiscussion, inviteCutDiscussion } from './cut-discussion.ts';
 import { USE, type UseName } from './grid.ts';
 import { prepareNativeReturn } from './native-return.ts';
+import { requestDoor, requestTalk, withdrawRequest } from './resident-requests.ts';
 import { seedRoleGoals } from './roles.ts';
 import { releaseVisit, visit } from './visits.ts';
 import {
@@ -53,6 +54,9 @@ export type Input =
   | { at: number; verb: 'bell' }
   | { at: number; verb: 'discuss-cut' | 'end-cut-discussion' | 'acknowledge' }
   | { at: number; verb: 'away'; elapsedMs: number; quanta: number }
+  | { at: number; verb: 'talk-rest' | 'talk-disagreement'; who: string }
+  | { at: number; verb: 'test-door'; who: string; cell: number }
+  | { at: number; verb: 'withdraw-request'; kind: 'rest' | 'disagreement' | 'door' }
   | { at: number; verb: 'visit'; who: string }
   | { at: number; verb: 'release'; who: string }
   | { at: number; verb: 'care-ada' | 'end-ada-visit' }
@@ -70,9 +74,9 @@ export interface Game {
   fileOrigin?: boolean;
 }
 
-export type NextConfig = 'warren-next/1' | 'warren-next/2';
+export type NextConfig = 'warren-next/1' | 'warren-next/2' | 'warren-rest/1';
 function supportedConfig(config: unknown): config is NextConfig {
-  return config === 'warren-next/1' || config === 'warren-next/2';
+  return config === 'warren-next/1' || config === 'warren-next/2' || config === 'warren-rest/1';
 }
 export function newGame(
   seed: number,
@@ -114,6 +118,14 @@ export function act(g: Game, o: Order): boolean {
 
 function apply(s: WarrenState, i: Input): boolean {
   switch (i.verb) {
+    case 'talk-rest':
+      return requestTalk(s, i.who, 'rest');
+    case 'talk-disagreement':
+      return requestTalk(s, i.who, 'disagreement');
+    case 'test-door':
+      return requestDoor(s, i.who, i.cell);
+    case 'withdraw-request':
+      return withdrawRequest(s, i.kind);
     case 'acknowledge':
       if (!s.next?.attention) return false;
       delete s.next.attention;
@@ -172,6 +184,7 @@ export function advance(g: Game, to: number) {
 function needsAttention(s: WarrenState): boolean {
   return (
     !!s.next?.attention ||
+    !!(s.next?.requests && Object.values(s.next.requests).some((r) => r.endedAt === undefined)) ||
     !!s.bell ||
     !!(s.next?.discussion && s.next.discussion.endedAt === undefined) ||
     s.raids.some((r) => r.stage === 'smoke' || r.stage === 'riders') ||

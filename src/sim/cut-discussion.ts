@@ -137,7 +137,7 @@ export function finishCutStatement(
       summary: 'The loose-stone discussion did not reach an awake listener at the hearth.',
     };
   const stance = activity.affordanceId === `cut-pause-${d.face}` ? 'pause' : 'continue';
-  const eliciting = s.next?.config === 'warren-next/2';
+  const eliciting = s.next?.config === 'warren-next/2' || s.next?.config === 'warren-rest/1';
   const text = eliciting
     ? stance === 'pause'
       ? `${p.name} tells ${q.name}, “I think that loose cut should wait. Stone can fall on the person digging.”`
