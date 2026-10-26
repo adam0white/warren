@@ -1,3 +1,9 @@
+## Automatic recording source candidate — 2026-10-26
+
+Ordinary automated browsers now initialize the released `createLab({ game: 'warren' })`; the implicit webdriver no-op client is removed. The SDK, endpoint, Recording switch, stored off choices, DNT/GPC defaults and privacy override behavior are unchanged. Client 0.4.11 still suppresses localhost recording without its public `sendFromLocalhost` option. Future recorded local QA requires a reviewed use of that option and disclosure that the deployed SDK has no supported agent cohort marker.
+
+This is an uncommitted source candidate on d710f8c, not a live recording fix or ingestion proof. Parent independent review, signed source, exact green CI, a fresh hold check and clean release remain. Actual live 7e8c056 stays under the R2 hold through 2026-10-27T16:05Z or B's handback; no upload here. Pending selected-plan logic, all 0.6/0.7 rules, rider/timer/replay behavior, startup history, Shelf and native bodies remain unchanged. The prior port-5197 cleanup incident and unknown recovery remain material facts; this change establishes no recovery. Historical quarantined/fake-client runs remain historical. B owns later recorded engineering and admission; HTTP 429 is not acknowledgment and HTTP 200 alone does not prove complete ingestion.
+
 ## Installer migration — 2026-10-26
 
 Development now uses the one shared Node 26.12.0 and exact pnpm 12.14.0. Use `/opt/homebrew/bin` first in PATH and `pnpm install --frozen-lockfile`; see README for policy and the existing-npm-tree conversion. Preserve dirty source changes before removing only that tree's root/workspace `node_modules`, `dist`, `.types` and `*.tsbuildinfo`. The immutable SDK tarballs stay exact. `npm run` wrappers remain supported but bypass pnpm's stale-module guard. No game deployment belongs to this installer change. Historical npm-lock references below describe their dated receipts; the current pnpm lock is authoritative.
