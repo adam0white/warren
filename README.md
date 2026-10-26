@@ -47,22 +47,26 @@ Package version, rules edition and engine version have different meanings. `pack
 
 ## Development
 
-Use Node 24+ and put `/opt/homebrew/bin` first in PATH. In fish:
+Use the shared Node 26.12.0 and pnpm 12.14.0. Put `/opt/homebrew/bin` first in PATH. In fish:
 
 ```fish
 set -gx PATH /opt/homebrew/bin $PATH
-npm ci
-npm run dev
+pnpm install --frozen-lockfile
+pnpm run dev
 ```
 
-`npm run build` stamps release metadata and builds with Vite. `npm run preview` serves the build. `npm run lint`, `npm run typecheck` and `npm run check:unused` run Biome, TypeScript and Knip. `npm test` runs Vitest with the repository’s 60-second test timeout. `npm run check:lane` runs lint, typecheck and the full test suite in this repository.
+`pnpm run build` stamps release metadata and builds with Vite. `pnpm run preview` serves the build. `pnpm run lint`, `pnpm run typecheck` and `pnpm run check:unused` run Biome, TypeScript and Knip. `pnpm test` runs Vitest with the repository’s 60-second test timeout. `pnpm run check:lane` runs lint, typecheck and the full test suite in this repository.
 
 Use managed worktrees. Run full suites and check:lane through the machine-wide shared lock, without nesting locks:
 
 ```fish
-node /Users/abdul/code/human-framework/scripts/suite-lock.ts -- npm run check:lane
+node /Users/abdul/code/human-framework/scripts/suite-lock.ts -- pnpm run check:lane
 ```
 
-Run check:lane before each signed commit. Fetch and rebase origin/main before pushing; require green CI on the exact commit. `npm run deploy` runs check, build and Wrangler deployment and also needs the shared wrapper. Source-only documentation requires no app deployment.
+Run check:lane before each signed commit. Fetch and rebase origin/main before pushing; require green CI on the exact commit. `pnpm run deploy` runs check, build and Wrangler deployment and also needs the shared wrapper. Source-only documentation requires no app deployment.
+
+The exact Node pin is `.node-version`; private-root engines and strict engine checks enforce it. Use the existing shared `/opt/homebrew/bin/node`; do not download a project runtime. `pnpm-workspace.yaml` disables hoisting, uses shared-store hardlinks, enforces strict peers and a 1440-minute release age, exempts only owned `@adam0white/*` packages, and owns the exact install-script approvals and overrides. `verifyDepsBeforeRun: error` rejects stale modules. Normal `npm run` wrappers still work but bypass this pnpm guard.
+
+After updating an existing npm tree, preserve dirty source changes, remove only that tree's root and workspace `node_modules`, run `pnpm install --frozen-lockfile`, and delete `dist`, `.types` and `*.tsbuildinfo`. Preserve the immutable local SDK archives. This installer migration requires no deployment.
 
 Read [AGENTS](AGENTS.md), [HANDOFF](HANDOFF.md), [design](docs/design.md) and the [plain-English policy](docs/lab/plain-english.md) before changing the game. Preserve simulation, save and replay contracts. Adam accepts game feel by playing; technical delivery is separate. Lab-panel rounds belong to the playtest director. Friends’ playtests and Show HN remain paused.

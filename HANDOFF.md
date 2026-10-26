@@ -1,3 +1,7 @@
+## Installer migration — 2026-10-26
+
+Development now uses the one shared Node 26.12.0 and exact pnpm 12.14.0. Use `/opt/homebrew/bin` first in PATH and `pnpm install --frozen-lockfile`; see README for policy and the existing-npm-tree conversion. Preserve dirty source changes before removing only that tree's root/workspace `node_modules`, `dist`, `.types` and `*.tsbuildinfo`. The immutable SDK tarballs stay exact. `npm run` wrappers remain supported but bypass pnpm's stale-module guard. No game deployment belongs to this installer change. Historical npm-lock references below describe their dated receipts; the current pnpm lock is authoritative.
+
 # Warren — current handoff, 2026-10-26
 
 Current source is signed `43f18df3c9171f4247d6f5805847c3a294585d6c`.
