@@ -91,6 +91,12 @@ Revert: new runs start on the previous edition by setting `DEFAULT_EDITION` in `
 - DL-27 updated 2026-10-21: ordinary 0.6.0/0.7.0 resuming restores the saved minute. Offline catch-up was removed so it cannot pass a bell decision before the player sees the hill. Old saves, inputs, editions and replay quanta remain unchanged.
 - DL-3 scene colours: chalk marks and lamp flames keep their material accent colour. Selection uses ordinary ink and a heavier ellipse; the current instruction uses the accent in the controls. Material colour does not mark selection.
 
+## Public access batch — 2026-10-27
+
+Candidate only: gameplay editions and Slow/Steady/Fast remain explicit public choices. No query string changes available features. The legacy native-slot file importer is removed pending the separate preserving public file route; it is not hidden behind a switch. Continuing shared people is automatic on a fresh hill; Resume retains the saved people exactly. The central browser shelf owns generic cast experiments. Game-specific Watch preparation stays on the selected person’s card and retains all source/duty/care refusals. Debug starts collapsed beside Lab privacy and contains only download/status; Feedback has its small version/run preview there. Vendor archives stay unchanged.
+
+Current verified launch release d9e5ede is clean and includes B2, next2, rest1, selected plans and the R2 stalled-dig/routine work. Historical “not delivered” and lease wording below is superseded within those exact mechanisms. No full117 compound coverage or player acceptance follows. The private per-item reconciliation records the remaining engineering. This is one director-scheduled batch; it does not defer buildable work to the2026-11-03 owner review. F199 remains the precise owner choice between automatic widening and the later fixed working camera. This batch retains the fixed camera. HF stays3.0.0/engine2.23.0 by the director’s current pin instruction.
+
 ## Deferred delivery — 2026-10-25
 
 B2 bounded source candidate — 2026-10-27 (**not delivered**): F647/GDI833 empty-store inspection reads the current standing crop, threshing floor, household jars, available store space and known open route. It names a real grain carrier and recorded trip when present, or says nobody is carrying now without claiming a private reason. Dry-water help distinguishes spring, discovered well, hearth jars, blocked spring during riders and actual fetching. Look, Chalk, Store and Lamp retain their existing meanings; no new work or order is created.

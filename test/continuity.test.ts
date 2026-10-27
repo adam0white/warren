@@ -76,7 +76,17 @@ beforeEach(() => {
   mock.gate = null;
   mock.requests = [];
   mock.defer = null;
-  mock.handle = null;
+  mock.handle = async (raw) => {
+    const request = raw as PersonaRequest;
+    const { castForGame } = await import('@adam0white/lab-client');
+    return request.action === 'prepareBatch'
+      ? {
+          expectedHeads: Object.fromEntries(castForGame('warren').map((c) => [c.castId, null])),
+          inputs: [],
+          blocked: [],
+        }
+      : {};
+  };
   vi.stubGlobal('location', { search: '?lab=1' });
   vi.stubGlobal('window', { addEventListener() {}, dispatchEvent: vi.fn() });
   vi.stubGlobal('document', { querySelector: () => null });
@@ -122,28 +132,27 @@ describe('continuity privacy and source receipts', () => {
     const archives = Object.values(current.sourceArchives ?? {});
     expect(archives).toContainEqual(before);
   });
-  it('keeps file origin through local reload and gates fresh-local shortcut immediately', async () => {
+  it('keeps file origin through local reload without a local cast opt-out', async () => {
     current = await fileLoad(file(save(newGame(7))));
     const loaded = await localLoad(save(current));
     expect(loaded.fileOrigin).toBe(true);
     expect(loaded.ownedHeads).toBeUndefined();
-    current = loaded;
-    mock.allowed = true;
-    let click: (() => void) | undefined;
-    const host = {
-      querySelector: (selector: string) =>
-        selector === '#local-fresh'
-          ? {
-              addEventListener: (_name: string, fn: () => void) => {
-                click = fn;
-              },
-            }
-          : null,
-    } as unknown as HTMLElement;
-    bind(host, () => {});
-    click!();
-    expect(mock.allowed).toBe(false);
-    expect(mock.gate).toMatch(/^[a-f0-9-]{36}$/);
+    const handlers: string[] = [];
+    bind({
+      querySelector: (selector: string) => {
+        handlers.push(selector);
+        return null;
+      },
+    } as unknown as HTMLElement);
+    expect(handlers).not.toContain('#local-fresh');
+    expect(handlers).not.toContain('#continuity');
+    expect(handlers).not.toContain('#native-fork');
+  });
+  it('automatically enables the public shelf for a fresh hill even with the old diagnostic query', async () => {
+    const game = await fresh(7, '0.7.0', 'warren-rest/1');
+    expect(mock.enabled).toBe(true);
+    expect(mock.requests.length).toBeGreaterThan(0);
+    expect(game.s.next?.config).toBe('warren-rest/1');
   });
   it('restores exact local ownership, refuses a competing head, and closes an owned death', async () => {
     let state: PersonaShelfState = { heads: {}, revisions: [] };
@@ -321,54 +330,4 @@ it('keeps routine Kian ineligibility separate from failed publication', async ()
   await checkpoint();
   expect(mock.requests).toEqual([]);
   expect(window.dispatchEvent).not.toHaveBeenCalled();
-});
-
-it('invalidates host saves before file import changes the SDK context or awaits file text', async () => {
-  const saved = save(newGame(7));
-  let release!: (text: string) => void;
-  const text = new Promise<string>((done) => {
-    release = done;
-  });
-  let change!: (event: unknown) => void;
-  const host = {
-    querySelector: (selector: string) =>
-      selector === '#cast-file'
-        ? {
-            addEventListener: (_name: string, fn: (event: unknown) => void) => {
-              change = fn;
-            },
-          }
-        : null,
-  } as unknown as HTMLElement;
-  const imported = { size: 100, text: () => text } as File;
-  let complete!: (game: ReturnType<typeof newGame>) => void;
-  const loaded = new Promise<ReturnType<typeof newGame>>((done) => {
-    complete = done;
-  });
-  let invalidated = false;
-  const prior = mock.gate;
-  bind(
-    host,
-    () => {
-      throw Error('The old callback must not install this import.');
-    },
-    () => {
-      expect(mock.gate).toBe(prior);
-      invalidated = true;
-      return {
-        loaded: complete,
-        failed() {
-          throw Error('Import failed');
-        },
-      };
-    },
-  );
-  change({ target: { files: [imported] } });
-  try {
-    expect(invalidated).toBe(true);
-    expect(mock.gate).not.toBe(prior);
-  } finally {
-    release(JSON.stringify(saved));
-  }
-  expect((await loaded).fileOrigin).toBe(true);
 });

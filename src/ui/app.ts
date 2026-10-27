@@ -69,18 +69,6 @@ import {
   waterHelpWords,
 } from './known-work.ts';
 import { lab } from './lab.ts';
-import { activityWords, displayWords, settingWords, speechWords } from './words.ts';
-import {
-  journalView,
-  observeMarkedWork,
-  observeSetups,
-  type SetupObservation,
-  type WorkObservation,
-  workDigestWords,
-} from './work.ts';
-
-const labTools = new URLSearchParams(location.search).get('lab') === '1';
-
 import { invitationWords, personHelpWords } from './person-help.ts';
 import { type PlanSafety, planSafety } from './plan-safety.ts';
 import { eventStamp, playbackRate } from './playback.ts';
@@ -93,6 +81,15 @@ import {
   sleepingRoomWords,
 } from './shelter.ts';
 import * as store from './store.ts';
+import { activityWords, displayWords, settingWords, speechWords } from './words.ts';
+import {
+  journalView,
+  observeMarkedWork,
+  observeSetups,
+  type SetupObservation,
+  type WorkObservation,
+  workDigestWords,
+} from './work.ts';
 
 type Tool = 'look' | 'chalk' | 'erase' | 'store' | 'beds' | 'lamp' | 'door';
 const SPEEDS = [1, 4, 16] as const;
@@ -203,7 +200,7 @@ const noticeFooter = document.createElement('footer');
 noticeFooter.id = 'notice-footer';
 if (notice) noticeFooter.append(notice);
 document.body.append(noticeFooter);
-const footer = `<div class="footer">${'<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>'}<br>People by the Human Framework.${labTools ? ` Version ${FRAMEWORK_VERSION}.` : ''}</div>`;
+const footer = `<div class="footer">${'<a class="mark" href="https://human.adamwhite.work">◇ human framework</a>'}<br>People by the Human Framework. Version ${FRAMEWORK_VERSION}.</div>`;
 const playInfo = `<p>You are the keeper. The hill is the stone beneath the village. Open ground means space already dug out. Furnishings are the stores, beds, lamps and stone doors you mark there.</p><p>Draw a dashed outline with chalk to mark stone for digging. People choose when to dig. They need fresh air and light.</p><p>Tap one stone square touching the cellar, or drag a connected chalk line from it. A dashed mark is a plan, not a finished passage.</p><p>Use the Furnish menu to mark open ground for grain stores, sleeping places, lamps or doors.</p><p>A door needs a passage one square wide, with open ground on two opposite sides. You can mark up to three doors.</p><p>Filled circles show marked sleeping places. Empty circles show how many more places are needed. Tap the people count to check who riders could reach.</p><p>${ROUTE_HELP}</p><p>Water comes from the spring until digging opens a well in damp stone. People choose when to carry water to the hearth jars.</p>`;
 function topbar(titlePage = false) {
   return `<header class="topbar"><div class="bar-words">${titlePage ? '<a target="_top" href="https://human.adamwhite.work/games/">All games</a>' : '<span id="when"></span>'}</div><button class="info" aria-label="Information" popovertarget="hill-info">i</button><button id="book" aria-label="Game menu">≡<span class="menu-label"> Menu</span></button></header><div id="hill-info" class="info-popover" popover="auto"><div class="who"><b>${titlePage ? 'The hill' : 'Chalk and marks'}</b><button popovertarget="hill-info" popovertargetaction="hide" aria-label="Close information">×</button></div>${titlePage ? '<p>Riders burned two villages. Your refuge starts in the cellar under Master Yusuf’s house.</p><p>You are the keeper. You have the chalk and the bell. You mark where work is needed. Each person chooses what to do.</p><p>Use one finger to draw chalk marks or inspect the hill. Use two fingers to move the view.</p><p>A year has 365 days. Year 1 begins on 19 August.</p>' : playInfo}</div>`;
@@ -373,7 +370,7 @@ function startError(error: unknown, message: string, host?: HTMLElement) {
     status.setAttribute('role', 'alert');
     (host ?? document.querySelector('.title-actions'))?.prepend(status);
   }
-  status.textContent = `${message} Your saved hill has not been replaced. You can retry or open Feedback in the menu.${labTools ? ` ${String(error)}` : ''}`;
+  status.textContent = `${message} Your saved hill has not been replaced. You can retry or open Feedback in the menu.`;
 }
 
 // ---------- the scene ----------
@@ -1174,13 +1171,14 @@ function card() {
     ${trustWords(p) ? `<div class="soft">${esc(p.name)} ${trustWords(p)}.</div>` : ''}
     ${why ? `<div class="hand">“${esc(speechWords(why))}”</div>` : ''}
     ${about.map((n) => `<div class="soft small">${esc(displayWords(n.text))}</div>`).join('')}
-</details>${p.id === 'kian' ? continuity.careControls() : ''}`;
+</details>${p.id === 'kian' ? continuity.careControls() : ''}${continuity.handoffControls(p.id)}`;
   if (el.dataset.html !== html) {
     const focused = document.activeElement?.id;
     const expanded = el.querySelector('details')?.open ?? false;
+    const handoffExpanded = el.querySelector<HTMLDetailsElement>('[data-native-person]')?.open ?? false;
     el.dataset.html = html;
     el.innerHTML = html;
-    continuity.bind(el, () => {});
+    continuity.bind(el);
     for (const verb of ['talk-rest', 'talk-disagreement'] as const)
       el.querySelector(`#${verb}`)?.addEventListener('click', () => {
         if (!g) return;
@@ -1224,6 +1222,8 @@ function card() {
     });
     const details = el.querySelector('details');
     if (details) details.open = expanded;
+    const handoff = el.querySelector<HTMLDetailsElement>('[data-native-person]');
+    if (handoff) handoff.open = handoffExpanded;
     if (focused) el.querySelector<HTMLElement>(`#${focused}`)?.focus();
   }
   hideOtherSheets('card');
@@ -1845,7 +1845,7 @@ function closeBook() {
 }
 
 function menuRows() {
-  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><label class="edition-choice"><input id="menu-refuge-edition" type="checkbox"> Use new sleep and shelter goals, limited wild food, and warned damage to furnishings.</label><label class="edition-choice"><input id="menu-next-edition" type="checkbox"> Also play quietly while away until an event needs attention, at one game minute per real minute. Includes the new rules above and asking for positions on loose stone.</label><label class="edition-choice"><input id="menu-rest-edition" type="checkbox"> Also allow rest conversations, quiet door tests and talking after a heard disagreement. Includes away play above. People may decline.</label><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div>${labTools ? continuity.controls() : ''}<div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label></div><button class="primary" id="resume">Resume</button>`;
+  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><label class="edition-choice"><input id="menu-refuge-edition" type="checkbox"> Use new sleep and shelter goals, limited wild food, and warned damage to furnishings.</label><label class="edition-choice"><input id="menu-next-edition" type="checkbox"> Also play quietly while away until an event needs attention, at one game minute per real minute. Includes the new rules above and asking for positions on loose stone.</label><label class="edition-choice"><input id="menu-rest-edition" type="checkbox"> Also allow rest conversations, quiet door tests and talking after a heard disagreement. Includes away play above. People may decline.</label><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div><a class="shelf-link" href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">People on this browser shelf</a><div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noopener">Lab privacy</a><details class="game-debug"><summary>Debug</summary><div>${continuity.controls()}</div></details></div><button class="primary" id="resume">Resume</button>`;
 }
 let feedbackCleanup: (() => void) | undefined;
 function showFeedback(host: HTMLElement, onBack: () => void) {
@@ -1865,7 +1865,7 @@ function bindMenu(host: HTMLElement, close: () => void) {
       ...host.querySelectorAll<HTMLElement>(
         'button:not(:disabled), a[href], input:not(:disabled), textarea, select, summary, [tabindex="0"]',
       ),
-    ].filter((el) => el.getClientRects().length > 0 && !el.closest('[hidden]'));
+    ].filter((el) => el.checkVisibility() && !el.closest('[hidden]'));
     const first = controls[0];
     const last = controls.at(-1);
     if (!first || !last) return;
@@ -1879,26 +1879,8 @@ function bindMenu(host: HTMLElement, close: () => void) {
     }
   };
 
-  const openFile = (game: Game) => {
-    replaceGame(game);
-    speedIx = 0;
-    enter();
-  };
-  continuity.bind(host, openFile, () => {
-    // Invalidate A before fileLoad can change the SDK recording context or await.
-    const expected = ++generation;
-    return {
-      loaded(game) {
-        if (expected === generation) openFile(game);
-      },
-      failed() {
-        if (expected === generation) {
-          gameGeneration = expected;
-          dirty = true;
-        }
-      },
-    };
-  });
+  host.querySelector('#download-run')?.addEventListener('click', download);
+  continuity.bind(host);
   host.querySelector('#resume')?.addEventListener('click', close);
   host.querySelector('#record-play')?.addEventListener('change', (e) => {
     const on = (e.target as HTMLInputElement).checked;

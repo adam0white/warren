@@ -81,19 +81,23 @@ export function careControls() {
     ? `<section><p>${esc(adaWords(current()!.s))}</p><button id="ada-care">Invite Kian to share grain, water and rest with Ada</button><button id="ada-end">End Kian’s optional refuge work</button><p data-cast-status role="status"></p></section>`
     : '';
 }
+/** A Watch departure is a game action; shelf experiments remain central. */
+export function handoffControls(who: string) {
+  if (!['kian', 'meryem'].includes(who)) return '';
+  return `<details data-native-person="${who}"><summary>Return to Watch</summary><p>Preparing ends only this person’s optional refuge work and runs ordinary play for up to ten game hours to find a quiet time to save. Duties and care still apply. Saving can refuse an unfinished or unsupported source. An imported file gains no permission to update shared history.</p><button id="native-prepare">Prepare this person’s Watch handoff</button><button id="native-save">Save this owned Watch checkpoint</button><p data-cast-status role="status">${esc(continuityStatus)}</p></details>`;
+}
+/** Diagnostics never change cast ownership. Cast experiments live on the central shelf. */
 export function controls() {
-  if (new URLSearchParams(location.search).get('lab') !== '1') return '';
-  const provenance =
-    current()
-      ?.chapter?.inputs.map(
-        (input) =>
-          `<p>${esc(canonicalCast(input.parent.castId).name)} continues from ${esc(input.parent.source.game)}, build ${esc(input.parent.source.build)}. This hill keeps the person and the events between games as they were when the person arrived.</p>`,
-      )
-      .join('') ?? '';
-  const care = current()?.s.adaVisit
-    ? `<p>${esc(adaWords(current()!.s))}</p><button id="ada-care">Invite Kian to share grain, water and rest with Ada</button><button id="ada-end">End Kian’s optional refuge work</button>`
-    : '';
-  return `<details class="continuity"><summary>People between chapters</summary><label><input id="continuity" type="checkbox" ${shelf.enabled ? 'checked' : ''}> Continue people between games in this browser</label><p data-cast-status role="status">${esc(continuityStatus)}</p>${provenance}<p>A person’s projects, injuries or duties may prevent them from continuing in another game. You can still play locally and export a file. Kian needs the recorded agreement from Watch, a record of completed care and the duty to return. Kian can return only through the supported Watch handoff. Other transfers are not supported.</p>${care}<button id="local-fresh">Use fresh local play</button><label>Open current playtest file <input id="cast-file" type="file" accept="application/json"></label>${current() ? '<button id="checkpoint-cast">Save eligible people to the browser shelf</button><fieldset style="min-inline-size:0"><legend>Native Watch handoff</legend><label>Person <select id="native-person" style="max-width:100%"><option value="kian">Kian and Ada’s supported care record</option><option value="meryem">Meryem</option></select></label><p>Prepare ends only this person’s optional work. It then runs ordinary play for up to ten game hours to find a quiet time to save. Other people continue their activities. An imported file does not gain permission to update shared history. A new history replaces only the selected person’s latest shared record. Earlier history is kept. Another open game could change that record after the check. Avoid updating this person in another open game at the same time.</p><button id="native-prepare">Prepare selected native checkpoint</button><button id="native-save">Save selected owned checkpoint</button><button id="native-fork">Start a new history for selected person…</button></fieldset>' : ''}<a href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">Inspect browser people</a></details>`;
+  return `<button id="download-run">Download this run</button><p data-cast-status role="status">${esc(continuityStatus)}</p>`;
+}
+async function readyShelf(token: number) {
+  await shelf.ready;
+  if (token !== generation) throw new Error('Another action replaced this hill.');
+  if (!shelf.enabled) {
+    shelf.setEnabled(true);
+    await shelf.ready;
+  }
+  if (token !== generation) throw new Error('Another action replaced this hill.');
 }
 export async function fresh(
   seed: number,
@@ -101,13 +105,8 @@ export async function fresh(
   config?: NextConfig,
 ): Promise<Game> {
   const token = ++generation;
-  await shelf.ready;
-  if (token !== generation) throw new Error('Another action replaced this new hill.');
+  await readyShelf(token);
   const base = newGame(seed, edition, undefined, config);
-  if (!shelf.enabled && new URLSearchParams(location.search).get('lab') === '1') {
-    lab.setPersonaRecording(null);
-    return base;
-  }
   lab.setPersonaRecording(crypto.randomUUID());
   const batch = await claimCastChapterBatch(
     shelf,
@@ -143,6 +142,7 @@ export async function fresh(
 export async function localLoad(saved: Saved): Promise<Game> {
   const token = ++generation;
   lab.setPersonaRecording(crypto.randomUUID());
+  await readyShelf(token);
   if (saved.ownedHeads)
     for (const [castId, p] of Object.entries(saved.ownedHeads)) {
       await validatePersona(p);
@@ -331,12 +331,12 @@ export async function checkpointNative(who: NativeReturnId, alternative = false)
   const game = current(),
     castId = CAST_IDS[who];
   if (busy || !game || !castId || !['kian', 'meryem'].includes(who) || !shelf.enabled)
-    throw Error('Turn on continuation between games in this browser. Then choose Kian or Meryem.');
+    throw Error('The browser shelf is unavailable or another action is saving. Try again when it is ready.');
   const parent =
     game.nativeReturnHeads?.[castId] ?? (!game.fileOrigin ? game.ownedHeads?.[castId] : undefined);
   if (!alternative && !parent)
     throw Error(
-      'This game has no local permission to update this person’s shared history. Choose the option to start a new history for this person.',
+      'This game has no local permission to update this person’s shared history. Inspect their history on the central browser shelf.',
     );
   const token = generation,
     departure = game.s.nativeDepartures?.[who];
@@ -402,12 +402,9 @@ export async function checkpointNative(who: NativeReturnId, alternative = false)
 export async function chooseContinuityRecording(_allow: boolean) {
   lab.allowPersonaRecording(true);
 }
-export function bind(
-  host: HTMLElement,
-  onFile: (game: Game) => void,
-  beginFile?: () => { loaded(game: Game): void; failed(): void },
-) {
-  const selected = () => (host.querySelector('#native-person') as HTMLSelectElement)?.value as NativeReturnId;
+export function bind(host: HTMLElement) {
+  const selected = () =>
+    host.querySelector<HTMLElement>('[data-native-person]')?.dataset.nativePerson as NativeReturnId;
   const status = () => {
     const el = host.querySelector('[data-cast-status]');
     if (el) el.textContent = continuityStatus;
@@ -424,38 +421,13 @@ export function bind(
     void persistAccepted(game);
     status();
   });
-  for (const [id, alternative] of [
-    ['native-save', false],
-    ['native-fork', true],
-  ] as const)
-    host.querySelector(`#${id}`)?.addEventListener('click', async () => {
-      const who = selected();
-      if (
-        alternative &&
-        !window.confirm(
-          `Start a new history for ${who} from this prepared state? Earlier history will be kept. Another game could change the latest shared record after the check. Other people will stay unchanged. Imported files will not gain permission to update shared history.`,
-        )
-      )
-        return;
-      try {
-        await checkpointNative(who, alternative);
-      } catch (error) {
-        continuityStatus = String(error);
-      }
-      status();
-    });
-  host.querySelector('#continuity')?.addEventListener('change', (event) => {
-    generation++;
-    shelf.setEnabled((event.target as HTMLInputElement).checked);
-    gate();
-  });
-  host.querySelector('#local-fresh')?.addEventListener('click', () => {
-    generation++;
-    lab.setPersonaRecording(crypto.randomUUID());
-    shelf.setEnabled(false);
-    continuityStatus = 'Continuation between games is off. Begin starts a new local history.';
-    const status = host.querySelector('.continuity p');
-    if (status) status.textContent = continuityStatus;
+  host.querySelector('#native-save')?.addEventListener('click', async () => {
+    try {
+      await checkpointNative(selected());
+    } catch (error) {
+      continuityStatus = String(error);
+    }
+    status();
   });
   for (const [id, verb] of [
     ['ada-care', 'care-ada'],
@@ -472,17 +444,4 @@ export function bind(
       if (status) status.textContent = continuityStatus;
       void persistAccepted(game);
     });
-  host.querySelector('#checkpoint-cast')?.addEventListener('click', () => void checkpoint());
-  host.querySelector('#cast-file')?.addEventListener('change', (event) => {
-    const file = (event.target as HTMLInputElement).files?.[0];
-    if (file) {
-      const attempt = beginFile?.();
-      void fileLoad(file)
-        .then(attempt ? attempt.loaded : onFile)
-        .catch((error) => {
-          attempt?.failed();
-          alert(String(error));
-        });
-    }
-  });
 }

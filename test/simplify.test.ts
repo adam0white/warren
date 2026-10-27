@@ -73,7 +73,7 @@ for (const engine of [chromium, webkit]) {
         await localHill(page);
         await page.evaluate(() => document.fonts.ready);
         await page.locator('#book').click();
-        expect(await page.locator('.continuity, #cast-file, #checkpoint-cast').count()).toBe(0);
+        expect(await page.locator('.continuity, #continuity, #checkpoint-cast').count()).toBe(0);
         expect(await page.locator('#send').innerText()).toBe('Feedback');
         expect(await page.locator('#record-play').count()).toBe(1);
         await page.locator('#send').click();
@@ -113,7 +113,8 @@ for (const engine of [chromium, webkit]) {
         expect(await page.locator('.continuity').count()).toBe(0);
         await page.goto(`${url}?lab=1`);
         await page.locator('#book').click();
-        expect(await page.locator('.continuity').count()).toBe(1);
+        expect(await page.locator('.continuity').count()).toBe(0);
+        expect(await page.locator('.game-debug').getAttribute('open')).toBeNull();
       } finally {
         await browser?.close();
       }
@@ -146,19 +147,17 @@ it('keeps the actual notice footer outside rerenders and never restores a remove
   const browser = await chromium.launch();
   const page = await browser.newPage();
   try {
-    await page.goto(`${url}?lab=1`);
-    await page.locator('#new').waitFor();
+    await page.goto(url);
+    await localHill(page);
     await page.evaluate(() => {
       const host = document.getElementById('notice-footer');
       (window as unknown as { noticeHost: Element | null }).noticeHost = host;
       host?.querySelector('.lk-telemetry-notice')?.remove();
     });
     await page.locator('#book').click();
-    await page.locator('.continuity summary').click();
-    await page.locator('#local-fresh').click();
-    await page.locator('#to-title').click();
-    await page.locator('#menu-new-yes').click();
-    await page.locator('#cv').waitFor();
+    await page.locator('#send').click();
+    await page.getByRole('button', { name: 'Back to the game', exact: true }).click();
+    await page.locator('#resume').click();
     expect(
       await page
         .locator('#notice-footer')
@@ -168,6 +167,29 @@ it('keeps the actual notice footer outside rerenders and never restores a remove
     expect(await page.locator('#notice-footer').evaluate((el) => el.parentElement === document.body)).toBe(
       true,
     );
+  } finally {
+    await browser.close();
+  }
+});
+it('keeps an occupied native hill byte-exact through public Debug and pagehide, with no legacy importer', async () => {
+  const browser = await chromium.launch();
+  const page = await browser.newPage();
+  try {
+    await page.goto(url);
+    const before = await page.evaluate<string>(
+      `(async()=>{const {newGame,save}=await import('/src/sim/game.ts');const {put,get}=await import('/src/ui/store.ts');await put('hill',save(newGame(111)));return JSON.stringify((await get('hill')).value);})()`,
+    );
+    await page.reload();
+    await page.locator('#book').click();
+    expect(await page.locator('.game-debug').getAttribute('open')).toBeNull();
+    await page.locator('.game-debug summary').click();
+    expect(await page.locator('#download-run').isVisible()).toBe(true);
+    expect(await page.locator('input[type="file"], #cast-file').count()).toBe(0);
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    const after = await page.evaluate<string>(
+      `(async()=>{const {get}=await import('/src/ui/store.ts');return JSON.stringify((await get('hill')).value);})()`,
+    );
+    expect(after).toBe(before);
   } finally {
     await browser.close();
   }

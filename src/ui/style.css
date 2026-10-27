@@ -1868,3 +1868,21 @@ body {
     height: 320px;
   }
 }
+
+/* The public diagnostics share the privacy row and open only on request. */
+.game-debug {
+  position: relative;
+  font-size: 14px;
+}
+.game-debug > summary {
+  cursor: pointer;
+}
+.game-debug > div {
+  padding-block: 8px;
+}
+.menu-footer:has(.game-debug[open]) {
+  flex-wrap: wrap;
+}
+.game-debug[open] {
+  flex-basis: 100%;
+}

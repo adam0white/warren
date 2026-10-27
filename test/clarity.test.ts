@@ -120,6 +120,7 @@ describe('F-213 first-minute clarity', () => {
       await page.clock.runFor(300);
       await page.locator('#book').click();
       await page.locator('#send').click();
+      await page.locator('.game-debug summary').click();
       const pending = page.waitForEvent('download');
       await page.getByRole('button', { name: 'Keep a copy of this run', exact: true }).click();
       const stream = await (await pending).createReadStream();

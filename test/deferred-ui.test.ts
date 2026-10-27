@@ -109,22 +109,23 @@ it('resumes an opted hill with slowed readings and a paused menu, without changi
     await page.close();
   }
 }, 20000);
-it('uses the edition chosen in the title menu when starting a new local hill', async () => {
+it('keeps edition choices public and refuses failed admission without a local cast opt-out', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   try {
     await page.clock.install();
-    await page.goto(`${url}?lab=1`);
+    await page.goto(url);
     await page.locator('#book').click();
     await page.keyboard.press('Escape');
     expect(await page.locator('#title-drawer').isVisible()).toBe(false);
     await page.locator('#book').click();
-    await page.locator('.continuity summary').click();
-    await page.locator('#continuity').uncheck();
     await page.locator('#to-title').click();
     await page.locator('#menu-refuge-edition').check();
+    expect(await page.locator('#menu-next-edition').isVisible()).toBe(true);
+    expect(await page.locator('#menu-rest-edition').isVisible()).toBe(true);
+    expect(await page.locator('#continuity, #local-fresh').count()).toBe(0);
     await page.locator('#menu-new-yes').click();
-    await page.locator('#cv').waitFor();
-    expect(await page.evaluate('window.__warren.game.s.edition')).toBe('0.7.0');
+    await expect.poll(() => page.locator('#start-error').innerText()).toContain('could not be started');
+    expect(await page.locator('#menu-refuge-edition').isChecked()).toBe(true);
   } finally {
     await page.close();
   }
