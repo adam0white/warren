@@ -62,6 +62,7 @@ import * as continuity from './continuity.ts';
 import { hillDate } from './date.ts';
 import { doorCandidates, doorDetailWords, doorWords } from './door-help.ts';
 import { cellAt, draw, type Ink, type Paint, personAt, readInk, type View } from './draw.ts';
+import { eventHistory, historyTime } from './event-history.ts';
 import { exposureWords } from './exposure.ts';
 import { openFeedback } from './feedback.ts';
 import { awayWords, growthWords } from './growth.ts';
@@ -131,6 +132,7 @@ let ctx: CanvasRenderingContext2D | null = null;
 let sceneObserver: ResizeObserver | null = null;
 let stage: PhoneStage | null = null;
 let focusCell: number | null = null;
+let framedPerson: string | null = null;
 let zoomCell: number | null = null;
 let sceneTop = 0;
 let resizeQueued = false;
@@ -1107,7 +1109,10 @@ function hideOtherSheets(keep: string) {
     const el = document.getElementById(id);
     if (el) el.hidden = true;
   }
-  if (keep !== 'card') paint.selected = null;
+  if (keep !== 'card') {
+    paint.selected = null;
+    framedPerson = null;
+  }
   const actions = document.querySelector<HTMLElement>('.reading-actions');
   if (actions) actions.hidden = true;
   const controls = document.getElementById('hill-controls');
@@ -1148,13 +1153,17 @@ function card() {
   }
   const s = g.s;
   const cell = positionAt(s, p.id, paint.t);
-  focusCell = cell;
-  const margin = Math.min(32, view.h / 4);
-  const px = (xOf(cell) + 0.5 - view.x) * view.cs;
-  const py = (yOf(cell) + 0.5 - view.y) * view.cs;
-  if (px < margin || px > view.w - margin) view.x = xOf(cell) + 0.5 - view.w / view.cs / 2;
-  if (py < margin || py > view.h - margin) view.y = yOf(cell) + 0.5 - view.h / view.cs / 2;
-  clampView();
+  // Selecting a person may frame them once. Reading an updating card never follows them.
+  if (framedPerson !== p.id) {
+    framedPerson = p.id;
+    focusCell = cell;
+    const margin = Math.min(32, view.h / 4);
+    const px = (xOf(cell) + 0.5 - view.x) * view.cs;
+    const py = (yOf(cell) + 0.5 - view.y) * view.cs;
+    if (px < margin || px > view.w - margin) view.x = xOf(cell) + 0.5 - view.w / view.cs / 2;
+    if (py < margin || py > view.h - margin) view.y = yOf(cell) + 0.5 - view.h / view.cs / 2;
+    clampView();
+  }
   const house = houseOf(s, p.id);
   const doing = p.activity?.affordance.label ?? 'deciding what to do';
   const tr = s.trips[p.id];
@@ -1840,6 +1849,8 @@ function updateShelter() {
 }
 
 function closeCard() {
+  framedPerson = null;
+  focusCell = null;
   if (!paint.selected) return;
   paint.selected = null;
   const el = document.getElementById('card');
@@ -1981,6 +1992,7 @@ function openBook(tab = 's', opener?: HTMLElement) {
   if (tab === 's') void writeSave();
   menuOpener = opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : null);
   paint.selected = null;
+  framedPerson = null;
   personOpener = null;
   const s = g.s;
   const journal = journalView(s.notes);
@@ -1988,6 +2000,18 @@ function openBook(tab = 's', opener?: HTMLElement) {
     .filter((n) => n.weight >= 1)
     .slice(-60)
     .reverse();
+  const history = eventHistory(g);
+  const timeline = `<section id="door-alarm-history"><h3>Door requests and bell calls</h3><p>These are retained records. An answer is not completed work. Missing events and times remain unknown. Current door state cannot establish past closure or safety.</p>${
+    history.length
+      ? history
+          .toReversed()
+          .map(
+            (e) =>
+              `<p data-history-kind="${e.kind}"><span class="soft small">${esc(historyTime(e.at))}</span>${e.cell === undefined ? '' : `<br><span class="soft small">Recorded square ${esc(cellLocationWords(s, e.cell))}</span>`}<br>${esc(displayWords(e.text))}</p>`,
+          )
+          .join('')
+      : '<p>No dated door or bell record is retained.</p>'
+  }</section>`;
   const routine = journal.routine.filter((n) => n.weight >= 1).reverse();
   const newestSafety = notes.find(
     (n) => n.kind === 'raid' || n.kind === 'hurt' || (n.kind === 'dig' && /shaft|riders|door/i.test(n.text)),
@@ -2030,7 +2054,7 @@ function openBook(tab = 's', opener?: HTMLElement) {
                   )
                   .join('')}</section>`
               : ''
-          }${newestSafety ? `<p id="newest-safety"><b>Latest safety entry</b><br>${esc(displayWords(newestSafety.text))}</p>` : ''}${notes.slice(0, 8).map(entry).join('')}${routine.length ? `<details id="daily-routine"><summary>Daily routine (${routine.length} repeated ${routine.length === 1 ? 'line' : 'lines'})</summary>${routine.map(entry).join('')}</details>` : ''}<details><summary>Earlier journal entries</summary>${notes.slice(8).map(entry).join('')}</details>`
+          }${newestSafety ? `<p id="newest-safety"><b>Latest safety entry</b><br>${esc(displayWords(newestSafety.text))}</p>` : ''}<details id="door-alarm-records"><summary>Door requests and bell calls</summary>${timeline}</details>${notes.slice(0, 8).map(entry).join('')}${routine.length ? `<details id="daily-routine"><summary>Daily routine (${routine.length} repeated ${routine.length === 1 ? 'line' : 'lines'})</summary>${routine.map(entry).join('')}</details>` : ''}<details><summary>Earlier journal entries</summary>${notes.slice(8).map(entry).join('')}</details>`
         : tab === 'd'
           ? `<p id="growth-record">${esc(growthWords(s))}</p><p>${done.map((x) => `✓ ${esc(displayWords(x.text))}`).join('<br>') || 'No goals are complete yet.'}</p>`
           : `<h3>People below ground</h3>${householdRows(below) || '<p>No one is below yet.</p>'}<h3>People above ground</h3><p id="shelter-summary"></p>${householdRows(alive.filter((p) => !below.includes(p))) || '<p>No one is above ground.</p>'}<p class="soft">There ${alive.length === 1 ? 'is' : 'are'} ${souls(alive.length)} in the village. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} ${s.stats.died === 1 ? 'person has' : 'people have'} died.` : 'No one has died.'}</p>`

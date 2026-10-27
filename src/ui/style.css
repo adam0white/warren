@@ -1886,3 +1886,14 @@ body {
 .game-debug[open] {
   flex-basis: 100%;
 }
+
+/* Full names and scrollable records take priority over squeezing the village list. */
+.shelter-row [data-who] {
+  min-height: 44px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+#door-alarm-history p {
+  overflow-wrap: anywhere;
+}

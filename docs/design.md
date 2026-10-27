@@ -2,6 +2,34 @@
 
 **What done means.** For this first increment: a public, playable build at https://warren.adamwhite.work with a playtest export that replays, at least two playtest-and-fix rounds recorded verbatim in `docs/playtests/`, and an entry on https://human.adamwhite.work/games/. Adam (owner) accepts it by playing it. Later work goes in the Deferred list below, each item with a date.
 
+## Door/alarm history presentation — 2026-10-27
+
+On base aba1217, the quiet held-hill trial and Kian/Ada conversation are delivered.
+This candidate adds a public Journal reading, Door requests and bell calls, using
+existing received records. Requests, assent/refusal, chosen activities, completed
+rolls, withdrawal and alarm outcomes stay separate and dated. Recorded start and
+work boundaries describe actual test work. Original ordinary outcome summaries
+retain their status. An ended call cannot establish door closure or safety. A past
+closure without a dated receipt remains unknown; today's door or person cannot
+supply it. Original saved logs and all simulation/native source bodies stay exact.
+
+Existing watch pacing observes retained door receipt changes; this is a reading
+projection, not a new saved event or simulation rule. Existing slowdown/legacy
+hold/menu policy remains. A deliberate person selection may frame that person once.
+Refreshing the card, reading the village list or scrolling history keeps the working
+view fixed. Full names and44px list targets take priority over compactness. Zoom and
+Fit hill remain deliberate controls. F199 camera policy stays owner input2026-11-03.
+
+Selected clauses are F637/F809/F1198 retained request/alarm/door chronology,
+F1195 fixed working view and phone targets, and F1199 door-event watch coverage.
+Missing old door intervals and contextual heard-refusal dialogue remain exact next
+engineering work, not fictional completions. F1192 is not selected. Next engineering
+target2026-10-28: F1189 costed Maryam knot/gift/story; F649/F655/F1200 real newcomer
+exchanges and Ada's actual actor contract; F1193 Yusuf stopping-line context for known
+chalk; F1192 actual invitation-answer notice; F1199 other actual setup-event receipts.
+The full117+18 register remains authoritative for other uncovered clauses. No whole
+Warren completion, owner acceptance or player retest is claimed.
+
 ## Current bounded conversation candidate — 2026-10-27
 
 Source authority is fetched origin/main9081e9a. B2, next2, rest1 and public-control
