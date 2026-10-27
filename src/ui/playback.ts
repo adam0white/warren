@@ -13,5 +13,20 @@ export function playbackRate(
 
 /** Bounded notes may replace their first entry; population IDs also expose arrivals and departures. */
 export function eventStamp(s: WarrenState): string {
-  return JSON.stringify([s.notes.at(-1), s.people.map((p) => [p.id, p.body.alive])]);
+  return JSON.stringify([
+    // Grouped old replies can change without replacing the last note. Request
+    // refusals can also be retained without a new note (for example, sleep).
+    s.notes.filter((n) => n.kind === 'answer'),
+    s.notes.at(-1),
+    s.answers.at(-1),
+    [...(s.doorTrials ?? []), ...(s.next?.requests?.door ? [s.next.requests.door] : [])].map((r) => [
+      r.at,
+      r.answers.at(-1),
+      r.results.at(-1),
+      r.opened,
+      r.endedAt,
+      r.withdrawn,
+    ]),
+    s.people.map((p) => [p.id, p.body.alive]),
+  ]);
 }

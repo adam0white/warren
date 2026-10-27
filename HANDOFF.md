@@ -1,3 +1,54 @@
+## Door/alarm history presentation candidate — 2026-10-27
+
+Remaining: director independent review and exact CLEAR; normal locked lane before
+signed source; PR/exact source CI; director merge/exact main CI; clean deployment,
+live release/served hashes and cleanup. This is a candidate, not delivery or acceptance.
+Base origin/main is aba12170d3979fa57e1382bc78b7bed656529206. The held-hill door
+trial and Kian/Ada conversation are already delivered. Older candidate labels below
+do not reopen those source mechanisms.
+
+The public Journal has Door requests and bell calls. It projects recorded request
+and reply times, refusals, chosen activities, actual test-roll start/work/finish times,
+withdrawal, bell inputs/replies and original alarm outcome notes. Retained ordinary
+door outcome episodes keep their original wording and status. They are not a safety
+claim or evidence of how long a door stayed shut. No current body, activity or
+physical state reconstructs past events. Missing older events/times remain unknown.
+The original Journal, full Persons, RNG, world, provenance and all native bodies stay
+unchanged. No saved events, default, edition, configuration, flag or query is added.
+
+The existing watch pacing now notices retained door request/reply/result changes
+and grouped answer changes even when the last note stays the same. Existing legacy
+reading holds, 0.7 slowdown and menu semantics remain exact. Selecting a person may
+frame the selected person once; card refresh does not follow subsequent movement.
+Phone list controls keep full names and at least44px height. Existing explicit zoom,
+Fit hill and navigation remain available. F199 automatic camera versus fixed working
+view remains Adam's actual owner decision2026-11-03.
+
+Bounded clauses: F637 request/refusal visibility; F809 retained door chronology;
+F1198 dated bell/door evidence and explicit unknown when closure is not established;
+F1195 fixed view while reading and full-name touch targets; F1199 retained door-event
+watch coverage. This does not establish every past bell's physical door state or
+reasons nobody closed it. F1192 invitation notice is not selected.
+
+Next engineering plans, target2026-10-28 (not permission deferrals):
+- F1189: a costed Maryam knot/gift/story continuation using her actual received words.
+- F649/F655/F1200: real newcomer actor/invitation contracts; Ada's own words require
+  her actual contract, not invention from dependent care records.
+- F1193: connect Yusuf's actual stopping-line words to selected known chalk, without
+  manufacturing agreement, a private motive or a completed project.
+- F637/F809/F1198 remaining: contextual replies to heard refusals and any future
+  public event-recording edition needed for door intervals absent from old exports.
+  Preserve exact omitted-input legacy continuation; never backfill old truth.
+- F1192: surface only actual existing invitation answer receipts outside the person
+  card. F1199: cover other real setup/outcome receipts beyond this door/alarm unit.
+- Every other uncovered clause in117+18 remains in the private exact register.
+
+Proof prefix: .lab-scratch/games-deferred/gd-resume-warren-events. Full pre-edit
+native saves and actual1440-minute continuations cover all nine historical variants.
+The causal headless public-input control and actual App phone/wide synthetic route
+are separate from owner/player acceptance and production receiving-host delivery.
+No player round, model/provider call, Submit or owner storage action was performed.
+
 ## Kian/Ada conversation source candidate — 2026-10-27
 
 Remaining: one independent director review, exact CLEAR, the normal lane before
