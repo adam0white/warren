@@ -1,3 +1,41 @@
+## Kian/Ada conversation source candidate — 2026-10-27
+
+Remaining: one independent director review, exact CLEAR, the normal lane before
+signed source, PR/head CI, director merge/main CI, clean deployment and live
+release/asset checks. This candidate is not delivered or owner acceptance.
+
+Fetched origin/main is 9081e9a. It already includes B2, next2, costed rest1
+conversation, public controls and the held-hill quiet door trial. Dated candidate
+and not-delivered sections below are historical within those merged scopes.
+Do not implement them again from their old labels.
+
+F-666 and the Ada clause of F-678 gain a public Ask Kian about Ada action.
+New recorded ask-ada and withdraw-ada-talk inputs retain append-only conversation
+history on 0.6/0.7 hills without changing their edition or configuration. Kian and
+Tamar each choose through HF, travel and spend half an hour. A reply requires
+actual hearing. Speech uses Ada’s explicitly dated care record or her existing new-story
+facts, attended words and current grain/water. Her current condition stays unknown without a new observation. Talking cannot feed her, finish a
+return, accept a project or change a duty. The existing costed care action stays
+separate. Sleeping, care, food, work, an absent listener, danger and the return
+boundary can delay or prevent speech. Withdrawal preserves earned history.
+
+All nine historical edition/configuration no-new-input tapes and actual1440-minute
+continuations retain exact bytes in the private controls. Full and compact native
+replay checks retain complete Persons, RNG, clocks and history. No package,
+framework, vendor, export-format, faith or old-input change. No player round,
+model call or Feedback Submit. Source proof stays in private gd-resume-warren-social
+artifacts; no shared ledger was changed.
+
+Next engineering target2026-10-28: Maryam’s knot/gift/story follow-up F-1189;
+newcomer invitations/stories F-649/F-655/F-1200; alarm-linked door/request history
+F-637/F-809/F-1198; broader replies to heard refusals; phone targeting F-1195;
+invitation notice F-1192; Yusuf’s planning connection F-1193; event-watch coverage
+F-1199; every other uncovered clause in the preserved117+18 packet. These remain
+buildable work, not permission deferrals. F-199 camera movement remains actual
+owner input2026-11-03. Adam accepts feel separately. Warren has no fabricated end.
+The no-server guardrail remains; the owner allowed action/real-time approaches
+on2026-10-26. HF4 migration remains separate from this explicit HF3 batch.
+
 ## Held-hill door trial candidate — 2026-10-27
 
 Remaining: director's one independent review, exact CLEAR, normal lane before
