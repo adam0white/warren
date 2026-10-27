@@ -4,6 +4,7 @@
  */
 import { ageYears, describePerson, FRAMEWORK_VERSION, type Person } from '@adam0white/human-framework';
 import { type PhoneStage, phoneStage, telemetryNotice } from '@adam0white/lab-kit';
+import { adaTalkUnavailable, adaTalkWords } from '../sim/ada-talk.ts';
 import { DAY, hourWords } from '../sim/calendar.ts';
 import { discussionWords, markedLooseCut } from '../sim/cut-discussion.ts';
 import {
@@ -1167,6 +1168,7 @@ function card() {
     <div>${esc(activityWords(doing, walking, p.name))}</div>
     ${s.next && ['yusuf', 'meryem'].includes(p.id) ? `<p>${esc(discussionWords(s))}</p>${!s.next.discussion && markedLooseCut(s) >= 0 ? '<button id="discuss-cut">Invite Yusuf Usta and Meryem to discuss the marked loose cut</button>' : s.next.discussion && s.next.discussion.endedAt === undefined ? '<button id="end-cut-discussion">Stop waiting for this discussion</button>' : ''}` : ''}
     ${residualEnabled(s) && ageYears(p) >= 18 ? `<p>${esc(s.next?.requests?.rest?.who === p.id ? requestWords(s, 'rest') : 'You can ask to talk about taking a break. The person may keep working or rest instead.')}</p>${s.next?.requests?.rest?.who === p.id && s.next.requests.rest.endedAt === undefined ? '<button data-withdraw="rest">Withdraw the rest request</button>' : '<button id="talk-rest">Ask to talk about rest</button>'}${s.next?.discussion?.exchange && s.next.discussion.statements.some((r) => r.speaker === p.id) ? `<p>${esc(s.next?.requests?.disagreement?.who === p.id ? requestWords(s, 'disagreement') : 'Both people heard the disagreement about the cut. You can invite another conversation. You may leave or change the chalk yourself.')}</p>${s.next?.requests?.disagreement?.who === p.id && s.next.requests.disagreement.endedAt === undefined ? '<button data-withdraw="disagreement">Withdraw the conversation request</button>' : '<button id="talk-disagreement">Ask to talk after the disagreement</button>'}` : ''}` : ''}
+    ${p.id === 'kian' && (s.edition === '0.6.0' || s.edition === '0.7.0') ? `<section id="ada-conversation"><p id="ada-talk-status">${esc(adaTalkWords(s))}</p>${s.adaTalks?.at(-1)?.endedAt === undefined && s.adaTalks?.length ? '<button id="withdraw-ada-talk">Stop waiting for this conversation</button>' : `<button id="ask-ada" ${adaTalkUnavailable(s) ? 'disabled' : ''}>Ask Kian about Ada</button>${adaTalkUnavailable(s) ? `<p>${esc(adaTalkUnavailable(s)!)}</p>` : ''}`}</section>` : ''}
     <div class="shelter-person">${esc(exposureWords(s, p))}</div>
     ${(s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') && VISIT_TERMS[p.id] ? `<p id="invitation-status">${esc(displayWords(invitationWords(s, p)))}</p><p>${esc(displayWords(VISIT_TERMS[p.id]!))}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] || s.flags[`invitation-pending:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><p class="soft small">${esc(s.flags[`released:${p.id}`] ? `${p.name} no longer works on the refuge. Promises and household duties still apply.` : `Releasing ${p.name} stops their digging and other work on the refuge for the rest of this hill.${p.id === 'yusuf' ? ' He will no longer walk the marks with the diggers when you ask.' : ''} It cannot be taken back. Promises and household duties still apply.`)}</p><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>${esc(`Release ${p.name} from refuge work`)}</button>` : ''}
 
@@ -1184,6 +1186,14 @@ function card() {
     el.dataset.html = html;
     el.innerHTML = html;
     continuity.bind(el);
+    for (const verb of ['ask-ada', 'withdraw-ada-talk'] as const)
+      el.querySelector(`#${verb}`)?.addEventListener('click', () => {
+        if (!g) return;
+        const ok = act(g, { verb });
+        dirty = true;
+        card();
+        if (!ok) flash(adaTalkUnavailable(g.s) ?? 'There is no pending conversation to withdraw.');
+      });
     for (const verb of ['talk-rest', 'talk-disagreement'] as const)
       el.querySelector(`#${verb}`)?.addEventListener('click', () => {
         if (!g) return;

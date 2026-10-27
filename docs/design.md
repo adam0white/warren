@@ -2,6 +2,44 @@
 
 **What done means.** For this first increment: a public, playable build at https://warren.adamwhite.work with a playtest export that replays, at least two playtest-and-fix rounds recorded verbatim in `docs/playtests/`, and an entry on https://human.adamwhite.work/games/. Adam (owner) accepts it by playing it. Later work goes in the Deferred list below, each item with a date.
 
+## Current bounded conversation candidate — 2026-10-27
+
+Source authority is fetched origin/main9081e9a. B2, next2, rest1 and public-control
+sections labelled candidate/not-delivered below describe earlier stages; their
+bounded source mechanisms are already merged. The quiet held-hill door trial
+at9081e9a is delivered. Do not duplicate those mechanics.
+
+Samir’s F-666 asks, “Let me ask Kian about Ada. That was the thread I wanted to
+follow.” F-678 asks, “Let me follow Meryem’s need for rest, or Kian’s concern for
+Ada, beyond a status line.” This candidate covers the Kian/Ada clause; it keeps
+the existing rest and mutually heard loose-cut conversation.
+
+Ask Kian about Ada is public on his0.6/0.7 card. The explicit ask-ada input creates
+one retained request. Kian may talk to Tamar, who already practises messages with
+him. Each utterance costs real travel and thirty minutes at the hearth. An awake
+listener must actually be there. Tamar may reply only after attending Kian’s words.
+HF chooses among these offers, ordinary work, food, sleep, rest and Ada’s existing
+care action. Assent alone earns no speech. Host words use explicitly dated Ada care facts,
+or her existing new-story family/story facts, and current jars. No private motive,
+agreement, completed project, care or return is inferred. Ada remains a referenced
+dependent under the existing finite contract, not a cloned Person.
+
+The public withdrawal input stops waiting. It preserves answers, speech, hearing,
+failed work, spent time and physical state. Danger, sleep, absent listeners and an
+ending care visit can prevent completion. Each request remains in history. New
+inputs add no configuration, flag, format or package. Every prior no-new-input
+continuation keeps its exact raw state. Technical readiness still needs the
+independent director review and delivery gates; Adam accepts feel by playing.
+
+Next plan, engineering target2026-10-28: costed Maryam knot/gift/story F-1189;
+newcomer exchanges F-649/F-655/F-1200; alarm-linked door/request timeline
+F-637/F-809/F-1198; other heard-refusal replies; phone targeting F-1195;
+invitation notice F-1192; Yusuf planning context F-1193; event-watch coverage
+F-1199; all remaining literal clauses in the preserved117+18 reconciliation.
+These remain available engineering. F-199 automatic camera versus fixed working
+view remains owner input2026-11-03. No fabricated game end or unpublished onward
+transfer is offered. HF3, hard faith rules and no-server infrastructure remain.
+
 ## The idea
 
 A plateau village digs a refuge into soft tuff, drawn in cross-section like an ant farm. The player keeps the dig-master's chalk and his bell. The people are full Human Framework persons (HF 3.0.0, engine 2.23.0, exact pin). Nobody takes orders. They see chalked faces, lamps, marked rooms and doors as things they could do, and choose by their own needs, goals, habits, fatigue and fear. The only voice is the bell.
@@ -156,7 +194,7 @@ The widened owner scope supersedes the dates in the historical sections below. E
 - Adam reviews game feel, food pressure, losses, goals, reading pace and readability by2026-11-03. Technical tests do not establish enjoyment.
 - F-199 automatic widening conflicts with the later fixed working-camera request. This batch keeps the fixed view and explicit Fit hill, as the director requires. Adam may choose automatic movement after playing, by2026-11-03.
 - F-113 offline growth is engineering under the widened scope. The earlier director-only prohibition is superseded by the explicitly unchecked configuration below. Adam still accepts the resulting pace and return record by2026-11-03. This is source preparation, not deployment or acceptance.
-- Framework decision-cost profiling and generic reach APIs remain platform work. HF AGENTS requires “no framework logic in games.” A host must not reproduce HF reasoning to supply quarrels or future choices. The standing game guardrail also excludes “action-game polish, real-time graphics or server infrastructure” unless the owner lifts it.
+- Framework decision-cost profiling and generic reach APIs remain platform work. HF AGENTS requires “no framework logic in games.” A host must not reproduce HF reasoning to supply quarrels or future choices. The owner allowed action and real-time games on2026-10-26. The no-server infrastructure guardrail remains; it does not block the host engineering above.
 
 ## Next source candidate — quiet away play and loose-stone discussion
 

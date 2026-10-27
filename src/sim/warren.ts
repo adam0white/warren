@@ -37,6 +37,14 @@ import {
 } from '@adam0white/human-framework';
 import { type AdaVisit, completeAdaCare, requestAdaEnd } from './ada-care.ts';
 import {
+  type AdaTalk,
+  adaTalkOffers,
+  adaTalkSuggestion,
+  captureAdaTalkAnswer,
+  finishAdaTalk,
+  observeAdaTalk,
+} from './ada-talk.ts';
+import {
   DAY,
   daylight,
   dayOfMinute,
@@ -190,6 +198,8 @@ export interface WarrenState {
   /** Absent in legacy saves; never added when continuing them. */
   edition?: '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0' | '0.7.0';
   adaVisit?: AdaVisit;
+  /** Created only by a recorded public ask-ada input. */
+  adaTalks?: AdaTalk[];
   nativeDepartures?: Record<
     string,
     {
@@ -650,6 +660,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
   const sleepy = !light || p.body.sleepPressure > 0.7 || p.body.sleepDebt > 0.5 || p.body.health < 0.5;
   const winter = season === 'winter';
   const hearth = hearthCell(s);
+  for (const a of adaTalkOffers(s, p)) offer(a, plan(s, f, at, hearth, 30, lit), 30);
   for (const a of cutOffers(s, p)) offer(a, plan(s, f, at, hearth, 30, lit), 30);
   for (const r of residentOffers(s, p)) offer(r.offer, plan(s, f, at, r.cell, r.minutes, lit), r.minutes);
   const below = yOf(from) >= SURF;
@@ -1529,6 +1540,8 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
   const hours = workDone(t, act, now);
   // Where they are now.
   s.pos[p.id] = done ? (t?.end ?? s.pos[p.id] ?? 0) : positionAt(s, p.id, now);
+  const adaTalk = finishAdaTalk(s, p, act, done);
+  if (adaTalk) return { ...base, ...adaTalk };
   const residentWork = finishResidentWork(s, p, act, done);
   if (residentWork) return { ...base, ...residentWork };
   const cutSpeech = finishCutStatement(s, p, act, done);
@@ -2129,6 +2142,7 @@ export function makeWorld(s: WarrenState): World {
       beginTrip(s, p, offer);
       captureAnswer(s, p, offer, record);
       captureResidentAnswer(s, p, offer, record);
+      captureAdaTalkAnswer(s, p, offer, record);
       return undefined;
     },
     resolve: (p, act, reason) => resolveActivity(s, p, act, reason),
@@ -2174,7 +2188,7 @@ export function advanceTo(s: WarrenState, to: number, observeIdle?: (person: Per
     const c = communityOf(s);
     const suggestions: Record<string, Suggestion> = {};
     for (const p of c.people) {
-      const suggestion = residentSuggestion(s, p) ?? cutSuggestion(s, p);
+      const suggestion = residentSuggestion(s, p) ?? cutSuggestion(s, p) ?? adaTalkSuggestion(s, p);
       if (suggestion) suggestions[p.id] = suggestion;
     }
     if (s.bell && s.bell.until > s.minute)
@@ -2243,6 +2257,7 @@ function observeRefuge(s: WarrenState) {
 }
 
 function afterQuantum(s: WarrenState, ev: SimEvent[]) {
+  observeAdaTalk(s);
   observeCutDiscussion(s);
   observeResidentTalk(s);
   if (s.edition === '0.7.0')

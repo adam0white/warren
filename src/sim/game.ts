@@ -5,6 +5,7 @@
 import { FRAMEWORK_VERSION, restore, snapshot } from '@adam0white/human-framework';
 import type { PersonaEnvelope } from '@adam0white/lab-client';
 import { requestAdaEnd } from './ada-care.ts';
+import { askAda, withdrawAdaTalk } from './ada-talk.ts';
 import type { Chapter } from './cast.ts';
 import { endCutDiscussion, inviteCutDiscussion } from './cut-discussion.ts';
 import { USE, type UseName } from './grid.ts';
@@ -53,6 +54,7 @@ export function editionOf(version: string): Edition {
 }
 
 export type Input =
+  | { at: number; verb: 'ask-ada' | 'withdraw-ada-talk' }
   | { at: number; verb: 'chalk'; cells: number[]; on: boolean }
   | { at: number; verb: 'use'; cells: number[]; use: UseName }
   | { at: number; verb: 'lamp'; cell: number }
@@ -127,6 +129,10 @@ export function act(g: Game, o: Order): boolean {
 
 function apply(s: WarrenState, i: Input): boolean {
   switch (i.verb) {
+    case 'ask-ada':
+      return askAda(s);
+    case 'withdraw-ada-talk':
+      return withdrawAdaTalk(s);
     case 'talk-rest':
       return requestTalk(s, i.who, 'rest');
     case 'talk-disagreement':
