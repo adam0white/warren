@@ -19,7 +19,21 @@ import {
   save,
   TEXT_VERSION,
 } from '../sim/game.ts';
-import { AIR_REACH, diggable, H, idx, K, neighbours, SURF, THEIR_X, USE, W, xOf, yOf } from '../sim/grid.ts';
+import {
+  AIR_REACH,
+  cellsWithUse,
+  diggable,
+  H,
+  idx,
+  K,
+  neighbours,
+  SURF,
+  THEIR_X,
+  USE,
+  W,
+  xOf,
+  yOf,
+} from '../sim/grid.ts';
 import { BELL, VISIT_TERMS } from '../sim/people.ts';
 import { type ResidentRequests, requestWords, residualEnabled } from '../sim/resident-requests.ts';
 import { INVITATIONS } from '../sim/visits.ts';
@@ -45,10 +59,10 @@ import { exposureWords } from './exposure.ts';
 import { openFeedback } from './feedback.ts';
 import { awayWords, growthWords } from './growth.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
-import { markedWorkWords, ROUTE_HELP, waterHelpWords } from './known-work.ts';
+import { grainHelpWords, markedWorkWords, ROUTE_HELP, waterHelpWords } from './known-work.ts';
 import { lab } from './lab.ts';
 import { activityWords, displayWords, settingWords, speechWords } from './words.ts';
-import { journalEntries, latestWorkWords } from './work.ts';
+import { journalEntries, observeMarkedWork, type WorkObservation, workDigestWords } from './work.ts';
 
 const labTools = new URLSearchParams(location.search).get('lab') === '1';
 
@@ -73,6 +87,8 @@ let speedIx = 0;
 const SAVE_KEY = 'hill';
 
 let g: Game | null = null;
+let observedGame: Game | null = null;
+let observedWork: WorkObservation | undefined;
 let generation = 0;
 let gameGeneration = 0;
 function replaceGame(game: Game, expected = ++generation): boolean {
@@ -375,7 +391,7 @@ function enter() {
       <div class="drawer" id="drawer" hidden></div>
       <div id="journal-tail"></div>
     </div>
-    <div class="reading-actions"><button id="last-reading"><span id="event-sentence" aria-live="polite">${FIRST_CHALK}</span> ▸</button><button class="ticker" id="ticker">Journal ▸</button></div>
+    <div class="reading-actions"><button id="last-reading"><span id="event-sentence" aria-live="polite">${FIRST_CHALK}</span> ▸</button><button id="completed-work" hidden>Inspect completed digging ▸</button><button class="ticker" id="ticker">Journal ▸</button></div>
     <div class="lk-commit" id="hill-controls"><div class="tools" role="toolbar" aria-label="Tools">
       ${toolBtn('look', 'look', '◎')}${toolBtn('chalk', 'chalk', '□')}${toolBtn('erase', 'rub out', '⌫')}
       <button id="furnish" aria-expanded="false">furnish ▾</button><button class="bell" id="bell" title="Call people below. False alarms can weaken trust." aria-label="Bell. Call people below. False alarms can weaken trust.">bell</button></div>
@@ -500,6 +516,12 @@ function enter() {
     } else if (document.getElementById('event-sentence')?.textContent === FIRST_CHALK) showCurrentHelp();
     else showReading('Latest word', document.getElementById('event-sentence')?.textContent ?? FIRST_CHALK);
   });
+  document.getElementById('completed-work')?.addEventListener('click', () => {
+    if (!g) return;
+    const cell = observedWork?.completed.at(-1);
+    if (cell === undefined) return;
+    showReading('Completed marked digging', workDigestWords(g.s, observedWork), true, false, cell);
+  });
   document.querySelector('.game')?.addEventListener('keydown', (e) => {
     if ((e as KeyboardEvent).key !== 'Escape') return;
     if (document.querySelector(':popover-open')) return;
@@ -553,7 +575,7 @@ function showCurrentHelp() {
   }
   showReading(
     'Current work and water',
-    `${waterHelpWords(s)} ${s.hill.chalk.some(Boolean) ? markedWorkWords(s) : 'Choose chalk to plan more digging.'}`,
+    `${grainHelpWords(s)} ${waterHelpWords(s)} ${s.hill.chalk.some(Boolean) ? markedWorkWords(s) : 'Choose chalk to plan more digging.'}`,
   );
   readingContext(
     `${ROUTE_HELP} First frost begins on 2 December in this game calendar. ${goalsFor(s)
@@ -784,7 +806,7 @@ function chrome() {
   const goal = document.getElementById('goal');
   if (goal)
     goal.textContent = waterWords(s).includes('dry')
-      ? 'The water jars are dry. People can carry water from the spring. Tap here for water and current work.'
+      ? `The water jars are dry. ${cellsWithUse(s.hill, USE.well).length ? 'A discovered well supplies water below.' : activeRaid(s)?.stage === 'riders' ? 'Riders block fetching from the spring.' : 'Water comes from the spring.'} Tap here for water and current work.`
       : tool === 'beds' && !activeRaid(s)
         ? sleepingCapacityWords(s)
         : colonyWords(s);
@@ -877,7 +899,13 @@ function chrome() {
     }
   }
   const event = document.getElementById('event-sentence');
-  if (event && performance.now() > hintUntil) event.textContent = latestWorkWords(s);
+  observedWork = observeMarkedWork(s, observedGame === g ? observedWork : undefined);
+  observedGame = g;
+  if (event && performance.now() > hintUntil) {
+    event.textContent = workDigestWords(s, observedWork);
+  }
+  const completedWork = document.getElementById('completed-work');
+  if (completedWork) completedWork.hidden = observedWork.completed.length === 0;
   const bell = document.getElementById('bell') as HTMLButtonElement | null;
   if (bell) bell.classList.toggle('ringing', !!s.bell && s.minute < s.bell.until);
   const tail = document.getElementById('journal-tail');
@@ -1452,9 +1480,7 @@ function describeCell(c: number) {
     const u = h.use[c] ?? 0;
     text =
       u === USE.store
-        ? (h.grain[c] ?? 0) > 0.5
-          ? 'This store holds jars of barley.'
-          : 'This store is empty.'
+        ? grainHelpWords(g.s, c)
         : u === USE.beds
           ? `${sleepingRoomWords(g.s, c)} ${sleepingCapacityWords(g.s)}`
           : u === USE.hearth
@@ -1495,7 +1521,12 @@ function describeCell(c: number) {
     if (stand !== undefined) text += airWords(stand);
   }
   if (h.use[c] === USE.door || h.use[c] === USE.beds) showDoor(c);
-  else flash(text);
+  else if (h.use[c] === USE.store) {
+    showReading('Grain store', text, true, false, c);
+    readingContext(
+      'Use Look to inspect the passage. Use Store on open ground for more jars; Chalk marks stone for digging and Lamp marks light over open ground. People choose their own work.',
+    );
+  } else flash(text);
   void xOf;
   void idx;
 }

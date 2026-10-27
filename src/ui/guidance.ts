@@ -1,4 +1,4 @@
-import { cellsWithUse, faces, grainBelow, STORE_CAP, USE } from '../sim/grid.ts';
+import { faces, grainBelow } from '../sim/grid.ts';
 import {
   activeRaid,
   airAndLight,
@@ -7,6 +7,7 @@ import {
   faceState,
   type WarrenState,
 } from '../sim/warren.ts';
+import { grainHelpWords } from './known-work.ts';
 import { bellStateWords, bellThreatWords, hadBellCall } from './room-safety.ts';
 import { sleepingCapacityWords } from './shelter.ts';
 import { activityWords, settingWords } from './words.ts';
@@ -70,10 +71,7 @@ export function colonyWords(s: WarrenState): string {
     return s.hill.chalk.some(Boolean)
       ? (task ?? 'The digging plan is marked. People decide when to start digging.')
       : FIRST_CHALK;
-  if (grainBelow(s.hill) < 45)
-    return cellsWithUse(s.hill, USE.store).length * STORE_CAP >= 45
-      ? 'The jars below are empty. People must bring the harvest down.'
-      : 'The harvest needs more room below. Mark open ground as a store for the jars.';
+  if (grainBelow(s.hill) < 45) return grainHelpWords(s);
   if (bedsBelow(s) < s.people.filter((p) => p.body.alive).length)
     return `People are filling the jars in the cellar. ${sleepingCapacityWords(s)}`;
   const goal = currentGoal(s);
