@@ -88,6 +88,7 @@ import {
 import { arrivingFamily, BELL, founders, type House, USTA_ID } from './people.ts';
 import {
   captureResidentAnswer,
+  type DoorRequest,
   finishResidentWork,
   observeResidentTalk,
   type ResidentRequests,
@@ -247,6 +248,8 @@ export interface WarrenState {
       events: string[];
     };
   };
+  /** Created only by a recorded try-door input; never changes the hill configuration. */
+  doorTrials?: DoorRequest[];
   goals: Record<string, number>;
   flags: Record<string, number>;
   stats: {

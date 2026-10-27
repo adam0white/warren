@@ -24,7 +24,7 @@ describe('door responses', () => {
     const canShut = (p: typeof adult) =>
       offersFor(s, p).some((a) => a.action === 'shut-door' && a.targetId === String(door));
 
-    expect(doorWords(s, door, true)).toContain('Ring the bell');
+    expect(doorWords(s, door, true)).toContain('test this open door');
     expect(canShut(adult)).toBe(false);
     s.bell = { at: s.minute, until: s.minute + 60, real: false };
     expect(doorWords(s, door, true)).toContain('bell is sounding');
@@ -51,13 +51,13 @@ describe('door responses', () => {
     const s = state();
     const words = doorWords(s, door, true);
     expect(words).toContain('open door');
-    expect(words).toContain('Ring the bell');
+    expect(words).toContain('test this open door');
     expect(words).toContain('adult');
-    expect(words).toContain('can reach');
-    expect(words).toContain('choose');
-    expect(words.startsWith('Ring the bell.')).toBe(true);
-    expect(words.indexOf('Ring the bell')).toBeLessThan(words.indexOf('False alarm'));
+    expect(words).toContain('reachable');
+    expect(words).toContain('Each roll takes work');
+    expect(words).toContain('Adults choose');
     expect(words).toContain('Calls without raids last six game hours');
+    expect(words).toContain('False alarms weaken trust');
     expect(words).not.toContain('Nearby adults:');
     expect(words).not.toMatch(/will shut|tap.*shut/i);
   });

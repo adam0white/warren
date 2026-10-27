@@ -10,7 +10,13 @@ import { endCutDiscussion, inviteCutDiscussion } from './cut-discussion.ts';
 import { USE, type UseName } from './grid.ts';
 import { prepareNativeReturn } from './native-return.ts';
 import { rally } from './rally.ts';
-import { requestDoor, requestTalk, withdrawRequest } from './resident-requests.ts';
+import {
+  requestDoor,
+  requestDoorTrial,
+  requestTalk,
+  withdrawDoorTrial,
+  withdrawRequest,
+} from './resident-requests.ts';
 import { seedRoleGoals } from './roles.ts';
 import { releaseVisit, visit } from './visits.ts';
 import {
@@ -57,7 +63,8 @@ export type Input =
   | { at: number; verb: 'discuss-cut' | 'end-cut-discussion' | 'acknowledge' }
   | { at: number; verb: 'away'; elapsedMs: number; quanta: number }
   | { at: number; verb: 'talk-rest' | 'talk-disagreement'; who: string }
-  | { at: number; verb: 'test-door'; who: string; cell: number }
+  | { at: number; verb: 'test-door' | 'try-door'; who: string; cell: number }
+  | { at: number; verb: 'withdraw-door-trial' }
   | { at: number; verb: 'withdraw-request'; kind: 'rest' | 'disagreement' | 'door' }
   | { at: number; verb: 'visit'; who: string }
   | { at: number; verb: 'release'; who: string }
@@ -124,6 +131,10 @@ function apply(s: WarrenState, i: Input): boolean {
       return requestTalk(s, i.who, 'rest');
     case 'talk-disagreement':
       return requestTalk(s, i.who, 'disagreement');
+    case 'try-door':
+      return requestDoorTrial(s, i.who, i.cell);
+    case 'withdraw-door-trial':
+      return withdrawDoorTrial(s);
     case 'test-door':
       return requestDoor(s, i.who, i.cell);
     case 'withdraw-request':

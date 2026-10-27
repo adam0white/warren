@@ -54,6 +54,8 @@ export interface ResidentRequests {
   disagreement?: TalkRequest;
   door?: DoorRequest;
 }
+export const doorRequest = (s: WarrenState) => s.doorTrials?.at(-1) ?? s.next?.requests?.door;
+const requestsEnabled = (s: WarrenState) => residualEnabled(s) || !!s.doorTrials;
 export const RESIDENT_VOICE = 'keeper-resident';
 export const residualEnabled = (s: WarrenState) => s.next?.config === 'warren-rest/1';
 const quiet = (s: WarrenState) =>
@@ -64,7 +66,7 @@ function active(s: WarrenState, id: string) {
   // A withdrawn request does not turn its still-running work into a new request.
   if (s.people.find((p) => p.id === id)?.activity?.affordanceId.startsWith('resident-')) return true;
   const r = s.next?.requests;
-  return [r?.rest, r?.disagreement, r?.door].some((x) => x?.who === id && x.endedAt === undefined);
+  return [r?.rest, r?.disagreement, doorRequest(s)].some((x) => x?.who === id && x.endedAt === undefined);
 }
 export function requestTalk(s: WarrenState, who: string, kind: 'rest' | 'disagreement'): boolean {
   if (
@@ -105,9 +107,8 @@ export function requestTalk(s: WarrenState, who: string, kind: 'rest' | 'disagre
   });
   return true;
 }
-export function requestDoor(s: WarrenState, who: string, cell: number): boolean {
+function canRequestDoor(s: WarrenState, who: string, cell: number): boolean {
   if (
-    !residualEnabled(s) ||
     !adult(s, who) ||
     active(s, who) ||
     !quiet(s) ||
@@ -119,16 +120,45 @@ export function requestDoor(s: WarrenState, who: string, cell: number): boolean 
     return false;
   const { lit } = airAndLight(s);
   if ((paths(s.hill, s.pos[who] ?? -1, lit, s.linked).dist[cell] ?? Infinity) > 40) return false;
-  s.next!.requests ??= {};
-  const requests = s.next!.requests;
-  if (requests.door && requests.door.endedAt === undefined) return false;
-  requests.door = { who, cell, at: s.minute, phase: 'close', answers: [], results: [] };
+  const current = doorRequest(s);
+  return !current || current.endedAt !== undefined;
+}
+function noteDoorRequest(s: WarrenState, who: string, cell: number) {
   note(s, {
     kind: 'story',
     who,
     cell,
     weight: 1,
     text: `You ask ${adult(s, who)!.name} to test this finished door, then reopen it. Each roll takes work. A shut door blocks the passage until someone chooses to reopen it. No bell was rung.`,
+  });
+}
+export function requestDoor(s: WarrenState, who: string, cell: number): boolean {
+  if (!residualEnabled(s) || !canRequestDoor(s, who, cell)) return false;
+  s.next!.requests ??= {};
+  s.next!.requests.door = { who, cell, at: s.minute, phase: 'close', answers: [], results: [] };
+  noteDoorRequest(s, who, cell);
+  return true;
+}
+/** Public trials reuse physical work and HF choice, without changing an older edition.
+ * Each accepted input appends a history receipt. No new input means no new state. */
+export function requestDoorTrial(s: WarrenState, who: string, cell: number): boolean {
+  if (residualEnabled(s) || !canRequestDoor(s, who, cell)) return false;
+  s.doorTrials ??= [];
+  s.doorTrials.push({ who, cell, at: s.minute, phase: 'close', answers: [], results: [] });
+  noteDoorRequest(s, who, cell);
+  return true;
+}
+export function withdrawDoorTrial(s: WarrenState): boolean {
+  const r = s.doorTrials?.at(-1);
+  if (!r || r.endedAt !== undefined) return false;
+  r.endedAt = s.minute;
+  r.withdrawn = true;
+  note(s, {
+    kind: 'story',
+    who: r.who,
+    cell: r.cell,
+    weight: 1,
+    text: 'You withdraw the door test. It did not finish. Time spent, earlier answers and the actual door state remain.',
   });
   return true;
 }
@@ -154,9 +184,10 @@ function talkFor(s: WarrenState, p: Person): [TalkRequest, 'rest' | 'disagreemen
 }
 /** Settle only a pending opening. Ordinary work supplies its own actor and timing. */
 function reconcileOpenDoor(s: WarrenState, opened?: DoorRequest['opened']): void {
-  if (!residualEnabled(s)) return;
-  const d = s.next?.requests?.door;
+  if (!requestsEnabled(s)) return;
+  const d = doorRequest(s);
   if (!d || d.endedAt !== undefined || d.phase !== 'open' || s.hill.shut[d.cell]) return;
+  if (s.doorTrials?.includes(d) && !opened) return;
   d.opened = opened ?? { at: s.minute };
   d.phase = 'done';
   d.endedAt = d.opened.at;
@@ -172,8 +203,19 @@ function reconcileOpenDoor(s: WarrenState, opened?: DoorRequest['opened']): void
   });
 }
 export function recordOrdinaryReopening(s: WarrenState, p: Person, activity: Activity): void {
-  const d = s.next?.requests?.door;
+  const d = doorRequest(s);
   if (!d || Number(activity.targetId) !== d.cell) return;
+  if (
+    s.doorTrials?.includes(d) &&
+    (!quiet(s) ||
+      !adult(s, p.id) ||
+      p.body.asleep ||
+      s.hill.use[d.cell] !== USE.door ||
+      s.hill.doorWork[d.cell] ||
+      p.now - (s.trips[p.id]?.workFrom ?? activity.startedAt) < 8 ||
+      !neighbours(d.cell).includes(positionAt(s, p.id, p.now)))
+  )
+    return;
   reconcileOpenDoor(s, {
     at: p.now,
     who: p.id,
@@ -183,7 +225,7 @@ export function recordOrdinaryReopening(s: WarrenState, p: Person, activity: Act
 }
 export function residentSuggestion(s: WarrenState, p: Person): Suggestion | undefined {
   reconcileOpenDoor(s);
-  if (!residualEnabled(s) || !quiet(s)) return;
+  if (!requestsEnabled(s) || !quiet(s)) return;
   const talk = talkFor(s, p);
   if (talk) {
     const [r, kind] = talk;
@@ -195,7 +237,7 @@ export function residentSuggestion(s: WarrenState, p: Person): Suggestion | unde
       since: r.speech?.at ?? r.at,
     };
   }
-  const door = s.next?.requests?.door;
+  const door = doorRequest(s);
   if (door?.who === p.id && door.endedAt === undefined)
     return {
       voiceId: RESIDENT_VOICE,
@@ -210,7 +252,7 @@ export function residentOffers(
   p: Person,
 ): { offer: Affordance; cell: number; minutes: number }[] {
   reconcileOpenDoor(s);
-  if (!residualEnabled(s) || !quiet(s)) return [];
+  if (!requestsEnabled(s) || !quiet(s)) return [];
   const talk = talkFor(s, p);
   if (talk && !talk[0].speech) {
     const [r, kind] = talk;
@@ -237,9 +279,10 @@ export function residentOffers(
       },
     ];
   }
-  const d = s.next?.requests?.door;
+  const d = doorRequest(s);
   if (
     !d ||
+    (s.doorTrials?.includes(d) && !adult(s, p.id)) ||
     d.who !== p.id ||
     d.endedAt !== undefined ||
     d.phase === 'done' ||
@@ -278,13 +321,13 @@ export function captureResidentAnswer(
   offer: Affordance,
   record: DecisionRecord,
 ): void {
-  if (!residualEnabled(s)) return;
+  if (!requestsEnabled(s)) return;
   const result =
     record.suggestion?.voiceId === RESIDENT_VOICE
       ? record.suggestion
       : record.suggestions?.find((r) => r.voiceId === RESIDENT_VOICE);
   if (!result) return;
-  const r = talkFor(s, p)?.[0] ?? (s.next?.requests?.door?.who === p.id ? s.next.requests.door : undefined);
+  const r = talkFor(s, p)?.[0] ?? (doorRequest(s)?.who === p.id ? doorRequest(s) : undefined);
   if (!r || r.endedAt !== undefined) return;
   const previous = r.answers.at(-1);
   if (
@@ -315,7 +358,7 @@ export function finishResidentWork(
   activity: Activity,
   done: boolean,
 ): Partial<Outcome> | undefined {
-  if (!residualEnabled(s)) return;
+  if (!requestsEnabled(s)) return;
   const talk = talkFor(s, p);
   if (activity.action === 'talk-rest' || activity.action === 'talk-disagreement') {
     if (!talk || talk[0].speech || !done || !quiet(s)) return { status: 'interrupted' };
@@ -371,9 +414,10 @@ export function finishResidentWork(
   }
   if (!['test-close', 'test-open'].includes(activity.action)) return;
   reconcileOpenDoor(s);
-  const d = s.next?.requests?.door;
+  const d = doorRequest(s);
   if (
     !d ||
+    (s.doorTrials?.includes(d) && !adult(s, p.id)) ||
     d.who !== p.id ||
     d.endedAt !== undefined ||
     Number(activity.targetId) !== d.cell ||
@@ -386,6 +430,11 @@ export function finishResidentWork(
     (positionAt(s, p.id, p.now) !== d.cell &&
       !(d.phase === 'open' && neighbours(d.cell).includes(positionAt(s, p.id, p.now)))) ||
     activity.action !== `test-${d.phase}`
+  )
+    return { status: 'interrupted' };
+  if (
+    s.doorTrials?.includes(d) &&
+    (!adult(s, p.id) || p.body.asleep || p.now - (s.trips[p.id]?.workFrom ?? activity.startedAt) < 8)
   )
     return { status: 'interrupted' };
   const shut = d.phase === 'close';
@@ -407,7 +456,7 @@ export function finishResidentWork(
 }
 export function observeResidentTalk(s: WarrenState): void {
   reconcileOpenDoor(s);
-  if (!residualEnabled(s)) return;
+  if (!requestsEnabled(s)) return;
   for (const r of [s.next?.requests?.rest, s.next?.requests?.disagreement]) {
     if (!r?.speech || r.heard) continue;
     const speech = r.speech;
@@ -417,7 +466,7 @@ export function observeResidentTalk(s: WarrenState): void {
   }
 }
 export function requestWords(s: WarrenState, kind: keyof ResidentRequests): string {
-  const r = s.next?.requests?.[kind];
+  const r = kind === 'door' ? doorRequest(s) : s.next?.requests?.[kind];
   if (!r)
     return kind === 'door'
       ? 'A test really shuts the door. Reopening takes another choice and more work.'

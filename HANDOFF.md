@@ -1,3 +1,23 @@
+## Held-hill door trial candidate — 2026-10-27
+
+Remaining: director's one independent review, exact CLEAR, normal lane before
+signed source, PR/exact source CI, director merge/exact main CI, clean deployment
+and title/menu checks. This source candidate is not live or owner acceptance.
+
+The public finished-door reading now offers a costed quiet test on retained hills.
+New `try-door` inputs append `doorTrials` history without creating `next` or
+changing edition. Existing rest1 `test-door` inputs and all no-new-action
+continuations retain their meanings. Each close/reopen uses existing path/work
+and HF participation; refusal, interruption and incomplete reopening cannot finish
+a trial. Actual observed results and withdrawn requests remain in history. No
+bell is manufactured and alarm history stays. No HF/vendor/package or faculty
+change. See docs/design.md and private gd-resume-warren-door evidence.
+
+F-1197/GDI-1342 and F-1201/GDI-1346 gain the held-hill mechanism;
+F-629/GDI-815 remains partial rather than whole-ask closure. Later engineering
+and the precise F-199 owner camera decision remain in the prior reconciliation.
+Adam accepts feel separately, target 2026-11-03. No panel or retest was run.
+
 ## Public controls source candidate — 2026-10-27
 
 Remaining: director-launched independent review, signed source, exact green CI, clean deployment and live engineering checks. This candidate is not live delivery or player acceptance. Owner readiness review stays2026-11-03.

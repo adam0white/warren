@@ -1,6 +1,6 @@
 import { ageYears } from '@adam0white/human-framework';
 import { paths, surfaceCell } from '../sim/grid.ts';
-import { requestWords, residualEnabled } from '../sim/resident-requests.ts';
+import { doorRequest, requestWords } from '../sim/resident-requests.ts';
 import { activeRaid, airAndLight, type WarrenState } from '../sim/warren.ts';
 import { displayWords } from './words.ts';
 
@@ -10,10 +10,12 @@ export function doorWords(s: WarrenState, cell: number, lit: boolean): string {
     return lit
       ? 'People decide whether to carve this door. They must finish it before anyone can roll it shut.'
       : 'Hang a lamp near this dark door mark. People decide whether to carve the door. They must finish it before anyone can shut it.';
-  if (residualEnabled(s) && !activeRaid(s) && !s.bell)
-    return `The door is ${s.hill.shut[cell] ? 'shut' : 'open'}. ${s.next?.requests?.door?.cell === cell ? requestWords(s, 'door') : 'You can ask a reachable adult to test it without ringing the bell. A test shuts the passage; reopening takes a separate choice and more work.'}`;
   if (s.hill.shut[cell])
-    return 'The door is rolled shut. An adult may reopen it when there is no smoke, no riders and no bell call.';
+    return `The door is rolled shut. ${doorRequest(s)?.cell === cell ? requestWords(s, 'door') : 'An adult may reopen it when there is no smoke, no riders and no bell call.'}`;
+  if (!activeRaid(s) && !s.bell)
+    return doorRequest(s)?.cell === cell
+      ? requestWords(s, 'door')
+      : 'Ask a reachable adult to test this open door. Each roll takes work. Adults choose. Ring the bell for danger. Calls without raids last six game hours. False alarms weaken trust.';
   const raid = activeRaid(s);
   const ringing = !!s.bell && s.bell.until > s.minute;
   if (raid || ringing)
