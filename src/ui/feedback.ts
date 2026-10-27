@@ -158,16 +158,19 @@ export function openFeedback(
       'If Recording is on or you choose to share your play, we include an available run and link play across games on this device. Otherwise, we send only your answer, note and optional name.',
     ),
   );
-  const diagnostic = new URLSearchParams(location.search).get('lab') === '1';
+
   const versions = element('p');
   const preview = element('pre', '', 'feedback-preview');
   const privacy = element('a', 'Lab privacy');
   privacy.href = PRIVACY_URL;
   privacy.target = '_blank';
   privacy.rel = 'noopener noreferrer';
-  if (diagnostic) disclosure.append(versions, preview);
-  disclosure.append(privacy);
+  const debug = element('details', '', 'game-debug');
+  debug.append(element('summary', 'Debug'), versions, preview);
+  const footer = element('div', '', 'menu-footer');
+  footer.append(privacy, debug);
   disclosure.addEventListener('toggle', updatePreview);
+  debug.addEventListener('toggle', updatePreview);
   name.addEventListener('input', updatePreview);
   note.addEventListener('input', updatePreview);
 
@@ -179,7 +182,7 @@ export function openFeedback(
   const actions = element('div', '', 'feedback-actions');
   const copy = element('button', 'Keep a copy of this run', 'feedback-secondary');
   copy.type = 'button';
-  copy.hidden = !diagnostic;
+  debug.append(copy);
   copy.addEventListener('click', () => {
     try {
       download();
@@ -192,8 +195,8 @@ export function openFeedback(
   back.addEventListener('click', onBack);
   const send = element('button', 'Submit', 'feedback-primary');
   send.type = 'button';
-  actions.append(copy, back, send);
-  screen.append(body, actions);
+  actions.append(back, send);
+  screen.append(body, actions, footer);
   host.replaceChildren(screen);
   // A full-screen reading must not leave the covered hill in the keyboard path.
   const covered = new Map<HTMLElement, boolean>();
@@ -217,7 +220,7 @@ export function openFeedback(
     if (event.key !== 'Tab' || document.querySelector('.hflab-veil')) return;
     const targets = [
       ...screen.querySelectorAll<HTMLElement>('button:not(:disabled), textarea, input, summary, a[href]'),
-    ].filter((e) => !e.closest('[hidden]') && e.getClientRects().length > 0);
+    ].filter((e) => !e.closest('[hidden]') && e.checkVisibility());
     const first = targets[0];
     const last = targets.at(-1);
     if (event.shiftKey && document.activeElement === first) {
@@ -237,7 +240,7 @@ export function openFeedback(
   }
 
   function updatePreview(): void {
-    if (!disclosure.open) return;
+    if (!debug.open) return;
     const build = lab.build();
     versions.textContent = `The Warren ${build.a ?? 'unknown'} · HF ${build.hf ?? 'unknown'} · commit ${build.c ?? 'unknown'}`;
     const run = feedbackRun(getRun, lab.personaRecordingAllowed === true);

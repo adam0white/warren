@@ -1,3 +1,15 @@
+## Public controls source candidate — 2026-10-27
+
+Remaining: director-launched independent review, signed source, exact green CI, clean deployment and live engineering checks. This candidate is not live delivery or player acceptance. Owner readiness review stays2026-11-03.
+
+Verified launch source/live is d9e5ede54d1f10c7485bfb4b03f156df8ffb4712, dirty:false, exact CI40470139386 success. Its B2, next2, rest1 and R2 changes supersede historical undelivered/hold wording below within their bounded scope. No storage recovery is established.
+
+This candidate removes query-dependent UI. Existing new-hill choices publicly select0.6,0.7,next2 or rest1; loaded hills retain their exact rules. Speed remains public. Fresh hills and resumed local hills enable the released browser shelf channel automatically. A loaded hill retains saved people and receipts; it never refreshes actors from newer shelf heads. Admission failure preserves the saved hill.
+
+Generic cast opt-out, fresh-local and fork controls are removed from the game. The menu links to the central browser shelf. Game-specific Watch preparation and owned saving remain public on Kian/Meryem cards, with their existing provenance, duty, care and edition refusals. The legacy native-slot importer is removed pending the separate preserving public file route. File imports gain no ownership. Download and status sit in collapsed Debug beside Lab privacy, also in Feedback. Immutable kit0.5.17 still has query-gated notebook diagnostics; its vendor bytes are untouched. A future released public Debug/privacy API is the specific adoption dependency.
+
+HF remains exactly3.0.0/engine2.23.0 for this batch. HF4 needs/migration belong to the director. No faith, difficulty, personal-read, simulation, save or replay rule changes. No player rounds, retests, model calls, production Feedback, storage clearing or queue retirement. Private evidence and all117/R2 mappings: `~/code/.lab-scratch/games-deferred/gd-resume-warren-report.md` and its reconciliation JSON. Director owns shared ledgers/inventory. Next bounded engineering remains there; F199 automatic camera widening remains owner input, with the fixed working camera kept.
+
 ## Automatic recording source candidate — 2026-10-26
 
 Ordinary automated browsers now initialize the released `createLab({ game: 'warren' })`; the implicit webdriver no-op client is removed. The SDK, endpoint, Recording switch, stored off choices, DNT/GPC defaults and privacy override behavior are unchanged. Client 0.4.11 still suppresses localhost recording without its public `sendFromLocalhost` option. Future recorded local QA requires a reviewed use of that option and disclosure that the deployed SDK has no supported agent cohort marker.

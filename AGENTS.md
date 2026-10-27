@@ -6,7 +6,7 @@ Stack: HF 3.0.0 (engine 2.23.0), lab-client 0.4.15, lab-kit 0.5.17, TypeScript 7
 
 Use the shared Node 26.12.0 and pnpm 12.14.0, with `/opt/homebrew/bin` first in PATH. Use managed worktrees. Run full suites and check:lane through the machine-wide human-framework/scripts/suite-lock.ts wrapper. Run check:lane before every signed commit. Rebase origin/main before pushing. Preserve simulation, save and replay contracts. Adam accepts game feel by playing; technical delivery is separate.
 
-App package/default rules are 0.6.0; only the unchecked new-hill option selects 0.7.0. HF package 3.0.0 and engine 2.23.0 are separate values. TypeScript support requires 7+. Lab client/kit remain immutable release artifacts; do not replace archives in place or adopt an npm SDK route. Read current HANDOFF before copying historical status.
+App package/default rules are 0.6.0; public new-hill choices select 0.7.0, next2 or rest1. Loaded hills retain their recorded rules. HF package 3.0.0 and engine 2.23.0 are separate values. TypeScript support requires 7+. Lab client/kit remain immutable release artifacts; do not replace archives in place or adopt an npm SDK route. Read current HANDOFF before copying historical status.
 
 Lab-panel rounds on HF 3 builds are allowed under the playtest director. Friends’ playtests and Show HN remain paused. Owner readiness review is targeted for 2026-11-03; technical delivery does not establish acceptance.
 

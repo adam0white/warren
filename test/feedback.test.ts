@@ -49,6 +49,7 @@ it('sends a linked verdict and trimmed name, remembers the name, and keeps downl
     await page.locator('textarea').fill('The door was hard to place.');
     await page.locator('.feedback-name summary').click();
     await page.locator('.feedback-name input').fill('  Tester 7  ');
+    await page.locator('.game-debug summary').click();
     await page.getByRole('button', { name: 'Keep a copy of this run' }).click();
     await page.locator('.feedback-primary').click();
     expect(await page.locator('.feedback-status').innerText()).toContain('Sent. Your note is stored.');
@@ -71,8 +72,8 @@ it('sends a linked verdict and trimmed name, remembers the name, and keeps downl
     ]);
     await page.evaluate('window.reopenFeedback()');
     expect(await page.locator('.feedback-name input').inputValue()).toBe('Tester 7');
-    await page.locator('.feedback-disclosure summary').click();
-    await expect.poll(() => page.locator('.feedback-disclosure').innerText()).toContain('HF 2.8.0');
+    await page.locator('.game-debug summary').click();
+    await expect.poll(() => page.locator('.game-debug').innerText()).toContain('HF 2.8.0');
   } finally {
     await page.close();
   }
