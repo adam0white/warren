@@ -36,7 +36,12 @@ import {
 } from '../sim/grid.ts';
 import { BELL, VISIT_TERMS } from '../sim/people.ts';
 import { rallyBlock } from '../sim/rally.ts';
-import { type ResidentRequests, requestWords, residualEnabled } from '../sim/resident-requests.ts';
+import {
+  doorRequest,
+  type ResidentRequests,
+  requestWords,
+  residualEnabled,
+} from '../sim/resident-requests.ts';
 import { INVITATIONS } from '../sim/visits.ts';
 import {
   activeRaid,
@@ -268,7 +273,7 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
     <div class="title-actions">${compatible ? `<button class="primary" id="cont">Resume <span class="soft">· ${esc(hillDate(sv.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
       <label class="edition-choice"><input id="refuge-edition" type="checkbox"> New rules for this new hill: sleep and shelter outcomes, limited wild food, and warned damage to furnishings. Existing hills keep their rules.</label>
       <label class="edition-choice"><input id="next-edition" type="checkbox"> Also let this new hill play quietly while away, until an event needs attention. One real minute plays one game minute. Includes the new rules above and asking for positions on loose stone.</label>
-      <label class="edition-choice"><input id="rest-edition" type="checkbox"> Also allow requests to talk about rest, test finished doors in quiet time, and talk after a heard disagreement. People may decline. Includes the new rules and away play above.</label>
+      <label class="edition-choice"><input id="rest-edition" type="checkbox"> Also allow requests to talk about rest and talk after a heard disagreement. People may decline. Includes the new rules and away play above.</label>
       <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'New game' : 'Begin'}</button>
       <div id="new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="new-yes">Yes, begin</button><button id="new-no">No</button></div>
       ${footer}</div><div id="title-drawer" hidden></div></div>`;
@@ -1683,14 +1688,14 @@ function updateResidentDoor(cell: number) {
   const el = document.getElementById('resident-door-controls');
   if (!el || !g) return;
   const s = g.s;
-  if (!residualEnabled(s) || s.hill.use[cell] !== USE.door) {
+  if (s.hill.use[cell] !== USE.door) {
     el.hidden = true;
     return;
   }
-  const r = s.next?.requests?.door;
+  const r = doorRequest(s);
   const pending = r?.endedAt === undefined && !!r;
   const quiet = !s.bell && !activeRaid(s);
-  const candidates = doorCandidates(s, cell);
+  const candidates = doorCandidates(s, cell).filter((p) => ageYears(p) >= 18 && !s.flags[`released:${p.id}`]);
   const canRequest =
     quiet && !pending && !s.hill.doorWork[cell] && !s.hill.shut[cell] && candidates.length > 0;
   const html = `<p>${esc(r?.cell === cell ? requestWords(s, 'door') : 'You can ask an adult to test this finished door during quiet time. Closing and reopening each take work. The door stays shut until someone reopens it.')}</p>${pending && r.cell === cell ? '<button id="withdraw-door-test">Withdraw the door request</button>' : canRequest ? `<label>Ask a reachable adult <select id="door-tester">${candidates.map((p) => `<option value="${esc(p.id)}">${esc(p.name)}</option>`).join('')}</select></label><button id="test-door">Ask for a door test</button>` : '<p>A test needs a finished open door, quiet time, and an adult who can reach it. Another pending door request must finish or be withdrawn first.</p>'}`;
@@ -1704,14 +1709,17 @@ function updateResidentDoor(cell: number) {
   el.querySelector('#test-door')?.addEventListener('click', () => {
     const who = el.querySelector<HTMLSelectElement>('#door-tester')?.value;
     if (!g || !who) return;
-    const ok = act(g, { verb: 'test-door', who, cell });
+    const ok = act(g, { verb: residualEnabled(g.s) ? 'test-door' : 'try-door', who, cell });
     dirty = true;
     updateResidentDoor(cell);
     if (!ok)
       flash('This door test could not begin. Check the current request and the person’s reachable route.');
   });
   el.querySelector('#withdraw-door-test')?.addEventListener('click', () => {
-    if (g) act(g, { verb: 'withdraw-request', kind: 'door' });
+    if (g) {
+      if (g.s.doorTrials?.at(-1) === doorRequest(g.s)) act(g, { verb: 'withdraw-door-trial' });
+      else act(g, { verb: 'withdraw-request', kind: 'door' });
+    }
     dirty = true;
     updateResidentDoor(cell);
   });
@@ -1845,7 +1853,7 @@ function closeBook() {
 }
 
 function menuRows() {
-  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><label class="edition-choice"><input id="menu-refuge-edition" type="checkbox"> Use new sleep and shelter goals, limited wild food, and warned damage to furnishings.</label><label class="edition-choice"><input id="menu-next-edition" type="checkbox"> Also play quietly while away until an event needs attention, at one game minute per real minute. Includes the new rules above and asking for positions on loose stone.</label><label class="edition-choice"><input id="menu-rest-edition" type="checkbox"> Also allow rest conversations, quiet door tests and talking after a heard disagreement. Includes away play above. People may decline.</label><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div><a class="shelf-link" href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">People on this browser shelf</a><div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noopener">Lab privacy</a><details class="game-debug"><summary>Debug</summary><div>${continuity.controls()}</div></details></div><button class="primary" id="resume">Resume</button>`;
+  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><label class="edition-choice"><input id="menu-refuge-edition" type="checkbox"> Use new sleep and shelter goals, limited wild food, and warned damage to furnishings.</label><label class="edition-choice"><input id="menu-next-edition" type="checkbox"> Also play quietly while away until an event needs attention, at one game minute per real minute. Includes the new rules above and asking for positions on loose stone.</label><label class="edition-choice"><input id="menu-rest-edition" type="checkbox"> Also allow rest conversations and talking after a heard disagreement. Includes away play above. People may decline.</label><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div><a class="shelf-link" href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">People on this browser shelf</a><div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noopener">Lab privacy</a><details class="game-debug"><summary>Debug</summary><div>${continuity.controls()}</div></details></div><button class="primary" id="resume">Resume</button>`;
 }
 let feedbackCleanup: (() => void) | undefined;
 function showFeedback(host: HTMLElement, onBack: () => void) {

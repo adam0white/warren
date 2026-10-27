@@ -91,6 +91,29 @@ Revert: new runs start on the previous edition by setting `DEFAULT_EDITION` in `
 - DL-27 updated 2026-10-21: ordinary 0.6.0/0.7.0 resuming restores the saved minute. Offline catch-up was removed so it cannot pass a bell decision before the player sees the hill. Old saves, inputs, editions and replay quanta remain unchanged.
 - DL-3 scene colours: chalk marks and lamp flames keep their material accent colour. Selection uses ordinary ink and a heavier ellipse; the current instruction uses the accent in the controls. Material colour does not mark selection.
 
+## Held-hill door trial — 2026-10-27
+
+The ordinary finished-door reading offers a quiet test on an already-held hill.
+The keeper selects a reachable adult and asks; the person may decline or do
+something else. No new-hill checkbox or Lab query is needed. Older hills record
+`try-door`; rest1 keeps its existing `test-door` input. No edition, configuration,
+old input or saved person is converted.
+
+Both rolls use the existing paths and eight work minutes plus travel. Closing
+really blocks the passage. Reopening is another voluntary activity, possibly by
+another adult during ordinary work. The recorded result names what happened.
+A refusal, interrupted roll or incomplete reopening does not complete a trial.
+The keeper may withdraw a pending trial; time, actual door state, answers and
+past trials remain. The test does not ring the bell or remove alarm history.
+Night, sleep, care, coverage and faith rules continue normally.
+
+This bounded source change covers the held-hill mechanism in F-1197/GDI-1342,
+F-1201/GDI-1346 and part of F-629/GDI-815. It is not whole-ask or player
+acceptance. Director review, signed source, exact CI, merge and clean deployment
+receipts are separate. Other history, dialogue, projects, phone and preserving-file
+engineering remains with the director. F-199 camera preference remains Adam's
+input; owner acceptance is targeted for 2026-11-03.
+
 ## Public access batch — 2026-10-27
 
 Candidate only: gameplay editions and Slow/Steady/Fast remain explicit public choices. No query string changes available features. The legacy native-slot file importer is removed pending the separate preserving public file route; it is not hidden behind a switch. Continuing shared people is automatic on a fresh hill; Resume retains the saved people exactly. The central browser shelf owns generic cast experiments. Game-specific Watch preparation stays on the selected person’s card and retains all source/duty/care refusals. Debug starts collapsed beside Lab privacy and contains only download/status; Feedback has its small version/run preview there. Vendor archives stay unchanged.
