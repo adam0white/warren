@@ -11,7 +11,7 @@ import {
   xOf,
   yOf,
 } from '../sim/grid.ts';
-import { bedsBelow, riderCells, type WarrenState } from '../sim/warren.ts';
+import { bedsBelow, riderCells, V, type WarrenState } from '../sim/warren.ts';
 import { cellLocationWords, ROUTE_HELP } from './known-work.ts';
 import { numberWords } from './shelter.ts';
 
@@ -144,7 +144,7 @@ export function planSafety(s: WarrenState, cells: Iterable<number>, kind: PlanKi
     }
   }
   if (exposed && !words.includes('shut open stone doors'))
-    words += ' Dig deeper, or shut doors on every open route.';
+    words += ` Riders search ${V.riderReach} passage steps from each opening, so count steps, not depth: lead the passage farther, or shut doors on every open route.`;
   let doorProtected = false;
   if (protectedCells) {
     const shut = [...state.hill.shut];

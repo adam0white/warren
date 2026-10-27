@@ -1,6 +1,9 @@
-/** Visible work and structural rules only. No future threat clock or private decision explanation. */
+/**
+ * Visible work and structural rules only. No future threat clock or private decision explanation, except one:
+ * whether each digger still holds the refuge goal, which people would say aloud if asked.
+ */
 
-import { isLight } from '../sim/calendar.ts';
+import { DAY, isLight } from '../sim/calendar.ts';
 import {
   airSteps,
   cellsWithUse,
@@ -15,7 +18,16 @@ import {
   xOf,
   yOf,
 } from '../sim/grid.ts';
-import { activeRaid, airAndLight, carrying, faceState, V, type WarrenState } from '../sim/warren.ts';
+import { rallyBlock, refugeGoal } from '../sim/rally.ts';
+import {
+  activeRaid,
+  airAndLight,
+  carrying,
+  diggingAdults,
+  faceState,
+  V,
+  type WarrenState,
+} from '../sim/warren.ts';
 import { activityWords } from './words.ts';
 
 export const ROUTE_HELP = `An open route is a connected passage from an opening to the sky. Riders search ${V.riderReach} passage steps from each opening. Space more than ${V.riderReach} steps along every route is beyond that search. Count passage steps, not just depth. A finished stone door blocks a route only while shut. A new shaft can create a shorter route.`;
@@ -147,6 +159,16 @@ export function grainHelpWords(s: WarrenState, selected?: number): string {
   return words.join(' ');
 }
 
+/** True when a marked wall (the selected one, or any) is ready to cut and nobody is cutting it. */
+export function readyMark(s: WarrenState, selected?: number): boolean {
+  if (selected !== undefined && s.hill.kind[selected] === K.open) return false;
+  const { lit, air } = airAndLight(s);
+  return faces(s.hill).some(
+    (f) =>
+      (selected === undefined || f.face === selected) && faceState(s, f.face, f.stand, lit, air) === 'ready',
+  );
+}
+
 export function markedWorkWords(s: WarrenState, selected?: number): string {
   if (selected !== undefined && s.hill.kind[selected] === K.open)
     return 'This ground is open now. Digging here is complete; furnishings need their own marks.';
@@ -168,7 +190,8 @@ export function markedWorkWords(s: WarrenState, selected?: number): string {
   const words: string[] = [];
   if (states.includes('ready'))
     words.push(
-      'The mark is available for work. Nobody is digging it now. People may choose another task or rest. The wall has light, air and room for spoil; no work is recorded here now.',
+      'The mark is available for work: the wall has light, air and room for spoil. Nobody is digging it now.',
+      waitingWords(s),
     );
   if (states.includes('dark')) words.push('The marked wall is dark. Hang a lamp on the open side of it.');
   if (states.includes('stale'))
@@ -179,7 +202,57 @@ export function markedWorkWords(s: WarrenState, selected?: number): string {
     words.push('Loose rock blocks the marked wall. People must carry it away first.');
   if (selected !== undefined && (s.hill.dig[selected] ?? 0) > 0)
     words.unshift('Some stone has already been cut here.');
+  if (selected !== undefined && s.hill.known[selected])
+    words.push(
+      s.hill.kind[selected] === K.loose
+        ? 'This wall is loose stone: it can fall when people cut it. Yusuf Usta’s line where work must stop is about walls like this.'
+        : s.hill.kind[selected] === K.hard
+          ? 'This wall is hard rock: it takes longer to cut. It is not loose stone.'
+          : 'This wall is ordinary stone. Yusuf Usta’s warning about loose stone is not about this wall.',
+    );
   return words.join(' ');
+}
+
+const listNames = (names: string[]) =>
+  names.length > 1 ? `${names.slice(0, -1).join(', ')} and ${names.at(-1)}` : (names[0] ?? '');
+
+/** Who could take a ready mark, and whether the refuge still matters to them. Approximate, from state. */
+export function waitingWords(s: WarrenState): string {
+  const diggers = diggingAdults(s);
+  if (!diggers.length) return 'Nobody on the hill takes digging work now.';
+  const keen: string[] = [];
+  const fading: { name: string; days: number }[] = [];
+  const gone: string[] = [];
+  const done: string[] = [];
+  for (const p of diggers) {
+    const g = refugeGoal(p);
+    if (g?.status === 'achieved') done.push(p.name);
+    else if (g?.status !== 'active') gone.push(p.name);
+    else if (g.importance < (g.baseImportance ?? g.importance) - 1e-9)
+      fading.push({ name: p.name, days: Math.floor((s.minute - (g.lastAdvancedAt ?? g.adoptedAt)) / DAY) });
+    else keen.push(p.name);
+  }
+  const out = [
+    `${diggers.length <= 3 ? 'Only ' : ''}${listNames(diggers.map((p) => p.name))} ${diggers.length === 1 ? 'takes' : 'take'} digging work; elders advise, and others keep to their own duties.`,
+  ];
+  if (keen.length)
+    out.push(
+      `${listNames(keen)} still ${keen.length === 1 ? 'wants' : 'want'} the refuge, but meals, harvest and rest come first when they are needed.`,
+    );
+  for (const f of fading)
+    out.push(
+      `${f.name} has not worked on the refuge for ${f.days === 1 ? 'a day' : `${f.days} days`}, and it matters less to them each day.`,
+    );
+  if (done.length)
+    out.push(
+      `${listNames(done)} ${done.length === 1 ? 'feels' : 'feel'} they have done their share of the refuge, whatever the chalk still asks.`,
+    );
+  if (gone.length) out.push(`${listNames(gone)} ${gone.length === 1 ? 'has' : 'have'} let the refuge go.`);
+  if (fading.length || gone.length || done.length) {
+    const block = rallyBlock(s);
+    out.push(block ? block : 'You can ask Yusuf Usta to walk the marks with them.');
+  }
+  return out.join(' ');
 }
 
 /** Coordinates are on the visible grid, relative to the labelled entrance row. */

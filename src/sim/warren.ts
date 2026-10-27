@@ -348,6 +348,19 @@ export const houseOf = (s: WarrenState, pid: string) => s.houses.find((h) => h.m
 const adult = (p: Person) => ageYears(p) >= 14;
 const elder = (p: Person) => ageYears(p) >= 68;
 
+/** Read-only: the living people whose offers can include digging now (same gates as `offersFor`). */
+export function diggingAdults(s: WarrenState): Person[] {
+  const later = s.edition === '0.6.0' || s.edition === '0.7.0';
+  return s.people.filter(
+    (p) =>
+      p.body.alive &&
+      (later ? ageYears(p) >= 18 : adult(p)) &&
+      !elder(p) &&
+      !(later && ['tariq', 'kian'].includes(p.id)) &&
+      !s.flags[`released:${p.id}`],
+  );
+}
+
 // ---------- caches (not saved; rebuilt from state) ----------
 
 interface Cache {

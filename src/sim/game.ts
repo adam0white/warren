@@ -9,6 +9,7 @@ import type { Chapter } from './cast.ts';
 import { endCutDiscussion, inviteCutDiscussion } from './cut-discussion.ts';
 import { USE, type UseName } from './grid.ts';
 import { prepareNativeReturn } from './native-return.ts';
+import { rally } from './rally.ts';
 import { requestDoor, requestTalk, withdrawRequest } from './resident-requests.ts';
 import { seedRoleGoals } from './roles.ts';
 import { releaseVisit, visit } from './visits.ts';
@@ -52,6 +53,7 @@ export type Input =
   | { at: number; verb: 'unlamp'; cell: number }
   | { at: number; verb: 'door'; cell: number }
   | { at: number; verb: 'bell' }
+  | { at: number; verb: 'rally' }
   | { at: number; verb: 'discuss-cut' | 'end-cut-discussion' | 'acknowledge' }
   | { at: number; verb: 'away'; elapsedMs: number; quanta: number }
   | { at: number; verb: 'talk-rest' | 'talk-disagreement'; who: string }
@@ -166,6 +168,8 @@ function apply(s: WarrenState, i: Input): boolean {
       return placeDoor(s, i.cell);
     case 'bell':
       return ringBell(s);
+    case 'rally':
+      return rally(s);
   }
 }
 

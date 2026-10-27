@@ -35,6 +35,7 @@ import {
   yOf,
 } from '../sim/grid.ts';
 import { BELL, VISIT_TERMS } from '../sim/people.ts';
+import { rallyBlock } from '../sim/rally.ts';
 import { type ResidentRequests, requestWords, residualEnabled } from '../sim/resident-requests.ts';
 import { INVITATIONS } from '../sim/visits.ts';
 import {
@@ -59,10 +60,24 @@ import { exposureWords } from './exposure.ts';
 import { openFeedback } from './feedback.ts';
 import { awayWords, growthWords } from './growth.ts';
 import { colonyWords, FIRST_CHALK, PURPOSE } from './guidance.ts';
-import { grainHelpWords, markedWorkWords, ROUTE_HELP, waterHelpWords } from './known-work.ts';
+import {
+  cellLocationWords,
+  grainHelpWords,
+  markedWorkWords,
+  ROUTE_HELP,
+  readyMark,
+  waterHelpWords,
+} from './known-work.ts';
 import { lab } from './lab.ts';
 import { activityWords, displayWords, settingWords, speechWords } from './words.ts';
-import { journalEntries, observeMarkedWork, type WorkObservation, workDigestWords } from './work.ts';
+import {
+  journalView,
+  observeMarkedWork,
+  observeSetups,
+  type SetupObservation,
+  type WorkObservation,
+  workDigestWords,
+} from './work.ts';
 
 const labTools = new URLSearchParams(location.search).get('lab') === '1';
 
@@ -89,6 +104,9 @@ const SAVE_KEY = 'hill';
 let g: Game | null = null;
 let observedGame: Game | null = null;
 let observedWork: WorkObservation | undefined;
+let observedSetups: SetupObservation | undefined;
+/** Display only, this sitting: changes to what the keeper set up, shown at the top of the Journal. */
+let seenWhileWatching: { at: number; text: string }[] = [];
 let generation = 0;
 let gameGeneration = 0;
 function replaceGame(game: Game, expected = ++generation): boolean {
@@ -387,7 +405,7 @@ function enter() {
     </div>
     <div class="panel lk-sheet" aria-label="Hill actions"><div class="lk-sheet-body" id="inspection-body">
       <div class="card" id="card" hidden></div>
-      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Reading</b><button class="x" id="cellx" aria-label="Close reading">×</button></div><p id="cell-words" role="region" aria-label="Full reading"></p><div id="resident-door-controls" hidden></div><div id="entrance-choice" hidden><button id="confirm-entrance">Plan this entrance</button><button id="cancel-entrance">Cancel</button></div><button id="connections" hidden aria-pressed="false">Show connections</button><p id="connection-words" hidden></p><details id="reading-context" hidden><summary>More ▸</summary><div id="door-context"></div></details></div>
+      <div class="card cell-detail" id="cell-detail" hidden><div class="who"><b id="cell-title">Reading</b><button class="x" id="cellx" aria-label="Close reading">×</button></div><p id="cell-words" role="region" aria-label="Full reading"></p><div id="resident-door-controls" hidden></div><div id="rally-controls" hidden><button id="rally-marks">Ask Master Yusuf to walk the marks with the diggers</button></div><div id="entrance-choice" hidden><button id="confirm-entrance">Plan this entrance</button><button id="cancel-entrance">Cancel</button></div><button id="connections" hidden aria-pressed="false">Show connections</button><p id="connection-words" hidden></p><details id="reading-context" hidden><summary>More ▸</summary><div id="door-context"></div></details></div>
       <div class="drawer" id="drawer" hidden></div>
       <div id="journal-tail"></div>
     </div>
@@ -427,6 +445,17 @@ function enter() {
       chrome();
       requestWake();
     });
+  document.getElementById('rally-marks')?.addEventListener('click', () => {
+    if (!order({ verb: 'rally' })) {
+      const why = g && rallyBlock(g.s);
+      if (why) hint('rally-blocked', displayWords(why));
+      showRally(rallyCell);
+      return;
+    }
+    if (rallyCell === null) showCurrentHelp();
+    else showPlan(rallyCell);
+    chrome();
+  });
   document.getElementById('bell')?.addEventListener('click', () => {
     if (order({ verb: 'bell' })) {
       const raid = g && activeRaid(g.s);
@@ -573,16 +602,26 @@ function showCurrentHelp() {
     );
     return;
   }
-  showReading(
-    'Current work and water',
-    `${grainHelpWords(s)} ${waterHelpWords(s)} ${s.hill.chalk.some(Boolean) ? markedWorkWords(s) : 'Choose chalk to plan more digging.'}`,
-  );
+  const dig = s.hill.chalk.some(Boolean) ? markedWorkWords(s) : 'Choose chalk to plan more digging.';
+  const supply = `${grainHelpWords(s)} ${waterHelpWords(s)}`;
+  // A stalled plan the keeper can act on leads, so the ask sits next to the words that explain it.
+  showReading('Current work and water', rallyBlock(s) ? `${supply} ${dig}` : `${dig} ${supply}`);
+  showRally(null);
   readingContext(
     `${ROUTE_HELP} First frost begins on 2 December in this game calendar. ${goalsFor(s)
       .filter((goal) => goal.shown(s) && s.goals[goal.id] === undefined)
       .map((goal) => displayWords(goal.text))
       .join(' ')}`,
   );
+}
+
+/** The keeper's ask appears only where a ready mark waits on people whose refuge goal has faded. */
+let rallyCell: number | null = null;
+function showRally(cell: number | null) {
+  const el = document.getElementById('rally-controls');
+  if (!el || !g) return;
+  rallyCell = cell;
+  el.hidden = !!rallyBlock(g.s) || !readyMark(g.s, cell ?? undefined);
 }
 
 function setTool(t: Tool) {
@@ -670,8 +709,15 @@ function resize() {
   canvas.style.width = `${r.width}px`;
   canvas.style.height = `${r.height}px`;
   canvas.style.marginTop = `${controlsHeight}px`;
+  const oldWidth = view.w;
   view.w = r.width;
   view.h = r.height;
+  // A width change keeps the hill in view: a new device size refits the dug hill, a small change keeps the centre.
+  if (oldWidth > 0 && r.width !== oldWidth) {
+    if (g && Math.max(oldWidth, r.width) / Math.min(oldWidth, r.width) > 1.5)
+      Object.assign(view, baseView(g.s, r.width, r.height));
+    else view.x += (oldWidth - r.width) / (2 * view.cs);
+  }
   ctx?.setTransform(dpr, 0, 0, dpr, 0, 0);
   clampView();
 }
@@ -899,8 +945,23 @@ function chrome() {
     }
   }
   const event = document.getElementById('event-sentence');
+  const completedBefore = observedGame === g ? (observedWork?.completed.length ?? 0) : undefined;
   observedWork = observeMarkedWork(s, observedGame === g ? observedWork : undefined);
+  const setups = observeSetups(s, observedGame === g ? observedSetups : undefined);
+  for (const c of observedWork.completed.slice(completedBefore ?? observedWork.completed.length))
+    setups.seen.push(`Your marked square ${cellLocationWords(s, c)} is dug open now.`);
+  observedSetups = setups.observation;
+  if (observedGame !== g) seenWhileWatching = [];
   observedGame = g;
+  if (setups.seen.length) {
+    const words = setups.seen.join(' ');
+    seenWhileWatching = [...seenWhileWatching, ...setups.seen.map((text) => ({ at: s.minute, text }))].slice(
+      -12,
+    );
+    // Display only: the line stays in view for six seconds. Playback is not paused or slowed for it.
+    hintUntil = performance.now() + 6000;
+    if (event) event.textContent = settingWords(words);
+  }
   if (event && performance.now() > hintUntil) {
     event.textContent = workDigestWords(s, observedWork);
   }
@@ -909,13 +970,18 @@ function chrome() {
   const bell = document.getElementById('bell') as HTMLButtonElement | null;
   if (bell) bell.classList.toggle('ringing', !!s.bell && s.minute < s.bell.until);
   const tail = document.getElementById('journal-tail');
-  if (tail)
-    tail.innerHTML = journalEntries(s.notes)
+  if (tail) {
+    const view = journalView(s.notes);
+    const routine = view.routine.filter((n) => n.weight >= 1).length;
+    tail.innerHTML = `${view.fresh
       .filter((n) => n.weight >= 1)
       .slice(-8)
       .reverse()
       .map((n) => `<p>${esc(displayWords(n.text))}</p>`)
-      .join('');
+      .join(
+        '',
+      )}${routine ? `<p class="soft small">${routine === 1 ? 'One routine line repeats' : `${routine} routine lines repeat`} each day. The Journal keeps them together under Daily routine.</p>` : ''}`;
+  }
   updateShelter();
   updateDoor();
   updatePlanPreview();
@@ -938,6 +1004,8 @@ function showReading(title: string, words: string, remember = true, preserveScro
   if (choice) choice.hidden = true;
   const residentControls = document.getElementById('resident-door-controls');
   if (residentControls) residentControls.hidden = true;
+  const rallyControls = document.getElementById('rally-controls');
+  if (rallyControls) rallyControls.hidden = true;
   const sameReading = preserveScroll && !detail.hidden && heading.textContent === settingWords(title);
   if (!sameReading) document.getElementById('inspection-body')?.scrollTo(0, 0);
   heading.textContent = settingWords(title);
@@ -1098,7 +1166,7 @@ function card() {
     ${s.next && ['yusuf', 'meryem'].includes(p.id) ? `<p>${esc(discussionWords(s))}</p>${!s.next.discussion && markedLooseCut(s) >= 0 ? '<button id="discuss-cut">Invite Yusuf Usta and Meryem to discuss the marked loose cut</button>' : s.next.discussion && s.next.discussion.endedAt === undefined ? '<button id="end-cut-discussion">Stop waiting for this discussion</button>' : ''}` : ''}
     ${residualEnabled(s) && ageYears(p) >= 18 ? `<p>${esc(s.next?.requests?.rest?.who === p.id ? requestWords(s, 'rest') : 'You can ask to talk about taking a break. The person may keep working or rest instead.')}</p>${s.next?.requests?.rest?.who === p.id && s.next.requests.rest.endedAt === undefined ? '<button data-withdraw="rest">Withdraw the rest request</button>' : '<button id="talk-rest">Ask to talk about rest</button>'}${s.next?.discussion?.exchange && s.next.discussion.statements.some((r) => r.speaker === p.id) ? `<p>${esc(s.next?.requests?.disagreement?.who === p.id ? requestWords(s, 'disagreement') : 'Both people heard the disagreement about the cut. You can invite another conversation. You may leave or change the chalk yourself.')}</p>${s.next?.requests?.disagreement?.who === p.id && s.next.requests.disagreement.endedAt === undefined ? '<button data-withdraw="disagreement">Withdraw the conversation request</button>' : '<button id="talk-disagreement">Ask to talk after the disagreement</button>'}` : ''}` : ''}
     <div class="shelter-person">${esc(exposureWords(s, p))}</div>
-    ${(s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') && VISIT_TERMS[p.id] ? `<p id="invitation-status">${esc(displayWords(invitationWords(s, p)))}</p><p>${esc(displayWords(VISIT_TERMS[p.id]!))}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] || s.flags[`invitation-pending:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>End optional work</button>` : ''}
+    ${(s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') && VISIT_TERMS[p.id] ? `<p id="invitation-status">${esc(displayWords(invitationWords(s, p)))}</p><p>${esc(displayWords(VISIT_TERMS[p.id]!))}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] || s.flags[`invitation-pending:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><p class="soft small">${esc(s.flags[`released:${p.id}`] ? `${p.name} no longer works on the refuge. Promises and household duties still apply.` : `Releasing ${p.name} stops their digging and other work on the refuge for the rest of this hill.${p.id === 'yusuf' ? ' He will no longer walk the marks with the diggers when you ask.' : ''} It cannot be taken back. Promises and household duties still apply.`)}</p><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>${esc(`Release ${p.name} from refuge work`)}</button>` : ''}
 
     <details id="person-context"><summary id="person-context-toggle">More activity and words</summary>
     ${feeling(p) ? `<div class="soft">${esc(feeling(p))}</div>` : ''}
@@ -1660,6 +1728,7 @@ function showPlan(cell: number) {
   const reading = planSafety(g.s, [cell], 'chalk');
   reading.words = `${markedWorkWords(g.s, cell)} ${reading.words}`;
   planReading('Unbuilt plan', reading, true, false, cell);
+  showRally(cell);
   document.getElementById('cellx')?.focus();
 }
 
@@ -1914,10 +1983,12 @@ function openBook(tab = 's', opener?: HTMLElement) {
   paint.selected = null;
   personOpener = null;
   const s = g.s;
-  const notes = journalEntries(s.notes)
+  const journal = journalView(s.notes);
+  const notes = journal.fresh
     .filter((n) => n.weight >= 1)
     .slice(-60)
     .reverse();
+  const routine = journal.routine.filter((n) => n.weight >= 1).reverse();
   const newestSafety = notes.find(
     (n) => n.kind === 'raid' || n.kind === 'hurt' || (n.kind === 'dig' && /shaft|riders|door/i.test(n.text)),
   );
@@ -1948,7 +2019,18 @@ function openBook(tab = 's', opener?: HTMLElement) {
     tab === 's'
       ? menuRows()
       : tab === 'j'
-        ? `<button data-open="d">What the village has done</button>${newestSafety ? `<p id="newest-safety"><b>Latest safety entry</b><br>${esc(displayWords(newestSafety.text))}</p>` : ''}${notes.slice(0, 8).map(entry).join('')}<details><summary>Earlier journal entries</summary>${notes.slice(8).map(entry).join('')}</details>`
+        ? `<button data-open="d">What the village has done</button>${
+            seenWhileWatching.length
+              ? `<section id="seen-while-watching"><b>Seen while you watched</b>${seenWhileWatching
+                  .slice()
+                  .reverse()
+                  .map(
+                    (e) =>
+                      `<p><span class="soft small">${esc(hillDate(e.at))}</span><br>${esc(settingWords(e.text))}</p>`,
+                  )
+                  .join('')}</section>`
+              : ''
+          }${newestSafety ? `<p id="newest-safety"><b>Latest safety entry</b><br>${esc(displayWords(newestSafety.text))}</p>` : ''}${notes.slice(0, 8).map(entry).join('')}${routine.length ? `<details id="daily-routine"><summary>Daily routine (${routine.length} repeated ${routine.length === 1 ? 'line' : 'lines'})</summary>${routine.map(entry).join('')}</details>` : ''}<details><summary>Earlier journal entries</summary>${notes.slice(8).map(entry).join('')}</details>`
         : tab === 'd'
           ? `<p id="growth-record">${esc(growthWords(s))}</p><p>${done.map((x) => `✓ ${esc(displayWords(x.text))}`).join('<br>') || 'No goals are complete yet.'}</p>`
           : `<h3>People below ground</h3>${householdRows(below) || '<p>No one is below yet.</p>'}<h3>People above ground</h3><p id="shelter-summary"></p>${householdRows(alive.filter((p) => !below.includes(p))) || '<p>No one is above ground.</p>'}<p class="soft">There ${alive.length === 1 ? 'is' : 'are'} ${souls(alive.length)} in the village. ${s.stats.died ? `${NUM[s.stats.died] ?? s.stats.died} ${s.stats.died === 1 ? 'person has' : 'people have'} died.` : 'No one has died.'}</p>`
