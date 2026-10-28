@@ -12,6 +12,8 @@ Current 4.7 control passes actual marked cutting, full game/HF replay, pending/a
 
 The public menu offers Open a saved hill at `/file/`, People across games and Pace. Debug shows app/HF versions. The 360×690 headless file control opened a real saved hill and observed zero native database opens. File play strips shared ownership and cannot write native saves or start a replacement hill.
 
+The sole hosted review found recurring autosave pauses in file play. The trigger now excludes file-origin games. The same35-second control counted13 save-status mutations before the fix and zero after it. Native database opens stayed zero.
+
 One public HF call runs per simulation frame. Atomic overruns remain possible; timing controls do not prove phone or worst-case performance. Saving visibly pauses play. See the current and historical controls in docs/playtests.
 
 ## Earlier handoff evidence

@@ -12,7 +12,7 @@
     "dev": "vite",
     "build": "stamp-release && vite build",
     "preview": "vite preview",
-    "test": "vitest run --testTimeout=60000",
+    "test": "vitest run --testTimeout=60000 --maxWorkers=2",
     "typecheck": "tsc -p tsconfig.json",
     "lint": "biome check .",
     "format": "biome format --write .",

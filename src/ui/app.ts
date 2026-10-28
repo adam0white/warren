@@ -859,7 +859,7 @@ function frame(now: number) {
   // The working view moves only through view controls, gestures or explicit person selection.
   draw(ctx, s, view, ink, paint);
   if (Math.floor(now / 250) !== Math.floor((now - dt) / 250)) chrome();
-  if (dirty && !checkpointPending && now - lastSaved > 30000) automaticCheckpoint();
+  if (dirty && !g?.fileOrigin && !checkpointPending && now - lastSaved > 30000) automaticCheckpoint();
 }
 
 /** The text around the scene: date, stores, goal, notes, the card. Updated a few times a second. */

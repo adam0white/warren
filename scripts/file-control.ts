@@ -27,6 +27,22 @@ try {
     buffer: Buffer.from(JSON.stringify(save(newGame(7)))),
   });
   await page.locator('#cv').waitFor();
+  await page.evaluate(() => {
+    Object.assign(window, { savingPauses: 0 });
+    new MutationObserver(() => {
+      if (document.getElementById('clock-rate')?.textContent?.includes('Saving this hill'))
+        Object.assign(window, {
+          savingPauses: (window as unknown as { savingPauses: number }).savingPauses + 1,
+        });
+    }).observe(document.getElementById('clock-rate')!, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+  });
+  await page.clock.fastForward(35000);
+  await page.clock.runFor(1000);
+  assert.equal(await page.evaluate(() => (window as unknown as { savingPauses: number }).savingPauses), 0);
   await page.locator('#book').click();
   assert.equal(await page.getByRole('link', { name: 'People across games', exact: true }).count(), 1);
   assert.equal(await page.locator('#to-title').count(), 0);
@@ -35,6 +51,7 @@ try {
   console.log(
     JSON.stringify({
       openedFile: true,
+      past35SecondsWithoutSavePause: true,
       nativeOpens: 0,
       sharedOwnership: false,
       versions: true,
