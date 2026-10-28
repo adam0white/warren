@@ -182,8 +182,10 @@ it('keeps an occupied native hill byte-exact through public Debug and pagehide, 
     await page.reload();
     await page.locator('#book').click();
     expect(await page.locator('.game-debug').getAttribute('open')).toBeNull();
-    await page.locator('.game-debug summary').click();
     expect(await page.locator('#download-run').isVisible()).toBe(true);
+    expect(await page.locator('#download-run').isDisabled()).toBe(true);
+    expect(await page.locator('.game-debug #download-run').count()).toBe(0);
+    await page.locator('.game-debug summary').click();
     expect(await page.locator('input[type="file"], #cast-file').count()).toBe(0);
     await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
     const after = await page.evaluate<string>(

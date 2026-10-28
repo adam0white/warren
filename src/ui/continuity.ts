@@ -88,7 +88,7 @@ export function handoffControls(who: string) {
 }
 /** Diagnostics never change cast ownership. Cast experiments live on the central shelf. */
 export function controls() {
-  return `<button id="download-run">Download this run</button><p data-cast-status role="status">${esc(continuityStatus)}</p>`;
+  return `<p data-cast-status role="status">${esc(continuityStatus)}</p>`;
 }
 async function readyShelf(token: number) {
   await shelf.ready;
