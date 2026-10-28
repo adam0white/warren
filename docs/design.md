@@ -91,6 +91,25 @@ answers, chosen activities, work boundaries, withdrawal and actual alarm outcome
 A past closure without a dated receipt remains unknown. Current bodies or doors
 cannot supply past truth. Original summaries and raw saved notes remain exact.
 
+## Yusuf’s invitation note and selected chalk
+
+F1193 asks: “Let me understand how Yusuf’s stopping line applies to the work I am
+planning.” The selected chalk reading now places the retained Yusuf invitation
+note and its date beside the current selected square. Show connections retains
+its existing known-ground geometry. The note is matched to the existing
+visit flag's actor, minute and authored words. A surviving visit flag alone
+cannot supply a trimmed note. Missing original words and date remain unknown. The
+legacy public visit writes an authored story note when Yusuf is free. It does not
+establish HF speech, hearing or a conversation cost. A broader actual costed reply
+remains separate available engineering, targeted for 2026-10-28.
+
+The clue records no stopping-line endpoints or agreement about the selected work.
+The reading says so. It leaves the keeper to keep the plan, use Rub out to remove
+marks or use Chalk to plan digging. Reading makes no chalk change and supplies no
+safety, agreement or completed-project credit. Material readings no longer assign
+Yusuf’s historical line to a particular present wall. Persons, simulation, raw
+history, formats, editions and public actions retain their existing contracts.
+
 ## Clocks, reading and presentation
 
 Slow, Steady and Fast are public. Gameplay readings, event beats and unanswered
@@ -164,7 +183,7 @@ base above; their source presence is distinct from current live delivery evidenc
 
 Engineering target2026-10-28: F1189 costed Maryam knot/gift/story continuation;
 F649/F655/F1200 actual newcomer exchanges and Ada actor contract; contextual replies
-to heard refusals; F1193 Yusuf stopping-line planning context; F1192 invitation-answer
+to heard refusals; any F1193 clauses beyond the bounded invitation-note projection; F1192 invitation-answer
 notice; F1199 other actual setup-event coverage; every uncovered compound clause.
 F595's rest request and F629's door request remain bounded mechanisms. F678 stays
 a compound ask. GDI089's general/spontaneous quarrels remain wider than this finite

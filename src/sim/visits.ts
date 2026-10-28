@@ -22,6 +22,13 @@ const CLUES: Record<string, string> = {
   tamar:
     'Tamar agrees to a daylight check. She demonstrates a hand signal twice. “I once changed a gesture without checking everyone understood. A younger watcher took the blame.” She asks Kian to demonstrate it back. The public correction remains unfinished.',
 };
+/** Read the retained authored invitation note only. A visit flag cannot recover trimmed words. */
+export function receivedVisit(s: WarrenState, id: string) {
+  const at = s.flags[`visit:${id}`];
+  if (!at || !CLUES[id]) return undefined;
+  return s.notes.find((n) => n.kind === 'story' && n.who === id && n.at === at - 1 && n.text === CLUES[id]);
+}
+
 export function visit(s: WarrenState, id: string): boolean {
   const p = s.people.find((p) => p.id === id);
   if (

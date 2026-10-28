@@ -1,6 +1,8 @@
 /** Display-only topology. Unknown stone is never inspected for a material or a hidden opening. */
 import { diggable, idx, K, neighbours, RIDGE, SURF, THEIR_X, USE, xOf, yOf } from '../sim/grid.ts';
+import { receivedVisit } from '../sim/visits.ts';
 import { riderCells, V, type WarrenState } from '../sim/warren.ts';
+import { historyTime } from './event-history.ts';
 import { cellLocationWords } from './known-work.ts';
 
 type Route = { accessible: boolean; exposed: boolean; riskPath: number[] };
@@ -102,4 +104,15 @@ export function chalkFeedback(ack: boolean, before: number[], after: number[]): 
   if (added) return `${added} ${added === 1 ? 'square marked' : 'squares marked'} for digging.`;
   if (removed) return `${removed} chalk ${removed === 1 ? 'mark removed' : 'marks removed'}.`;
   return 'The chalk is unchanged.';
+}
+
+/** SCOPE: retained invitation note beside today's selection, never a historical geometric agreement. */
+export function yusufPlanWords(s: WarrenState, cell: number): string {
+  if (!s.hill.chalk[cell]) return '';
+  const receipt = receivedVisit(s, 'yusuf');
+  const original = receipt
+    ? `Retained Yusuf invitation note · ${historyTime(receipt.at)}: ${receipt.text}`
+    : 'Yusuf’s invitation note is unavailable in the retained notes. Its words and date are unknown.';
+  const current = `Current chalk selection: ${cellLocationWords(s, cell)}. ${s.hill.known[cell] ? 'This square is known ground.' : 'The chalk is visible, but the stone inside is unknown.'}`;
+  return `${original} ${current} No endpoints for Yusuf’s stopping line are recorded. The selected chalk and its shown connections do not establish that line or an agreement about this work. You choose whether to keep or change this plan. Use Rub out on a mark to remove it. Use Chalk on adjoining stone to plan digging. Reading these words changes no chalk.`;
 }

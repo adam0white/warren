@@ -121,3 +121,89 @@ it('actual App synthetic phone/wide route shows real request and alarm records w
     await server.close();
   }
 }, 60000);
+
+it('actual App separates the Yusuf invitation note from each selected chalk at phone/wide sizes and keeps missing history unknown', async () => {
+  const g = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  advance(g, 360);
+  expect(act(g, { verb: 'visit', who: 'yusuf' })).toBe(true);
+  expect(g.s.flags['invitation-pending:yusuf']).toBeTruthy();
+  advance(g, 390);
+  expect(g.s.flags['visit:yusuf']).toBeTruthy();
+  const cells = [idx(15, SURF + 3), idx(20, SURF + 3)];
+  expect(act(g, { verb: 'chalk', cells, on: true })).toBe(true);
+  const server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
+  const browser = await chromium.launch({ headless: true });
+  try {
+    await server.listen();
+    const url = server.resolvedUrls!.local[0]!;
+    for (const viewport of [
+      { width: 360, height: 690 },
+      { width: 1280, height: 800 },
+    ]) {
+      const page = await browser.newPage({ viewport });
+      try {
+        await page.route('**/*', (r) => (r.request().url().startsWith(url) ? r.continue() : r.abort()));
+        await page.clock.install();
+        await page.goto(url);
+        await page.evaluate(`(async () => {
+          const { put } = await import('/src/ui/store.ts');
+          await put('hill', ${JSON.stringify(save(g))});
+        })()`);
+        await page.reload();
+        await page.locator('#cont').click();
+        if (await page.locator('#cellx').isVisible()) await page.locator('#cellx').click();
+        await page.locator('[data-tool="look"]').click();
+        const raw = await page.evaluate(() => JSON.stringify(window.__warren.game));
+        const select = async (x: number) => {
+          const point = await page.evaluate((x) => {
+            const v = window.__warren.view;
+            const b = document.querySelector('#cv')!.getBoundingClientRect();
+            return { x: b.x + (x + 0.5 - v.x) * v.cs, y: b.y + (11.5 - v.y) * v.cs };
+          }, x);
+          await page.mouse.click(point.x, point.y);
+        };
+        await select(15);
+        let text = await page.locator('#cell-words').innerText();
+        expect(text).toContain('Retained Yusuf invitation note');
+        expect(text).toContain('A mark must show others when they can stop me.');
+        expect(text).toContain('Year 1');
+        expect(text).toContain('06:00');
+        expect(text).toContain('Current chalk selection: 3 squares left');
+        expect(text).toContain('No endpoints');
+        expect(text).toContain('Use Rub out');
+        await page.locator('#connections').click();
+        expect(await page.locator('#connection-words').innerText()).toContain('First connecting stone');
+        await page.locator('#cellx').click();
+        await select(20);
+        text = await page.locator('#cell-words').innerText();
+        expect(text).toContain('Current chalk selection: 2 squares right');
+        expect(text).toContain('A mark must show others when they can stop me.');
+        expect(await page.evaluate(() => JSON.stringify(window.__warren.game))).toBe(raw);
+        // Synthetic historical omission only; never infer the original note from the surviving flag.
+        await page.evaluate(() => {
+          const s = window.__warren.game!.s;
+          s.notes = s.notes.filter((n) => !(n.kind === 'story' && n.who === 'yusuf' && n.weight === 2));
+        });
+        await page.locator('#cellx').click();
+        await select(15);
+        expect(await page.locator('#cell-words').innerText()).toContain('words and date are unknown');
+        expect(await page.locator('#cell-words').innerText()).not.toContain('A mark must show others');
+        const minute = await page.evaluate(() => window.__warren.game!.s.minute);
+        await page.clock.runFor(12000);
+        const later = await page.evaluate(() => window.__warren.game!.s.minute);
+        expect(later).toBeGreaterThan(minute);
+        expect(later - minute).toBeLessThan(12 * 72);
+        await page.locator('#book').click();
+        const menuMinute = await page.evaluate(() => window.__warren.game!.s.minute);
+        await page.clock.runFor(12000);
+        expect(await page.evaluate(() => window.__warren.game!.s.minute)).toBe(menuMinute);
+        expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width);
+      } finally {
+        await page.close();
+      }
+    }
+  } finally {
+    await browser.close();
+    await server.close();
+  }
+}, 60000);

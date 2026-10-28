@@ -205,10 +205,10 @@ export function markedWorkWords(s: WarrenState, selected?: number): string {
   if (selected !== undefined && s.hill.known[selected])
     words.push(
       s.hill.kind[selected] === K.loose
-        ? 'This wall is loose stone: it can fall when people cut it. Yusuf Usta’s line where work must stop is about walls like this.'
+        ? 'This wall is loose stone: it can fall when people cut it.'
         : s.hill.kind[selected] === K.hard
           ? 'This wall is hard rock: it takes longer to cut. It is not loose stone.'
-          : 'This wall is ordinary stone. Yusuf Usta’s warning about loose stone is not about this wall.',
+          : 'This wall is ordinary stone.',
     );
   return words.join(' ');
 }
