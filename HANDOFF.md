@@ -1,3 +1,11 @@
+# Public gameplay audit — 2026-10-27
+
+Remaining: final lane, signed commit, PR and exact CI; merge, deploy and live release verification remain separate. Adam accepts game feel by playing.
+
+The ordinary game menu offers Download this run. It is disabled when no hill is active; it does not silently load a saved hill. Debug remains collapsed beside Lab privacy and contains status. Feedback has its own collapsed Debug beside privacy. Fresh hills claim supported shared people automatically; local resumes retain their recorded people. Cast controls remain on the central shelf. Begin uses rules 0.7.0 with warren-rest/1.
+
+The source audit covered menu and person actions, hidden controls, query parameters, local storage, development-only branches and Debug. No gameplay query or local-storage switch was found. Development-only window access exposes test controls; context-dependent actions use actual game state. No game simulation, save or replay rule changed. Independent review found no blockers. Frozen install and 55 focused tests passed; the initial-title disabled control and three viewport/touch-target checks passed separately. The full lane exposed an outdated menu-control count; its expectation now includes public download.
+
 # Yusuf stopping-line source candidate — 2026-10-27
 
 Remaining: root’s one independent Codex review of the exact frozen candidate,

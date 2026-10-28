@@ -59,7 +59,8 @@ it('Begin uses existing latest public rules at phone and wide sizes, with exact 
         await page.locator('#cardx').click();
         await page.locator('#book').click();
         expect(await page.locator('.game-debug').getAttribute('open')).toBeNull();
-        await page.locator('.game-debug > summary').click();
+        expect(await page.locator('#download-run').isVisible()).toBe(true);
+        expect(await page.locator('.game-debug #download-run').count()).toBe(0);
         const downloading = page.waitForEvent('download');
         await page.locator('#download-run').click();
         const full: Saved = JSON.parse(readFileSync((await (await downloading).path())!, 'utf8'));
