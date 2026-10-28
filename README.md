@@ -10,13 +10,15 @@
 4. Use **look** to inspect stone and people. Open **Journal** for events and **What the village has done** for progress. Tap the people count to inspect shelter conditions.
 5. Watch for smoke and riders. Ring the **bell** to call people below. People weigh the call; it does not command them.
 
-Choose Slow, Steady or Fast. The menu pauses play. Rules 0.7 slows gameplay readings; earlier rules retain their reading holds. Default hills wait while you are away.
+Choose Slow, Steady or Fast. The menu pauses play. Rules 0.7 slows gameplay readings; earlier rules retain their reading holds. Older hills without away rules wait while you are away.
 
 Drag in look mode to move the view. Two fingers move and pinch the view. Mouse wheel pans; Ctrl+wheel zooms. The +, − and Fit hill buttons also control the view.
 
-The unchecked **New rules for this new hill** choice starts rules 0.7.0. It enables completed-sleep and actual raid-protection outcomes, limited wild food and warned damage to local furnishings. It also adds ongoing digging display and slower gameplay readings. Leaving it unchecked starts 0.6.0. Resuming or importing keeps recorded rules. Existing adult helper rules and body needs also apply in 0.6.0.
+Every new hill starts with rules 0.7.0 and the existing `warren-rest/1` configuration. Sleep and shelter outcomes, limited wild food, warned furnishing damage, quiet away play and resident conversation requests are public. Existing hills keep their recorded rules and configuration.
 
-A second unchecked choice lets a new hill play quietly while away and enables asking for positions on loose stone. It includes rules 0.7.0 and records configuration `warren-next/2`. One real minute plays one game minute through ordinary simulation, stopping for events, pending choices or a computation limit. The return reading reports completed play and unplayed time; unplayed time is not banked. In person readings, you can invite Yusuf Usta and Meryem to discuss a marked, known loose cut, or stop waiting. They may keep working or resting. Speech needs travel, thirty work minutes and an awake listener at the hearth. HF chooses their actions; hearing a position does not force agreement or disagreement. This is a bounded encounter, not general conversation. Recorded configurations remain part of saves and replay; neither next configuration supports native Watch preparation.
+One real minute away plays one game minute through ordinary simulation. Play stops for events, pending choices or a computation limit. The return reading reports completed play and unplayed time; unplayed time is not banked. You can invite Yusuf Usta and Meryem to discuss a marked, known loose cut, or stop waiting. Speech needs travel, thirty work minutes and an awake listener at the hearth. HF chooses their actions. Hearing a position does not force agreement or disagreement. You can ask an adult to talk about rest. A further conversation needs an actual mutually heard disagreement. People may decline. Door tests remain deliberate requests on a finished door.
+
+Native Watch preparation retains its existing refusal for next/rest configurations, including new hills. Older supported hills retain their existing Watch route. No saved hill is upgraded to enable an action.
 
 ## Saves, recording and files
 
@@ -34,15 +36,15 @@ Current save loading requires matching HF package and `plain3` text metadata. A 
 
 ## Human Framework and versions
 
-The [Human Framework](https://human.adamwhite.work/) supplies people’s needs, goals, habits, memories, social decisions and responses to the bell. Warren supplies the hill, work opportunities, resources, hazards, controls and presentation. Its opt-in loose-cut encounter supplies offers and records attended positions as claims; it does not force a quarrel or turn a heard position into standing advice. People choose among offered actions rather than obeying player orders. The existing game footer credits HF.
+The [Human Framework](https://human.adamwhite.work/) supplies people’s needs, goals, habits, memories, social decisions and responses to the bell. Warren supplies the hill, work opportunities, resources, hazards, controls and presentation. Its loose-cut encounter supplies offers and records attended positions as claims; it does not force a quarrel or turn a heard position into standing advice. People choose among offered actions rather than obeying player orders. The existing game footer credits HF.
 
 | Value                                    | Current source             |
 | ---------------------------------------- | -------------------------- |
-| App package / default rules              | 0.6.0                      |
-| Explicit new-hill rules option           | 0.7.0                      |
+| App package                              | 0.6.0                      |
+| Ordinary new-hill rules / configuration  | 0.7.0 / warren-rest/1      |
 | HF npm package                           | 3.0.0                      |
 | HF engine                                | 2.23.0                     |
-| Immutable lab-client / lab-kit artifacts | 0.4.11 / 0.5.12            |
+| Immutable lab-client / lab-kit artifacts | 0.4.15 / 0.5.17            |
 | TypeScript                               | 7.0.2; support requires 7+ |
 
 Package version, rules edition and engine version have different meanings. `package.json` and the lockfile pin dependencies. `/release.json` identifies a deployed build. See [HANDOFF](HANDOFF.md) for dated deployment evidence and remaining owner review.

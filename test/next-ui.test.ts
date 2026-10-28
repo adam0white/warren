@@ -19,7 +19,7 @@ for (const [width, height] of [
   [360, 690],
   [1280, 800],
 ]) {
-  it(`shows an opt-in return record and keeps it waiting until closed at ${width}x${height}`, async () => {
+  it(`shows a retained return record and keeps it waiting until closed at ${width}x${height}`, async () => {
     const page = await browser.newPage({ viewport: { width: width!, height: height! } });
     try {
       await page.route('**/*', (route) =>
@@ -27,7 +27,7 @@ for (const [width, height] of [
       );
       await page.clock.install();
       await page.goto(`${url}?lab=1`);
-      expect(await page.locator('#next-edition').isChecked()).toBe(false);
+      expect(await page.locator('.title-actions input, .title-actions select').count()).toBe(0);
       await page.evaluate(`(async()=>{
         const {newGame,save,catchUp}=await import('/src/sim/game.ts');
         const {put}=await import('/src/ui/store.ts');

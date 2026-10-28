@@ -274,9 +274,6 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
     <p class="title-goal">${PURPOSE}</p>
     ${sv && !compatible ? '<p class="soft">This saved game comes from an older version and cannot be loaded. Start a new game.</p>' : ''}
     <div class="title-actions">${compatible ? `<button class="primary" id="cont">Resume <span class="soft">· ${esc(hillDate(sv.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
-      <label class="edition-choice"><input id="refuge-edition" type="checkbox"> New rules for this new hill: sleep and shelter outcomes, limited wild food, and warned damage to furnishings. Existing hills keep their rules.</label>
-      <label class="edition-choice"><input id="next-edition" type="checkbox"> Also let this new hill play quietly while away, until an event needs attention. One real minute plays one game minute. Includes the new rules above and asking for positions on loose stone.</label>
-      <label class="edition-choice"><input id="rest-edition" type="checkbox"> Also allow requests to talk about rest and talk after a heard disagreement. People may decline. Includes the new rules and away play above.</label>
       <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'New game' : 'Begin'}</button>
       <div id="new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="new-yes">Yes, begin</button><button id="new-no">No</button></div>
       ${footer}</div><div id="title-drawer" hidden></div></div>`;
@@ -317,7 +314,7 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
     }
   });
   document.getElementById('new')?.addEventListener('click', () => {
-    if (compatible) {
+    if (sv) {
       document.getElementById('new-confirm')?.removeAttribute('hidden');
       document.getElementById('new')?.setAttribute('hidden', '');
     } else void beginNewHill();
@@ -332,25 +329,10 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
 async function beginNewHill(errorHost?: HTMLElement): Promise<boolean> {
   const expected = ++generation;
   try {
-    const opted =
-      (
-        errorHost?.querySelector<HTMLInputElement>('#menu-refuge-edition') ??
-        document.querySelector<HTMLInputElement>('#refuge-edition')
-      )?.checked ?? false;
-    const next =
-      (
-        errorHost?.querySelector<HTMLInputElement>('#menu-next-edition') ??
-        document.querySelector<HTMLInputElement>('#next-edition')
-      )?.checked ?? false;
-    const rest =
-      (
-        errorHost?.querySelector<HTMLInputElement>('#menu-rest-edition') ??
-        document.querySelector<HTMLInputElement>('#rest-edition')
-      )?.checked ?? false;
     const prepared = await continuity.fresh(
       (Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0,
-      opted || next || rest ? '0.7.0' : '0.6.0',
-      rest ? 'warren-rest/1' : next ? 'warren-next/2' : undefined,
+      '0.7.0',
+      'warren-rest/1',
     );
     if (expected !== generation) return false;
     await store.drop(SAVE_KEY);
@@ -1874,7 +1856,7 @@ function closeBook() {
 }
 
 function menuRows() {
-  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><label class="edition-choice"><input id="menu-refuge-edition" type="checkbox"> Use new sleep and shelter goals, limited wild food, and warned damage to furnishings.</label><label class="edition-choice"><input id="menu-next-edition" type="checkbox"> Also play quietly while away until an event needs attention, at one game minute per real minute. Includes the new rules above and asking for positions on loose stone.</label><label class="edition-choice"><input id="menu-rest-edition" type="checkbox"> Also allow rest conversations and talking after a heard disagreement. Includes away play above. People may decline.</label><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div><a class="shelf-link" href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">People on this browser shelf</a><div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noopener">Lab privacy</a><details class="game-debug"><summary>Debug</summary><div>${continuity.controls()}</div></details></div><button class="primary" id="resume">Resume</button>`;
+  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div><a class="shelf-link" href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">People on this browser shelf</a><div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noopener">Lab privacy</a><details class="game-debug"><summary>Debug</summary><div>${continuity.controls()}</div></details></div><button class="primary" id="resume">Resume</button>`;
 }
 let feedbackCleanup: (() => void) | undefined;
 function showFeedback(host: HTMLElement, onBack: () => void) {
