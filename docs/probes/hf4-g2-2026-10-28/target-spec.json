@@ -1,0 +1,1021 @@
+{
+  "definitions": {
+    "actions": [
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "talk-rest",
+        "label": "talk-rest",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "talk-disagreement",
+        "label": "talk-disagreement",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "test-close",
+        "label": "test-close",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "test-open",
+        "label": "test-open",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "building-assistance",
+        "label": "building-assistance",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "building-preparation",
+        "label": "building-preparation",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "care-ada",
+        "label": "care-ada",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "carry-grain",
+        "label": "carry-grain",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "carry-spoil",
+        "label": "carry-spoil",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "carve-door",
+        "label": "carve-door",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "chat",
+        "label": "chat",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "cook",
+        "label": "cook",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "dig",
+        "label": "dig",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "digging-advice",
+        "label": "digging-advice",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "discuss-cut",
+        "label": "discuss-cut",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "drink",
+        "label": "drink",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "eat",
+        "label": "eat",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "equipment-check",
+        "label": "equipment-check",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "fetch-water",
+        "label": "fetch-water",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "forage",
+        "label": "forage",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "hide",
+        "label": "hide",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "household-work",
+        "label": "household-work",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "make-lamp",
+        "label": "make-lamp",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "open-door",
+        "label": "open-door",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "perimeter-watch",
+        "label": "perimeter-watch",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "play",
+        "label": "play",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "pray",
+        "label": "pray",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "reap",
+        "label": "reap",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "rest",
+        "label": "rest",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "shelter",
+        "label": "shelter",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "show",
+        "label": "show",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "shut-door",
+        "label": "shut-door",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "sleep",
+        "label": "sleep",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "sow",
+        "label": "sow",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "store-check",
+        "label": "store-check",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "stores-assistance",
+        "label": "stores-assistance",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "survey-route",
+        "label": "survey-route",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "take",
+        "label": "take",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "talk-ada",
+        "label": "talk-ada",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "watch-running",
+        "label": "watch-running",
+        "norms": [],
+        "tags": []
+      },
+      {
+        "demands": {
+          "effort": 0,
+          "focus": 0,
+          "mode": "awake",
+          "requires": {}
+        },
+        "id": "well-advice",
+        "label": "well-advice",
+        "norms": [],
+        "tags": []
+      }
+    ],
+    "calendar": {
+      "dayMs": 86400000,
+      "days": [
+        {
+          "dayIndex": 0,
+          "start": 0,
+          "windows": []
+        }
+      ],
+      "epoch": {
+        "dayIndex": 0,
+        "id": "warren-opening",
+        "msOfDay": 0,
+        "simulationAt": 0
+      },
+      "id": "warren-calendar"
+    },
+    "lexicon": {
+      "actions": {},
+      "names": {
+        "kian": "Kian",
+        "maryam": "Hajja Maryam",
+        "meryem": "Meryem",
+        "tamar": "Tamar of the Wall",
+        "tariq": "Tariq",
+        "yusuf": "Yusuf Usta"
+      },
+      "prefer": "name",
+      "roles": {
+        "usta": "the keeper"
+      }
+    },
+    "marriageCustoms": [],
+    "methods": [],
+    "norms": [
+      {
+        "exemptions": [],
+        "id": "salah",
+        "label": "Perform the daily prayers",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#salah",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 2:43"
+          },
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 4:103 (prayer at prescribed times)"
+          },
+          {
+            "kind": "interpretation",
+            "ref": "A missed prayer is still owed (qada); sleep, forgetting and unconsciousness lift the blame, not the debt; the debt for a stretch of unconsciousness beyond five prayer times drops (Hanafi count, kept as the default): research/capacity-and-excuse-sources.md §0, §2, §4; research/decisions.md"
+          },
+          {
+            "kind": "assumption",
+            "ref": "Window boundaries (Fajr until sunrise, one-shadow Asr, red-twilight Maghrib) are the most common positions, chosen in research/decisions.md; agenda/prayer.ts"
+          }
+        ],
+        "standing": "obligatory"
+      },
+      {
+        "exemptions": [
+          {
+            "makeUp": true,
+            "provenance": {
+              "interpretationRef": "packages/human/src/conscience/catalog.ts#sawm-ramadan",
+              "kind": "religious",
+              "researchRef": "research/norm-sources.md"
+            },
+            "sources": [
+              {
+                "kind": "revelation",
+                "ref": "Qur'an 2:184 (whoever is ill or on a journey: an equal number of days after)"
+              },
+              {
+                "kind": "revelation",
+                "ref": "Qur'an 2:185 (repeated; Allah intends ease, not hardship)"
+              },
+              {
+                "kind": "assumption",
+                "ref": "Which illness qualifies is the person’s judgment; the severity threshold is an engineering stand-in"
+              },
+              {
+                "kind": "interpretation",
+                "ref": "Qur'an 2:184 continues: 'For those who can only fast with extreme difficulty, compensation can be made by feeding a needy person' (quran.com, checked 2026-10-03). Commonly read as covering chronic illness with no expected recovery (fidya instead of make-up); NOT modelled: every qualifying illness, chronic or acute, owes a make-up, because whether a condition is beyond recovery cannot be derived from body state"
+              }
+            ],
+            "when": "illness"
+          },
+          {
+            "makeUp": true,
+            "provenance": {
+              "interpretationRef": "packages/human/src/conscience/catalog.ts#sawm-ramadan",
+              "kind": "religious",
+              "researchRef": "research/norm-sources.md"
+            },
+            "sources": [
+              {
+                "kind": "revelation",
+                "ref": "Qur'an 2:184 (whoever is ill or on a journey: an equal number of days after)"
+              },
+              {
+                "kind": "revelation",
+                "ref": "Qur'an 2:185"
+              },
+              {
+                "kind": "assumption",
+                "ref": "What counts as a journey is supplied by the host as a traveling flag"
+              }
+            ],
+            "when": "travel"
+          }
+        ],
+        "id": "sawm-ramadan",
+        "label": "Fast in Ramadan",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#sawm-ramadan",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 2:183"
+          },
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 2:185 (the month of Ramadan)"
+          },
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 2:187 (eat and drink until dawn, then complete the fast until nightfall)"
+          }
+        ],
+        "standing": "obligatory"
+      },
+      {
+        "exemptions": [],
+        "id": "zakat",
+        "label": "Pay zakat",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#zakat",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 2:43"
+          }
+        ],
+        "standing": "obligatory"
+      },
+      {
+        "exemptions": [],
+        "id": "charity",
+        "label": "Give voluntary charity (sadaqah)",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#charity",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 2:261"
+          }
+        ],
+        "standing": "recommended"
+      },
+      {
+        "exemptions": [],
+        "id": "lying",
+        "label": "Lying (truthfulness is required)",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#lying",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 22:30 (shun words of falsehood; quran.com, checked 2026-10-03)"
+          },
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 9:119 (be with the truthful)"
+          }
+        ],
+        "standing": "forbidden"
+      },
+      {
+        "exemptions": [],
+        "id": "theft",
+        "label": "Theft",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#theft",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 5:38"
+          },
+          {
+            "kind": "assumption",
+            "ref": "Listed in CONSCIENCE_DEFAULTS.necessityEligible: taking food in extremity is a juristic extension of the 2:173 necessity exception by analogy (2:173 itself names forbidden food); not yet sourced in research/, recorded as an engineering assumption pending a Hanafi source"
+          }
+        ],
+        "standing": "forbidden"
+      },
+      {
+        "exemptions": [],
+        "id": "keep-promise",
+        "label": "Keep promises and commitments",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#keep-promise",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 17:34"
+          }
+        ],
+        "standing": "obligatory"
+      },
+      {
+        "exemptions": [],
+        "id": "kindness-to-parents",
+        "label": "Kindness to parents",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#kindness-to-parents",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 17:23"
+          }
+        ],
+        "standing": "obligatory"
+      },
+      {
+        "exemptions": [],
+        "id": "backbiting",
+        "label": "Backbiting",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#backbiting",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 49:12"
+          }
+        ],
+        "standing": "forbidden"
+      },
+      {
+        "exemptions": [],
+        "id": "help-neighbor",
+        "label": "Help and be good to neighbours",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#help-neighbor",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 4:36 (be kind to neighbours; a command)"
+          },
+          {
+            "kind": "interpretation",
+            "ref": "Standing recorded as recommended for everyday help beyond basic kindness is an engineering simplification; the verse itself is a command"
+          }
+        ],
+        "standing": "recommended"
+      },
+      {
+        "exemptions": [],
+        "id": "gratitude",
+        "label": "Gratitude",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#gratitude",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 2:152 (thank Me, and never be ungrateful)"
+          },
+          {
+            "kind": "interpretation",
+            "ref": "Standing as recommended for expressed gratitude toward people is an engineering simplification"
+          }
+        ],
+        "standing": "recommended"
+      },
+      {
+        "exemptions": [],
+        "id": "harm-others",
+        "label": "Harming others without right",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#harm-others",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 33:58 (abusing believers unjustifiably)"
+          },
+          {
+            "kind": "interpretation",
+            "ref": "General prohibition of unjust harm to any person, extended from specific texts; scope of \"without right\" left to the host"
+          }
+        ],
+        "standing": "forbidden"
+      },
+      {
+        "exemptions": [],
+        "id": "intoxicants",
+        "label": "Intoxicants",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#intoxicants",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 5:90"
+          }
+        ],
+        "standing": "forbidden"
+      },
+      {
+        "exemptions": [],
+        "id": "forbidden-food",
+        "label": "Eating forbidden food (carrion, blood, swine)",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#forbidden-food",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 2:173 ('if someone is compelled by necessity—neither driven by desire nor exceeding immediate need—they will not be sinful'; quran.com, checked 2026-10-03)"
+          }
+        ],
+        "standing": "forbidden"
+      },
+      {
+        "exemptions": [],
+        "id": "fairness",
+        "label": "Deal fairly (no cheating in trade)",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#fairness",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "revelation",
+            "ref": "Qur'an 83:1-3 (woe to the defrauders)"
+          },
+          {
+            "kind": "assumption",
+            "ref": "Generalised to fair dealing for secular hosts"
+          }
+        ],
+        "standing": "obligatory"
+      },
+      {
+        "exemptions": [],
+        "id": "care-dependents",
+        "label": "Care for those who depend on you",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#care-dependents",
+          "kind": "religious",
+          "researchRef": "research/norm-sources.md"
+        },
+        "sources": [
+          {
+            "kind": "interpretation",
+            "ref": "Obligations toward family alongside those toward Allah and oneself (Bukhari 1968, as cited in research/islamic-foundations.md §2); extending it to every dependent’s urgent needs is the host’s reading"
+          },
+          {
+            "kind": "assumption",
+            "ref": "Standing obligatory for secular hosts as a shared caregiving norm; engineering default"
+          }
+        ],
+        "standing": "obligatory"
+      },
+      {
+        "exemptions": [],
+        "id": "punctuality",
+        "label": "Be on time",
+        "provenance": {
+          "author": "human-framework",
+          "edition": "engineering-default",
+          "kind": "authored-world",
+          "ruleId": "punctuality"
+        },
+        "sources": [
+          {
+            "kind": "assumption",
+            "ref": "Secular social norm; engineering default"
+          }
+        ],
+        "standing": "recommended"
+      },
+      {
+        "exemptions": [],
+        "id": "eid-prayer",
+        "label": "Pray the Eid prayer in congregation",
+        "provenance": {
+          "interpretationRef": "packages/human/src/conscience/catalog.ts#eid-prayer",
+          "kind": "religious",
+          "researchRef": "research/eid-and-mourning-sources.md §1"
+        },
+        "sources": [
+          {
+            "kind": "interpretation",
+            "ref": "Strongly emphasised in every school: wajib for Hanafis, sunnah mu'akkada (Maliki), sunnah (Shafi'i), fard kifaya (Hanbali), per TDV \"Bayram\" in research/eid-and-mourning-sources.md §1"
+          },
+          {
+            "kind": "assumption",
+            "ref": "Recorded as recommended (the most common standing overall, research/decisions.md), so missing it is no breach; congregational, with no individual make-up (eid-and-mourning-sources.md §1)"
+          }
+        ],
+        "standing": "recommended"
+      }
+    ],
+    "routines": [],
+    "skillTransfers": [],
+    "skills": [
+      {
+        "domain": "motor",
+        "id": "digging",
+        "label": "digging"
+      },
+      {
+        "domain": "motor",
+        "id": "farming",
+        "label": "farming"
+      }
+    ],
+    "sources": [
+      {
+        "id": "yusuf",
+        "type": "person"
+      },
+      {
+        "id": "meryem",
+        "type": "person"
+      },
+      {
+        "id": "maryam",
+        "type": "person"
+      },
+      {
+        "id": "tariq",
+        "type": "person"
+      },
+      {
+        "id": "kian",
+        "type": "person"
+      },
+      {
+        "id": "tamar",
+        "type": "person"
+      },
+      {
+        "id": "warren",
+        "type": "host"
+      },
+      {
+        "id": "usta",
+        "type": "voice"
+      },
+      {
+        "id": "keeper-resident",
+        "type": "voice"
+      },
+      {
+        "id": "keeper-ada-talk",
+        "type": "voice"
+      },
+      {
+        "id": "keeper-cut",
+        "type": "voice"
+      }
+    ]
+  },
+  "host": {
+    "edition": "warren-hf4/1",
+    "id": "warren",
+    "schema": "warren-hf4/1"
+  },
+  "id": "warren:8",
+  "lifecycle": {
+    "kinPremises": [],
+    "kinScopes": []
+  },
+  "seed": 8,
+  "start": 18000000,
+  "world": {
+    "facts": [],
+    "hostState": {},
+    "revision": 0
+  }
+}

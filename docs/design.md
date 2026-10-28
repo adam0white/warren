@@ -6,6 +6,58 @@ playtest-and-fix rounds recorded verbatim in `docs/playtests/`, and an entry at
 https://human.adamwhite.work/games/. Adam accepts it by playing. Technical delivery
 and acceptance are separate. Later work belongs in Deferred with a date.
 
+## HF4 port blocked — 2026-10-28
+
+**Remaining:** resolve the measured G2 lived-history admission refusal, meet the
+existing ten-millisecond simulation/frame constraint (G1; evaluate G6), then retry
+the preserved candidate and perform its review, CI, clean deployment and owner
+acceptance. Warren stays on the released HF3 build. No owner question is pending.
+Next blocker review: **2026-11-03**. The matching shared rows are **G2** and **G6**
+in `human-framework/docs/hf4-game-needs.md`; that repository was not changed.
+
+The candidate used the latest npm patch available at the final check, HF 4.5.2,
+and immutable lab-client 0.5.2 and kit 0.5.19. HF 4.5.2 was published during the port
+and fixes actual sleep/wake settlement. No HF or vendor source was patched.
+
+**G2 blocks delivery.** After ordinary public chalk, ten hours of play, public
+release of Meryem's optional work and another quantum, public persona projection
+succeeds. The receiving Warren run refuses that exact passport with
+`invalid-admission` at `$.portable`. The remembered history includes the actor
+`travellers` and places `house:usta`, `field`, `hearth`, `surface` and `below`.
+Published admission accepts entity references only from declared person sources,
+current people or lifecycle entities. The opening lifecycle offers kin
+premises/scopes, not world-place registration. Inventing people or kin for
+places, changing their identity, or deleting memory would alter the history.
+An empty-goal opening admitted successfully; that did not prove lived carryover.
+Required resolution: a supported opening route for non-person historical entities
+and places, with mappings that preserve their meaning. Re-run this lived passport
+through admission and exact replay before retrying the port.
+
+The [standalone public consumer](probes/hf4-g2-2026-10-28/README.md) retains the
+complete compressed HF source archive and actual receiving inputs. Its isolated
+frozen install and run exited 0. It verifies exact source replay, restores and
+reprojects the same passport, then reproduces the admission refusal. It uses
+only public calls and no candidate game code. This is one measured refusal, not
+a claim that every passport fails.
+
+**G6 workload remains unmet.** The six-person headless candidate
+control replays exactly, including pending, active and partial-phase checkpoints.
+The primary run covers minutes 300–900 (ten hours). Public marked cutting reached 0.032942272274438786 versus 0 unmarked. The raw
+export was 4,160,173 bytes. Across the control arms, 2,321 warmed public HF calls, wall p95 was 15.215 ms
+and max 95.639 ms; process CPU p95 was 13.528 ms and max 91.492 ms on the loaded Node
+machine. One-minute HF slices kept the thirty-minute physical cadence, but these
+measurements do not establish the required ten-millisecond frame constraint.
+They also do not prove phone performance, first-raid survival or a full season.
+The [control result](playtests/hf4-control-blocked-2026-10-28.json) is candidate
+evidence, not a released-game receipt.
+
+The complete uncommitted port is preserved outside the repository at
+`~/code/.lab-scratch/stale-patches/warren-codex-hf4-20261028.patch`,
+`.untracked.tar.gz` and `.manifest.json`, based on
+`82a006ee31687eed66b7e2b07838535914eb7f25`. Apply the patch and restore the tar
+in a fresh managed worktree when the contract is available; reconcile these
+blocker notes instead of replacing later documentation. Re-run all gates.
+
 ## Source and public rules
 
 This nine-path public-rules candidate is based on origin/main

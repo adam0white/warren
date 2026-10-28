@@ -1,0 +1,21 @@
+{
+  "scope": "actual lived Warren history; public HF calls only; admission refusal is the blocker",
+  "engine": {
+    "package": "@adam0white/human-framework@4.5.2",
+    "build": "27d7215d9f75d2f8584043bef3809671a519df46395efab15256837073fa4cdd",
+    "schema": "3d0ab64265ef50840b77c1a5085b427212c0665e2c801e6ff5549adfd96b1306"
+  },
+  "sourceReplayExact": true,
+  "sourceHash": "0bdb114054900baf865af615048cf9b59d5e0add9ac39d73e2ff938a7083a5d8",
+  "sourceProjectionMatchesTarget": true,
+  "rememberedActors": ["travellers", "meryem"],
+  "rememberedPlaces": ["house:usta", "field", "hearth", "surface", "below"],
+  "admission": {
+    "ok": false,
+    "error": {
+      "code": "invalid-admission",
+      "path": "$.portable",
+      "message": "This person cannot continue here with this saved history. Keep the source chapter or export it. Your saved history has not been replaced."
+    }
+  }
+}

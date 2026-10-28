@@ -1,0 +1,32 @@
+{
+  "scope": "actual Warren public host control, no player acceptance",
+  "engine": {
+    "package": "@adam0white/human-framework@4.5.2",
+    "build": "27d7215d9f75d2f8584043bef3809671a519df46395efab15256837073fa4cdd",
+    "schema": "3d0ab64265ef50840b77c1a5085b427212c0665e2c801e6ff5549adfd96b1306"
+  },
+  "normalMarkedCut": 0.032942272274438786,
+  "unmarkedControl": 0,
+  "gameReplayExact": true,
+  "hfReplayExact": true,
+  "pendingBoundaryIdentityExact": true,
+  "pendingGameContinuationExact": true,
+  "partialGameLogReplayExact": true,
+  "activeContinuationExact": true,
+  "inspectionAndPreviewReadOnly": true,
+  "gameFingerprint": "599a4e73",
+  "hfFullHash": "6a089ccdaca0ccced555c4e28c12058cd883d5680af58601c542916f5746020d",
+  "active330Hash": "7bbb96ee378c8e48163f2f70cc522d428d99fe8c02f782b288b9c72c361e220b",
+  "exportBytes": 4160173,
+  "frameWorkload": {
+    "people": 6,
+    "physicalQuantumMinutes": 30,
+    "hfSliceMinutes": 1,
+    "samples": 2321,
+    "discardedWarmupCalls": 30,
+    "wallP95Ms": 15.214791999999761,
+    "cpuP95Ms": 13.528,
+    "wallMaxMs": 95.63925000000017,
+    "cpuMaxMs": 91.492
+  }
+}
