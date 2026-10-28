@@ -1,3 +1,18 @@
+# HF4 port blocked — 2026-10-28
+
+Remaining: G2 lived-history admission and the G6 workload constraint, then retry
+the preserved candidate. Next blocker review: 2026-11-03. Warren remains on HF3.
+No owner question is pending. See the new dated section in docs/design.md and
+the standalone public consumer under docs/probes/hf4-g2-2026-10-28.
+
+The candidate and untracked files are saved under
+~/code/.lab-scratch/stale-patches/warren-codex-hf4-20261028.{patch,untracked.tar.gz,manifest.json}.
+Base: 82a006ee31687eed66b7e2b07838535914eb7f25. The failed carryover is an actual
+projected lived passport, not an old save or a missing 3.x export. Its complete
+HF source archive replays exactly on 4.5.2. No production port is claimed.
+
+## Earlier handoff evidence
+
 # Public gameplay audit — 2026-10-27
 
 Remaining: final lane, signed commit, PR and exact CI; merge, deploy and live release verification remain separate. Adam accepts game feel by playing.

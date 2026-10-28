@@ -1,0 +1,9 @@
+{
+  "name": "warren-hf4-g2-proof",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@adam0white/human-framework": "4.5.2"
+  },
+  "packageManager": "pnpm@12.14.0"
+}
