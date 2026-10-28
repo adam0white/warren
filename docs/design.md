@@ -1,337 +1,186 @@
 # The Warren: design
 
-**What done means.** For this first increment: a public, playable build at https://warren.adamwhite.work with a playtest export that replays, at least two playtest-and-fix rounds recorded verbatim in `docs/playtests/`, and an entry on https://human.adamwhite.work/games/. Adam (owner) accepts it by playing it. Later work goes in the Deferred list below, each item with a date.
-
-## Door/alarm history presentation — 2026-10-27
-
-On base aba1217, the quiet held-hill trial and Kian/Ada conversation are delivered.
-This candidate adds a public Journal reading, Door requests and bell calls, using
-existing received records. Requests, assent/refusal, chosen activities, completed
-rolls, withdrawal and alarm outcomes stay separate and dated. Recorded start and
-work boundaries describe actual test work. Original ordinary outcome summaries
-retain their status. An ended call cannot establish door closure or safety. A past
-closure without a dated receipt remains unknown; today's door or person cannot
-supply it. Original saved logs and all simulation/native source bodies stay exact.
-
-Existing watch pacing observes retained door receipt changes; this is a reading
-projection, not a new saved event or simulation rule. Existing slowdown/legacy
-hold/menu policy remains. A deliberate person selection may frame that person once.
-Refreshing the card, reading the village list or scrolling history keeps the working
-view fixed. Full names and44px list targets take priority over compactness. Zoom and
-Fit hill remain deliberate controls. F199 camera policy stays owner input2026-11-03.
-
-Selected clauses are F637/F809/F1198 retained request/alarm/door chronology,
-F1195 fixed working view and phone targets, and F1199 door-event watch coverage.
-Missing old door intervals and contextual heard-refusal dialogue remain exact next
-engineering work, not fictional completions. F1192 is not selected. Next engineering
-target2026-10-28: F1189 costed Maryam knot/gift/story; F649/F655/F1200 real newcomer
-exchanges and Ada's actual actor contract; F1193 Yusuf stopping-line context for known
-chalk; F1192 actual invitation-answer notice; F1199 other actual setup-event receipts.
-The full117+18 register remains authoritative for other uncovered clauses. No whole
-Warren completion, owner acceptance or player retest is claimed.
-
-## Current bounded conversation candidate — 2026-10-27
-
-Source authority is fetched origin/main9081e9a. B2, next2, rest1 and public-control
-sections labelled candidate/not-delivered below describe earlier stages; their
-bounded source mechanisms are already merged. The quiet held-hill door trial
-at9081e9a is delivered. Do not duplicate those mechanics.
-
-Samir’s F-666 asks, “Let me ask Kian about Ada. That was the thread I wanted to
-follow.” F-678 asks, “Let me follow Meryem’s need for rest, or Kian’s concern for
-Ada, beyond a status line.” This candidate covers the Kian/Ada clause; it keeps
-the existing rest and mutually heard loose-cut conversation.
-
-Ask Kian about Ada is public on his0.6/0.7 card. The explicit ask-ada input creates
-one retained request. Kian may talk to Tamar, who already practises messages with
-him. Each utterance costs real travel and thirty minutes at the hearth. An awake
-listener must actually be there. Tamar may reply only after attending Kian’s words.
-HF chooses among these offers, ordinary work, food, sleep, rest and Ada’s existing
-care action. Assent alone earns no speech. Host words use explicitly dated Ada care facts,
-or her existing new-story family/story facts, and current jars. No private motive,
-agreement, completed project, care or return is inferred. Ada remains a referenced
-dependent under the existing finite contract, not a cloned Person.
-
-The public withdrawal input stops waiting. It preserves answers, speech, hearing,
-failed work, spent time and physical state. Danger, sleep, absent listeners and an
-ending care visit can prevent completion. Each request remains in history. New
-inputs add no configuration, flag, format or package. Every prior no-new-input
-continuation keeps its exact raw state. Technical readiness still needs the
-independent director review and delivery gates; Adam accepts feel by playing.
-
-Next plan, engineering target2026-10-28: costed Maryam knot/gift/story F-1189;
-newcomer exchanges F-649/F-655/F-1200; alarm-linked door/request timeline
-F-637/F-809/F-1198; other heard-refusal replies; phone targeting F-1195;
-invitation notice F-1192; Yusuf planning context F-1193; event-watch coverage
-F-1199; all remaining literal clauses in the preserved117+18 reconciliation.
-These remain available engineering. F-199 automatic camera versus fixed working
-view remains owner input2026-11-03. No fabricated game end or unpublished onward
-transfer is offered. HF3, hard faith rules and no-server infrastructure remain.
-
-## The idea
-
-A plateau village digs a refuge into soft tuff, drawn in cross-section like an ant farm. The player keeps the dig-master's chalk and his bell. The people are full Human Framework persons (HF 3.0.0, engine 2.23.0, exact pin). Nobody takes orders. They see chalked faces, lamps, marked rooms and doors as things they could do, and choose by their own needs, goals, habits, fatigue and fear. The only voice is the bell.
-
-The ant-farm frame (actual ants) was rejected after an early consult with a game-design expert and a wildcard persona: it splits into two half-games and shows HF least. People underground keep the pull of an ant farm and let HF do the work. The setting is unnamed ("in the old days"), inspired by the underground cities of central Anatolia. Raiders are never named by people or era.
-
-## Hooks map
-
-Research: [research-hooks.md](research-hooks.md) ([S] sourced, [I] inference). Each hook, and the design choice that answers it:
-
-| Hook                                     | Choice in The Warren                                                                                                                                                                                                                                                                                                             |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Watching the swarm work [S]           | Everyone is visible at once in the cross-section; posture shows what they do (pick swung, load carried, lying asleep, leaning tired). Nothing is scripted; HF picks each action.                                                                                                                                                 |
-| 2. Trails and indirect control [S]       | Stigmergy, honestly. Chalk, lamps, room marks and doors change what people can do; they do not command. Feet wear the floor: worn cells are walked faster and decay ×0.9 a day (evaporation). A habit of digging forms over weeks (HF habits). Crews form because an offer names who is already doing it (HF 2.8.0 `alongside`). |
-| 3. One-to-many power, without guilt [I]  | Transformed rather than copied: these are named people. Danger is advertised (loose stone, smoke) and the people choose; the risk is theirs, not thrown at them. Infrastructure (lamps, doors, rooms) is the expendable part.                                                                                                    |
-| 4. Growth and the queen [S]              | Yusuf Usta, 74, sits at the hearth and shows the young how to cut stone (the immobile anchor). Word spreads when the hill holds; families arrive if there are beds. Growth is capped at sixty souls.                                                                                                                             |
-| 5. Cross-section, discovery, digging [S] | Unseen stone is drawn as plain rock until someone digs beside it. Hard bands, loose pockets, a water seam that becomes a well, an old chamber with soot and two lamps, the neighbours' passages.                                                                                                                                 |
-| 6. Wars between colonies [S]             | Riders come at set seasons (smoke first, then the hill). The neighbours across the ridge have a store; a tunnel can reach it. Theft is a norm violation people weigh for themselves; if noticed, a grudge grows, they retaliate, then wall the passage, and word of the hill drops.                                              |
-| 7. Compounding, idle pull [S]            | Automatic quiet playback; new words and arrivals stop fast batches for reading. Inspections and bell decisions wait. The saved hill waits while you are away.                                                                                                                                                                    |
-| 8. Stories you retell [S]                | The journal records breakthroughs, finds, raids, refusals, habits and deaths in past tense. People answer the bell in their own words.                                                                                                                                                                                           |
-
-**Naughty edges, by design, a little fun and inside the model:** crying wolf with the bell (false alarms make sheltering a poor outcome, so trust in the bell falls and later the bell is ignored); digging into the neighbours' store (above); peering into everyone's lives through the cross-section; overworking the diggers (fatigue builds over days in HF's slow store; tired people stop, slow down, or get hurt on loose stone).
-
-**Natural difficulty first:** stale air beyond reach of a sky opening (no lamp burns, people avoid the face); darkness; spoil blocking faces until carried up; hard stone; loose stone that can fall; thirst and water carrying; the harvest and the winter; riders; crowding. No arbitrary caps beyond three doors.
-
-## Core loop
-
-1. Chalk stone beside open ground. Someone who sees it may take up a pick (within the hour in daylight).
-2. The dug space opens; spoil piles up and is carried to the heap; feet wear the path.
-3. Mark rooms (store, beds); grain and sleepers move below. Hang lamps where the dark stops the picks; sink a shaft where the air goes stale.
-4. Smoke comes. Ring the bell, or not. Riders come down every opening to the sky, so each shaft dug for air is also a way in; a door below closes it. People shelter, shut doors, hide, or keep reaping.
-5. The hill holds or it does not. Word spreads; families come; the warren must grow.
-
-## How HF is used
-
-- Every figure is a full HF `Person` (no lightweight agents), stepped with `stepCommunity` in 30-minute quanta.
-- World callbacks offer real affordances with real paths (Dijkstra over the cross-section, costs from wear, light and spoil).
-- Goals (`refuge`), material pay (`material` on work offers), `alongside`, habits, fatigue store, injuries, norms (theft, help) and a voice (`usta`, the bell) carry the behaviour. Psychological need terms alone are too small to drive work (see [hf-requests.md](hf-requests.md)).
-- Faith stays quiet: devout adults keep a dusk prayer; it is a line in the journal, never a mechanic.
-
-## Determinism, saves and export
-
-- One seed; all randomness is hashed from the seed and the event. Inputs are logged at the minute they apply (always a quantum boundary).
-- Saves: the full state as gzip in IndexedDB (a year with 60 people is several megabytes of JSON).
-- Export (Game menu → Save and run → Download this run): seed, input log, state JSON and fingerprint. `replay(seed, inputs, minute)` reproduces the fingerprint (tested; a 365-day bot run matched).
-
-## Performance (measured, M-series Mac, machine under heavy parallel load)
-
-| People | ms per sim-day | Notes                                       |
-| ------ | -------------- | ------------------------------------------- |
-| 9      | 35–60          | first weeks                                 |
-| 35     | ~135           | day 120                                     |
-| 81     | ~810           | before the population cap; now capped at 60 |
-
-A pending raid warning holds playback until the keeper rings the bell or chooses Keep watching. Inspections hold time. Quiet playback runs at 72 game minutes per real second, and the first new note, arrival, departure or death stops the current batch for six seconds of reading time. These are UI playback changes; simulation quanta, state, inputs and exports stay unchanged. Keep watching lasts for the current sitting; resuming an unresolved raid shows its warning again.
-
-The earlier gallop setting ran a sim-day in 1.25 real seconds; automatic quiet playback now takes 20 seconds before reading stops. The earlier CPU measurement does not describe the current pacing. The frame loop gives the sim at most 10 ms a frame; if it cannot keep up, time slows and the page says "the days pass as fast as they can". **Decision date for moving the sim to a Web Worker: 2026-10-26**, after phone playtests.
-
-## Shelter and marks (round 4)
-
-Check shelter opens the people sheet after the bell or during ordinary play. The same sheet is available through Game menu → people. It updates each living person’s current location against the existing rider-search geometry, their observed activity or trip, and their recorded answer to the latest bell. An unknown reason stays unknown. Hidden people are described as out of sight for now. Depth and shut doors limit the passages riders search; beds only make sleeping space. Open shafts remain entrances. Current checks do not reconstruct motives at a past injury.
-
-Chalk uses a dashed excavation outline and a pick in previews and accepted marks. A successful mark says “Dig planned.” Sleeping marks report the connected room’s approximate capacity in words. Selecting beds and the people sheet also show the total marked capacity and whether it fits the living village. Raid guidance takes precedence. Capacity is space, not a promise of access, occupancy or protection. These are UI readings of existing state; simulation rules, HF pin, inputs and export format stay unchanged.
-
-## Phone building and door inspection (round 5)
-
-Selecting a building tool keeps the current camera fixed as the refuge grows. Prompt and warning text share reserved space, so changing tasks does not move the hill. Zoom + and Zoom − enlarge the working area around its centre, up to 72 CSS pixels per cell. Pinch zoom remains available. Fit hill explicitly reframes the excavated space. Look drags or two fingers move the view; no camera action enters the simulation input log.
-
-The compact shelter button remains available during building and raid warnings. It opens the same live people sheet. Sleeping capacity and current exposure are counted independently; hiding is listed separately and never called safe. The sheet has a scroll body for touch and wheel, with close and tabs outside it. Updates only replace changed status text.
-
-Look and Door show the full door explanation in a closable inspection card. Unfinished doors name the light and carving prerequisites. Rolled-back doors explain that the bell, smoke or riders make shutting it a choice for an adult nearby who can reach it. The keeper cannot roll it directly or guarantee that choice. The explanation updates while open. Inspecting another target closes it. These are UI changes; simulation sources, HF pin and export format remain unchanged.
-
-## Design change 2026-10-20 (owner may veto)
-
-Bao said, “I did not become bored. I became frustrated after the raid” and wanted to judge whether people were sheltered (F-246). Tunde could not discover how to close the door (F-254). Mirela said, “I do not know how to make this shelter safe enough before I call them in. I would not spend the rest of my break repeating the bell” (F-259).
-
-The plan now shows draught hatching along the routes riders can search. Marked sleeping places can be inspected before anyone goes below. Their words distinguish shallow space, an open route, and a rolled-back door in the actual layout. The bell describes the sleeping places before calling people and distinguishes a standing call, continuing journeys and an ended call. A door names the reachable adults who could shut it and their current activity; nobody is ordered to do it.
-
-New runs use **edition 0.3.0**. Their first raid is a scouting visit: no strikes, looting, trampled grain or extinguished lamps. The journal records actual searched places and names the exposed people who would have been caught. Those searched cells remain visible as pale tracks afterwards. Later raids keep the existing strike and theft rules. Existing HF healing is unchanged; injured people describe easing pain and a mended injury as it happens. These words do not award recovery or promise an adult's choice. Saves and exports retain their edition. Missing state edition means 0.2.0. Three-argument replay keeps its legacy contract; pass the export's `game` as the fourth argument to replay a versioned export.
-
-Costs and risks: the first raid offers less material danger and can bring the existing successful-refuge consequences sooner. Hatching adds texture to a small plan; room words and the bell reading must stay legible on phones. Current exposure and historical scouting tracks differ when a door shuts or a new shaft opens. Plain-policy runs (seeds 1, 7, 19; 70 days) changed first-raid injuries from 1/8/6 to zero and second-raid injuries from 7/9/7 to 10/15/15, alongside larger populations. No retention or per-capita improvement is claimed. Headless runs measure injuries and village survival; they cannot establish whether a person would quit. Adam accepts by playing; a fresh source-unread retest is still needed.
-
-Revert: new runs start on the previous edition by setting `DEFAULT_EDITION` in `src/sim/game.ts` to `'0.2.0'`. Keep both rulesets to continue existing 0.3.0 runs. Revert the UI changes in `src/ui/room-safety.ts`, `draw.ts`, `app.ts`, `shelter.ts`, `door-help.ts` and `guidance.ts` separately if the read-only cues are vetoed. Pre-change full-state hashes and checkpoint continuations are in `test/fixtures/edition-legacy.json`, captured from `172c384` before changing simulation sources.
-
-## Clarity exceptions
-
-- DL-27 updated 2026-10-21: ordinary 0.6.0/0.7.0 resuming restores the saved minute. Offline catch-up was removed so it cannot pass a bell decision before the player sees the hill. Old saves, inputs, editions and replay quanta remain unchanged.
-- DL-3 scene colours: chalk marks and lamp flames keep their material accent colour. Selection uses ordinary ink and a heavier ellipse; the current instruction uses the accent in the controls. Material colour does not mark selection.
-
-## Held-hill door trial — 2026-10-27
-
-The ordinary finished-door reading offers a quiet test on an already-held hill.
-The keeper selects a reachable adult and asks; the person may decline or do
-something else. No new-hill checkbox or Lab query is needed. Older hills record
-`try-door`; rest1 keeps its existing `test-door` input. No edition, configuration,
-old input or saved person is converted.
-
-Both rolls use the existing paths and eight work minutes plus travel. Closing
-really blocks the passage. Reopening is another voluntary activity, possibly by
-another adult during ordinary work. The recorded result names what happened.
-A refusal, interrupted roll or incomplete reopening does not complete a trial.
-The keeper may withdraw a pending trial; time, actual door state, answers and
-past trials remain. The test does not ring the bell or remove alarm history.
-Night, sleep, care, coverage and faith rules continue normally.
-
-This bounded source change covers the held-hill mechanism in F-1197/GDI-1342,
-F-1201/GDI-1346 and part of F-629/GDI-815. It is not whole-ask or player
-acceptance. Director review, signed source, exact CI, merge and clean deployment
-receipts are separate. Other history, dialogue, projects, phone and preserving-file
-engineering remains with the director. F-199 camera preference remains Adam's
-input; owner acceptance is targeted for 2026-11-03.
-
-## Public access batch — 2026-10-27
-
-Candidate only: gameplay editions and Slow/Steady/Fast remain explicit public choices. No query string changes available features. The legacy native-slot file importer is removed pending the separate preserving public file route; it is not hidden behind a switch. Continuing shared people is automatic on a fresh hill; Resume retains the saved people exactly. The central browser shelf owns generic cast experiments. Game-specific Watch preparation stays on the selected person’s card and retains all source/duty/care refusals. Debug starts collapsed beside Lab privacy and contains only download/status; Feedback has its small version/run preview there. Vendor archives stay unchanged.
-
-Current verified launch release d9e5ede is clean and includes B2, next2, rest1, selected plans and the R2 stalled-dig/routine work. Historical “not delivered” and lease wording below is superseded within those exact mechanisms. No full117 compound coverage or player acceptance follows. The private per-item reconciliation records the remaining engineering. This is one director-scheduled batch; it does not defer buildable work to the2026-11-03 owner review. F199 remains the precise owner choice between automatic widening and the later fixed working camera. This batch retains the fixed camera. HF stays3.0.0/engine2.23.0 by the director’s current pin instruction.
-
-## Deferred delivery — 2026-10-25
-
-B2 bounded source candidate — 2026-10-27 (**not delivered**): F647/GDI833 empty-store inspection reads the current standing crop, threshing floor, household jars, available store space and known open route. It names a real grain carrier and recorded trip when present, or says nobody is carrying now without claiming a private reason. Dry-water help distinguishes spring, discovered well, hearth jars, blocked spring during riders and actual fetching. Look, Chalk, Store and Lamp retain their existing meanings; no new work or order is created.
-
-F648’s main reading retains marked-to-open changes actually observed in this sitting, with entrance-relative location and the existing reading/connection affordance. It does not reconstruct unobserved completions from a loaded hill. Located work and distinct developments remain beside routine words. Only exact low-weight unlocated route/approach and unchanged seed-jar/equipment check repetitions are grouped in the display; every distinct person, place, result, arrival and injury remains in the journal projection. Raw notes and native history are unchanged.
-
-These six UI/test/design paths are a source candidate without a fixed commit, review, source CI, release or player acceptance. Original broader grain/water/completion asks and all unproved clauses remain OPEN, dated 2026-10-27. Parent owns independent correctness/game-design review and later source integration; the actual7e8 live hold and Adam’s acceptance by playing remain separate.
-
-
-Residual author candidate (2026-10-26; **not delivered**): unchecked `warren-rest/1` adds a request to talk about rest, a voluntary quiet-time finished-door test, and a follow-up to an actual mutually heard loose-cut disagreement. Default0.6, ordinary0.7 and retained next1/next2 keep their recorded rules. Speech requires real travel, thirty work minutes and an awake companion at the hearth; HF conversation and received advice run normally. HF may choose work or rest instead. A door test needs an adult and a reachable finished open door. Closing and reopening each take eight work minutes plus travel; a shut passage stays shut until a real reopening choice completes. Requests record actual HF answers, speech and outcomes. No anger, motives, reconciliation or protection is inferred.
-
-Source readiness still needs the parent's independent correctness/game-design review and actual360×690/1280×800 checks. Technical delivery and Adam's play acceptance remain separate. F595 gains bounded rest conversation source; F629 gains voluntary door-test source; F678 remains PARTIAL on its rest-or-Ada compound request. GDI089 remains PARTIAL: only the actual heard loose-cut disagreement has this follow-up. Spontaneous/general quarrels and every other uncovered117 clause remain OPEN. Original117 packet fields, quotes, dates and prior proof are unchanged. No engineering clause is deferred merely to wait for permission. Source plan, raw-continuation capture, controls and archive live in `/Users/abdul/code/.lab-scratch/games-deferred/warren-rest-*`.
-
-
-The widened owner scope supersedes the dates in the historical sections below. Edition **0.7.0** is an explicit, unchecked new-hill choice. Leaving it unchecked starts 0.6.0. Resuming or importing keeps the recorded edition. No saved hill is converted. Both editions keep the same canonical roles, care guards and finite calendar passport. Source preparation is separate from the signed release, exact green CI and clean deployment; current delivery receipts live in `/Users/abdul/code/.lab-scratch/games-deferred/warren-report.md`. Adam accepts feel by playing.
-
-| Former Deferred item                        | Current implementation or boundary                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Very short portrait and landscape           | The working scene and reading occupy separate areas. Short screens scroll as a page; the full reading and tools remain reachable. Controlled builder checks cover 320×568,690×360,360×690 and1280×800.                                                                                                                                                                                                                                                                                            |
-| Menu focus                                  | Tab and Shift+Tab stay in the visible Game menu. Escape returns to its opener.                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| Tap with a drag-only tool                   | The current pointer path already accepts a single-cell tap. A focused builder check verifies a real store input and receipt. No drag requirement was added.                                                                                                                                                                                                                                                                                                                                       |
-| Outcome goals                               | In0.7.0, sleeping credit requires a completed sleep in marked beds. A real raid records actual positions throughout the search. Scouting and exposed people cannot earn the protected-raid goal. Door credit requires a person whose protection actually depends on a shut door. Construction and capacity alone do not earn those goals.                                                                                                                                                         |
-| Food pressure                               | Meals already consumed host grain and fed HF needs. In0.7.0, gathering wild food has a small shared daily yield, lower in winter; it cannot replace a village harvest indefinitely. Empty jars provide no food outcome. Harvesting, carrying, sowing, hunger and autonomous choices remain real.                                                                                                                                                                                                  |
-| Infrastructure loss and between-raid events | Existing loose-stone falls retain their seeded condition and injury. In0.7.0, a visible warning precedes any furnishing loss. A fall can damage only the lamp and room furnishing immediately beside the cut, spilling at most two grain units. It never fills the passage or destroys the hearth or well. Work can replace the furnishing. Ordinary digging is unchanged. Real attended HF conversations receive bounded journal entries. No quarrel, motive or hidden relationship is invented. |
-| Growth record                               | What the village has done combines saved lifetime growth with the latest actual work, discovery, arrival, raid, injury and attended conversation records. It describes simulated play. The hill still waits while absent.                                                                                                                                                                                                                                                                         |
-| Visible digging                             | Cracks already reflected settled digging. In0.7.0, the same host work calculation also draws an ongoing cut before breakthrough, without awarding work or changing saved state. Inspection describes its approximate progress. No action-game graphics system was added.                                                                                                                                                                                                                          |
-| Finds and pacing                            | In0.7.0, readings, new events and unanswered warnings slow play to the existing reading pace. Fast resumes after the reading beat. Menus pause. Prior editions retain their existing presentation holds. Water and room completions use actual simulation notes and keep seed/input identity.                                                                                                                                                                                                     |
-| Wider arc and teaching                      | Actual sleep, rider protection, bounded losses, current work and discoveries connect planning to lived outcomes. Existing tool teaching, refusal receipts, exposure and unknown danger timing remain.                                                                                                                                                                                                                                                                                             |
-| Worker simulation                           | Conditional on measured stutter, not a standing rewrite. Supported Chrome profiling and a controlled larger-hill check are recorded in the report. A desktop trace is not a phone timing claim.                                                                                                                                                                                                                                                                                                   |
-| SDK npm adoption                            | EXCLUDED by the owner rule “The lab client and kit stay release artifacts” (HF AGENTS.md, widened v3 increment). The dated registry404 observation belongs to the historical report; npm publication is not a dependency. This candidate adopts verified immutable client0.4.11/kit0.5.12 release archives. Selection of the quiet Feedback choices sends nothing; Submit sends their literal wording with the edited note. No production Feedback was submitted.                                 |
-
-### Actual remaining input
-
-- Adam reviews game feel, food pressure, losses, goals, reading pace and readability by2026-11-03. Technical tests do not establish enjoyment.
-- F-199 automatic widening conflicts with the later fixed working-camera request. This batch keeps the fixed view and explicit Fit hill, as the director requires. Adam may choose automatic movement after playing, by2026-11-03.
-- F-113 offline growth is engineering under the widened scope. The earlier director-only prohibition is superseded by the explicitly unchecked configuration below. Adam still accepts the resulting pace and return record by2026-11-03. This is source preparation, not deployment or acceptance.
-- Framework decision-cost profiling and generic reach APIs remain platform work. HF AGENTS requires “no framework logic in games.” A host must not reproduce HF reasoning to supply quarrels or future choices. The owner allowed action and real-time games on2026-10-26. The no-server infrastructure guardrail remains; it does not block the host engineering above.
-
-## Next source candidate — quiet away play and loose-stone discussion
-
-This section records retained36f4974 next/1 behavior. The R1 source amendment below supersedes the new-hill choice; saved next/1 histories keep this path.
-
-This branch is **not deployed**. Warren round1 remains open on43adc501. No main merge, main push or game deployment is allowed during the round. Root coordinates integration after closure, including exact-main CI and a fresh clean live receipt. Adam accepts by playing; source and CI readiness do not establish delivery.
-
-The separate unchecked **warren-next/1** configuration starts on0.7.0. The original unchecked0.7 choice and ordinary0.6 default remain available. Neither existing edition gains fields, inputs, changed histories or conversion. The new configuration is stored separately in state and full exports, and is passed explicitly to replay. Canonical chapter claims use the distinct `warren-0.7.0-next1` rules stamp. The finite native Watch return route does not admit this new configuration; it cannot be relabelled as an older source. Ordinary0.6/0.7 routes remain exact.
-
-Away play uses one game minute per real minute, in the ordinary half-hour simulation quanta. The browser samples elapsed milliseconds once on Resume or visibility return. Replay receives those milliseconds and the number of quanta actually computed. It never reads wall time. Each quantum uses the normal world/HF path: food, sleep, work, journeys, ageing and events cost what they cost in play. No growth or goods are awarded separately. An atomic quantum may exceed the measured8ms CPU budget; the browser then stops and records a computation stop. There is no gameplay-duration cap. Unplayed elapsed time and incomplete quanta are reported and discarded, not credited later.
-
-Catch-up stops at the first new journal event, at the first available input boundary, and before a further quantum. An existing call, observed smoke/riders, pending invitation/release, active discussion or imminent recorded care-return deadline prevents stepping. New events retain an attention record across saving and reopening. Closing the return reading records acknowledgement. Ordinary visible readings and event beats keep the nonzero0.7 reading slowdown. Their unread attention blocks later offline catch-up; visible playback acknowledges it after the beat. Only the actual return record holds playback until dismissed. A new return record contains only actual events and unplayed remainder; it does not reveal scheduled raids or invented future dates.
-
-A marked, known loose face beside open ground allows an ordinary invitation on Yusuf Usta or Meryem’s card. This is one authored hill encounter: they may spend real travel and half an hour discussing whether to leave that cut alone or keep digging for space. The keeper’s invitation is an HF suggestion, not an order. Both speech offers compete with ordinary work, food, sleep and rest. HF selects the actual utterance. A present awake listener must attend its told percept before a reply can count. Advice then goes through HF’s standing-advice path, scoped to this face’s digging or local caution offer. It does not recommend other digging or general rest. Only opposed statements attended by both establish a disagreement; agreement or unanswered speech does not. No anger, insult, private goal, promise or social result is invented. No speech moves grain, finishes excavation or makes loose stone safe. The player may stop waiting; the journal preserves earlier speech.
-
-The focused headless terrain control changes only a known rock face beside the original cellar into loose stone. It leaves all Persons unchanged. Before the review correction, Yusuf chose caution and Meryem chose continued digging. With caution now scoped to the local pause offer, both actually choose caution and hear the other. The earlier opposed exchange remains archived evidence of the earlier candidate, not a current disagreement. This control establishes attended speech and local advice; it does not establish current spontaneous conflict. The separate unmodified seeded bot control reaches the real encounter through ordinary inputs, but both speakers agree to continue. The old60day no-conversation control therefore remains a valid negative historical observation. No claim of frequent or angry quarrels follows from this slice. Advertised safety0.4 and competence0.3/meaning0.15 are authored engineering estimates for the two speech options; the earlier safety0.35 probe produced agreement. Realized speech grants only ordinary social contact and never safety or excavation credit.
-
-Partial round1 asks remain report-level evidence. Maya, Emre and Nia ask for clearer people interaction, invitation placement, safety remedies, larger phone targets/view and fewer repeated reports. The new encounter and return record cover only their stated mechanics. They do not close the complete-round UI/readability asks or prove enjoyment. Root reconciles the full round and retest; target2026-11-03 for remaining owner feel/input. No new round or production Feedback was run by this implementer.
-
-Reproduction, focused failures, review and branch CI receipts belong in `/Users/abdul/code/.lab-scratch/games-deferred/warren-next-report.md`. Root README/HANDOFF/AGENTS/About facts remain owned by docsweb. The historical `warren-report.md` is unchanged.
-
-## Follow-up b — 2026-10-20 (owner may veto)
-
-The lead designer found the draught too faint at phone zoom, the sleeping-room reading covered its room, and faint text competed with the plan. Exposure now uses a pale continuous wash with long draught strokes, fading along the existing rider-search routes from entrances and shafts. Shut doors stop it. Protected passages stay darker and still; historical searches leave small floor tracks. Dark-theme figures and room marks use dark ink against the pale exposed floor.
-
-Room and door readings replace the status copy beside/below the map. The map and tools retain their bounds, automatic framing stays fixed during inspection, and long readings scroll below the close control. The clock stays visible. Temporary hints join previews in the journal control rather than covering the plan. Opening shelter or the Game menu replaces the reading.
-
-Cost: the compact reading requires scrolling for longer room and door explanations. The wash shows existing rider-search reach, not physical illumination, and historical tracks describe past searches. No simulation, edition, input, dependency or export rule changed. Revert this follow-up's UI hunks in `src/ui/draw.ts`, `app.ts` and `style.css`; retain the 0.3.0 ruleset. Adam's acceptance play and the lead designer's fresh source-unread retest remain acceptance work.
-
-## Design change 2026-10-20 (owner may veto)
-
-Follow-up c, after Kofi's live retest: a held chalk or beds stroke reads its estimated capacity and exposure before release. The dashed plan carries the same exposure wash. Look reads an unbuilt plan. These are hypothetical readings after all chalk is dug, not present sleeping places. Disconnected space is named as unreachable. The bell says its six-game-hour duration and observed expiry. Its live reading pairs named answers with actual journeys, current tasks and next choice times; a future choice remains uncertain. Immediate explanations open in the dock without line clamping. Last reading reopens them; bell readings resume live updates.
-
-Kofi: “I left without confidence that I understood the warning, the call and shelter readiness together” (fresh retest `scratch/design-round/retest/warren.md`; no new ledger id assigned). His best moment was “finding Hasan actually carving the rolling stone”. This extends F-246/F-259's shelter/call readings and F-254's stable phone plan. The new information supports physical planning and visible work without directing a best move.
-
-Costs: hypothetical excavation can open a route that is presently blocked; readings explicitly say “if dug”. A docked long reading scrolls, but its close control and the tools stay fixed. An assent is not a binding promise; timing names the next choice rather than inventing a departure. Prayer has no countdown. Rule results, editions, HF 2.8.0 and exports are unchanged. Revert this UI with the follow-up-c commit's UI/test changes; keep its live replay baseline as evidence. New runs remain 0.3.0.
-
-### Follow-up d — edition 0.4.0
-
-Mirela's quit was explicit: “I would not spend the rest of my break repeating the bell” (F-259). The ranked proposals in `fun-warren.md`, section 5, now change the rules for **new runs only, edition 0.4.0**. A call rung during smoke or riders stands until that raid's all-clear. Repeated rings during it are rejected before any interruption. HF still weighs the standing suggestion at later choices and reviews; people may refuse, defer or choose another activity. Quiet-time calls still expire after six game hours. Quiet-door help states that a false alarm can weaken trust.
-
-A harmless scouting visit still records search tracks and named exposure. It awards neither `heldAt` nor defence reputation, and imposes no failed-defence penalty. A later real defence still earns the existing reward. During smoke or riders, sleep and shelter offers prefer an available protected bed, then the nearest by the existing weighted walking route. Protected-bed preference excludes stale-air routes and unreachable beds. Sleeping and sheltering journeys reserve the existing three places per bed cell; a person may retain their own place. With no such bed, ordinary sleep keeps its nearest available option and shelter can use other reachable breathable space. A full bed cell is excluded from the shelter fallback. The person still chooses whether to accept any offer.
-
-Costs and risks: a longer suggestion can affect choices and learned trust throughout a raid, and removing the unearned scouting bonus can slow arrivals. Bed reservations can move someone to another place; present rider protection does not guarantee future protection if a shaft opens or a door changes. These are testable behavior changes, not evidence of greater enjoyment or retention. Room-safety cues and individual speech remain. Adam's acceptance play and a fresh source-unread retest remain outstanding.
-
-Revert: new runs start on the previous edition by setting `DEFAULT_EDITION` in `src/sim/game.ts` to `'0.3.0'`. Keep all three rulesets so existing 0.2.0, 0.3.0 and 0.4.0 exports continue on their recorded edition. The exact HF pin remains 2.8.0. `test/fixtures/edition-before-d.json` captures the clean live f9550e8 bundle before simulation edits: 36 full-state hashes across prior editions, three seeds, plain/watch logs, day-20 checkpoints, loaded continuations and endpoints. `scripts/compare-editions.ts` compares unchanged bot/watch policies and a separately labeled renewal policy; full results and shipping receipts are in the external Follow-up d report.
-
-## Design change 2026-10-20b (owner may veto)
-
-Ines (F-275) asked: “Keep the immediate safety response visible: tell me how to protect these beds or shut this door before the panel cuts off.” She also asked: “Make it easier to select a person on the phone and tell me whether they need help” and “Acknowledge the storage designation directly, so I know whether my tap worked.”
-
-The Warren adopts lab kit 0.2.0's phone stage. A fitted sheet occupies its own row below the scene; on desktop it docks beside it. The state strip keeps the date, current task, sleeping capacity and exposed count visible during inspection and marking. Bed and door remedies lead the reading. Door candidates and bell replies sit behind More or Replies; a person's activity and words sit behind their own labelled disclosure. Essential readings grow instead of scrolling inside a fixed text box. Bell, tools and the chosen speed remain in a separate commit row while marking. All inspection slows playback; closing it restores the chosen rate. This serves DL-13, DL-15, DL-22..25 and DL-30..31.
-
-People opens a named selection list with at least 44 px targets. A selected person remains in the visible scene, including during a journey. Their card says whether food, water, rest or care is needed, without meters or claims about unknown motives. The body summary never contradicts known illness or poor health. Live updates preserve the open disclosure and focus. A successful storage mark says “Store marked. People can bring grain to these jars.” Repeating an unchanged mark says it is already a store. These are readings of existing state, not orders to a person.
-
-Cost: a long reading leaves less hill visible; the ordinary phone fixture retains at least 120 px of canvas. Optional details and long people/journal/save lists scroll, while return controls remain reachable. At enlarged text (computed game type above 24 px) or below 600 px viewport height, the stage uses page flow with a 280 px scene. The strip then scrolls with the page so enlarged words and controls remain readable. Real-device reflow follow-up is due 2026-11-03. The phone audit flags offscreen list controls and geometric overlaps with the privacy footer; these controls are clipped by the scrolling list until scrolled into view, rather than covered visible targets.
-
-Rules, simulation sources, HF 2.8.0 pin, save/export format and editions remain unchanged. Existing export and checkpoint replay tests remain exact. Chalk, rooms, lamps and doors remain direct acts in the scene (DL-32..33); this change adds no hands-on simulation verb or claim about retention. Release completion means checked UI, pushed main, matching clean live release metadata and green CI; Adam's acceptance remains his own play, as recorded above. Revert the shipping commit for this dated section to restore the previous UI and lab-kit pin. No save migration or simulation edition rollback is required.
-
-
-**Round 2 (2026-10-20).** Yusra’s fresh retest of 6c00dab says “I had spent more time opening readings than carving rooms” and asks “Keep the place I am marking stable and obvious while I choose tools and read the result.” Her report has no ledger id yet; this extends the F-275 phone work and fun-warren §5 recommendations 1–2. The 360×690 working scene keeps the same position, scale and height across tools and readings. Excavation no longer reframes the camera automatically; Fit hill, zoom, gestures and explicit person selection change it. Every pressed cell gets an outline before release. Ordinary marks remain one gesture; a new surface entrance asks once in words, and cancel or another gesture discards that pending selection. Essential plan/bed/door readings are shorter. Compound plan conditions use compact counts; full route explanations sit behind Route details and remain available through Last reading. A complete named work sentence sits beside Open journal. Bed capacity updates in the same input as its reading. The journal starts with the complete newest safety entry, with earlier entries behind a labelled disclosure; changing tabs returns to the top. These serve DL-13–15, DL-22–25 and DL-30–33 without changing simulation, editions, saves or the HF pin.
-
-Round-2 cost and revert: reserving the reading space keeps a 120 px canvas even when the reading is closed at 360×690; the 156 px strip and 320 px sheet stay fixed. Two Zoom + presses reach at least 44 px cells; deeper building may need deliberate Fit hill or pan. Very short/enlarged-text layouts retain page flow and the existing 2026-11-03 real-device follow-up. Optional lists and disclosures still scroll. Action availability is unchanged: seed 7, 301 one-second samples over five default-speed minutes each had a verified legal direct chalk action, longest sampled unavailable gap zero; replay 9f124635. This does not measure enjoyment or attention. Revert the Round-2 shipping commit to restore the preceding UI; retain edition 0.4.0 and HF 2.8.0. Adam still accepts by playing.
-
-## Owner pacing update (2026-10-21)
-
-The speed chooser is removed. Automatic playback stops at the first delivered event, waits for reading, and holds during inspections, information, menus and unanswered raid warnings. Menus preserve the remaining reading beat. The existing hill and route/door information remains in native dismissible information popovers; records of people and earlier events keep their gameplay disclosures. No simulation, edition, save format, tally or HF change. Adam accepts feel.
-
-
-## Owner speed restoration (2026-10-22)
-
-The original speed choices are restored. Inspection, new-event reading time and menu protections remain. Pending raid warnings still hold time. Simulation inputs, saves and replay rules are unchanged.
-
-## Approved UI sweep (2026-10-22)
-
-Adam approved the lab layout spec: "All good decisions, proceed." The implementation follows `ui-sweep/specs/warren.md` and `GRAMMAR.md` in the lab scratch store. The drawn village state opens The village. Five bottom chips replace the seven equal tools. Furnish holds the four room marks. Readings cover the lower map on phones and occupy the right column on desktop. The menu holds rare reading rows, recording and Send word. Send word remembers an optional name and preserves the explicit recording-off and browser privacy consent paths. The title page holds the only new-hill action, behind inline confirmation.
-
-Warren keeps the spec-default three player speeds. Slow starts a new hill; Steady starts a resumed one. Reading, information, menu and pending raids hold playback only. There is deliberately no end screen and no skip action. Simulation, editions, framework version, saved hills and replay inputs stay unchanged. A beds mark still exports the existing `{ verb: 'use', use: 'beds' }` order.
-
-Done means signed main commits, green CI, a deployed clean matching release, live browser acceptance at 360×690 and 1280×800, the unchanged owner export replay, and the owner ledger entries. Adam accepts the result by playing afterwards. Evidence and report live in `~/code/.lab-scratch/ui-sweep/built/warren/` and `~/code/.lab-scratch/codex/build-warren.md`.
-
-Deferred to 2026-10-26: add a presentation slowdown for water struck and rooms finished, with strip words "Water struck" and "A room is dug". It must preserve seed/input replay identity.
-
-## Open-fix sweep (2026-10-23)
-
-Store and hung-lamp success receipts stay in the peek row. They do not open an inspection or add a playback hold; tapping the peek reopens the receipt for reading. Lamp prerequisites and refused marks retain their explanations. The bell reading names observed smoke or riders, or their absence, without revealing the scheduled raid. The shortened door hint retains its placement and light rules. The information legend distinguishes sleeping capacity from each person's actual exposure, and raid guidance points to the visible souls control.
-
-What the village has done now opens with a growth record from existing saved facts: dug cells, arriving families and completed rider visits. A completed visit does not imply protection. The record points to The village for current safety and states that the saved hill waits while away. Simulation, editions, HF, input logs and saved state are unchanged.
-
-The sweep report and all 23 proposed ledger statuses live in `~/code/.lab-scratch/sweep/warren.md` and `warren-ledger.md`. Delivery means one independent Codex review, focused regression checks and check:lane, signed main commit, green exact-commit CI, a clean live release containing that commit, and Chromium checks at 360×690 and 1280×800. Adam accepts feel by playing afterwards.
-
-Owner decisions remain: automatic widening versus the later fixed working camera (F-199), and keeping a room visible beneath an approved phone overlay without moving the working view (F-294 DL-31). Revisit these together on 2026-10-26. Outcome-based goal criteria remain deferred to 2026-10-26; offline progression and its return record remain a 2026-11-02 design decision. The growth record does not introduce offline progression or resolve the wider between-raid arc.
-
-## R1 source candidate — elicited positions and current work
-
-Remaining: the director's one independent correctness/design review and clearance, then authorized feature-branch delivery. R1 remains open on the deployed43adc50 build. Root owns later integration and live proof. Adam accepts game feel by playing, targeted2026-11-03. This source is not a deployed fix or a player retest.
-
-The unchecked away/discussion choice now starts **warren-next/2**, with distinct `warren-0.7.0-next2` claim rules. Retained next/1 saves and replays keep exactly their original scoped-advice behavior. Ordinary0.6/0.7 remain exact, including raw histories, RNG and continuation. Native Watch preparation still refuses either next configuration. No older native source stamp is borrowed.
-
-In next/2 the consultation asks for positions. HF still chooses between the same caution and continued-work offers and ordinary activities, with the same engineering estimates. Actual speech still needs travel, thirty work minutes and an awake listener at the hearth. Attended positions enter HF as claims. They do not install standing advice to repeat the speaker's answer. Hearing a position and adopting advice are distinct. Nothing forces the listener to oppose it. Speech earns social contact only; it does not excavate, protect anyone, clear chalk or invent anger.
-
-The focused positive control starts seed7 with one explicitly labelled physical-world fixture: known loose stone at(15,SURF+3), beside the initial cellar. It changes no Person. The complete initial fixture is pinned in the headless chapter for replay; it is not a normal seed-only hill or an importable canonical cast claim. Yusuf chooses pause and Meryem chooses continue; both actually hear the other. Their speech costs thirty work minutes each. This new control is separate from the historical pre-fix opposition. The ordinary seeded bot still reaches mutually heard continue/continue, a valid negative observation. No frequency, spontaneous quarrelling, insult or enjoyment claim follows.
-
-Display repairs keep existing world rules. Person cards expose the existing invitation, its recorded pending/answered state, current needs and actual bell reply without opening a disclosure. The UI disables duplicate pending invitations. It does not diagnose private motives or promise when a busy person will answer. The bell shows the latest heard reply beside the call, with all replies and current tasks available below. Door candidates remain current reachable adults and their actual tasks.
-
-Chalk receipts count new squares and say when a repeated tap removes a mark. Potential sleeping space is named as potential; the route detail states the actual marked-bed total and the need to mark beds after digging. Known rider-search geometry explains passage steps from every sky opening, shut doors and shaft shortcuts. It never promises one universal safe depth. Selected exposed cells have positions relative to the entrance row. Current digging blockers come from existing face/air/light/spoil state. Water help explains spring trips, the discovered well and the current fetching task. The current-work button opens this help; before the first mark it explicitly locates the cellar. First frost is2December in the fixed game calendar, not a hidden raid forecast.
-
-The phone panel reserves256pixels instead of360pixels during ordinary play and readings. The smaller fixed panel keeps map bounds stable through a chalk stroke and its result. Long readings scroll; their full text remains available. Fit hill stays explicit; time does not move the camera. Zoom can retain the selected working cell. Look/door inspection keeps real doors and beds available; person targets have a minimum touch radius and the village remains the unambiguous person list. Full selected-tool instructions wrap and scroll. Calendar words use completed simulation time, and distinguish before dawn from evening night. No speed or difficulty was tuned from felt Fast complaints.
-
-The latest-word cue includes newer real person reports. Only exact, low-weight, unlocated routine story repeats are grouped in the display, with a repetition count and the latest entry time. New locations, arrivals, injuries, raids and raw saved notes remain separate. No history is rewritten.
-
-Remaining after technical preparation: finish the corrected R1 panel and director's per-tester reconciliation, then the authorized post-fix retest after actual deployment. Original eight reports are unmatched qualitative evidence. The first four corrected pairs are declared returns, not cold players. Jonas's available corrected free report is a first Warren visit; it has no completed partner at the source cutoff. Ordinary refusals and difficult shelter planning remain intentional. A private motive, unseen raid countdown, direct obedience and frictionless door closure are not promised fixes. A player/owner choice about feel remains dated2026-11-03; any failing engineering control stays open for the director's next source step, target2026-10-26.
+**What done means.** The first increment ends with a public playable build at
+https://warren.adamwhite.work, a playtest export that replays, at least two
+playtest-and-fix rounds recorded verbatim in `docs/playtests/`, and an entry at
+https://human.adamwhite.work/games/. Adam accepts it by playing. Technical delivery
+and acceptance are separate. Later work belongs in Deferred with a date.
+
+## Source and public rules
+
+This nine-path public-rules candidate is based on origin/main
+`f18a46ef7d46eeca06b02cb189a82fb5b0b7c796`. Git establishes source contents;
+it does not establish the current live deployment. Review, signed source, exact CI,
+root merge, clean deploy, live checks and cleanup remain separate delivery gates.
+
+Ordinary Begin and confirmed New game use existing rules 0.7.0 with `warren-rest/1`.
+There is no gameplay feature selector. Loaded hills retain their exact recorded
+edition/configuration. The app package and low-level constructor default stay
+0.6.0 for compatibility. HF stays 3.0.0, engine 2.23.0. No framework logic belongs
+in the game. Client/kit remain immutable release artifacts; the npm SDK route is
+excluded by the owner artifact rule. No private framework or vendor patch is used.
+
+## The game and people
+
+A plateau village digs a refuge into soft tuff, drawn in cross-section. The player
+is the keeper, with the dig-master's chalk and bell. The people choose what to do.
+The setting is unnamed, in the old days, inspired by central Anatolia's underground
+cities. Raiders are not named by people or era. The actual-ant concept was rejected.
+
+Every figure is a full HF Person, stepped through `stepCommunity` in thirty-minute
+quanta. HF owns needs, goals, habits, fatigue, norms, fear and social decisions.
+Warren supplies physical opportunities, Dijkstra paths, work, food, water and danger.
+The canonical foreground is Yusuf Usta, Meryem, Hajja Maryam, Tariq, Kian and Tamar
+of the Wall. Seeded arriving households do not become canonical by a matching name.
+The keeper is a player office. See [canonical cast](canonical-cast.md).
+
+Faith stays quiet: prayer is part of a person's life, not the game's theme or goal.
+Keep the Islam-guided provenance and hard rules in AGENTS.md. Never compute divine
+acceptance, quantify the ruh, invent rulings or name RNG/scheduling after divine
+attributes. Model a person's understanding; use HF research for norms.
+
+The player marks stone, sleeping places, stores, lamps and doors. People may dig,
+carry spoil, harvest, fetch water, rest or refuse. Openings admit both air and riders.
+Shut doors stop the corresponding search route. Depth alone gives no universal
+safety guarantee. Beds provide capacity, not proof of occupancy or protection.
+The bell is a suggestion; an assent is not a binding promise. False alarms can
+weaken trust. Smoke provides the existing approximate half-day warning. Future
+raid dates remain unknown. No difficulty, damage, care or refusal is softened.
+
+In 0.7 rules, sleep credit needs completed sleep in marked beds. Raid protection
+uses actual positions throughout the search; scouting or exposure cannot earn it.
+Door credit needs protection that actually depends on the shut door. Wild food has
+a bounded shared daily yield, lower in winter; empty jars give no food. A warned
+loose-stone fall can damage only adjacent local furnishing/lamp, spill at most two
+grain units and never destroy the hearth/well or fill the passage. Existing seeded
+falls and injuries remain. Work can replace damaged furnishings.
+
+## Deliberate conversations and door tests
+
+A marked, known loose cut allows an invitation on Yusuf/Meryem's card. Speech
+requires travel, thirty work minutes and an awake listener at the hearth. Offers
+compete with ordinary work, food, sleep and rest. Actual hearing matters. Current
+rest/1 uses the existing elicited-position encounter: a heard position enters HF
+as a claim, not a command or standing advice to repeat it. Both people may agree.
+Only mutually attended opposing statements establish the bounded disagreement.
+No anger, insult, motive, promise, excavation or protection is invented.
+
+The keeper can ask an adult to talk about rest. A further talk needs the actual
+heard disagreement and a participating speaker. HF may decline or do something
+else. Withdrawal stops waiting and preserves spent time, answers, hearing and
+world state. This is a finite authored encounter, not general social cognition.
+
+Ask Kian about Ada addresses Samir's F666: “Let me ask Kian about Ada. That was the
+thread I wanted to follow.” F678 asks: “Let me follow Meryem’s need for rest, or
+Kian’s concern for Ada, beyond a status line.” Kian/Tamar may travel and spend
+thirty minutes per utterance. Speech uses dated Ada care records or actual new-story
+facts, attended words and current jars. Ada remains a referenced dependent under
+the finite contract; do not fabricate an admitted Person or current condition.
+Talking does not feed her, clear a duty, finish a return or accept a project.
+
+A finished-door reading offers a quiet test on held hills. The keeper chooses a
+reachable adult; assent does not roll the door. Closing and reopening each need
+existing travel and eight work minutes. Another adult may choose reopening.
+A refusal, interruption or incomplete reopening does not finish the trial. A shut
+door stays shut until actual reopening. Old held hills append `try-door`; rest/1
+keeps its existing `test-door`. No bell, alarm erasure or legacy conversion occurs.
+Night, sleep, care, coverage and faith rules still apply. Withdrawal keeps history.
+
+The public Journal's Door requests and bell calls reading projects retained times,
+answers, chosen activities, work boundaries, withdrawal and actual alarm outcomes.
+A past closure without a dated receipt remains unknown. Current bodies or doors
+cannot supply past truth. Original summaries and raw saved notes remain exact.
+
+## Clocks, reading and presentation
+
+Slow, Steady and Fast are public. Gameplay readings, event beats and unanswered
+warnings slow 0.7 visible play; menus pause. Older recorded editions retain their
+existing reading holds. The actual return reading waits for dismissal. New-event
+attention is retained for offline boundaries; visible playback acknowledges it
+through the existing reading beat. No clock, RNG or simulation quantum changes.
+
+Away play uses one game minute per real minute through ordinary simulation. Resume
+and visibility return sample elapsed milliseconds once. Logged elapsed time and
+actual completed quanta reproduce the run without reading wall time during replay.
+Food, sleep, work, travel and ageing retain their costs. Events, pending choices,
+calls, smoke/riders, active discussion or imminent recorded care return can prevent
+further stepping. Computation stops after the existing budget; an atomic quantum
+may exceed it. Unplayed elapsed time and partial quanta are reported and discarded.
+Old hills without away configuration keep waiting while absent.
+
+The working camera stays fixed during reading, construction and card refresh.
+Selecting a person may frame them once. Zoom, gestures and Fit hill remain deliberate.
+Phone people lists use full names and at least44px targets. The working scene and
+reading have separate space; short/enlarged screens scroll. Long readings retain
+complete words and reachable return controls. Tab/Shift+Tab stay in the menu;
+Escape returns to its opener. Tool selection does not change the simulation.
+
+Selected plans explain actual light, air, reach, spoil and known loose stone.
+Capacity previews say potential sleeping space; actual beds must still be marked.
+Empty-store and dry-water readings distinguish standing crops, threshing, household
+jars, existing storage, spring/well, routes and actual carriers without inventing
+private reasons. Work receipts describe observed starts/completions and locations.
+Only exact low-weight unlocated routine repeats group in display. Distinct people,
+places, arrivals, injuries and results remain. Raw histories are never rewritten.
+
+## Save, replay, care and public controls
+
+Full native saves retain state, seed, inputs, rules, configuration, fingerprints,
+complete Persons/RNG and source archives. Compact replay uses the recorded edition,
+configuration and pinned chapter initial state. Current exports require HF3 and
+plain3 text metadata. Unsupported versions retain a visible refusal. Starting over
+requires confirmation even for an unsupported hill. Failed preparation preserves it.
+Do not clear storage or manufacture recovery. Preserve full/compact readers and caps.
+
+Historical next/1 keeps its original scoped standing-advice path. Recorded next/2
+and rest/1 retain their elicited-position semantics. No old save gains an action,
+configuration, rewritten word or away play just because new hills use latest rules.
+
+Fresh hills automatically claim supported shared people through the released shelf.
+Loaded hills never refresh actors from newer shelf heads. Cast controls and generic
+persona experiments belong on the central shelf. Few diagnostics sit in one closed
+Debug beside Lab privacy; gameplay remains public. The host offers download/status,
+not a file chooser. Low-level canonical file compatibility remains as implemented;
+files gain no shared-history ownership. Do not infer a public import feature from
+historical generic notes. Recording and explicit Feedback sharing retain SDK privacy
+contracts. Feedback drafts send nothing until Submit.
+
+Public Kian/Meryem Watch preparation retains its finite source guards. It refuses
+next/rest configurations, including ordinary new hills. Older supported sources
+retain their exact path. Kian/Ada need the released accompaniment contract, both
+assents, a completed source meal and the exact pending return duty. Ada's reservoirs
+and dependent provenance remain pinned; further care consumes real grain/water.
+Ending optional refuge work does not complete return or erase duties. Native
+preparation spends ordinary play toward a quiet boundary. Preserve complete raw
+archives, care/dialect/role/identity/calendar checks and recorded permissions.
+No general cross-host ownership or atomic compare-and-swap is established.
+
+## Deferred and acceptance
+
+The original117 plus18 R2 register preserves literal asks, source hashes, return
+qualifications, dates and aliases. This batch changes access, not whole-ask closure.
+Door trial, Kian/Ada and retained door-history mechanisms already exist in the source
+base above; their source presence is distinct from current live delivery evidence.
+
+Engineering target2026-10-28: F1189 costed Maryam knot/gift/story continuation;
+F649/F655/F1200 actual newcomer exchanges and Ada actor contract; contextual replies
+to heard refusals; F1193 Yusuf stopping-line planning context; F1192 invitation-answer
+notice; F1199 other actual setup-event coverage; every uncovered compound clause.
+F595's rest request and F629's door request remain bounded mechanisms. F678 stays
+a compound ask. GDI089's general/spontaneous quarrels remain wider than this finite
+heard-disagreement encounter. No fabricated game end or unsupported onward route.
+
+F199 automatic widening versus the fixed working camera remains Adam's actual
+2026-11-03 decision. Feel, food pressure, losses, goals, pacing and readability also
+need Adam's play. No player/panel/retest is authorized by engineering checks.
+Friends' playtests and Show HN remain paused. Decision-cost profiling and generic
+reach APIs belong to HF; no host reimplementation. The no-server guardrail remains;
+owner-approved action/real-time approaches do not remove it. A worker-simulation
+rewrite is conditional on measured stutter, not a standing requirement.
+
+Historical source design and handoff notes were preserved completely in the private
+`warren-gd-resume-warren-public-rules-source-doc-history.tar.gz` archive under
+`~/code/.lab-scratch/stale-patches/`. Every member was fully read and SHA256/mode
+verified before replacing source guidance. The receipt and complete117+18 register
+are beside `~/code/.lab-scratch/games-deferred/gd-resume-warren-public-rules`.
+See [HANDOFF](../HANDOFF.md) for this candidate's remaining delivery gates.

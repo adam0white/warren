@@ -109,7 +109,7 @@ it('resumes an opted hill with slowed readings and a paused menu, without changi
     await page.close();
   }
 }, 20000);
-it('keeps edition choices public and refuses failed admission without a local cast opt-out', async () => {
+it('refuses failed new-hill admission without gameplay flags or a local cast opt-out', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   try {
     await page.clock.install();
@@ -119,13 +119,11 @@ it('keeps edition choices public and refuses failed admission without a local ca
     expect(await page.locator('#title-drawer').isVisible()).toBe(false);
     await page.locator('#book').click();
     await page.locator('#to-title').click();
-    await page.locator('#menu-refuge-edition').check();
-    expect(await page.locator('#menu-next-edition').isVisible()).toBe(true);
-    expect(await page.locator('#menu-rest-edition').isVisible()).toBe(true);
+    expect(await page.locator('#menu-new-confirm input, #menu-new-confirm select').count()).toBe(0);
     expect(await page.locator('#continuity, #local-fresh').count()).toBe(0);
     await page.locator('#menu-new-yes').click();
     await expect.poll(() => page.locator('#start-error').innerText()).toContain('could not be started');
-    expect(await page.locator('#menu-refuge-edition').isChecked()).toBe(true);
+    expect(await page.locator('#menu-new-yes').isVisible()).toBe(true);
   } finally {
     await page.close();
   }
