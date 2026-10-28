@@ -1,3 +1,4 @@
+import { cellsWithUse, neighbours, paths, USE } from './grid.ts';
 /**
  * SCOPE: three finite keeper requests: talk about rest, talk after the mutually heard
  * loose-cut disagreement, and test one finished door during quiet time. Travel and work
@@ -11,12 +12,12 @@ import {
   type Affordance,
   ageYears,
   type DecisionRecord,
+  heard,
   type Outcome,
   type Person,
   type Suggestion,
   type SuggestionResolution,
-} from '@adam0white/human-framework';
-import { cellsWithUse, neighbours, paths, USE } from './grid.ts';
+} from './hf4.ts';
 import { airAndLight, note, positionAt, touch, type WarrenState } from './warren.ts';
 
 type Reply = {
@@ -454,15 +455,13 @@ export function finishResidentWork(
   note(s, { at: p.now, kind: 'story', who: p.id, cell: d.cell, weight: 1, text });
   return { summary: text, needs: { competence: 0.05 } };
 }
-export function observeResidentTalk(s: WarrenState): void {
-  reconcileOpenDoor(s);
+export function observeResidentTalk(s: WarrenState, reconcile = true): void {
+  if (reconcile) reconcileOpenDoor(s);
   if (!requestsEnabled(s)) return;
   for (const r of [s.next?.requests?.rest, s.next?.requests?.disagreement]) {
     if (!r?.speech || r.heard) continue;
     const speech = r.speech;
-    r.heard = !!s.people
-      .find((p) => p.id === r.listener)
-      ?.memory.episodes.some((e) => e.at >= speech.at && e.summary === speech.text);
+    r.heard = !!((p) => !!p && heard(p, speech.text, speech.at))(s.people.find((p) => p.id === r.listener));
   }
 }
 export function requestWords(s: WarrenState, kind: keyof ResidentRequests): string {

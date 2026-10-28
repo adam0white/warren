@@ -1,8 +1,7 @@
-import { mkdirSync } from 'node:fs';
 import { type Browser, chromium } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
-import { act, advance, newGame, type Saved, save } from '../src/sim/game.ts';
+import { act, advance, newGame, type Saved, save, stateJson } from '../src/sim/game.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
@@ -12,6 +11,10 @@ beforeAll(async () => {
   const game = newGame(7);
   const raid = game.s.raids[0];
   if (!raid) throw new Error('Missing raid');
+  raid.smoke = game.s.minute + 30;
+  raid.riders = game.s.minute + 60;
+  raid.leave = game.s.minute + 120;
+  game.chapter = { version: 'warren-hf4-cast/1', inputs: [], claims: [], initial: stateJson(game.s) };
   advance(game, raid.riders);
   act(game, { verb: 'bell' });
   saved = save(game);
@@ -54,12 +57,6 @@ for (const [width, height] of [
       const bodyBox = await page.locator('#inspection-body').boundingBox();
       const slotBox = await page.locator('.game > .goal-slot').boundingBox();
       if (!goalBox || !slotBox) throw new Error('Missing guidance');
-      const shots = process.env.WARREN_BUG_SHOTS;
-      if (shots) {
-        mkdirSync(shots, { recursive: true });
-        if (process.env.WARREN_SCREENSHOTS === '1')
-          await page.screenshot({ path: `${shots}/raid-${width}.png` });
-      }
       if (width >= 900) {
         if (!bodyBox) throw new Error('Missing journal');
         expect(goalBox.y + goalBox.height).toBeLessThanOrEqual(bodyBox.y);

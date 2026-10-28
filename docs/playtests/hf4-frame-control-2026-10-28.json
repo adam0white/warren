@@ -1,0 +1,12 @@
+{
+  "scope": "Chromium actual main-thread simulation, six people; same12-hour checkpoint next90minutes; one publicHFcall per RAF; excludes draw and export",
+  "frames": 111,
+  "elapsedMs": 1820.5,
+  "simulationWallP95": 7.799999952316284,
+  "simulationWallMax": 11.100000023841858,
+  "framesOver10ms": 1,
+  "nominalSpeed1Ms": 1250,
+  "nominalClockLagMinutes": 41.07599999999999,
+  "exportMs": 79.70000004768372,
+  "exportBytes": 2249932
+}

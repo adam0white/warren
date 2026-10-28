@@ -147,7 +147,7 @@ it('lets a short portrait title scroll to the new-hill confirmation', async () =
     await page.close();
   }
 }, 20000);
-it('slows Journal, growth and village-opened person readings, while the Game menu pauses', async () => {
+it('slows Journal and growth while village-opened person readings and the Game menu pause', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   try {
     await page.clock.install();
@@ -171,7 +171,7 @@ it('slows Journal, growth and village-opened person readings, while the Game men
     await page.locator('[data-who="meryem"]').click();
     before = await minute();
     await page.clock.runFor(3000);
-    expect(await minute()).toBeGreaterThan(before);
+    expect(await minute()).toBe(before);
     await page.locator('#cardx').click();
     await page.locator('#bookx').click();
     await page.locator('#book').click();

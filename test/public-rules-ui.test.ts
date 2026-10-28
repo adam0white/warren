@@ -3,7 +3,17 @@ import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
 import { expect, it } from 'vitest';
-import { act, advance, catchUp, load, newGame, replay, type Saved, save } from '../src/sim/game.ts';
+import {
+  act,
+  advance,
+  catchUp,
+  fingerprint,
+  load,
+  newGame,
+  replay,
+  type Saved,
+  save,
+} from '../src/sim/game.ts';
 
 it('Begin uses existing latest public rules at phone and wide sizes, with exact native continuation', async () => {
   const server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
@@ -29,7 +39,7 @@ it('Begin uses existing latest public rules at phone and wide sizes, with exact 
               body: `<script>
               addEventListener('message', e => {
                 const m=e.data; const consent=m.type==='hf-persona-consent';
-                const value=consent?true:m.action==='prepareBatch'?{expectedHeads:Object.fromEntries(m.castIds.map(id=>[id,null])),inputs:[],blocked:[]}:{};
+                const value=consent?true:m.action==='get'?null:m.action==='prepareBatch'?{expectedHeads:Object.fromEntries(m.castIds.map(id=>[id,null])),inputs:[],blocked:[]}:{};
                 e.ports[0].postMessage({id:m.id,type:consent?'hf-persona-consent-reply':'hf-persona-reply',value});
               });</script>`,
             });
@@ -69,10 +79,18 @@ it('Begin uses existing latest public rules at phone and wide sizes, with exact 
         expect(act(nativeGuard, { verb: 'prepare-native-return', who: 'meryem' })).toBe(false);
         expect(JSON.stringify(save(nativeGuard))).toBe(beforeNative);
         const restored = load(full);
-        const compact = replay(full.seed, full.inputs, full.minute, full.game, full.chapter, full.config);
-        expect(JSON.stringify(save(restored))).toBe(JSON.stringify(save(compact)));
-        for (const g of [restored, compact]) advance(g, full.minute + 1440);
-        expect(JSON.stringify(save(restored))).toBe(JSON.stringify(save(compact)));
+        const compact = replay(
+          full.seed,
+          full.inputs,
+          full.minute,
+          full.game,
+          full.chapter,
+          full.config,
+          full.phase,
+        );
+        expect(fingerprint(restored.s)).toBe(fingerprint(compact.s));
+        for (const g of [restored, compact]) advance(g, full.minute + 30);
+        expect(fingerprint(restored.s)).toBe(fingerprint(compact.s));
         expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
         await page.locator('#to-title').click();
         expect(await page.locator('#menu-new-confirm input, #menu-new-confirm select').count()).toBe(0);
@@ -86,7 +104,7 @@ it('Begin uses existing latest public rules at phone and wide sizes, with exact 
   }
 }, 60000);
 
-it('retains old rules on Resume and preserves an unsupported saved hill through confirmation and failed admission', async () => {
+it('retains saved configurations on Resume and preserves an unsupported saved hill through confirmation and failed admission', async () => {
   const server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
   const browser = await chromium.launch({ headless: true });
   try {
@@ -98,7 +116,7 @@ it('retains old rules on Resume and preserves an unsupported saved hill through 
     await page.goto(url);
     for (const config of [undefined, 'warren-next/1'] as const) {
       await page.goto(url);
-      const original = newGame(7, config ? '0.7.0' : '0.6.0', undefined, config);
+      const original = newGame(7, '0.7.0', undefined, config);
       const raw = JSON.stringify(save(original));
       catchUp(original, 0);
       const expected = JSON.stringify(save(original));
@@ -110,7 +128,19 @@ it('retains old rules on Resume and preserves an unsupported saved hill through 
       const actual = await page.evaluate<string>(
         `(async()=>{const {save}=await import('/src/sim/game.ts');return JSON.stringify(save(window.__warren.game));})()`,
       );
-      expect(actual).toBe(expected);
+      const actualSave = JSON.parse(actual) as Saved;
+      const expectedSave = JSON.parse(expected) as Saved;
+      expect({
+        minute: actualSave.minute,
+        fingerprint: actualSave.fingerprint,
+        config: actualSave.config,
+        inputs: actualSave.inputs,
+      }).toEqual({
+        minute: expectedSave.minute,
+        fingerprint: expectedSave.fingerprint,
+        config: expectedSave.config,
+        inputs: expectedSave.inputs,
+      });
       expect(await page.locator('#talk-rest').count()).toBe(0);
     }
     await page.goto(url);

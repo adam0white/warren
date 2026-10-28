@@ -3,9 +3,10 @@
  * stippled; what nobody has seen is drawn as plain rock. Worn floors are darker ink; dark passages are shaded;
  * stale air is a faint wavy hatch. People are small ink figures whose posture says what they are doing.
  */
-import { ageYears, type Person, readBody } from '@adam0white/human-framework';
+
 import { DAY, HOUR, isLight, minuteOfDay } from '../sim/calendar.ts';
 import { AIR_REACH, faces, H, idx, K, STORE_CAP, SURF, USE, W, xOf, yOf } from '../sim/grid.ts';
+import { ageYears, type PersonReading as Person } from '../sim/hf4.ts';
 import { USTA_ID } from '../sim/people.ts';
 import { strHash } from '../sim/rng.ts';
 import {
@@ -815,9 +816,6 @@ function figure(
   const a = p.activity?.action ?? '';
   const tr = s.trips[p.id];
   const walking = !!tr && t < tr.workFrom && tr.cells.length > 1;
-  const body = readBody(p);
-  const tired = body.perceived.fatigue > 0.6 || body.perceived.sleepiness > 0.7;
-  const hurt = (p.body.injuries?.length ?? 0) > 0;
   c.strokeStyle = ink.ink;
   c.lineWidth = 1.4;
   c.lineCap = 'round';
@@ -845,7 +843,7 @@ function figure(
     a === 'pray' ||
     a === 'show' ||
     (p.id === USTA_ID && !walking);
-  const lean = (old ? 0.18 : 0) + (tired ? 0.15 : 0) + (a === 'dig' && !walking ? 0.3 : 0);
+  const lean = (old ? 0.18 : 0) + (a === 'dig' && !walking ? 0.3 : 0);
   const hipY = seated ? foot - hgt * 0.22 : foot - hgt * 0.42;
   const headR = hgt * 0.13;
   const shoulderX = x + lean * hgt * 0.5;
@@ -857,9 +855,7 @@ function figure(
     c.lineTo(x + hgt * 0.25, hipY);
     c.lineTo(x + hgt * 0.25, foot);
   } else {
-    const stride = walking
-      ? Math.sin(t * 0.9 + (strHash(p.id) % 10)) * hgt * (tired ? 0.12 : 0.2)
-      : hgt * 0.06;
+    const stride = walking ? Math.sin(t * 0.9 + (strHash(p.id) % 10)) * hgt * 0.2 : hgt * 0.06;
     c.moveTo(x - stride, foot);
     c.lineTo(x, hipY);
     c.lineTo(x + stride, foot);
@@ -896,14 +892,6 @@ function figure(
     c.lineTo(shoulderX + hgt * 0.15, shoulderY + hgt * 0.22);
   }
   c.stroke();
-  if (hurt) {
-    c.fillStyle = ink.rope;
-    c.globalAlpha = 0.8;
-    c.beginPath();
-    c.arc(shoulderX + hgt * 0.06, shoulderY + hgt * 0.1, hgt * 0.07, 0, Math.PI * 2);
-    c.fill();
-    c.globalAlpha = 1;
-  }
 }
 
 function bubble(c: CanvasRenderingContext2D, text: string, x: number, y: number, cs: number, ink: Ink) {

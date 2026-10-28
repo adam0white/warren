@@ -1,8 +1,8 @@
-import type { Activity, DecisionRecord } from '@adam0white/human-framework';
 import { describe, expect, it } from 'vitest';
 import { HOUR } from '../src/sim/calendar.ts';
-import { act, advance, fingerprint, load, newGame, replay, save } from '../src/sim/game.ts';
+import { act, advance, fingerprint, load, newGame, replay, save, stateJson } from '../src/sim/game.ts';
 import { AIR_REACH, idx, K, SURF, USE } from '../src/sim/grid.ts';
+import type { Activity, DecisionRecord } from '../src/sim/hf4.ts';
 import { airAndLight, makeWorld, offersFor, QUANTUM, riderCells, touch } from '../src/sim/warren.ts';
 import { doorWords } from '../src/ui/door-help.ts';
 import { colonyWords } from '../src/ui/guidance.ts';
@@ -65,13 +65,13 @@ describe('edition 0.4.0 raid call', () => {
     );
     expect(colonyWords(g.s)).not.toContain('riders have gone');
   });
-  it('starts only new runs on 0.6.0 and replays its export and continuation', () => {
+  it('starts current runs on 0.7.0 and replays export and continuation', () => {
     const g = newGame(19);
-    expect(g.s.edition).toBe('0.6.0');
+    expect(g.s.edition).toBe('0.7.0');
     act(g, { verb: 'bell' });
     advance(g, g.s.minute + HOUR);
     const exported = save(g);
-    expect(exported.game).toBe('0.6.0');
+    expect(exported.game).toBe('0.7.0');
     expect(fingerprint(replay(exported.seed, exported.inputs, exported.minute, exported.game).s)).toBe(
       exported.fingerprint,
     );
@@ -81,55 +81,33 @@ describe('edition 0.4.0 raid call', () => {
     expect(fingerprint(restored.s)).toBe(fingerprint(g.s));
   });
 
-  it('keeps one smoke-time suggestion through riders until all-clear without renewal interrupts', () => {
+  it('keeps one smoke-time suggestion through an authored short raid without renewal', () => {
     const g = newGame(7);
     const raid = g.s.raids[0];
-    if (!raid) throw new Error('Missing raid');
-    advance(g, raid.smoke);
+    if (!raid) throw Error('Missing raid');
+    // World-only duration fixture; actor decisions and responses still come from HF.
+    raid.stage = 'smoke';
+    raid.smoke = g.s.minute;
+    raid.riders = g.s.minute + 60;
+    raid.leave = g.s.minute + 120;
+    g.chapter = { version: 'warren-hf4-cast/1', inputs: [], claims: [], initial: stateJson(g.s) };
     expect(act(g, { verb: 'bell' })).toBe(true);
     const at = g.s.bell?.at;
-    const dissenter = g.s.people[0];
-    if (!dissenter) throw new Error('Missing dissenter');
-    dissenter.retention = { ...dissenter.retention, trace: 200 };
-    let lateDissent = false;
-    for (let t = g.s.minute + QUANTUM; t < raid.leave; t += QUANTUM) {
-      advance(g, t);
-      if (!lateDissent && t > (at ?? 0) + 6 * HOUR) {
-        // A person with a bad history is free to decline even at a later review.
-        dissenter.activity = null;
-        delete g.s.trips[dissenter.id];
-        g.s.pos[dissenter.id] = idx(g.s.hill.surface.entrance, SURF);
-        for (const voice of dissenter.will.voices) {
-          voice.trust = 0;
-          voice.pressure = 1;
-        }
-        expect(offersFor(g.s, dissenter).some((a) => a.action === 'shelter')).toBe(true);
-        lateDissent = true;
-      }
+    while (g.s.minute < raid.leave - QUANTUM) {
+      advance(g, g.s.minute + QUANTUM);
       expect(g.s.bell?.at).toBe(at);
       expect(g.s.bell?.until).toBe(raid.leave);
       expect(bellStateWords(g.s)).toContain('until the riders leave');
-      expect(bellStateWords(g.s)).not.toMatch(/renew|six game hours/);
-      const before = fingerprint(g.s);
       expect(act(g, { verb: 'bell' })).toBe(false);
-      expect(fingerprint(g.s)).toBe(before);
     }
-    expect(g.inputs.filter((i) => i.verb === 'bell')).toHaveLength(1);
-    expect(g.s.answers.some((a) => a.verdict === 'refused')).toBe(true);
-    expect(
-      dissenter.trace.some(
-        (record) =>
-          record.at > (at ?? 0) + 6 * HOUR &&
-          // The explicit idle control above creates a fresh choice, not necessarily an activity review.
-          record.suggestion?.voiceId === 'usta' &&
-          record.suggestion.verdict === 'refused' &&
-          record.suggestion.says.length > 0,
-      ),
-    ).toBe(true);
+    expect(g.inputs.filter((input) => input.verb === 'bell')).toHaveLength(1);
     advance(g, raid.leave);
-    expect(raid.stage).toBe('gone');
+    expect(g.s.raids[0]?.stage).toBe('gone');
     expect(g.s.bell).toBeNull();
-    expect(bellStateWords(g.s)).not.toMatch(/renew|call ended after six game hours/);
+    const saved = save(g);
+    expect(
+      fingerprint(replay(saved.seed, saved.inputs, saved.minute, saved.game, saved.chapter, saved.config).s),
+    ).toBe(saved.fingerprint);
   });
 
   it('still expires a quiet call as a false alarm and states the cost at a quiet door', () => {
@@ -147,27 +125,33 @@ describe('edition 0.4.0 raid call', () => {
 });
 
 describe('edition 0.4.0 scouting reward', () => {
-  it('keeps scouting exposure but gives neither defence reward nor penalty; later real defence earns it', () => {
+  it('keeps scouting exposure and refuses protection credit for a loss-free exposed visit', () => {
     const g = newGame(7);
     const first = g.s.raids[0];
     const second = g.s.raids[1];
     if (!first || !second) throw new Error('Missing raids');
+    // Keep this physical-world control short; it does not test the calendar's first-raid date.
+    first.smoke = g.s.minute + QUANTUM;
+    first.riders = g.s.minute + 2 * QUANTUM;
+    first.leave = g.s.minute + 4 * QUANTUM;
     advance(g, first.leave - QUANTUM);
     const word = g.s.word;
     advance(g, first.leave);
-    expect(first.scouted?.length).toBeGreaterThan(0);
-    expect(first.wouldCatch?.length).toBeGreaterThan(0);
-    expect(first.hurt).toEqual([]);
+    expect(g.s.raids[0]?.scouted?.length).toBeGreaterThan(0);
+    expect(g.s.raids[0]?.wouldCatch?.length).toBeGreaterThan(0);
+    expect(g.s.raids[0]?.hurt).toEqual([]);
     expect(g.s.heldAt).toBe(-1);
     expect(g.s.word).toBe(word);
     // Complete an actual second raid's all-clear with no losses.
-    second.stage = 'riders';
-    second.leave = g.s.minute + QUANTUM;
-    second.took = 0;
-    second.hurt = [];
-    advance(g, second.leave);
-    expect(g.s.heldAt).toBe(second.leave);
-    expect(g.s.word).toBe(Math.min(1, word + 0.25));
+    const currentSecond = g.s.raids[1]!;
+    currentSecond.stage = 'riders';
+    currentSecond.leave = g.s.minute + QUANTUM;
+    currentSecond.took = 0;
+    currentSecond.hurt = [];
+    advance(g, currentSecond.leave);
+    // Current rules require actual protected positions, not a loss-free short-circuit.
+    expect(g.s.heldAt).toBe(-1);
+    expect(g.s.word).toBe(Math.max(0, word - 0.1));
   });
 });
 

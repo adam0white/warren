@@ -1,0 +1,45 @@
+{
+  "scope": "same authored12-hour checkpoint, next90minutes, six people, unchanged30-minute physical cadence; all calls retained, first30 excluded from percentiles",
+  "package": "4.5.3",
+  "results": [
+    {
+      "sliceMs": 60000,
+      "elapsedMs": 627.574958,
+      "exportMs": 163.266666,
+      "archiveBytes": 4832973,
+      "transactions": 990,
+      "warmedSamples": 78,
+      "wallP95": 6.304583999999977,
+      "wallMax": 9.702249999999822,
+      "cpuP95": 11.232,
+      "cpuMax": 28.432,
+      "overBudgetCpu": 10
+    },
+    {
+      "sliceMs": 10000,
+      "elapsedMs": 1698.8762500000003,
+      "exportMs": 170.68454200000042,
+      "archiveBytes": 4947713,
+      "transactions": 1440,
+      "warmedSamples": 528,
+      "wallP95": 4.827124999999796,
+      "wallMax": 11.721416999999974,
+      "cpuP95": 8.433,
+      "cpuMax": 22.464,
+      "overBudgetCpu": 11
+    },
+    {
+      "sliceMs": 1000,
+      "elapsedMs": 12079.252875,
+      "exportMs": 226.38037500000064,
+      "archiveBytes": 6187020,
+      "transactions": 6300,
+      "warmedSamples": 5388,
+      "wallP95": 2.84308400000009,
+      "wallMax": 58.034208000000035,
+      "cpuP95": 4.91,
+      "cpuMax": 33.504,
+      "overBudgetCpu": 47
+    }
+  ]
+}

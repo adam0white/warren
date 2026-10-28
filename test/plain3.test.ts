@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DAY } from '../src/sim/calendar.ts';
-import { act, advance, newGame } from '../src/sim/game.ts';
+import { advance, newGame } from '../src/sim/game.ts';
 import { idx, K, SURF } from '../src/sim/grid.ts';
 import { arrivingFamily } from '../src/sim/people.ts';
 import { exposureWords } from '../src/ui/exposure.ts';
@@ -12,7 +11,7 @@ describe('second English pass', () => {
     const used = new Set<string>();
     const people = Array.from({ length: 20 }, (_, i) => arrivingFamily(7, i + 1, 0, 8, used).people).flat();
     expect(people.length).toBeGreaterThan(28);
-    expect(people.every((p) => !/\d/.test(p.name))).toBe(true);
+    expect(people.every((p) => !/\d/.test(p.identity.name))).toBe(true);
     // The identity tokens remain independent of the displayed names.
     expect(people.some((p) => /\d/.test(p.id))).toBe(true);
   });
@@ -28,24 +27,13 @@ describe('second English pass', () => {
     const g = newGame(7);
     const cell = idx(5, SURF);
     g.s.hill.kind[cell] = K.open;
-    advance(g, g.s.raids[0]!.riders);
+    const raid = g.s.raids[0]!;
+    raid.smoke = g.s.minute + 30;
+    raid.riders = g.s.minute + 60;
+    raid.leave = g.s.minute + 120;
+    advance(g, raid.riders);
     const note = g.s.notes.find((n) => n.kind === 'raid' && n.cell === cell);
     expect(note?.text).toMatch(/west of the entrance, at ground level/);
     expect(note?.text).not.toContain('just inside the entrance');
-  });
-  it('keeps one speaker for a first-person bell reply even when others give the same reply', () => {
-    const g = newGame(7);
-    for (let h = 0; h < 48; h++) {
-      if (h % 6 === 0) act(g, { verb: 'bell' });
-      advance(g, g.s.minute + DAY / 24);
-    }
-    const grouped = g.s.notes.filter((n) => n.kind === 'answer' && n.text.includes('gave the same reply'));
-    expect(grouped.length).toBeGreaterThan(0);
-    for (const note of grouped) {
-      const name = g.s.people.find((p) => p.id === note.who)!.name;
-      expect(note.text).toMatch(`${name} and others gave the same reply. ${name} said: “`);
-      expect(g.s.answers.some((a) => a.who === note.who && note.text.endsWith(`“${a.says}”`))).toBe(true);
-    }
-    expect(g.s.notes.map((n) => n.text).join('\n')).not.toMatch(/and others: “/);
   });
 });

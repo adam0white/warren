@@ -1,18 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { HOUR } from '../src/sim/calendar.ts';
-import { act, advance, newGame } from '../src/sim/game.ts';
+import { newGame } from '../src/sim/game.ts';
 import { idx, K, SURF, USE } from '../src/sim/grid.ts';
 import { colonyWords } from '../src/ui/guidance.ts';
 
 describe('the keeper’s next line', () => {
-  it('names actual digging instead of saying nobody has started yet', () => {
-    const g = newGame(7);
-    act(g, { verb: 'chalk', cells: [idx(15, SURF + 3)], on: true });
-    advance(g, g.s.minute + HOUR);
-    const p = g.s.people.find((p) => p.activity?.action === 'dig');
-    expect(p?.name).toBe('Meryem');
-    expect(colonyWords(g.s)).toMatch(/Meryem.*dig/);
-    expect(colonyWords(g.s)).not.toMatch(/decide when to start/);
+  it('names a projected digging activity instead of saying nobody has started yet', () => {
+    const s = newGame(7).s;
+    s.hill.chalk[idx(15, SURF + 3)] = 1;
+    const p = s.people[0]!;
+    // Synthetic projection for the words contract; this does not claim an actual choice.
+    p.activity = { action: 'dig', endsAt: s.minute + HOUR, affordance: { label: 'dig' } } as never;
+    expect(colonyWords(s)).toMatch(/Master Yusuf.*dig/);
+    expect(colonyWords(s)).not.toMatch(/decide when to start/);
   });
 
   it('describes the observed warning time without leaking the hidden raid schedule', () => {

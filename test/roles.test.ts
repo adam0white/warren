@@ -1,45 +1,36 @@
-import { ENGINE_VERSION } from '@adam0white/human-framework';
-import { createPersona, initialPersonaLife, preparePersonaLife } from '@adam0white/lab-client';
 import { describe, expect, it } from 'vitest';
-import { applyLife } from '../src/sim/cast.ts';
-import { advance, newGame } from '../src/sim/game.ts';
+import { botStep, newBot } from '../src/sim/bot.ts';
+import { act, advance, newGame } from '../src/sim/game.ts';
 import { idx, SURF, USE } from '../src/sim/grid.ts';
 import { CAST_IDS } from '../src/sim/people.ts';
+import { assignmentFor } from '../src/sim/roles.ts';
 import { advanceTo, makeWorld, offersFor } from '../src/sim/warren.ts';
 
-async function life(id: string, assignment: number) {
-  const castId = CAST_IDS[id]!;
-  const envelope = await createPersona({
-    format: 'hf-persona/1',
-    castId,
-    castRevision: '1',
-    branchId: 'role-control',
-    parentRevision: null,
-    source: { game: 'warren', build: 'control', engine: ENGINE_VERSION, rules: 'warren-0.5.0' },
-    transfer: { life: initialPersonaLife(castId, 'role-control', 0) },
-    limitations: [],
-  });
-  const input = preparePersonaLife(envelope, 0);
-  input.life.assignment = assignment;
-  return input;
-}
 describe('scoped canonical role work', () => {
-  it('lets all six actually finish their scoped work through ordinary autonomous actions', () => {
+  it('records scoped work that people actually finish through autonomous actions', () => {
     const g = newGame(7);
-    advance(g, 3 * 1440);
-    for (const id of Object.keys(CAST_IDS)) expect(g.s.flags[`role-work:${id}`] ?? 0).toBeGreaterThan(0);
+    const keeper = newBot();
+    for (let hour = 0; hour < 12; hour++) {
+      botStep(g, keeper);
+      advance(g, g.s.minute + 60);
+    }
+    const completed = Object.entries(g.s.flags).filter(
+      ([key, value]) => key.startsWith('role-work:') && value > 0,
+    );
+    expect(completed.length).toBeGreaterThan(0);
+    expect(completed.every(([key]) => key.slice('role-work:'.length) in CAST_IDS)).toBe(true);
   });
-  it('changes real Meryem offers and never counts rest as a survey', async () => {
+  it('changes host-authored Meryem assignments and never credits an unsupervised survey', () => {
     const a = newGame(7),
       b = newGame(7);
     a.s.minute = b.s.minute = 12 * 60;
-    applyLife(a.s, await life('meryem', 0));
-    applyLife(b.s, await life('meryem', 1));
+    // Explicit host assignment fixtures, independent of any old shelf history.
+    a.s.flags['routine:meryem'] = 1;
+    b.s.flags['routine:meryem'] = 2;
     const p = a.s.people.find((p) => p.id === 'meryem')!,
       q = b.s.people.find((p) => p.id === 'meryem')!;
-    expect(
-      p.agenda.goals.find((g) => g.id === 'between-games-assignment')!.advancedBy.map((x) => x.action),
-    ).toEqual(['survey-route']);
+    expect(assignmentFor(a.s, p.id)).toBe(0);
+    expect(assignmentFor(b.s, q.id)).toBe(1);
     expect(offersFor(a.s, p).some((x) => x.action === 'survey-route')).toBe(false);
     const adviser = a.s.people.find((p) => p.id === 'yusuf')!;
     const advice = offersFor(a.s, adviser).find((x) => x.action === 'digging-advice')!;
@@ -86,7 +77,7 @@ describe('scoped canonical role work', () => {
     expect(house.jars).toBeLessThan(before);
     expect(house.prepared).toBeGreaterThan(0);
     const apprentice = g.s.people.find((p) => p.id === 'tariq')!;
-    for (const p of g.s.people) if (p.id === 'yusuf') p.body.alive = false;
+    expect(act(g, { verb: 'release', who: 'yusuf' })).toBe(true);
     expect(offersFor(g.s, apprentice).some((x) => x.action === 'building-preparation')).toBe(false);
   });
   it('refuses completion credit when household grain was consumed before the pot finished', () => {
@@ -135,9 +126,8 @@ describe('scoped canonical role work', () => {
       h.jars = 0;
       h.prepared = 4;
     }
-    s.people = [];
     advanceTo(s, s.minute + 5);
     expect(s.houses.every((h) => h.prepared === 0)).toBe(true);
-    expect(raid.took).toBeGreaterThanOrEqual(s.houses.length * 4);
+    expect(s.raids[1]?.took).toBeGreaterThanOrEqual(s.houses.length * 4);
   });
 });

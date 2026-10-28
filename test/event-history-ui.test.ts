@@ -1,9 +1,11 @@
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
 import { expect, it } from 'vitest';
-import { act, advance, newGame, save } from '../src/sim/game.ts';
-import { idx, SURF } from '../src/sim/grid.ts';
+import { act, advance, newGame, save, stateJson } from '../src/sim/game.ts';
+import { idx, SURF, USE } from '../src/sim/grid.ts';
 import type { _debug } from '../src/ui/app.ts';
+import { eventHistory } from '../src/ui/event-history.ts';
+import { authoredGame } from './authored-opening.ts';
 
 declare global {
   interface Window {
@@ -12,10 +14,12 @@ declare global {
 }
 
 it('actual App synthetic phone/wide route shows real request and alarm records while the working map stays fixed', async () => {
-  const g = newGame(7, '0.7.0');
+  const g = newGame(10, '0.7.0');
   const cell = idx(18, SURF + 1);
-  expect(act(g, { verb: 'door', cell })).toBe(true);
-  while (g.s.hill.doorWork[cell] && g.s.minute < 6000) advance(g, g.s.minute + 30);
+  // Authored physical fixture: a finished door; its test and alarm are actual inputs.
+  g.s.hill.use[cell] = USE.door;
+  g.s.hill.doorWork[cell] = 0;
+  g.chapter = { version: 'warren-hf4-cast/1', inputs: [], claims: [], initial: stateJson(g.s) };
   const server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
   let browser: Awaited<ReturnType<typeof chromium.launch>> | undefined;
   try {
@@ -48,8 +52,9 @@ it('actual App synthetic phone/wide route shows real request and alarm records w
     await page.evaluate(`(async () => {
       const { advance } = await import('/src/sim/game.ts');
       const g = window.__warren.game;
-      for (let n=0; n<160 && !g.s.doorTrials?.[0]?.endedAt; n++) advance(g, g.s.minute+30);
+      for (let n=0; n<12 && !g.s.doorTrials?.[0]?.endedAt; n++) advance(g, g.s.minute+30);
     })()`);
+    expect(await page.evaluate(() => !!window.__warren.game!.s.doorTrials?.[0]?.opened)).toBe(true);
     await page.clock.runFor(300);
     await page.locator('#cellx').click();
     // The existing public Bell button records a real call, not a synthetic history row.
@@ -81,7 +86,13 @@ it('actual App synthetic phone/wide route shows real request and alarm records w
       const text = await page.locator('#door-alarm-history').innerText();
       expect(text).toContain('Completed door test: shut');
       expect(text).toContain('reopened');
-      expect(text).toContain('refused');
+      const answers = await page.evaluate(() => window.__warren.game!.s.answers);
+      expect(answers.length).toBeGreaterThan(0);
+      for (const answer of answers) {
+        expect(text).toContain(answer.verdict);
+        expect(text).toContain(answer.says);
+      }
+      if (!answers.some((answer) => answer.verdict === 'refused')) expect(text).not.toContain('refused');
       expect(text).toContain('Bell reply');
       expect(text).toContain('No riders came.');
       expect(text).toContain('unknown');
@@ -123,11 +134,8 @@ it('actual App synthetic phone/wide route shows real request and alarm records w
 }, 60000);
 
 it('actual App separates the Yusuf invitation note from each selected chalk at phone/wide sizes and keeps missing history unknown', async () => {
-  const g = newGame(7, '0.7.0', undefined, 'warren-rest/1');
-  advance(g, 360);
+  const g = authoredGame(7, 360, 'warren-rest/1');
   expect(act(g, { verb: 'visit', who: 'yusuf' })).toBe(true);
-  expect(g.s.flags['invitation-pending:yusuf']).toBeTruthy();
-  advance(g, 390);
   expect(g.s.flags['visit:yusuf']).toBeTruthy();
   const cells = [idx(15, SURF + 3), idx(20, SURF + 3)];
   expect(act(g, { verb: 'chalk', cells, on: true })).toBe(true);
@@ -207,3 +215,17 @@ it('actual App separates the Yusuf invitation note from each selected chalk at p
     await server.close();
   }
 }, 60000);
+
+// A separate public call captures a real refusal; its record must retain the actual words.
+it('retains a real bell refusal without inventing an outcome', () => {
+  const g = newGame(7, '0.7.0');
+  expect(act(g, { verb: 'bell' })).toBe(true);
+  advance(g, g.s.minute + 360);
+  const refusal = g.s.answers.find((answer) => answer.verdict === 'refused');
+  expect(refusal).toBeDefined();
+  expect(
+    eventHistory(g).some(
+      (row) => row.kind === 'reply' && row.text.includes('refused') && row.text.includes(refusal!.says),
+    ),
+  ).toBe(true);
+});

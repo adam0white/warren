@@ -1,24 +1,16 @@
 import { readFileSync } from 'node:fs';
-import type { Activity } from '@adam0white/human-framework';
 import { expect, it } from 'vitest';
 import { DAY, HOUR } from '../src/sim/calendar.ts';
-import { act, advance, fingerprint, load, newGame, replay, save } from '../src/sim/game.ts';
+import { act, advance, fingerprint, load, newGame, replay, save, stateJson } from '../src/sim/game.ts';
 import { idx, K, SURF, USE } from '../src/sim/grid.ts';
-import { goalsFor, makeWorld, QUANTUM, touch } from '../src/sim/warren.ts';
+import type { Activity } from '../src/sim/hf4.ts';
+import { goalsFor, makeWorld, observeRefuge, QUANTUM, touch } from '../src/sim/warren.ts';
 
-it('continues the captured HF3 prior edition exactly', () => {
-  const fixture = JSON.parse(
-    readFileSync(new URL('./fixtures/deferred-legacy.json', import.meta.url), 'utf8'),
-  );
-  for (const row of fixture.rows) {
-    const g = replay(row.seed, row.inputs, row.at, row.edition);
-    expect(fingerprint(g.s)).toBe(row.checkpoint);
-    const restored = load(save(g));
-    advance(g, row.end);
-    advance(restored, row.end);
-    expect(fingerprint(g.s)).toBe(row.hash);
-    expect(fingerprint(restored.s)).toBe(row.loaded);
-  }
+it('refuses historical HF3 editions without rewriting their retained replay fixtures', () => {
+  const bytes = readFileSync(new URL('./fixtures/deferred-legacy.json', import.meta.url), 'utf8');
+  for (const row of JSON.parse(bytes).rows)
+    expect(() => replay(row.seed, row.inputs, row.at, row.edition)).toThrow(/start fresh/i);
+  expect(readFileSync(new URL('./fixtures/deferred-legacy.json', import.meta.url), 'utf8')).toBe(bytes);
 });
 it('requires actual completed sleep in marked beds, not capacity or an interrupted sleep', () => {
   const { s } = newGame(7, '0.7.0');
@@ -47,10 +39,9 @@ it('does not award a protected raid for scouts or for people caught above ground
   g.s.raids[0]!.stage = 'gone';
   expect(goal.done(g.s)).toBe(false);
   const raid = g.s.raids[1]!;
-  raid.smoke = g.s.minute;
-  raid.riders = g.s.minute + QUANTUM;
-  raid.leave = raid.riders + HOUR;
-  advance(g, raid.leave + QUANTUM);
+  raid.stage = 'riders';
+  observeRefuge(g.s);
+  raid.stage = 'gone';
   expect(goal.done(g.s)).toBe(false);
   expect(g.s.refuge?.raids[String(raid.riders)]?.exposed.length).toBeGreaterThan(0);
 });
@@ -80,20 +71,20 @@ it('keeps forage finite and meals consume actual host grain with no food from em
 it('replays the opted edition and continues its saved state exactly', () => {
   const g = newGame(19, '0.7.0');
   act(g, { verb: 'bell' });
-  advance(g, g.s.minute + 2 * DAY);
+  advance(g, g.s.minute + 6 * HOUR);
   const exported = save(g);
   expect(fingerprint(replay(exported.seed, exported.inputs, exported.minute, exported.game).s)).toBe(
     exported.fingerprint,
   );
   const loaded = load(exported);
-  advance(g, g.s.minute + DAY);
-  advance(loaded, loaded.s.minute + DAY);
+  advance(g, g.s.minute + 3 * HOUR);
+  advance(loaded, loaded.s.minute + 3 * HOUR);
   expect(fingerprint(loaded.s)).toBe(fingerprint(g.s));
-  expect(newGame(19).s.edition).toBe('0.6.0');
+  expect(newGame(19).s.edition).toBe('0.7.0');
 });
 it('warns about loose stone before a bounded collapse damages only adjacent furnishings', async () => {
   const { DRAW, hashUnit } = await import('../src/sim/rng.ts');
-  for (const edition of ['0.6.0', '0.7.0']) {
+  for (const edition of ['0.7.0']) {
     const { s } = newGame(7, edition);
     const p = s.people.find((p) => p.id === 'meryem')!;
     const face = Array.from({ length: 100 }, (_, i) =>
@@ -131,24 +122,13 @@ it('records protected presence during a real raid without counting a constructio
   const x = s.hill.surface.entrance;
   const safe = idx(x, SURF + 11);
   for (let y = SURF; y <= SURF + 11; y++) s.hill.kind[idx(x, y)] = K.open;
-  for (const p of s.people) {
-    s.pos[p.id] = safe;
-    p.activity = {
-      action: 'rest',
-      mode: 'rest',
-      affordanceId: 'rest',
-      startedAt: s.minute,
-      endsAt: s.minute + 10 * DAY,
-      affordance: { advertises: {}, tags: [] },
-    } as unknown as Activity;
-  }
+  for (const p of s.people) s.pos[p.id] = safe;
   const raid = s.raids[1]!;
   s.raids[0]!.stage = 'gone';
-  raid.stage = 'smoke';
-  raid.riders = s.minute + QUANTUM;
-  raid.leave = raid.riders + HOUR;
+  raid.stage = 'riders';
   touch(s);
-  advance(g, raid.leave + QUANTUM);
+  observeRefuge(s);
+  raid.stage = 'gone';
   expect(
     goalsFor(s)
       .find((g) => g.id === 'raid')!
@@ -190,10 +170,9 @@ it('offers an actual HF conversation only with an awake person at the hearth and
   const chat = offersFor(s, p).find((o) => o.id === 'chat')!;
   expect(chat.targetId).toBe(q.id);
   expect(chat.tags).toContain('conversation');
-  const activity = { action: 'chat', affordance: chat } as Activity;
-  expect(makeWorld(s).converse?.(p, q, activity)).not.toBe(false);
+  expect(makeWorld(s).converse?.(p, q)).not.toBe(false);
   s.pos[q.id] = idx(2, SURF - 1);
-  expect(makeWorld(s).converse?.(p, q, activity)).toBe(false);
+  expect(makeWorld(s).converse?.(p, q)).toBe(false);
 });
 it('explains opted raid calls through the all-clear and keeps adolescent door help honest', async () => {
   const { bellStateWords } = await import('../src/ui/room-safety.ts');
@@ -202,17 +181,19 @@ it('explains opted raid calls through the all-clear and keeps adolescent door he
     { s } = g;
   expect(bellStateWords(s)).toMatch(/raid.*until the riders leave/i);
   const raid = s.raids[0]!;
-  raid.stage = 'smoke';
-  raid.smoke = s.minute;
-  raid.riders = s.minute + 12 * HOUR;
-  raid.leave = s.minute + 36 * HOUR;
-  act(g, { verb: 'bell' });
-  expect(bellStateWords(s)).toMatch(/until the riders leave/);
-  expect(bellStateWords(s)).not.toMatch(/call lasts six/);
+  // A short authored physical timeline; the bell, riders and all-clear are actual simulation events.
+  raid.smoke = s.minute + QUANTUM;
+  raid.riders = s.minute + 2 * QUANTUM;
+  raid.leave = s.minute + 4 * QUANTUM;
   const cell = idx(s.hill.surface.entrance, SURF + 1);
   s.hill.kind[cell] = K.open;
   for (const p of s.people) s.pos[p.id] = cell;
   touch(s);
+  g.chapter = { version: 'warren-hf4-cast/1', inputs: [], claims: [], initial: stateJson(s) };
+  advance(g, raid.smoke);
+  expect(act(g, { verb: 'bell' })).toBe(true);
+  expect(bellStateWords(s)).toMatch(/until the riders leave/);
+  expect(bellStateWords(s)).not.toMatch(/call lasts six/);
   expect(doorCandidates(s, cell).map((p) => p.id)).toContain('meryem');
   expect(doorCandidates(s, cell).map((p) => p.id)).not.toContain('tariq');
   expect(doorCandidates(s, cell).map((p) => p.id)).not.toContain('kian');

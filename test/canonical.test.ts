@@ -1,7 +1,7 @@
-import { ageYears } from '@adam0white/human-framework';
 import { castForGame } from '@adam0white/lab-client';
 import { describe, expect, it } from 'vitest';
 import { act, advance, fingerprint, load, newGame, replay, save } from '../src/sim/game.ts';
+import { ageYears } from '../src/sim/hf4.ts';
 import { ROLE_TASKS } from '../src/sim/roles.ts';
 import { QUANTUM } from '../src/sim/warren.ts';
 
@@ -13,15 +13,15 @@ describe('canonical Warren chapter', () => {
     for (const c of cast) {
       const p = g.s.people.find((p) => p.name === c.name)!;
       expect(Math.floor(ageYears(p))).toBe(c.age);
-      expect(p.traits).toEqual(c.traits);
-      expect(p.values).toEqual(c.values);
+      const authored = g.s.hf.initial.people.find((person) => person.id === p.id)!;
+      expect(authored.state.traits).toEqual(c.traits);
+      expect(authored.state.values).toEqual(c.values);
     }
     expect(
-      g.s.people.find((p) => p.id === 'meryem')?.social.relationships.find((r) => r.otherId === 'yusuf')
-        ?.roles,
+      g.s.people.find((p) => p.id === 'meryem')?.will.ties.find((r) => r.otherId === 'yusuf')?.roles,
     ).toContain('grandparent');
     expect(
-      g.s.people.find((p) => p.id === 'kian')?.social.relationships.find((r) => r.otherId === 'tamar')?.roles,
+      g.s.people.find((p) => p.id === 'kian')?.will.ties.find((r) => r.otherId === 'tamar')?.roles,
     ).toContain('mentor');
   });
   it('keeps goal memory-tag identity while activity prose becomes clearer', () => {

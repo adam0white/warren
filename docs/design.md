@@ -6,57 +6,58 @@ playtest-and-fix rounds recorded verbatim in `docs/playtests/`, and an entry at
 https://human.adamwhite.work/games/. Adam accepts it by playing. Technical delivery
 and acceptance are separate. Later work belongs in Deferred with a date.
 
-## HF4 port blocked — 2026-10-28
+## HF4 port correction — 2026-10-28
 
-**Remaining:** resolve the measured G2 lived-history admission refusal, meet the
-existing ten-millisecond simulation/frame constraint (G1; evaluate G6), then retry
-the preserved candidate and perform its review, CI, clean deployment and owner
-acceptance. Warren stays on the released HF3 build. No owner question is pending.
-Next blocker review: **2026-11-03**. The matching shared rows are **G2** and **G6**
-in `human-framework/docs/hf4-game-needs.md`; that repository was not changed.
+**Remaining:** finish the restored HF4 candidate, prove complete game export/replay
+and the existing ten-millisecond simulation/frame budget, then deliver through
+review, exact CI and a clean verified deployment. Adam accepts feel separately.
+The candidate targets published HF 4.7.0 with immutable client 0.5.3 / kit 0.5.21.
+The public menu opens `/file/`. A file must replay exactly before play. File play does not open native storage or claim shared people. It cannot replace the native hill.
+Production remains on HF3 until delivery. Profile-only portable v1 refuses explicitly; it cannot stand in for retained v2 runtime history. No HF or vendor source is patched.
 
-The candidate used the latest npm patch available at the final check, HF 4.5.2,
-and immutable lab-client 0.5.2 and kit 0.5.19. HF 4.5.2 was published during the port
-and fixes actual sleep/wake settlement. No HF or vendor source was patched.
+**The G2 blocker conclusion in PR #8 was wrong.** The negative control omitted
+receiving-world declarations. Published HF registers subjects in `world.facts`
+as lifecycle entities. Declaring Warren’s actual remembered places and the
+travellers group admits the unchanged lived passport on 4.5.2; its target archive
+replays exactly. No fabricated people/kin or deleted memory is needed. The
+[corrected standalone consumer](probes/hf4-g2-2026-10-28/README.md) retains the
+original negative case and the successful world-declaration control. The shared
+**G2** row in `human-framework/docs/hf4-game-needs.md` remains broader journey
+acceptance work; this refusal is not a missing HF contract. HF was not edited.
 
-**G2 blocks delivery.** After ordinary public chalk, ten hours of play, public
-release of Meryem's optional work and another quantum, public persona projection
-succeeds. The receiving Warren run refuses that exact passport with
-`invalid-admission` at `$.portable`. The remembered history includes the actor
-`travellers` and places `house:usta`, `field`, `hearth`, `surface` and `below`.
-Published admission accepts entity references only from declared person sources,
-current people or lifecycle entities. The opening lifecycle offers kin
-premises/scopes, not world-place registration. Inventing people or kin for
-places, changing their identity, or deleting memory would alter the history.
-An empty-goal opening admitted successfully; that did not prove lived carryover.
-Required resolution: a supported opening route for non-person historical entities
-and places, with mappings that preserve their meaning. Re-run this lived passport
-through admission and exact replay before retrying the port.
+The earlier workload result is historical evidence, not a proved G6 blocker.
+Current public step-horizon measurements on the same six-person checkpoint show
+no established atomic HF ten-millisecond floor. The candidate now schedules one
+public call per animation frame and slows its clock when computation falls behind.
+A browser control starts after twelve hours (minutes 300–1020), then plays ninety
+more simulated minutes: 111 frames, simulation-frame p95 7.8 ms / max 11.1 ms,
+one sample over 10 ms on this machine. An atomic call can exceed the budget; no
+second HF call is batched into that frame. It took 1.82 seconds versus 1.25 nominal;
+the control explicitly reports 41 simulated minutes of nominal-speed lag. This
+is a bounded machine measurement, not a phone or worst-case guarantee. Exporting
+2.25 MB took 79.7 ms separately, outside the simulation-frame result. Scripts and
+exact control receipts accompany the candidate. The original
+[4.5.2 result](playtests/hf4-control-blocked-2026-10-28.json) retains its measured
+ten-hour run and loaded-Node timings. Matching inventory rows: G1 and G6.
 
-The [standalone public consumer](probes/hf4-g2-2026-10-28/README.md) retains the
-complete compressed HF source archive and actual receiving inputs. Its isolated
-frozen install and run exited 0. It verifies exact source replay, restores and
-reprojects the same passport, then reproduces the admission refusal. It uses
-only public calls and no candidate game code. This is one measured refusal, not
-a claim that every passport fails.
+The candidate was restored from the full patch and untracked archive under
+`~/code/.lab-scratch/stale-patches/warren-codex-hf4-20261028.*`, base
+`82a006ee31687eed66b7e2b07838535914eb7f25`. Those preserved files predate this
+correction. Apply both only in a fresh managed worktree and reconcile later docs.
 
-**G6 workload remains unmet.** The six-person headless candidate
-control replays exactly, including pending, active and partial-phase checkpoints.
-The primary run covers minutes 300–900 (ten hours). Public marked cutting reached 0.032942272274438786 versus 0 unmarked. The raw
-export was 4,160,173 bytes. Across the control arms, 2,321 warmed public HF calls, wall p95 was 15.215 ms
-and max 95.639 ms; process CPU p95 was 13.528 ms and max 91.492 ms on the loaded Node
-machine. One-minute HF slices kept the thirty-minute physical cadence, but these
-measurements do not establish the required ten-millisecond frame constraint.
-They also do not prove phone performance, first-raid survival or a full season.
-The [control result](playtests/hf4-control-blocked-2026-10-28.json) is candidate
-evidence, not a released-game receipt.
+## Player evidence on HF4 — design decision, 2026-10-28
 
-The complete uncommitted port is preserved outside the repository at
-`~/code/.lab-scratch/stale-patches/warren-codex-hf4-20261028.patch`,
-`.untracked.tar.gz` and `.manifest.json`, based on
-`82a006ee31687eed66b7e2b07838535914eb7f25`. Apply the patch and restore the tar
-in a fresh managed worktree when the contract is available; reconcile these
-blocker notes instead of replacing later documentation. Re-run all gates.
+The bridge may inspect private body/agenda/relationships for world settlement.
+The player UI cannot use that privileged reading as someone else’s knowledge.
+Published 4.6.0 returns `unobserved` for another person’s body. The candidate
+therefore draws actual work/motion and retains dated journal injury evidence;
+it does not infer fatigue, pain, health or trust from private state. Current
+condition is explicitly unavailable where no public observation exists. This
+removes the earlier privileged fatigue/injury poses and current-need summary;
+it is a visible design change, not equivalent condition-sign support. Physiology,
+care costs, bodily interruption and HF decisions remain in HF. Wider observed
+condition projection belongs to shared G4, not a host body model. Adam’s feel
+acceptance remains separate from technical delivery.
 
 ## Source and public rules
 

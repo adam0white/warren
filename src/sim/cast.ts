@@ -1,274 +1,174 @@
-/** Finite zero-duration calendar maps. No travel, healing, duty settlement or qualification inference. */
+/** HF owns retained person state; the shelf owns transport and compare-and-swap. */
 import {
-  admitCalendarPersona,
-  ENGINE_VERSION,
-  isContinuingCommitment,
-  type Person,
-  projectCalendarPersona,
-  restore,
-  snapshot,
-  validateCalendarPersona,
+  inspect,
+  type PersonAuthoring,
+  type PortablePerson,
+  validatePortablePerson,
 } from '@adam0white/human-framework';
-import {
-  canonicalCast,
-  canonicalPersona,
-  type LifePreparation,
-  lifeAdmission,
-  type PersonaEnvelope,
-  preparePersonaLife,
-} from '@adam0white/lab-client';
-import { shiftWatchCare, validateWatchCare } from './ada-care.ts';
-import { SITE_CAST_NORMS } from './cast-norms.ts';
-import { idx, SURF, surfaceCell } from './grid.ts';
+import { canonicalCast, type PersonaEnvelope } from '@adam0white/lab-client';
+import { ACTIONS, archiveOf, hfRunOf } from './hf4.ts';
 import { CAST_IDS } from './people.ts';
-import { roleTask } from './roles.ts';
 import type { WarrenState } from './warren.ts';
 
-const TRUSTED_NORMS = [
-  ...SITE_CAST_NORMS,
-  {
-    id: 'dues',
-    label: 'The valley household’s agreed share',
-    standing: 'obligatory' as const,
-    sources: [
-      {
-        kind: 'assumption' as const,
-        ref: 'Valley household share; each person understands the agreement locally',
-      },
-    ],
-  },
-];
 export interface Chapter {
-  version: 'warren-cast/1' | 'warren-cast/2';
-  inputs: LifePreparation[];
+  version: 'warren-hf4-cast/1';
+  inputs: PersonaEnvelope[];
   claims: PersonaEnvelope[];
   initial: WarrenState;
 }
-const SOURCES: Record<string, Record<string, string>> = {
+const SOURCE_ROLES: Record<string, Record<string, string>> = {
   warren: CAST_IDS,
   well: { maryam: CAST_IDS.maryam!, tariq: CAST_IDS.tariq! },
   watch: { kian: CAST_IDS.kian!, tamar: CAST_IDS.tamar!, meryem: CAST_IDS.meryem! },
   valley: { 'yusuf-usta': CAST_IDS.yusuf!, 'meryem-visitor': CAST_IDS.meryem!, maryam: CAST_IDS.maryam! },
 };
-const ACTIONS = new Set([
-  'eat',
-  'drink',
-  'sleep',
-  'rest',
-  'pray',
-  'dig',
-  'carry-spoil',
-  'make-lamp',
-  'carve-door',
-  'return-with-ada',
-]);
-const SKILLS: Record<string, Record<string, string>> = {
-  warren: { digging: 'digging', farming: 'farming' },
-  well: {}, // Building/cooking do not certify stone digging or farming.
-  watch: {}, // Watching and sling use do not certify stone digging.
-  valley: { digging: 'digging', farming: 'farming' },
-};
-function role(castId: string) {
-  const id = Object.keys(CAST_IDS).find((id) => CAST_IDS[id] === castId);
-  if (!id) throw new Error('This person has no supported Warren role.');
-  return id;
-}
-export function admit(input: LifePreparation, opening: Person): Person {
-  const parent = input.parent;
-  if (canonicalPersona(preparePersonaLife(parent, input.clockMs).life) !== canonicalPersona(input.life))
-    throw new Error('The person’s history does not match the saved time.');
-  lifeAdmission(input, 'warren');
-  const id = role(parent.castId);
+export function portableOf(envelope: PersonaEnvelope): PortablePerson {
+  const portable = validatePortablePerson(envelope.transfer.portable);
+  const cast = canonicalCast(envelope.castId);
   if (
-    parent.castRevision !== canonicalCast(parent.castId).revision ||
-    opening.id !== id ||
-    (parent.source.engine !== ENGINE_VERSION &&
-      parent.source.engine !== '2.17.0' &&
-      parent.source.engine !== '2.21.0')
+    envelope.terminal ||
+    portable.version !== 2 ||
+    envelope.castRevision !== cast.revision ||
+    portable.castId !== envelope.castId ||
+    portable.castRevision !== envelope.castRevision ||
+    portable.source.game !== envelope.source.game ||
+    portable.source.engine !== envelope.source.engine ||
+    !cast.games.includes(envelope.source.game) ||
+    !cast.games.includes('warren') ||
+    envelope.transfer.castPassport !== `hf-portable-person/${portable.version}` ||
+    !/^4\./.test(portable.source.engine) ||
+    (portable.source.personId !== envelope.castId &&
+      SOURCE_ROLES[portable.source.game]?.[portable.source.personId] !== envelope.castId)
   )
-    throw new Error('This identity or simulation version is not supported.');
-  const sourceRole = parent.transfer.sourceRole;
-  if (typeof sourceRole !== 'string' || SOURCES[parent.source.game]?.[sourceRole] !== parent.castId)
-    throw new Error('The person’s role in the previous game is not supported.');
-  const dialect =
-    parent.source.game === 'warren'
-      ? 'warren-calendar/1'
-      : parent.source.game === 'valley'
-        ? 'valley-cast/1'
-        : 'site-cast/1';
-  if (parent.transfer.castPassport !== dialect)
-    throw new Error('This transfer record uses an unsupported format.');
-  const portable = validateCalendarPersona(parent.transfer.person);
-  if (id === 'kian' && !parent.transfer.watchCare)
-    throw new Error('The agreement for Ada’s care at the Watch is missing.');
-  const care =
-    id === 'kian'
-      ? validateWatchCare(
-          parent.transfer.watchCare,
-          portable.person.source.now,
-          portable.calendar.commitments,
-        )
-      : undefined;
-  if (care && (parent.source.game !== 'watch' || parent.source.rules !== 'cast-1'))
-    throw new Error('This record of care at the Watch is not supported.');
-  if (portable.person.source.id !== sourceRole)
-    throw new Error('The person’s identity does not match the previous game’s record.');
-  const checkpoint = parent.transfer.checkpoint as
-    | { schema?: unknown; sourceMinute?: unknown; rng?: unknown; sha256?: unknown }
-    | undefined;
-  if (
-    !checkpoint ||
-    checkpoint.schema !== portable.person.source.schema ||
-    checkpoint.sourceMinute !== portable.person.source.now ||
-    canonicalPersona(checkpoint.rng) !== canonicalPersona(portable.person.rng) ||
-    typeof checkpoint.sha256 !== 'string' ||
-    !/^[a-f0-9]{64}$/.test(checkpoint.sha256)
-  )
-    throw new Error('The record needed to verify the full previous state is missing.');
-  if (
-    portable.person.mappingVersion !==
-    (parent.source.game === 'warren'
-      ? 'warren-calendar/1'
-      : parent.source.game === 'valley'
-        ? 'valley-calendar/1'
-        : 'site-cast-calendar/1')
-  )
-    throw new Error('This method of matching the games’ calendars is not supported.');
-  if (parent.source.game === 'valley' && parent.source.rules !== 'valley-cast-3')
-    throw new Error('These Valley rules are not supported.');
-  if (
-    portable.calendar.owed.length ||
-    portable.calendar.lapse ||
-    portable.calendar.commitments.some(
-      (c) =>
-        !(care && c.id === care.agreement.returnCommitmentId) &&
-        (c.kind !== 'worship' || c.normId !== 'salah' || c.actions.some((a) => a !== 'pray')),
-    )
-  )
-    throw new Error(
-      'A duty from the previous game cannot be carried here. It may concern care, work or an unfinished obligation.',
+    throw Error(
+      'This saved person cannot continue in this hill. Keep the source chapter or export it. Start a fresh hill to use new people.',
     );
-  for (const n of portable.calendar.norms)
-    if (!TRUSTED_NORMS.some((k) => canonicalPersona(k) === canonicalPersona(n)))
-      throw new Error('A rule about right and wrong has a meaning this game does not support.');
-  for (const duty of [...portable.calendar.commitments, ...portable.calendar.owed])
-    if ([...duty.actions, ...(duty.violatedBy ?? [])].some((a) => !ACTIONS.has(a)))
-      throw new Error('A duty from the previous game requires an action this game does not support.');
-  const shifted = structuredClone(portable);
-  const offset = opening.now - portable.person.source.now;
-  shifted.calendar.offset = offset;
-  for (const c of shifted.calendar.commitments) {
-    c.from += offset;
-    c.until += offset;
-    if (c.recurUntil !== undefined) c.recurUntil += offset;
-    if (c.exempt) c.exempt.at += offset;
-  }
-  for (const d of shifted.calendar.owed) {
-    d.at += offset;
-    if (d.lapseSince !== undefined) d.lapseSince += offset;
-  }
-  if (shifted.calendar.lapse) shifted.calendar.lapse.since += offset;
-  const target = restore(snapshot(opening));
-  const age = portable.person.source.now - portable.person.life.bornAt;
-  if (
-    age < canonicalCast(parent.castId).age * 525600 ||
-    age > (canonicalCast(parent.castId).age + 200) * 525600
-  )
-    throw new Error('The recorded age cannot be verified from the previous game’s history.');
-  target.life.bornAt = portable.person.life.bornAt + offset;
-  // Only fitness is explicitly portable; clinical and circadian compatibility stay exact in HF.
-  target.body.fitness = portable.person.health.fitness;
-  target.agenda.commitments = [];
-  delete target.agenda.owed;
-  delete target.agenda.lapse;
-  const retained: typeof shifted.person.skills = {};
-  for (const [skill, value] of Object.entries(shifted.person.skills)) {
-    const mapped = SKILLS[parent.source.game]?.[skill];
-    if (mapped) retained[mapped] = value;
-    else
-      shifted.person.limitations.push(
-        `The previous game’s archive keeps this skill, which cannot be carried here: ${skill}`,
-      );
-  }
-  shifted.person.skills = retained;
-  return admitCalendarPersona(shifted, target, {
-    mappingVersion: portable.person.mappingVersion,
-    sourceId: sourceRole,
-    targetId: id,
-    targetNorms: portable.calendar.norms,
-  }).person;
+  if (envelope.transfer.portableClaim)
+    throw Error('This person still belongs to another chapter. Continue or export that chapter first.');
+  return portable;
 }
-export function applyLife(s: WarrenState, input: LifePreparation) {
-  const id = role(input.parent.castId),
-    p = s.people.find((p) => p.id === id)!;
-  const facts = lifeAdmission(input, 'warren');
-  if (id === 'kian') {
-    const portable = validateCalendarPersona(input.parent.transfer.person);
-    s.adaVisit = shiftWatchCare(
-      validateWatchCare(
-        input.parent.transfer.watchCare,
-        portable.person.source.now,
-        portable.calendar.commitments,
-      ),
-      p.now - portable.person.source.now,
-    );
+/** Explicit retained vocabulary preserves foreign history without claiming its places
+ * or people are present in this hill. Unsupported future duties still refuse. */
+function retainedReferences(portable: PortablePerson, person: string) {
+  type Kind = 'action' | 'entity' | 'source' | 'norm' | 'proposition';
+  const references: { kind: Kind; source: string; target: string }[] = [];
+  if (portable.version !== 2) return references;
+  const declared = new Set<string>();
+  const add = (kind: Kind, id: string | undefined) => {
+    if (!id || declared.has(`${kind}:${id}`)) return;
+    declared.add(`${kind}:${id}`);
+    if ((kind === 'entity' || kind === 'source') && (id === 'self' || id === portable.source.personId)) {
+      if (id !== 'self') references.push({ kind, source: id, target: person });
+      return;
+    }
+    const foreign = portable.source.game !== 'warren';
+    const historical =
+      (foreign && (kind === 'entity' || kind === 'source')) || (kind === 'action' && !ACTIONS.includes(id));
+    references.push({
+      kind,
+      source: id,
+      target: historical ? `history:${portable.source.game}:${encodeURIComponent(id)}` : id,
+    });
+  };
+  const memory = portable.retained.memory;
+  for (const episode of [...memory.episodes, ...memory.gists]) {
+    add('action', episode.action);
+    for (const id of [episode.actorId, episode.targetId, episode.placeId]) add('entity', id);
+    add('source', episode.voiceId);
   }
-  const h = s.houses.find((h) => h.members.includes(id))!;
-  s.pos[id] = facts.startsAtHome ? surfaceCell(h.x) : idx(17, SURF + 3);
-  s.flags[`routine:${id}`] = input.life.assignment + 1;
-  p.agenda.goals = p.agenda.goals.filter((goal) => goal.id !== 'canonical-role');
-  const task = roleTask(id, input.life.assignment);
-  if (!task) throw new Error('This local work assignment is not supported.');
-  p.agenda.goals.push({
-    id: 'between-games-assignment',
-    label: facts.assignment,
-    serves: ['competence'],
-    advancedBy: [{ action: task.action, amount: 0.1 }],
-    importance: facts.availableForExtraWork ? 0.35 : 0.15,
-    progress: 0,
-    status: 'active',
-    adoptedAt: s.minute,
-  });
-  s.notes.push({ at: s.minute, kind: 'story', who: id, text: facts.line, weight: 1 });
+  for (const id of Object.keys(memory.sourceTrust)) add('source', id);
+  for (const belief of memory.beliefs) {
+    add('proposition', belief.prop);
+    for (const source of belief.sources) add('source', source.id);
+    add('source', belief.provenance?.origin);
+    add('source', belief.provenance?.firstFrom);
+  }
+  for (const row of memory.contradictions) {
+    add('source', row.sourceId);
+    add('proposition', row.prop);
+  }
+  for (const row of memory.expectations) {
+    const actions = [
+      ...new Set([
+        ...ACTIONS,
+        ...[...memory.episodes, ...memory.gists].flatMap((e) => (e.action ? [e.action] : [])),
+      ]),
+    ];
+    if (actions.includes(row.key)) add('action', row.key);
+    else {
+      const matches = actions.filter((action) => row.key.startsWith(`${action}@`));
+      if (matches.length !== 1)
+        throw Error('This remembered expectation cannot be mapped here. Keep the source chapter.');
+      const action = matches[0]!;
+      add('action', action);
+      add('entity', row.key.slice(action.length + 1));
+    }
+  }
+  for (const duty of [...portable.retained.agenda.commitments, ...portable.retained.agenda.owed]) {
+    for (const action of [...duty.actions, ...(duty.violatedBy ?? [])]) {
+      if (!ACTIONS.includes(action))
+        throw Error('This person has a responsibility this hill cannot support. Keep the source chapter.');
+      add('action', action);
+    }
+    if ('toId' in duty) add('entity', duty.toId);
+    if ('targetId' in duty) add('entity', duty.targetId);
+    add('norm', duty.normId);
+  }
+  return references;
 }
-export async function project(person: Person) {
-  const retained = person.agenda.commitments.filter((c) => isContinuingCommitment(person.agenda, c));
-  const identity = (keys: string[]) => Object.fromEntries(keys.map((k) => [k, k]));
-  const raw = snapshot(person);
-  const personState = projectCalendarPersona(person, {
-    version: 'warren-calendar/1',
-    skills: Object.fromEntries(
-      ['digging', 'farming'].filter((id) => person.skills[id]).map((id) => [id, id]),
-    ),
-    calendar: {
-      version: 'hf-persona-calendar-map/1',
-      offset: 0,
-      sourceNorms: TRUSTED_NORMS,
-      references: {
-        commitments: identity(retained.map((c) => c.id)),
-        chains: identity(retained.flatMap((c) => (c.chain ? [c.chain] : []))),
-        actions: identity([...ACTIONS]),
-        entities: { self: 'self', ada: 'ada' },
-        norms: identity(TRUSTED_NORMS.map((n) => n.id)),
+/** The complete admission is retained in the game export. HF validates all references. */
+export function authoringFor(envelopes: PersonaEnvelope[], startMs: number) {
+  const incoming = new Map(envelopes.map((envelope) => [envelope.castId, portableOf(envelope)]));
+  if (incoming.size !== envelopes.length) throw Error('The continuing group contains a person twice.');
+  return (opening: PersonAuthoring): PersonAuthoring => {
+    const castId = CAST_IDS[opening.id];
+    const portable = castId && incoming.get(castId);
+    if (!portable) return opening;
+    const result = structuredClone(opening);
+    if (portable.version === 2) {
+      result.biography = [];
+      result.state.beliefs = [];
+      result.state.expectations = [];
+      result.state.sourceTrust = [];
+      result.state.heldNorms = [];
+      result.state.agenda.commitments = [];
+      result.state.agenda.owed = [];
+      result.state.agenda.goals = [];
+      result.state.agenda.precommitments = [];
+    }
+    result.identity.castId = castId;
+    result.portable = {
+      person: portable,
+      mapping: {
+        offsetMs: portable.version === 2 ? startMs - portable.retained.at : 0,
+        references: retainedReferences(portable, opening.id),
       },
-    },
+    };
+    return result;
+  };
+}
+export async function project(s: WarrenState, who: string) {
+  if (s.hfQueue.length || s.hfPhase)
+    throw Error(
+      'This hill still has inputs waiting for its people. Continue playing before saving shared history.',
+    );
+  const castId = CAST_IDS[who];
+  if (!castId) throw Error('This person has no shared cast identity.');
+  const cast = canonicalCast(castId);
+  const result = inspect(hfRunOf(s), {
+    perspective: { kind: 'host' },
+    people: [who],
+    select: ['persona'],
+    portable: { person: who, castId, castRevision: cast.revision },
   });
-  const sha256 = Array.from(
-    new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(canonicalPersona(raw)))),
-    (b) => b.toString(16).padStart(2, '0'),
-  ).join('');
+  if (!result.ok) throw Error(result.error.message);
+  const person = result.value.people[0];
+  if (!person || person.kind !== 'host') throw Error('The person could not be projected.');
+  const part = person.parts.find((part) => part.select === 'persona');
+  if (!part || part.select !== 'persona') throw Error('The retained person is unavailable.');
+  const portable = validatePortablePerson(part.value);
   return {
-    transfer: {
-      castPassport: 'warren-calendar/1',
-      sourceRole: person.id,
-      person: personState,
-      checkpoint: {
-        schema: raw.schema,
-        sourceMinute: raw.now,
-        rng: structuredClone(raw.rng),
-        sha256,
-      },
-    },
-    raw,
+    transfer: { castPassport: `hf-portable-person/${portable.version}`, portable },
+    raw: archiveOf(s),
   };
 }

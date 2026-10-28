@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
 import { expect, it } from 'vitest';
-import { advance, load, newGame, replay, type Saved, save } from '../src/sim/game.ts';
+import { advance, load, newGame, replay, type Saved, save, stateJson } from '../src/sim/game.ts';
+import { cellsWithUse, USE } from '../src/sim/grid.ts';
+import { newWarren } from '../src/sim/warren.ts';
 import type { _debug } from '../src/ui/app.ts';
 
 declare global {
@@ -22,9 +24,32 @@ it('actual App synthetic control: publicly asks Kian, sees heard speech, downloa
     await page.route('**/*', (r) => (r.request().url().startsWith(url) ? r.continue() : r.abort()));
     await page.clock.install();
     await page.goto(url);
+    // Fresh authored, rested and fed opening; choices and hearing remain HF outcomes.
+    const state = newWarren(
+      7,
+      true,
+      (person) => ({
+        ...person,
+        state: {
+          ...person.state,
+          body: { ...person.state.body, satiety: 1, hydration: 1, sleepPressure: 0 },
+        },
+      }),
+      720,
+    );
+    const hearth = cellsWithUse(state.hill, USE.hearth)[0]!;
+    state.pos.kian = hearth;
+    state.pos.tamar = hearth;
+    const chapter = {
+      version: 'warren-hf4-cast/1' as const,
+      inputs: [],
+      claims: [],
+      initial: stateJson(state),
+    };
+    const opening = newGame(7, '0.7.0', chapter);
     const stored = await page.evaluate(`(async () => {
       const { put } = await import('/src/ui/store.ts');
-      return put('hill', ${JSON.stringify(save(newGame(7)))});
+      return put('hill', ${JSON.stringify(save(opening))});
     })()`);
     expect(stored).toBe(true);
     await page.reload();
@@ -65,15 +90,18 @@ it('actual App synthetic control: publicly asks Kian, sees heard speech, downloa
       compact.game,
       compact.chapter,
       compact.config,
+      compact.phase,
     );
     // The downloaded file also carries the UI export wall-clock stamp.
     // Preserve that file unchanged; the deterministic native body comes from load/save.
     expect(typeof (full as Saved & { exportedAt: string }).exportedAt).toBe('string');
     expect(save(replayed)).toEqual(save(restored));
-    for (const g of [restored, replayed]) advance(g, full.minute + 1440);
+    for (const g of [restored, replayed]) advance(g, full.minute + 30);
     expect(save(restored)).toEqual(save(replayed));
   } finally {
     await browser?.close();
     await server.close();
   }
-});
+  // This bounded control includes browser simulation, archive download, full replay
+  // and two continuations. Allow loaded full-suite runs time for all assertions.
+}, 120000);

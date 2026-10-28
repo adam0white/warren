@@ -1,0 +1,51 @@
+  it('keeps one smoke-time suggestion through riders until all-clear without renewal interrupts', () => {
+    const g = newGame(7);
+    const raid = g.s.raids[0];
+    if (!raid) throw new Error('Missing raid');
+    advance(g, raid.smoke);
+    expect(act(g, { verb: 'bell' })).toBe(true);
+    const at = g.s.bell?.at;
+    const dissenter = g.s.people[0];
+    if (!dissenter) throw new Error('Missing dissenter');
+    dissenter.retention = { ...dissenter.retention, trace: 200 };
+    let lateDissent = false;
+    for (let t = g.s.minute + QUANTUM; t < raid.leave; t += QUANTUM) {
+      advance(g, t);
+      if (!lateDissent && t > (at ?? 0) + 6 * HOUR) {
+        // A person with a bad history is free to decline even at a later review.
+        dissenter.activity = null;
+        delete g.s.trips[dissenter.id];
+        g.s.pos[dissenter.id] = idx(g.s.hill.surface.entrance, SURF);
+        for (const voice of dissenter.will.voices) {
+          voice.trust = 0;
+          voice.pressure = 1;
+        }
+        expect(offersFor(g.s, dissenter).some((a) => a.action === 'shelter')).toBe(true);
+        lateDissent = true;
+      }
+      expect(g.s.bell?.at).toBe(at);
+      expect(g.s.bell?.until).toBe(raid.leave);
+      expect(bellStateWords(g.s)).toContain('until the riders leave');
+      expect(bellStateWords(g.s)).not.toMatch(/renew|six game hours/);
+      const before = fingerprint(g.s);
+      expect(act(g, { verb: 'bell' })).toBe(false);
+      expect(fingerprint(g.s)).toBe(before);
+    }
+    expect(g.inputs.filter((i) => i.verb === 'bell')).toHaveLength(1);
+    expect(g.s.answers.some((a) => a.verdict === 'refused')).toBe(true);
+    expect(
+      dissenter.trace.some(
+        (record) =>
+          record.at > (at ?? 0) + 6 * HOUR &&
+          // The explicit idle control above creates a fresh choice, not necessarily an activity review.
+          record.suggestion?.voiceId === 'usta' &&
+          record.suggestion.verdict === 'refused' &&
+          record.suggestion.says.length > 0,
+      ),
+    ).toBe(true);
+    advance(g, raid.leave);
+    expect(raid.stage).toBe('gone');
+    expect(g.s.bell).toBeNull();
+    expect(bellStateWords(g.s)).not.toMatch(/renew|call ended after six game hours/);
+  });
+

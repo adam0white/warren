@@ -2,14 +2,13 @@
  * The page around the hill: a title, the cross-section, the keeper's tools, the bell, the speed, a person card
  * and the Game menu (journal, people, saves, download). Time runs continuously; the Game menu pauses it.
  */
-import { ageYears, describePerson, FRAMEWORK_VERSION, type Person } from '@adam0white/human-framework';
+import { version as FRAMEWORK_VERSION } from '@adam0white/human-framework/package.json';
 import { type PhoneStage, phoneStage, telemetryNotice } from '@adam0white/lab-kit';
 import { adaTalkUnavailable, adaTalkWords } from '../sim/ada-talk.ts';
 import { DAY, hourWords } from '../sim/calendar.ts';
 import { discussionWords, markedLooseCut } from '../sim/cut-discussion.ts';
 import {
   act,
-  advance,
   catchUp,
   GAME_VERSION,
   type Game,
@@ -35,7 +34,8 @@ import {
   xOf,
   yOf,
 } from '../sim/grid.ts';
-import { BELL, VISIT_TERMS } from '../sim/people.ts';
+import { ageYears, type PersonReading as Person } from '../sim/hf4.ts';
+import { VISIT_TERMS } from '../sim/people.ts';
 import { rallyBlock } from '../sim/rally.ts';
 import {
   doorRequest,
@@ -46,6 +46,7 @@ import {
 import { INVITATIONS } from '../sim/visits.ts';
 import {
   activeRaid,
+  advanceFrame,
   airAndLight,
   digProgress,
   goalsFor,
@@ -116,6 +117,7 @@ let gameGeneration = 0;
 function replaceGame(game: Game, expected = ++generation): boolean {
   if (expected !== generation) return false;
   g = game;
+  framePending = null;
   gameGeneration = expected;
   hiddenAt = null;
   return true;
@@ -146,6 +148,7 @@ function queueResize() {
 }
 const paint: Paint = { preview: new Set(), previewKind: null, selected: null, t: 0 };
 let lastSaved = 0;
+let checkpointPending = false;
 let dirty = false;
 let lastSeenNote: Note | null = null;
 let ticker: Note | null = null;
@@ -217,6 +220,10 @@ function topbar(titlePage = false) {
 // ---------- start ----------
 
 export async function start() {
+  if (location.pathname === '/file/') {
+    openFilePage();
+    return;
+  }
   window.addEventListener('warren-history-error', (event) => {
     if ((event as CustomEvent<Game>).detail !== g) return;
     let warning = document.getElementById('history-warning');
@@ -323,6 +330,33 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
   document.getElementById('new-no')?.addEventListener('click', () => {
     document.getElementById('new-confirm')?.setAttribute('hidden', '');
     document.getElementById('new')?.removeAttribute('hidden');
+  });
+}
+
+function openFilePage() {
+  ink = readInk();
+  app().innerHTML = `<main class="title"><h1>Open a saved hill</h1><p>Choose a Warren run you downloaded. It plays here without replacing the hill saved on this device or changing shared people.</p><p>Keep your original file. Older versions may need a fresh hill.</p><input id="hill-file" type="file" accept=".json,application/json"><p id="file-status" role="status"></p><a href="/">Return to your hill</a></main>`;
+  document.getElementById('hill-file')?.addEventListener('change', async (event) => {
+    const input = event.target as HTMLInputElement,
+      file = input.files?.[0];
+    if (!file) return;
+    input.disabled = true;
+    const status = document.getElementById('file-status');
+    if (!status) return;
+    status.textContent = 'Checking the saved hill and its history…';
+    try {
+      const expected = ++generation;
+      const prepared = await continuity.fileLoad(file);
+      if (!replaceGame(prepared, expected)) return;
+      speedIx = 0;
+      enter();
+    } catch (error) {
+      status.textContent =
+        error instanceof Error
+          ? error.message
+          : 'This hill could not be opened. Keep the file and start a fresh hill.';
+      input.disabled = false;
+    }
   });
 }
 
@@ -485,7 +519,7 @@ function enter() {
   });
   document.getElementById('cellx')?.addEventListener('click', () => {
     if (g?.s.next?.attention) {
-      act(g, { verb: 'acknowledge' });
+      order({ verb: 'acknowledge' });
       dirty = true;
     }
     closeCell();
@@ -731,6 +765,7 @@ function zoomView(factor: number) {
 function order(o: Order): boolean {
   if (!g) return false;
   const ok = act(g, o);
+  framePending = null;
   if (ok) dirty = true;
   return ok;
 }
@@ -749,8 +784,11 @@ function raidDecision() {
 /** Menu pages, their person pages and notebook/privacy dialogs hold only playback. */
 function menuHoldsTime(): boolean {
   if (g?.s.edition === '0.7.0')
-    return !!document.querySelector(
-      '#drawer[data-kind="s"]:not([hidden]), #drawer[data-kind="feedback"]:not([hidden]), .hflab-veil, #feedback-host:not([hidden])',
+    return (
+      !!document.querySelector(
+        '#drawer[data-kind="s"]:not([hidden]), #drawer[data-kind="p"]:not([hidden]), #drawer[data-kind="feedback"]:not([hidden]), .hflab-veil, #feedback-host:not([hidden])',
+      ) ||
+      (!!personOpener?.isConnected && !document.getElementById('card')?.hidden)
     );
   return (
     !!document.querySelector('#drawer:not([hidden]), .hflab-veil, #feedback-host:not([hidden])') ||
@@ -758,6 +796,8 @@ function menuHoldsTime(): boolean {
     (!!personOpener?.isConnected && !document.getElementById('card')?.hidden)
   );
 }
+
+let framePending: { before: string; day: number; alive: number; raid: boolean } | null = null;
 
 function frame(now: number) {
   raf = requestAnimationFrame(frame);
@@ -772,7 +812,7 @@ function frame(now: number) {
   const reading = isReading();
   const awaitingReading = returnReading;
   const rate =
-    menuHeld || awaitingReading
+    menuHeld || awaitingReading || checkpointPending
       ? 0
       : playbackRate(
           reading || !!document.querySelector(':popover-open'),
@@ -784,27 +824,34 @@ function frame(now: number) {
   if (rate === 0) disp = s.minute;
   else disp += (dt * rate) / 1000;
   const t0 = performance.now();
-  while (rate > 0 && s.minute + QUANTUM <= disp && performance.now() - t0 < 10) {
-    const pending = raidDecision();
-    const before = eventStamp(s);
-    const dayBefore = Math.floor(s.minute / DAY);
-    const aliveBefore = s.people.filter((p) => p.body.alive).length;
-    if (s.next?.attention && now >= readUntil) act(g, { verb: 'acknowledge' });
-    advance(g, s.minute + QUANTUM);
+  while (rate > 0 && (framePending || s.minute + QUANTUM <= disp) && performance.now() - t0 < 10) {
+    if (!framePending) {
+      if (s.next?.attention && now >= readUntil) order({ verb: 'acknowledge' });
+      framePending = {
+        before: eventStamp(s),
+        day: Math.floor(s.minute / DAY),
+        alive: s.people.filter((p) => p.body.alive).length,
+        raid: !!raidDecision(),
+      };
+    }
+    if (!advanceFrame(s)) break;
+    const completed = framePending;
+    framePending = null;
     if (
       s.people.some((p) => (s.flags[`released:${p.id}`] ?? 0) >= s.minute - QUANTUM + 1 && !p.activity) ||
-      Math.floor(s.minute / DAY) !== dayBefore ||
-      s.people.filter((p) => p.body.alive).length !== aliveBefore
+      Math.floor(s.minute / DAY) !== completed.day ||
+      s.people.filter((p) => p.body.alive).length !== completed.alive
     )
       void continuity.checkpoint();
     dirty = true;
-    if ((!pending && raidDecision()) || eventStamp(s) !== before) {
+    if ((!completed.raid && raidDecision()) || eventStamp(s) !== completed.before) {
       readUntil = now + 6000;
-      // Discard only playback overshoot: never skip or alter a simulation step.
       disp = s.minute;
       chrome();
       break;
     }
+    // One simulation boundary per animation frame, even when a quantum just ended.
+    break;
   }
   lagging = disp > s.minute + 2 * QUANTUM;
   if (lagging) disp = s.minute + QUANTUM;
@@ -812,7 +859,7 @@ function frame(now: number) {
   // The working view moves only through view controls, gestures or explicit person selection.
   draw(ctx, s, view, ink, paint);
   if (Math.floor(now / 250) !== Math.floor((now - dt) / 250)) chrome();
-  if (dirty && now - lastSaved > 30000) writeSave();
+  if (dirty && !g?.fileOrigin && !checkpointPending && now - lastSaved > 30000) automaticCheckpoint();
 }
 
 /** The text around the scene: date, stores, goal, notes, the card. Updated a few times a second. */
@@ -898,8 +945,9 @@ function chrome() {
   }
   const rate = document.getElementById('clock-rate');
   if (rate)
-    rate.textContent =
-      menuHoldsTime() || (sEditionLegacy() && reading0)
+    rate.textContent = checkpointPending
+      ? 'Saving this hill. Time is paused.'
+      : menuHoldsTime() || (sEditionLegacy() && reading0)
         ? 'Time is paused for reading.'
         : !sEditionLegacy() && (reading0 || pending)
           ? 'Time slows while you read.'
@@ -1110,21 +1158,6 @@ function restoreActions() {
 
 // ---------- the person card ----------
 
-/** How they seem, from HF's own description: the feeling, if any, said plainly. */
-function feeling(p: Person): string {
-  const f = /feeling ([^.;]+)/.exec(describePerson(p))?.[1];
-  return f ? `${p.name.split(' ')[0]} seems to be feeling ${f}.` : '';
-}
-
-function trustWords(p: Person): string {
-  const v = p.will.voices.find((x) => x.voiceId === BELL);
-  if (!v) return '';
-  if (v.trust > 0.75) return 'comes when the bell rings';
-  if (v.trust > 0.5) return 'listens for the bell';
-  if (v.trust > 0.3) return 'is not sure about the bell any more';
-  return 'has stopped believing the bell';
-}
-
 function card() {
   const el = document.getElementById('card');
   if (!el || !g) return;
@@ -1152,7 +1185,6 @@ function card() {
   const walking = tr && paint.t < tr.workFrom && tr.cells.length > 1;
   const why = walking ? undefined : s.why?.[p.id];
   const about = s.notes.filter((n) => n.who === p.id).slice(-2);
-  const habit = p.habits.some((h) => h.action === 'dig' && h.strength > 0.25);
   const html = `
     <div class="who">${personOpener ? `<button id="cardback" aria-label="Back to The village">← ${esc(p.name)}</button>` : `<b>${esc(p.name)}</b>`} <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
         <p id="person-help">${esc(personHelpWords(s, p))}</p>
@@ -1164,9 +1196,6 @@ function card() {
     ${(s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') && VISIT_TERMS[p.id] ? `<p id="invitation-status">${esc(displayWords(invitationWords(s, p)))}</p><p>${esc(displayWords(VISIT_TERMS[p.id]!))}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] || s.flags[`invitation-pending:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><p class="soft small">${esc(s.flags[`released:${p.id}`] ? `${p.name} no longer works on the refuge. Promises and household duties still apply.` : `Releasing ${p.name} stops their digging and other work on the refuge for the rest of this hill.${p.id === 'yusuf' ? ' He will no longer walk the marks with the diggers when you ask.' : ''} It cannot be taken back. Promises and household duties still apply.`)}</p><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>${esc(`Release ${p.name} from refuge work`)}</button>` : ''}
 
     <details id="person-context"><summary id="person-context-toggle">More activity and words</summary>
-    ${feeling(p) ? `<div class="soft">${esc(feeling(p))}</div>` : ''}
-    ${habit ? `<div class="hand">${esc(p.name)} goes down to the marked walls every morning now. Nobody needs to ask.</div>` : ''}
-    ${trustWords(p) ? `<div class="soft">${esc(p.name)} ${trustWords(p)}.</div>` : ''}
     ${why ? `<div class="hand">“${esc(speechWords(why))}”</div>` : ''}
     ${about.map((n) => `<div class="soft small">${esc(displayWords(n.text))}</div>`).join('')}
 </details>${p.id === 'kian' ? continuity.careControls() : ''}${continuity.handoffControls(p.id)}`;
@@ -1180,7 +1209,7 @@ function card() {
     for (const verb of ['ask-ada', 'withdraw-ada-talk'] as const)
       el.querySelector(`#${verb}`)?.addEventListener('click', () => {
         if (!g) return;
-        const ok = act(g, { verb });
+        const ok = order({ verb });
         dirty = true;
         card();
         if (!ok) flash(adaTalkUnavailable(g.s) ?? 'There is no pending conversation to withdraw.');
@@ -1188,7 +1217,7 @@ function card() {
     for (const verb of ['talk-rest', 'talk-disagreement'] as const)
       el.querySelector(`#${verb}`)?.addEventListener('click', () => {
         if (!g) return;
-        const ok = act(g, { verb, who: p.id });
+        const ok = order({ verb, who: p.id });
         dirty = true;
         card();
         if (!ok)
@@ -1198,7 +1227,7 @@ function card() {
       });
     el.querySelectorAll<HTMLButtonElement>('[data-withdraw]').forEach((button) => {
       button.addEventListener('click', () => {
-        if (g) act(g, { verb: 'withdraw-request', kind: button.dataset.withdraw as keyof ResidentRequests });
+        if (g) order({ verb: 'withdraw-request', kind: button.dataset.withdraw as keyof ResidentRequests });
         dirty = true;
         card();
       });
@@ -1206,14 +1235,14 @@ function card() {
     for (const verb of ['discuss-cut', 'end-cut-discussion'] as const)
       el.querySelector(`#${verb}`)?.addEventListener('click', () => {
         if (g) {
-          act(g, { verb });
+          order({ verb });
           dirty = true;
           card();
         }
       });
     el.querySelector('#release-person')?.addEventListener('click', () => {
       if (g) {
-        const ok = act(g, { verb: 'release', who: p.id });
+        const ok = order({ verb: 'release', who: p.id });
         if (!ok) alert('This person cannot leave yet. Work, a duty, danger or care still needs them here.');
         dirty = true;
         card();
@@ -1221,7 +1250,7 @@ function card() {
     });
     el.querySelector('#visit-person')?.addEventListener('click', () => {
       if (g) {
-        act(g, { verb: 'visit', who: p.id });
+        order({ verb: 'visit', who: p.id });
         dirty = true;
         card();
       }
@@ -1710,7 +1739,7 @@ function updateResidentDoor(cell: number) {
   el.querySelector('#test-door')?.addEventListener('click', () => {
     const who = el.querySelector<HTMLSelectElement>('#door-tester')?.value;
     if (!g || !who) return;
-    const ok = act(g, { verb: residualEnabled(g.s) ? 'test-door' : 'try-door', who, cell });
+    const ok = order({ verb: residualEnabled(g.s) ? 'test-door' : 'try-door', who, cell });
     dirty = true;
     updateResidentDoor(cell);
     if (!ok)
@@ -1718,8 +1747,8 @@ function updateResidentDoor(cell: number) {
   });
   el.querySelector('#withdraw-door-test')?.addEventListener('click', () => {
     if (g) {
-      if (g.s.doorTrials?.at(-1) === doorRequest(g.s)) act(g, { verb: 'withdraw-door-trial' });
-      else act(g, { verb: 'withdraw-request', kind: 'door' });
+      if (g.s.doorTrials?.at(-1) === doorRequest(g.s)) order({ verb: 'withdraw-door-trial' });
+      else order({ verb: 'withdraw-request', kind: 'door' });
     }
     dirty = true;
     updateResidentDoor(cell);
@@ -1815,10 +1844,9 @@ function updateShelter() {
   const bellState = document.getElementById('bell-state');
   if (bellState) {
     const ringing = !!g.s.bell && g.s.minute < g.s.bell.until;
-    const low = alive.some((p) => (p.will.voices.find((v) => v.voiceId === BELL)?.trust ?? 0.5) < 0.3);
-    bellState.textContent = low ? '🔔╱' : '🔔';
+    bellState.textContent = '🔔';
     bellState.classList.toggle('ringing', ringing);
-    bellState.setAttribute('aria-label', ringing ? 'Bell ringing' : low ? 'Bell trust is low' : 'Bell quiet');
+    bellState.setAttribute('aria-label', ringing ? 'Bell ringing' : 'Bell quiet');
   }
   const summary = document.getElementById('shelter-summary');
   if (summary)
@@ -1856,7 +1884,7 @@ function closeBook() {
 }
 
 function menuRows() {
-  return `<p>The game is paused while the menu is open.</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><button id="download-run" ${g ? '' : 'disabled'}>Download this run</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a><button id="to-title">New game</button></div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div><a class="shelf-link" href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">People on this browser shelf</a><div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noopener">Lab privacy</a><details class="game-debug"><summary>Debug</summary><div>${continuity.controls()}</div></details></div><button class="primary" id="resume">Resume</button>`;
+  return `<p>The game is paused while the menu is open.</p><p>Pace: ${SPEED_NAMES[speedIx]}</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a href="/file/" target="_blank" rel="noopener">Open a saved hill</a><button id="download-run" ${g ? '' : 'disabled'}>Download this run</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a>${g?.fileOrigin ? '<a href="/">Return to your hill</a>' : '<button id="to-title">New game</button>'}</div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div><a class="shelf-link" href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">People across games</a><div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noopener">Lab privacy</a><details class="game-debug"><summary>Debug</summary><p>The Warren ${GAME_VERSION} · HF ${FRAMEWORK_VERSION}</p><div>${continuity.controls()}</div></details></div><button class="primary" id="resume">Resume</button>`;
 }
 let feedbackCleanup: (() => void) | undefined;
 function showFeedback(host: HTMLElement, onBack: () => void) {
@@ -2057,8 +2085,28 @@ function openBook(tab = 's', opener?: HTMLElement) {
   document.getElementById('bookx')?.focus();
 }
 
+/** Show and pause an automatic checkpoint before materializing its exact archive.
+ * Export cost is separate from the simulation frame budget; no history is trimmed. */
+function automaticCheckpoint() {
+  const current = g,
+    expected = generation;
+  checkpointPending = true;
+  chrome();
+  requestAnimationFrame(() =>
+    setTimeout(() => {
+      if (g !== current || generation !== expected) {
+        checkpointPending = false;
+        return;
+      }
+      void writeSave().finally(() => {
+        checkpointPending = false;
+        chrome();
+      });
+    }, 0),
+  );
+}
 async function writeSave(): Promise<boolean> {
-  if (!g) return true;
+  if (!g || g.fileOrigin) return true;
   const current = g;
   const expected = gameGeneration;
   const owns = () => g === current && expected === generation;
@@ -2074,7 +2122,9 @@ async function writeSave(): Promise<boolean> {
 }
 
 function runOf() {
-  return g ? { ...save(g), exportedAt: new Date().toISOString() } : null;
+  if (!g) return null;
+  const saved = save(g);
+  return { ...saved, exportedAt: new Date().toISOString() };
 }
 
 function download() {

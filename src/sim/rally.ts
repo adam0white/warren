@@ -10,6 +10,7 @@
  */
 import { DAY } from './calendar.ts';
 import { faces } from './grid.ts';
+import { enqueue } from './hf4.ts';
 import { USTA_ID } from './people.ts';
 import { airAndLight, diggingAdults, faceState, note, type WarrenState } from './warren.ts';
 
@@ -18,7 +19,7 @@ export const RALLY_WAIT = 3 * DAY;
 type RefugeGoal = WarrenState['people'][number]['agenda']['goals'][number];
 
 export function refugeGoal(p: WarrenState['people'][number]): RefugeGoal | undefined {
-  return p.agenda.goals.find((g) => g.id === 'refuge');
+  return p.agenda.goals.findLast((g) => g.id === 'refuge' || g.id.startsWith('refuge-rally:'));
 }
 
 /** True when the refuge goal pulls at its full importance. */
@@ -55,10 +56,23 @@ export function rally(s: WarrenState): boolean {
   for (const p of diggingAdults(s)) {
     const g = refugeGoal(p);
     if (!g || fresh(g)) continue;
-    if (g.status === 'achieved') g.progress = 0;
-    g.status = 'active';
-    g.importance = g.baseImportance ?? g.importance;
-    g.lastAdvancedAt = s.minute;
+    enqueue(s, 'agenda.requested', { person: p.id, request: { type: 'abandon-goal', goalId: g.id } });
+    enqueue(s, 'agenda.requested', {
+      person: p.id,
+      request: {
+        type: 'goal',
+        goal: {
+          id: `refuge-rally:${s.minute}`,
+          label: g.label,
+          serves: g.serves,
+          advancedBy: g.advancedBy,
+          importance: g.baseImportance,
+          baseImportance: g.baseImportance,
+          completionHalfLifeMs: g.completionHalfLifeMs,
+          progress: 0,
+        },
+      },
+    });
     joined.push(p.name);
   }
   s.flags.rally = s.minute + 1;
@@ -66,7 +80,7 @@ export function rally(s: WarrenState): boolean {
   note(s, {
     kind: 'story',
     who: USTA_ID,
-    text: `Yusuf Usta walked the chalk marks with ${names} and talked about who the refuge is for. The refuge matters to them again. Each still chooses when to dig.`,
+    text: `Yusuf Usta walked the chalk marks with ${names} and talked about who the refuge is for. He asked them to take up the refuge work again. Each still chooses when to dig.`,
     weight: 2,
   });
   return true;

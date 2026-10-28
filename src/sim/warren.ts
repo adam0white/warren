@@ -1,6 +1,6 @@
 /**
  * The hill as an HF host: world truth (rock, rooms, grain, water, raids, the neighbours) and the HF `World` its
- * people decide in. Every figure on screen is an HF `Person` lived in full by `stepCommunity`; there are no
+ * people decide in. Every figure is a full HF4 actor in one community Run; there are no
  * lightweight agents (measured in scripts/measure.ts; see docs/design.md, performance).
  *
  * The keeper's marks are world shaping, not orders. Chalk makes a face that can be dug, a lamp makes a passage
@@ -12,29 +12,8 @@
  *
  * The sim advances in fixed quanta (QUANTUM minutes) in play and replay alike; inputs apply at quantum boundaries.
  */
-import {
-  type Activity,
-  type Affordance,
-  addPerson,
-  ageYears,
-  type Community,
-  type CommunityState,
-  communityState,
-  createCommunity,
-  type DecisionRecord,
-  injure,
-  interruptPerson,
-  type Outcome,
-  type Percept,
-  type Person,
-  readBody,
-  type SimEvent,
-  type Suggestion,
-  type SuggestionResolution,
-  type snapshot,
-  stepCommunity,
-  type World,
-} from '@adam0white/human-framework';
+
+import type { Input as HFInput, PersonAuthoring, RunArchive, StepResult } from '@adam0white/human-framework';
 import { type AdaVisit, completeAdaCare, requestAdaEnd } from './ada-care.ts';
 import {
   type AdaTalk,
@@ -93,6 +72,28 @@ import {
   xOf,
   yOf,
 } from './grid.ts';
+import {
+  type Activity,
+  type Affordance,
+  ageYears,
+  archiveOf,
+  createWarrenRun,
+  type DecisionRecord,
+  enqueue,
+  hfRunOf,
+  interruptPerson,
+  type Outcome,
+  type Percept,
+  type Person,
+  readBody,
+  type SimEvent,
+  type Suggestion,
+  type SuggestionResolution,
+  sendInjury,
+  stepWarren,
+  syncReadings,
+  type World,
+} from './hf4.ts';
 import { arrivingFamily, BELL, founders, type House, USTA_ID } from './people.ts';
 import {
   captureResidentAnswer,
@@ -203,10 +204,10 @@ export interface WarrenState {
   nativeDepartures?: Record<
     string,
     {
-      person: ReturnType<typeof snapshot>;
+      person: unknown;
       care?: AdaVisit;
       preparedAt: number;
-      guard: ReturnType<typeof snapshot>;
+      guard: unknown;
     }
   >;
   recoveries?: { who: string; injury: string; part: string; severity: number }[];
@@ -217,7 +218,20 @@ export interface WarrenState {
   version: number;
   people: Person[];
   houses: House[];
-  community?: CommunityState;
+  hf: RunArchive;
+  hfEventCursor?: string;
+  hfPhase?: {
+    from: number;
+    to: number;
+    target: number;
+    steps: number;
+    result?: StepResult;
+    events?: SimEvent[];
+    lastNote?: Note;
+  };
+  hfActive: Record<string, Activity>;
+  hfOffers: Record<string, { revision: number; offers: Affordance[] }>;
+  hfQueue: HFInput[];
   pos: Record<string, number>;
   trips: Record<string, Trip>;
   fields: { size: number; standing: number; sown: number; floor: number };
@@ -276,8 +290,14 @@ export interface WarrenState {
 
 // ---------- setup ----------
 
-export function newWarren(seed: number, canonical = false): WarrenState {
-  const now = 5 * HOUR;
+export function newWarren(
+  seed: number,
+  canonical = true,
+  incoming?: (opening: PersonAuthoring) => PersonAuthoring,
+  openingMinute = 5 * HOUR,
+): WarrenState {
+  if (!Number.isSafeInteger(openingMinute * 60_000)) throw Error('The authored opening time is unsupported.');
+  const now = openingMinute;
   const hill = newHill(seed);
   const { houses, people } = founders(seed, now, canonical);
   const pos: Record<string, number> = {};
@@ -308,7 +328,11 @@ export function newWarren(seed: number, canonical = false): WarrenState {
     minute: now,
     hill,
     version: 0,
-    people,
+    people: [],
+    hf: null as unknown as RunArchive,
+    hfActive: {},
+    hfOffers: {},
+    hfQueue: [],
     houses,
     pos,
     trips: {},
@@ -329,8 +353,17 @@ export function newWarren(seed: number, canonical = false): WarrenState {
     goals: {},
     flags: {},
     stats: { dug: 0, hurt: 0, died: 0, bell: {}, peak: people.length },
-    usedNames: [...people.map((p) => p.name), 'house:Kaya', 'house:Demir', 'house:Usta'],
+    usedNames: [...people.map((p) => p.identity.name), 'house:Kaya', 'house:Demir', 'house:Usta'],
   };
+  const localGoals = new Map(people.map((person) => [person.id, structuredClone(person.state.agenda.goals)]));
+  const admitted = people.map((person) => (incoming ? incoming(person) : person));
+  createWarrenRun(s, admitted);
+  // Retained admission requires an empty opening agenda. Local work goals enter through HF inputs afterwards.
+  for (const person of admitted)
+    if (person.portable?.person.version === 2) {
+      for (const goal of localGoals.get(person.id) ?? [])
+        enqueue(s, 'agenda.requested', { person: person.id, request: { type: 'goal', goal } });
+    }
   note(s, {
     kind: 'story',
     text: 'The barley was ripe. Riders had burned two villages to the south in spring. The cellar under Yusuf’s house held one jar.',
@@ -407,13 +440,9 @@ function anchorField(s: WarrenState, from: number): Field {
 
 export function resetCaches() {
   // Keep the state we are leaving whole: its community lives in the cache until synced.
-  if (community && communityFor) communityFor.community = communityState(community);
+
   cache = null;
   anchorCache = null;
-  community = null;
-  communityFor = null;
-  world = null;
-  worldFor = null;
 }
 
 export function touch(s: WarrenState) {
@@ -657,7 +686,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
     !!activeRaid(s);
   const outside = riskOutside(s);
   const house = houseOf(s, p.id);
-  const sleepy = !light || p.body.sleepPressure > 0.7 || p.body.sleepDebt > 0.5 || p.body.health < 0.5;
+  const sleepy = !light || p.body.sleepPressure > 0.7 || p.body.sleepDebtHours > 0.5 || p.body.health < 0.5;
   const winter = season === 'winter';
   const hearth = hearthCell(s);
   for (const a of adaTalkOffers(s, p)) offer(a, plan(s, f, at, hearth, 30, lit), 30);
@@ -2111,6 +2140,17 @@ function queue(s: WarrenState, pid: string, pc: Percept) {
 
 export function makeWorld(s: WarrenState): World {
   return {
+    observed: (at) => {
+      const minute = s.minute;
+      s.minute = at;
+      try {
+        observeAdaTalk(s);
+        observeCutDiscussion(s);
+        observeResidentTalk(s, false);
+      } finally {
+        s.minute = minute;
+      }
+    },
     converse: (speaker, listener) =>
       s.edition === '0.7.0' &&
       !speaker.body.asleep &&
@@ -2149,75 +2189,87 @@ export function makeWorld(s: WarrenState): World {
   };
 }
 
-let world: World | null = null;
-let worldFor: WarrenState | null = null;
-let community: Community | null = null;
-let communityFor: WarrenState | null = null;
-
-function worldOf(s: WarrenState): World {
-  if (worldFor !== s || !world) {
-    world = makeWorld(s);
-    worldFor = s;
-  }
-  return world;
+export function communityOf(s: WarrenState) {
+  return { people: s.people, state: s };
 }
-
-export function communityOf(s: WarrenState): Community {
-  if (communityFor !== s || !community) {
-    if (community && communityFor && communityFor !== s) communityFor.community = communityState(community);
-    community = createCommunity(
-      s.people.filter((p) => p.body.alive),
-      s.community,
-    );
-    communityFor = s;
-  }
-  return community;
-}
-
 export function syncCommunity(s: WarrenState) {
-  s.community = communityState(communityOf(s));
+  s.hf = archiveOf(s);
 }
 
 // ---------- the step loop ----------
 
+interface PendingAdvance {
+  generator: Generator<void, SimEvent[], void>;
+  target: number;
+}
+const pendingAdvances = new WeakMap<WarrenState, PendingAdvance>();
+/** Complete any admitted partial quantum before a player input, save or synchronous replay. */
+export function drainAdvance(s: WarrenState): SimEvent[] {
+  let pending = pendingAdvances.get(s);
+  if (!pending && s.hfPhase) {
+    pending = { generator: advancing(s, s.hfPhase.to), target: s.hfPhase.to };
+    pendingAdvances.set(s, pending);
+  }
+  if (!pending) return [];
+  let result = pending.generator.next();
+  while (!result.done) result = pending.generator.next();
+  pendingAdvances.delete(s);
+  return result.value;
+}
+/** Advance at most one physical quantum, yielding between public HF calls. World hazards remain30-minute work. */
+export function advanceFrame(s: WarrenState, budgetMs = 0): boolean {
+  let pending = pendingAdvances.get(s);
+  if (!pending) {
+    const target = s.hfPhase?.to ?? (Math.floor(s.minute / QUANTUM) + 1) * QUANTUM;
+    pending = { generator: advancing(s, target), target };
+    pendingAdvances.set(s, pending);
+  }
+  const start = performance.now();
+  do {
+    const result = pending.generator.next();
+    if (result.done) {
+      pendingAdvances.delete(s);
+      return true;
+    }
+  } while (performance.now() - start < budgetMs);
+  return false;
+}
 export function advanceTo(s: WarrenState, to: number, observeIdle?: (person: Person) => void): SimEvent[] {
+  const events = drainAdvance(s),
+    generator = advancing(s, to, observeIdle);
+  let result = generator.next();
+  while (!result.done) result = generator.next();
+  return [...events, ...result.value];
+}
+function* advancing(
+  s: WarrenState,
+  to: number,
+  observeIdle?: (person: Person) => void,
+): Generator<void, SimEvent[], void> {
   const events: SimEvent[] = [];
-  while (s.minute < to) {
-    const lastNote = s.notes.at(-1);
-    const next = Math.min(to, (Math.floor(s.minute / QUANTUM) + 1) * QUANTUM);
-    const c = communityOf(s);
+  while (s.minute < to || s.hfPhase) {
+    const from = s.hfPhase?.from ?? s.minute;
+    const lastNote = s.hfPhase?.lastNote ?? s.notes.at(-1);
+    const next = s.hfPhase?.to ?? Math.min(to, (Math.floor(s.minute / QUANTUM) + 1) * QUANTUM);
     const suggestions: Record<string, Suggestion> = {};
-    for (const p of c.people) {
+    for (const p of s.people) {
       const suggestion = residentSuggestion(s, p) ?? cutSuggestion(s, p) ?? adaTalkSuggestion(s, p);
       if (suggestion) suggestions[p.id] = suggestion;
     }
     if (s.bell && s.bell.until > s.minute)
-      for (const p of c.people)
+      for (const p of s.people)
         suggestions[p.id] = { voiceId: BELL, action: 'shelter', strength: V.bellStrength, since: s.bell.at };
-    const baseWorld = worldOf(s);
-    const world = observeIdle
-      ? {
-          ...baseWorld,
-          affordancesFor: (p: Person) => {
-            const offers = baseWorld.affordancesFor(p);
-            if (!p.activity) observeIdle(p);
-            return offers;
-          },
-        }
-      : baseWorld;
-    const ev = stepCommunity(c, world, next, {
-      suggestions,
-      lifecourse: { mortality: true },
-      maxEvents: 2000,
-      contagion: false,
-    });
+    const ev = yield* stepWarren(s, makeWorld, next, suggestions, observeIdle);
     for (const e of ev) if (e.kind === 'died') events.push(e);
-    const day0 = dayOfMinute(s.minute);
+    const day0 = dayOfMinute(from);
     s.minute = next;
+    delete s.hfPhase;
     afterQuantum(s, ev);
     if (dayOfMinute(s.minute) !== day0) endOfDay(s, day0);
     if (s.next) {
-      const added = s.notes.slice(lastNote ? s.notes.indexOf(lastNote) + 1 : 0);
+      const added = s.notes.slice(
+        lastNote ? s.notes.findLastIndex((n) => JSON.stringify(n) === JSON.stringify(lastNote)) + 1 : 0,
+      );
       if (added.length) s.next.attention = added.map((n) => n.text);
     }
   }
@@ -2225,7 +2277,7 @@ export function advanceTo(s: WarrenState, to: number, observeIdle?: (person: Per
 }
 
 /** Sample actual positions each quantum, including entry and departure boundaries. No forecasts. */
-function observeRefuge(s: WarrenState) {
+export function observeRefuge(s: WarrenState) {
   if (!s.refuge) return;
   for (const { face } of faces(s.hill))
     if (
@@ -2311,7 +2363,7 @@ function afterQuantum(s: WarrenState, ev: SimEvent[]) {
 function everyone(s: WarrenState, pc: Omit<Percept, 'at'>, interrupt: boolean) {
   const c = communityOf(s);
   for (const p of c.people) {
-    queue(s, p.id, { ...pc, at: s.minute });
+    queue(s, p.id, { ...pc, at: s.minute } as Percept);
     if (interrupt) interruptPerson(c, p, Math.max(p.now, s.minute), `percept:${pc.kind}`);
   }
 }
@@ -2405,7 +2457,7 @@ function raidStep(s: WarrenState) {
           if (!exposed || p.activity?.action === 'hide' || r.hurt.includes(p.id)) continue;
           const odds = (yOf(c) < SURF ? 0.04 : 0.02) * r.force;
           if (hashUnit(s.seed, DRAW.harm, strHash(p.id), Math.floor(s.minute / HOUR)) < odds) {
-            injure(p, {
+            sendInjury(s, p, {
               part: hashUnit(s.seed, DRAW.harm, 7, s.minute) < 0.5 ? 'arm' : 'head',
               severity: 0.3 + 0.25 * r.force,
               healRatePerDay: 0.03,
@@ -2435,7 +2487,10 @@ function raidStep(s: WarrenState) {
       if (s.minute >= r.leave) {
         r.stage = 'gone';
         const lost = r.took;
-        const held = r.hurt.length === 0 && lost < s.people.length * V.ration * 30;
+        const presence = s.refuge?.raids[String(r.riders)];
+        const protectedPresence =
+          s.edition !== '0.7.0' || (!!presence?.present.length && presence.exposed.length === 0);
+        const held = protectedPresence && r.hurt.length === 0 && lost < s.people.length * V.ration * 30;
         if (
           !(
             (s.edition === '0.4.0' ||
@@ -2456,7 +2511,7 @@ function raidStep(s: WarrenState) {
             ? 'The scouts rode off north. No one was struck and nothing was taken. The pale tracks show where they searched. Next time they may strike.'
             : held
               ? `They rode off north. They found ${lost > 1 ? 'a little' : 'nothing'} above ground and nothing below. The refuge protected the village.`
-              : `They rode off north with ${lost > 0.5 * (lost + grainBelow(s.hill)) ? 'much of our grain' : lost > 3 ? 'some of our grain' : 'very little grain'}${r.hurt.length ? `, and ${r.hurt.length === 1 ? 'one of us was' : `${r.hurt.length} of us were`} hurt` : ''}.${raidWhy(s, r)}`,
+              : `They rode off north ${lost === 0 ? 'without taking grain' : `with ${lost > 0.5 * (lost + grainBelow(s.hill)) ? 'much of our grain' : lost > 3 ? 'some of our grain' : 'very little grain'}`}${r.hurt.length ? `, and ${r.hurt.length === 1 ? 'one of us was' : `${r.hurt.length} of us were`} hurt` : ''}.${raidWhy(s, r)}`,
           weight: 3,
         });
         everyone(
@@ -2580,7 +2635,7 @@ function endOfDay(s: WarrenState, day: number) {
   // Habits: the first person who goes to the faces of their own accord.
   if (!s.flags.habit) {
     for (const p of s.people) {
-      const hb = p.habits.find((x) => x.action === 'dig' && x.strength > 0.25);
+      const hb = s.notes.some((n) => n.who === p.id && n.kind === 'dig');
       if (hb) {
         s.flags.habit = s.minute;
         note(s, {
@@ -2761,13 +2816,15 @@ function wordStep(s: WarrenState, day: number) {
   const fam = arrivingFamily(s.seed, s.arrivals, s.minute, x, used);
   s.usedNames = [...used];
   s.houses.push(fam.house);
-  s.fields.size = Math.min(150, s.fields.size + 7 * fam.people.filter((p) => ageYears(p) >= 16).length);
-  const c = communityOf(s);
+  s.fields.size = Math.min(
+    150,
+    s.fields.size +
+      7 *
+        fam.people.filter((p) => (s.minute * 60000 - p.identity.birthAt) / (365.25 * 86400000) >= 16).length,
+  );
   for (const p of fam.people) {
-    p.now = s.minute;
-    s.people.push(p);
     s.pos[p.id] = surfaceCell(x);
-    addPerson(c, p);
+    enqueue(s, 'person.arrived', { authored: p, arrivalEvidenceId: `arrival:${p.id}` });
   }
   const head = fam.people[0];
   note(s, {

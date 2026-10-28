@@ -1,130 +1,253 @@
-import { readFileSync } from 'node:fs';
-import { ENGINE_VERSION, snapshot } from '@adam0white/human-framework';
-import { createPersona, initialPersonaLife, preparePersonaLife } from '@adam0white/lab-client';
+import {
+  createPerson,
+  createRun,
+  exportRun,
+  inspect,
+  replay as replayHF,
+  step,
+  validatePortablePerson,
+} from '@adam0white/human-framework';
+import { canonicalCast, createPersona } from '@adam0white/lab-client';
 import { describe, expect, it } from 'vitest';
-import { admit, applyLife, project } from '../src/sim/cast.ts';
+import { authoringFor, portableOf, project } from '../src/sim/cast.ts';
 import { act, advance, fingerprint, load, newGame, replay, save, stateJson } from '../src/sim/game.ts';
-import { CAST_IDS } from '../src/sim/people.ts';
+import { archiveOf, FRAMEWORK_VERSION, need } from '../src/sim/hf4.ts';
 
-async function source(id = 'meryem') {
-  const g = newGame(7),
-    p = g.s.people.find((p) => p.id === id)!;
-  if (id !== 'kian') expect(act(g, { verb: 'release', who: id })).toBe(true);
-  else for (const goal of p.agenda.goals) goal.status = 'achieved'; // declared refusal control only
-  const captured = await project(p);
-  const castId = CAST_IDS[id]!;
+async function source() {
+  // Actual public release ends optional local goals through admitted HF inputs.
+  // Projection must refuse the still-active ordinary opening without dropping history.
+  const game = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  await expect(project(game.s, 'meryem')).rejects.toThrow();
+  expect(act(game, { verb: 'release', who: 'meryem' })).toBe(true);
+  advance(game, 330);
+  expect(
+    game.s.people
+      .find((person) => person.id === 'meryem')
+      ?.agenda.goals.some((goal) => goal.status === 'active'),
+  ).toBe(false);
+  const captured = await project(game.s, 'meryem');
+  const castId = 'hf.cast.meryem.warren';
   const envelope = await createPersona({
     format: 'hf-persona/1',
     castId,
-    castRevision: '1',
-    branchId: 'test-native',
+    castRevision: canonicalCast(castId).revision,
+    branchId: 'test-hf4',
     parentRevision: null,
-    source: { game: 'warren', build: 'test', engine: ENGINE_VERSION, rules: 'warren-0.5.0' },
-    transfer: { ...captured.transfer, life: initialPersonaLife(castId, 'test-native', 0) },
+    source: { game: 'warren', build: 'test', engine: FRAMEWORK_VERSION, rules: 'warren-hf4-1' },
+    transfer: captured.transfer,
     limitations: [],
   });
-  return { g, p, envelope, captured };
+  return { game, captured, envelope };
 }
-describe('bounded Warren calendar mapping', () => {
-  it('pins real portable state and coarse outcomes in complete replay initial state', async () => {
-    const { g, p, envelope } = await source();
-    const input = preparePersonaLife(envelope, 12 * 3600000);
-    const target = newGame(8);
-    const i = target.s.people.findIndex((p) => p.id === 'meryem');
-    target.s.people[i] = admit(input, target.s.people[i]!);
-    applyLife(target.s, input);
-    expect(target.s.people[i]!.lexicon?.plainEnglish).toBe(true);
-    expect(target.s.people[i]!.rng).toEqual(p.rng);
-    expect(target.s.people[i]!.agenda.goals.some((g) => g.id === 'between-games-assignment')).toBe(true);
+describe('HF4 retained cast', () => {
+  it('projects through public inspect without changing the live archive', async () => {
+    const { game, captured, envelope } = await source();
+    const before = archiveOf(game.s);
+    expect(portableOf(envelope).version).toBe(2);
+    expect(captured.raw).toEqual(before);
+    await project(game.s, 'meryem');
+    expect(archiveOf(game.s)).toEqual(before);
+    const replayed = replayHF(captured.raw);
+    expect(replayed.ok).toBe(true);
+    if (replayed.ok) expect(replayed.value.fullHash).toBe(before.hashes.full);
+  });
+  it('retains admission inputs and exact opening state in export replay', async () => {
+    const { envelope } = await source();
+    const base = newGame(8, '0.7.0', undefined, 'warren-rest/1');
+    const target = newGame(
+      8,
+      '0.7.0',
+      undefined,
+      'warren-rest/1',
+      authoringFor([envelope], archiveOf(base.s).initial.spec.start),
+    );
+    expect(
+      target.s.hfQueue.some(
+        (input) =>
+          input.kind === 'agenda.requested' &&
+          input.payload.person === 'meryem' &&
+          input.payload.request.type === 'goal' &&
+          input.payload.request.goal.id === 'refuge',
+      ),
+    ).toBe(true);
     const chapter = {
-      version: 'warren-cast/2' as const,
-      inputs: [input],
+      version: 'warren-hf4-cast/1' as const,
+      inputs: [envelope],
       claims: [],
       initial: stateJson(target.s),
     };
-    const run = newGame(8, '0.6.0', chapter),
-      saved = save(run);
+    const run = newGame(8, '0.7.0', chapter, 'warren-rest/1');
+    const saved = save(run);
     expect(fingerprint(load(saved).s)).toBe(saved.fingerprint);
-    expect(fingerprint(replay(8, saved.inputs, saved.minute, saved.game, saved.chapter).s)).toBe(
-      saved.fingerprint,
-    );
-    expect(fingerprint(g.s)).not.toBe(saved.fingerprint);
+    expect(
+      fingerprint(replay(8, saved.inputs, saved.minute, saved.game, saved.chapter, saved.config).s),
+    ).toBe(saved.fingerprint);
   });
-  it('refuses Kian care, unsupported norms and fabricated life rather than resetting', async () => {
+  it('refuses wrong identity and active ownership instead of silently replacing history', async () => {
     const { envelope } = await source();
-    const input = preparePersonaLife(envelope, 0);
-    input.life.assignment = (input.life.assignment + 1) % 2;
-    expect(() => admit(input, newGame(8).s.people.find((p) => p.id === 'meryem')!)).toThrow(
-      /history does not match the saved time/,
-    );
-    const kian = await source('kian');
+    expect(() => portableOf({ ...envelope, castId: 'hf.cast.yusuf.warren' })).toThrow(/cannot continue/);
+    const portable = envelope.transfer.portable as import('@adam0white/human-framework').PortablePerson;
+    if (portable.version !== 2) throw Error('Expected retained source');
+    const { retained: _retained, ...profile } = portable;
+    const profileOnly = { ...profile, version: 1 as const };
+    expect(validatePortablePerson(profileOnly).version).toBe(1);
     expect(() =>
-      admit(preparePersonaLife(kian.envelope, 0), newGame(8).s.people.find((p) => p.id === 'kian')!),
-    ).toThrow(/Ada’s care/);
-  });
-  it('keeps actual source checkpoint separate from the shelf projection', async () => {
-    const { p, envelope, captured } = await source();
-    expect(captured.raw).toEqual(snapshot(p));
-    expect(envelope.transfer).not.toHaveProperty('raw');
-    expect(captured.transfer.checkpoint.sha256).toMatch(/^[a-f0-9]{64}$/);
-  });
-  it('preserves a trusted imported Valley norm and captures receipt metadata before hashing', async () => {
-    const { g, p } = await source();
-    p.conscience.norms.push({ normId: 'dues', standing: 'obligatory', conviction: 0.8 });
-    const pending = project(p);
-    const now = p.now;
-    p.now += 5;
-    const captured = await pending;
-    expect(captured.transfer.checkpoint.sourceMinute).toBe(now);
-    expect(captured.transfer.checkpoint.rng).toEqual(captured.raw.rng);
-    expect(captured.transfer.person.calendar.heldNorms.some((n) => n.normId === 'dues')).toBe(true);
-    expect(g.s.people).toContain(p);
+      portableOf({
+        ...envelope,
+        transfer: { ...envelope.transfer, castPassport: 'hf-portable-person/1', portable: profileOnly },
+      }),
+    ).toThrow(/cannot continue/);
+
+    expect(() =>
+      portableOf({ ...envelope, transfer: { ...envelope.transfer, portableClaim: { game: 'warren' } } }),
+    ).toThrow(/belongs/);
   });
 });
 
-it('admits a real current Watch checkpoint with finite identity and dialect checks', async () => {
-  const fixture = JSON.parse(readFileSync(new URL('./fixtures/watch-hf-2.21.json', import.meta.url), 'utf8'));
-  expect(fixture.raw.engine).toBe('2.21.0');
-  expect(fixture.transfer.person.person.source.engine).toBe('2.21.0');
-  const castId = 'hf.cast.meryem.warren';
-  const parent = await createPersona({
+it('admits an actual lived Warren passport with remembered world references and replays the receiving run', async () => {
+  const game = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  advance(game, 900);
+  expect(act(game, { verb: 'release', who: 'meryem' })).toBe(true);
+  advance(game, 930);
+  let captured: Awaited<ReturnType<typeof project>> | undefined;
+  for (let n = 0; n < 12 && !captured; n++) {
+    try {
+      captured = await project(game.s, 'meryem');
+    } catch {
+      advance(game, game.s.minute + 30);
+    }
+  }
+  if (!captured) throw Error('The lived person did not reach an eligible quiet boundary');
+  const portable = captured.transfer.portable;
+  expect(portable.version).toBe(2);
+  if (portable.version !== 2) throw Error('Expected retained memory');
+  expect(portable.retained.memory.episodes.some((e) => e.placeId || e.actorId === 'travellers')).toBe(true);
+  const envelope = await createPersona({
     format: 'hf-persona/1',
-    castId,
-    castRevision: '1',
-    branchId: 'real-watch-221',
+    castId: portable.castId,
+    castRevision: portable.castRevision,
+    branchId: 'lived-world',
     parentRevision: null,
-    source: { game: 'watch', build: fixture.peerCommit, engine: fixture.raw.engine, rules: 'cast-1' },
-    transfer: { ...fixture.transfer, life: initialPersonaLife(castId, 'real-watch-221', 0) },
+    source: { game: 'warren', build: 'test', engine: FRAMEWORK_VERSION, rules: 'warren-hf4-1' },
+    transfer: captured.transfer,
     limitations: [],
   });
-  const input = preparePersonaLife(parent, 0);
-  const opening = newGame(7).s.people.find((p) => p.id === 'meryem')!;
-  const admitted = admit(input, opening);
-  expect(admitted.rng).toEqual(fixture.raw.rng);
-  expect(admitted.lexicon?.plainEnglish).toBe(true);
-  expect(snapshot(admitted).engine).toBe('2.23.0');
-  const target = newGame(7);
-  const index = target.s.people.findIndex((p) => p.id === admitted.id);
-  target.s.people[index] = admitted;
-  applyLife(target.s, input);
-  const chapter = {
-    version: 'warren-cast/2' as const,
-    inputs: [input],
-    claims: [],
-    initial: stateJson(target.s),
-  };
-  const current = newGame(7, '0.6.0', chapter);
-  advance(current, current.s.minute + 60);
-  const exported = save(current);
-  expect(exported.framework).toBe('3.0.0');
-  expect(fingerprint(load(exported).s)).toBe(exported.fingerprint);
-  expect(fingerprint(replay(exported.seed, exported.inputs, exported.minute, exported.game, chapter).s)).toBe(
-    exported.fingerprint,
+  const before = archiveOf(game.s);
+  const target = newGame(8, '0.7.0', undefined, 'warren-rest/1', authoringFor([envelope], 300 * 60000));
+  const received = archiveOf(target.s);
+  expect(received.initial.spec.world.facts.some((f) => f.subject === 'travellers')).toBe(true);
+  expect(archiveOf(game.s)).toEqual(before);
+  const verified = replayHF(received);
+  expect(verified.ok).toBe(true);
+  if (verified.ok) expect(verified.value.fullHash).toBe(received.hashes.full);
+  const saved = save(target);
+  expect(save(load(saved))).toEqual(saved);
+});
+
+it('preserves a current foreign chapter place as historical evidence without claiming local presence', async () => {
+  const base = archiveOf(newGame(7).s);
+  const spec = structuredClone(base.initial.spec);
+  spec.id = 'watch-authored-port-control';
+  spec.host.id = 'watch';
+  spec.definitions.sources = [
+    ...spec.definitions.sources.filter((source) => source.type !== 'host'),
+    { type: 'host', id: 'watch' },
+  ];
+  spec.world.facts = spec.world.facts.map((f) => ({
+    ...f,
+    provenance: { ...f.provenance, source: 'watch' },
+  }));
+  spec.world.facts = [
+    ...spec.world.facts,
+    {
+      id: 'watch-map:courtyard',
+      subject: 'watch-courtyard',
+      predicate: 'kind',
+      value: 'place',
+      at: spec.start,
+      provenance: { source: 'watch', evidenceId: 'watch-authored-map' },
+    },
+  ];
+  const run = need(createRun(spec));
+  const person = base.initial.people.find((p) => p.id === 'meryem')!;
+  need(createPerson(run, person));
+  const inputs = person.state.agenda.goals.map((goal, n) => ({
+    id: `release:${n}`,
+    at: spec.start,
+    source: { type: 'host' as const, id: 'watch' },
+    kind: 'agenda.requested' as const,
+    payload: { person: 'meryem', request: { type: 'abandon-goal' as const, goalId: goal.id } },
+  }));
+  need(
+    step(run, {
+      until: spec.start,
+      inputs: [
+        ...inputs,
+        {
+          id: 'courtyard-sighting',
+          at: spec.start,
+          source: { type: 'host', id: 'watch' },
+          kind: 'observation.received',
+          payload: {
+            person: 'meryem',
+            evidenceId: 'watch-courtyard-sighting',
+            percepts: [
+              {
+                id: 'courtyard-percept',
+                occurredAt: spec.start,
+                channel: 'saw',
+                kind: 'travellers',
+                actorId: 'travellers',
+                targetId: 'watch-courtyard',
+                placeId: 'watch-courtyard',
+                salience: 0.9,
+                summary: 'Travellers crossed the Watch courtyard.',
+                claims: [],
+                norms: [],
+                advice: [],
+                consequences: [],
+                withdrawConsequences: [],
+                witnesses: [],
+                reports: [],
+                provenance: ['watch-authored-map'],
+              },
+            ],
+          },
+        },
+      ],
+    }),
   );
-  const wrongRole = structuredClone(input);
-  wrongRole.parent.transfer.sourceRole = 'tamar';
-  expect(() => admit(wrongRole, opening)).toThrow(/role/);
-  const wrongEngine = structuredClone(input);
-  wrongEngine.parent.source.engine = '99.0.0';
-  expect(() => admit(wrongEngine, opening)).toThrow(/version/);
+  const projection = need(
+    inspect(run, {
+      perspective: { kind: 'host' },
+      people: ['meryem'],
+      select: ['persona', 'calendar'],
+      portable: { person: 'meryem', castId: 'hf.cast.meryem.warren', castRevision: '1' },
+    }),
+  );
+  const view = projection.people[0]!;
+  if (view.kind !== 'host') throw Error('Expected host projection');
+  const part = view.parts.find((p) => p.select === 'persona');
+  if (part?.select !== 'persona') throw Error('Expected portable projection');
+  const portable = part.value;
+  const envelope = await createPersona({
+    format: 'hf-persona/1',
+    castId: portable.castId,
+    castRevision: portable.castRevision,
+    branchId: 'foreign-world',
+    parentRevision: null,
+    source: { game: 'watch', build: 'authored-control', engine: FRAMEWORK_VERSION, rules: 'control' },
+    transfer: { castPassport: 'hf-portable-person/2', portable },
+    limitations: [],
+  });
+  const before = exportRun(run);
+  const target = newGame(8, '0.7.0', undefined, 'warren-rest/1', authoringFor([envelope], spec.start));
+  const received = archiveOf(target.s);
+  expect(
+    received.initial.spec.world.facts.find((f) => f.subject === 'history:watch:watch-courtyard')?.value,
+  ).toBe('historical-entity:watch:watch-courtyard');
+  const memory = received.current.people.meryem!.memory;
+  expect(memory.episodes.some((e) => e.placeId === 'history:watch:watch-courtyard')).toBe(true);
+  expect(exportRun(run)).toEqual(before);
+  expect(replayHF(received).ok).toBe(true);
 });

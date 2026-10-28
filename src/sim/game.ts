@@ -2,13 +2,14 @@
  * The game around the hill: the keeper's inputs (each applied at an exact minute on a quantum boundary, so a run
  * replays), saves and the playtest export (seed + input log + state JSON).
  */
-import { FRAMEWORK_VERSION, restore, snapshot } from '@adam0white/human-framework';
+import { type PersonAuthoring, restoreRun } from '@adam0white/human-framework';
 import type { PersonaEnvelope } from '@adam0white/lab-client';
 import { requestAdaEnd } from './ada-care.ts';
 import { askAda, withdrawAdaTalk } from './ada-talk.ts';
 import type { Chapter } from './cast.ts';
 import { endCutDiscussion, inviteCutDiscussion } from './cut-discussion.ts';
-import { USE, type UseName } from './grid.ts';
+import { H, USE, type UseName, W } from './grid.ts';
+import { FRAMEWORK_VERSION, need, syncReadings } from './hf4.ts';
 import { prepareNativeReturn } from './native-return.ts';
 import { rally } from './rally.ts';
 import {
@@ -18,10 +19,11 @@ import {
   withdrawDoorTrial,
   withdrawRequest,
 } from './resident-requests.ts';
-import { seedRoleGoals } from './roles.ts';
 import { releaseVisit, visit } from './visits.ts';
 import {
+  advanceFrame,
   advanceTo,
+  drainAdvance,
   newWarren,
   placeDoor,
   placeLamp,
@@ -35,22 +37,14 @@ import {
   type WarrenState,
 } from './warren.ts';
 
-export const GAME_VERSION = '0.6.0';
+export const GAME_VERSION = '0.7.0';
 export const TEXT_VERSION = 'plain3';
-const DEFAULT_EDITION = GAME_VERSION;
+const DEFAULT_EDITION = '0.7.0';
 export type Edition = '0.2.0' | '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0' | '0.7.0';
 
 export function editionOf(version: string): Edition {
-  if (/^0\.2\.\d+$/.test(version)) return '0.2.0';
-  if (
-    version === '0.3.0' ||
-    version === '0.4.0' ||
-    version === '0.5.0' ||
-    version === '0.6.0' ||
-    version === '0.7.0'
-  )
-    return version;
-  throw new Error(`This version of Warren cannot load game version ${version}. Start a new game.`);
+  if (version === '0.7.0') return version;
+  throw new Error('This hill uses an older game version. Keep its file and start fresh with a new hill.');
 }
 
 export type Input =
@@ -94,21 +88,19 @@ export function newGame(
   edition: string = DEFAULT_EDITION,
   chapter?: Chapter,
   config?: NextConfig,
+  incoming?: (opening: PersonAuthoring) => PersonAuthoring,
 ): Game {
   resetCaches();
   const rules = editionOf(edition);
-  const s = chapter
-    ? restoreState(chapter.initial)
-    : newWarren(seed, rules === '0.5.0' || rules === '0.6.0' || rules === '0.7.0');
+  const s = chapter ? restoreState(chapter.initial) : newWarren(seed, true, incoming);
   if (
     chapter &&
-    (chapter.version !== (rules === '0.6.0' || rules === '0.7.0' ? 'warren-cast/2' : 'warren-cast/1') ||
+    (chapter.version !== 'warren-hf4-cast/1' ||
       s.seed !== seed ||
       (rules !== '0.5.0' && rules !== '0.6.0' && rules !== '0.7.0'))
   )
     throw new Error('This version cannot load the saved starting state. Start a new game.');
   if (rules !== '0.2.0') s.edition = rules;
-  if (!chapter && (rules === '0.6.0' || rules === '0.7.0')) seedRoleGoals(s);
   if (!chapter && rules === '0.7.0') s.refuge = { slept: {}, raids: {}, forage: { day: -1, gathered: 0 } };
   if (config !== undefined) {
     if (!supportedConfig(config) || rules !== '0.7.0')
@@ -121,6 +113,7 @@ export function newGame(
 
 /** Apply an input now and log it. Inputs wait for the next quantum boundary (the UI steps in quanta). */
 export function act(g: Game, o: Order): boolean {
+  drainAdvance(g.s);
   const i = { ...o, at: g.s.minute } as Input;
   const ok = apply(g.s, i);
   if (ok) g.inputs.push(i);
@@ -193,7 +186,7 @@ function apply(s: WarrenState, i: Input): boolean {
 /** Advance to `to`, rounded down to a quantum. */
 export function advance(g: Game, to: number) {
   const q = Math.floor(to / QUANTUM) * QUANTUM;
-  if (q > g.s.minute) advanceTo(g.s, q);
+  if (g.s.hfPhase || q > g.s.minute) advanceTo(g.s, q);
 }
 
 /**
@@ -241,11 +234,11 @@ function runAway(s: WarrenState, elapsedMs: number, limit: number, yieldWork?: (
     const last = s.notes.at(-1);
     advanceTo(s, s.minute + QUANTUM);
     steps++;
-    const index = last ? s.notes.indexOf(last) + 1 : 0;
+    const index = last ? s.notes.findLastIndex((n) => JSON.stringify(n) === JSON.stringify(last)) + 1 : 0;
     const added = s.notes.slice(index);
     events.push(...added.map((n) => n.text));
     if (added.length) {
-      next.attention = added.map((n) => n.text);
+      s.next!.attention = added.map((n) => n.text);
       reason = 'event';
       break;
     }
@@ -260,7 +253,7 @@ function runAway(s: WarrenState, elapsedMs: number, limit: number, yieldWork?: (
   }
   if (needsAttention(s) && !steps) reason = 'attention';
   if (reason === 'elapsed' && steps < Math.floor(elapsedMs / (QUANTUM * 60_000))) reason = 'computation';
-  next.away = {
+  s.next!.away = {
     elapsedMs,
     simulatedMinutes: s.minute - from,
     remainderMs: elapsedMs - (s.minute - from) * 60_000,
@@ -272,6 +265,7 @@ function runAway(s: WarrenState, elapsedMs: number, limit: number, yieldWork?: (
 export function catchUp(g: Game, elapsedMs: number, yieldWork?: () => boolean): boolean {
   const quanta = Math.floor(elapsedMs / (QUANTUM * 60_000));
   if (!validAway(g.s, elapsedMs, quanta)) return false;
+  drainAdvance(g.s);
   const at = g.s.minute;
   const started = performance.now();
   runAway(g.s, elapsedMs, quanta, yieldWork ?? (() => performance.now() - started >= 8));
@@ -281,7 +275,9 @@ export function catchUp(g: Game, elapsedMs: number, yieldWork?: () => boolean): 
 
 // ---------- saves and export ----------
 
+export type PhaseCheckpoint = { from: number; to: number; steps: number };
 export interface Saved {
+  phase?: PhaseCheckpoint;
   config?: NextConfig;
   textVersion?: string;
   game: string;
@@ -298,23 +294,29 @@ export interface Saved {
   fileOrigin?: boolean;
 }
 
-/** HF `restore` drops an empty family record; drop it here too so a save and its restore print the same. */
-function tidy<T>(p: T): T {
-  const q = p as { family?: Record<string, unknown> };
-  if (q.family && Object.keys(q.family).length === 0) delete q.family;
-  return p;
-}
-
 export function stateJson(s: WarrenState): WarrenState {
   syncCommunity(s);
-  const { people, ...rest } = s;
-  return { ...structuredClone(rest), people: people.map((p) => tidy(snapshot(p))) } as WarrenState;
+  return JSON.parse(JSON.stringify(s)) as WarrenState;
 }
-
 export function restoreState(json: WarrenState): WarrenState {
   resetCaches();
-  const { people, ...rest } = json;
-  return { ...structuredClone(rest), people: people.map((p) => restore(p)) } as WarrenState;
+  if (
+    !json ||
+    !json.hf ||
+    !Array.isArray(json.houses) ||
+    !Array.isArray(json.notes) ||
+    !Array.isArray(json.hill?.kind) ||
+    !Number.isSafeInteger(json.seed) ||
+    !Number.isSafeInteger(json.minute) ||
+    !json.hfActive ||
+    !json.hfOffers ||
+    !Array.isArray(json.hfQueue)
+  )
+    throw new Error('This saved hill is unsupported. Keep its file and start fresh.');
+  need(restoreRun(json.hf));
+  const restored = structuredClone(json);
+  syncReadings(restored);
+  return restored;
 }
 
 function sorted(v: unknown): unknown {
@@ -330,8 +332,9 @@ function sorted(v: unknown): unknown {
 
 /** A stable hash of the state (keys sorted; a restored person may hold fields in another order). */
 export function fingerprint(s: WarrenState): string {
-  const j = stateJson(s);
-  for (const p of j.people) tidy(p);
+  return fingerprintJson(stateJson(s));
+}
+export function fingerprintJson(j: WarrenState): string {
   const text = JSON.stringify(sorted(j));
   let h = 0x811c9dc5;
   for (let i = 0; i < text.length; i++) {
@@ -342,6 +345,7 @@ export function fingerprint(s: WarrenState): string {
 }
 
 export function save(g: Game): Saved {
+  const state = stateJson(g.s);
   return {
     ...(g.s.next ? { config: g.s.next.config } : {}),
     textVersion: TEXT_VERSION,
@@ -350,8 +354,11 @@ export function save(g: Game): Saved {
     seed: g.s.seed,
     minute: g.s.minute,
     inputs: structuredClone(g.inputs),
-    state: stateJson(g.s),
-    fingerprint: fingerprint(g.s),
+    state,
+    ...(state.hfPhase
+      ? { phase: { from: state.hfPhase.from, to: state.hfPhase.to, steps: state.hfPhase.steps } }
+      : {}),
+    fingerprint: fingerprintJson(state),
     ...(g.chapter ? { chapter: structuredClone(g.chapter) } : {}),
     ...(g.ownedHeads ? { ownedHeads: structuredClone(g.ownedHeads) } : {}),
     ...(g.nativeReturnHeads ? { nativeReturnHeads: structuredClone(g.nativeReturnHeads) } : {}),
@@ -360,13 +367,127 @@ export function save(g: Game): Saved {
   };
 }
 
+/** Decode the current player tape before replay or restore. Unknown inputs are refused. */
+function validInput(value: unknown): value is Input {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const input = value as Record<string, unknown>;
+  if (
+    !Number.isSafeInteger(input.at) ||
+    typeof input.at !== 'number' ||
+    input.at % QUANTUM !== 0 ||
+    typeof input.verb !== 'string'
+  )
+    return false;
+  const cell = (v: unknown) => typeof v === 'number' && Number.isSafeInteger(v) && v >= 0 && v < W * H;
+  const who = typeof input.who === 'string' && input.who.length > 0;
+  let keys: string[];
+  switch (input.verb) {
+    case 'ask-ada':
+    case 'withdraw-ada-talk':
+    case 'bell':
+    case 'rally':
+    case 'discuss-cut':
+    case 'end-cut-discussion':
+    case 'acknowledge':
+    case 'withdraw-door-trial':
+    case 'care-ada':
+    case 'end-ada-visit':
+      keys = [];
+      break;
+    case 'chalk':
+      if (!Array.isArray(input.cells) || !input.cells.every(cell) || typeof input.on !== 'boolean')
+        return false;
+      keys = ['cells', 'on'];
+      break;
+    case 'use':
+      if (
+        !Array.isArray(input.cells) ||
+        !input.cells.every(cell) ||
+        typeof input.use !== 'string' ||
+        !Object.hasOwn(USE, input.use)
+      )
+        return false;
+      keys = ['cells', 'use'];
+      break;
+    case 'lamp':
+    case 'unlamp':
+    case 'door':
+      if (!cell(input.cell)) return false;
+      keys = ['cell'];
+      break;
+    case 'talk-rest':
+    case 'talk-disagreement':
+    case 'visit':
+    case 'release':
+      if (!who) return false;
+      keys = ['who'];
+      break;
+    case 'test-door':
+    case 'try-door':
+      if (!who || !cell(input.cell)) return false;
+      keys = ['who', 'cell'];
+      break;
+    case 'prepare-native-return':
+      if (!['kian', 'meryem'].includes(String(input.who))) return false;
+      keys = ['who'];
+      break;
+    case 'withdraw-request':
+      if (!['rest', 'disagreement', 'door'].includes(String(input.kind))) return false;
+      keys = ['kind'];
+      break;
+    case 'away':
+      if (
+        typeof input.elapsedMs !== 'number' ||
+        !Number.isSafeInteger(input.elapsedMs) ||
+        input.elapsedMs < 0 ||
+        typeof input.quanta !== 'number' ||
+        !Number.isSafeInteger(input.quanta) ||
+        input.quanta < 0
+      )
+        return false;
+      keys = ['elapsedMs', 'quanta'];
+      break;
+    default:
+      return false;
+  }
+  return Object.keys(input).every((key) => ['at', 'verb', ...keys].includes(key));
+}
+function validTape(inputs: unknown, start: number, end: number): inputs is Input[] {
+  if (!Array.isArray(inputs)) return false;
+  let previous = start;
+  for (const input of inputs) {
+    if (!validInput(input) || input.at < previous || input.at > end) return false;
+    previous = input.at;
+  }
+  return true;
+}
+
 export function load(saved: Saved): Game {
+  if (
+    !saved ||
+    typeof saved !== 'object' ||
+    !saved.state ||
+    !Number.isSafeInteger(saved.seed) ||
+    !Number.isFinite(saved.minute) ||
+    saved.seed !== saved.state.seed ||
+    saved.minute !== saved.state.minute ||
+    !saved.state.hf ||
+    saved.minute !== Math.floor(saved.state.hf.current.at / 60_000) ||
+    !validTape(saved.inputs, saved.state.hf.initial.spec.start / 60_000, saved.minute)
+  )
+    throw Error('This saved hill or input log is invalid. Keep its file and start fresh.');
   if (saved.framework !== FRAMEWORK_VERSION)
     throw new Error(
       'This saved game uses an older version of the Human Framework. Start fresh with a new game.',
     );
   if (saved.textVersion !== TEXT_VERSION)
     throw new Error('This saved game uses a different version. Start a new game.');
+  if (
+    saved.phase?.from !== saved.state.hfPhase?.from ||
+    saved.phase?.to !== saved.state.hfPhase?.to ||
+    saved.phase?.steps !== saved.state.hfPhase?.steps
+  )
+    throw Error('The partial checkpoint header is invalid. Keep the file and start fresh.');
   const edition = editionOf(saved.game);
   if (
     saved.config !== saved.state.next?.config ||
@@ -375,7 +496,7 @@ export function load(saved: Saved): Game {
     throw new Error('The saved configuration does not match its state.');
   if ((saved.state.edition ?? '0.2.0') !== edition)
     throw new Error('The saved game’s version does not match its recorded state. Start a new game.');
-  return {
+  const game: Game = {
     s: restoreState(saved.state),
     inputs: structuredClone(saved.inputs),
     ...(saved.chapter ? { chapter: structuredClone(saved.chapter) } : {}),
@@ -384,23 +505,53 @@ export function load(saved: Saved): Game {
     ...(saved.sourceArchives ? { sourceArchives: structuredClone(saved.sourceArchives) } : {}),
     ...(saved.fileOrigin ? { fileOrigin: true } : {}),
   };
+  if (fingerprint(game.s) !== saved.fingerprint)
+    throw Error('The saved state does not match its verification code. Keep the file and start fresh.');
+  return game;
 }
 
-/** Replay on the recorded edition. Unversioned calls retain the legacy 0.2.x contract. */
+/** Replay current ordered inputs and the exact persisted partial-quantum checkpoint. */
 export function replay(
   seed: number,
   inputs: readonly Input[],
   minute: number,
-  edition: string = '0.2.0',
+  edition: string = '0.7.0',
   chapter?: Chapter,
   config?: NextConfig,
+  phase?: PhaseCheckpoint,
 ): Game {
   const g = newGame(seed, edition, chapter, config);
+  if (
+    !Number.isFinite(minute) ||
+    minute < g.s.minute ||
+    !validTape(inputs, g.s.minute, phase?.from ?? minute)
+  )
+    throw Error('The input log or replay time is invalid. Keep the file and start fresh.');
   for (const i of inputs) {
     advance(g, i.at);
-    apply(g.s, i);
+    if (g.s.minute !== i.at || !apply(g.s, i))
+      throw Error('A recorded input is not accepted by this game. Keep its file and start fresh.');
     g.inputs.push(structuredClone(i));
   }
-  advance(g, minute);
+  advance(g, phase?.from ?? minute);
+  if (phase) {
+    if (
+      !Number.isSafeInteger(phase.steps) ||
+      phase.steps < 1 ||
+      phase.steps > 10000 ||
+      phase.to !== phase.from + QUANTUM
+    )
+      throw new Error('Unsupported partial hill checkpoint. Keep the file and start fresh.');
+    for (let n = 0; n < phase.steps; n++) advanceFrame(g.s, 0);
+    if (
+      g.s.minute !== minute ||
+      g.s.hfPhase?.from !== phase.from ||
+      g.s.hfPhase?.to !== phase.to ||
+      g.s.hfPhase?.steps !== phase.steps
+    )
+      throw new Error('The partial hill checkpoint does not match its input log.');
+  }
+  if (!phase && g.s.minute !== minute)
+    throw Error('The replay time does not name a complete quantum. Keep the file and start fresh.');
   return g;
 }

@@ -1,10 +1,7 @@
 /** Only the known Warren → Watch Meryem/Kian route. No travel or completed return is inferred. */
-import { restore, snapshot } from '@adam0white/human-framework';
 import { canonicalPersona } from '@adam0white/lab-client';
 import { type AdaVisit, shiftWatchCare, validateWatchCare } from './ada-care.ts';
-import { project } from './cast.ts';
-import { releaseVisit } from './visits.ts';
-import { advanceTo, type WarrenState } from './warren.ts';
+import type { WarrenState } from './warren.ts';
 
 export type NativeReturnId = 'kian' | 'meryem';
 export function returnCare(
@@ -51,60 +48,15 @@ export function returnCare(
   return { version: 'warren-watch-ada/1' as const, capturedMinute: captured, visit: v };
 }
 
-/** Deliberate replay input. Normal HF actions finish; no activity/body/clock is overwritten. */
-export function prepareNativeReturn(s: WarrenState, who: NativeReturnId): boolean {
-  const invalidated = !!s.nativeDepartures?.[who];
-  if (s.nativeDepartures) delete s.nativeDepartures[who];
-  if (s.next || (s.edition !== '0.6.0' && s.edition !== '0.7.0') || !['kian', 'meryem'].includes(who))
-    return invalidated;
-  const p = s.people.find((p) => p.id === who);
-  if (!p?.body.alive || s.raids.some((r) => r.stage === 'riders')) return invalidated;
-  if (who === 'kian') {
-    if (s.adaVisit?.endedAt === undefined || s.minute >= s.adaVisit.returnBy) return invalidated;
-  } else if (!releaseVisit(s, who)) return invalidated;
-  const end = s.minute + 600;
-  let person = !p.activity ? snapshot(p) : undefined;
-  let care = person && who === 'kian' ? structuredClone(s.adaVisit) : undefined;
-  while (!person && s.minute < end)
-    advanceTo(s, s.minute + 30, (actual) => {
-      if (actual === p && !person) {
-        person = snapshot(actual);
-        if (who === 'kian') care = structuredClone(s.adaVisit);
-      }
-    });
-  if (person) {
-    s.nativeDepartures ??= {};
-    s.nativeDepartures[who] = { person, preparedAt: s.minute, guard: snapshot(p), ...(care ? { care } : {}) };
-  }
-  return true;
+/** HF3 Watch checkpoints are deliberately refused by the HF4 edition. */
+export function prepareNativeReturn(_s: WarrenState, _who: NativeReturnId): boolean {
+  return false;
 }
-export function nativeReturnCurrent(s: WarrenState, who: NativeReturnId): boolean {
-  const departure = s.nativeDepartures?.[who],
-    live = s.people.find((p) => p.id === who);
-  return (
-    !s.next &&
-    !!departure &&
-    !!live?.body.alive &&
-    departure.preparedAt === s.minute &&
-    canonicalPersona(snapshot(live)) === canonicalPersona(departure.guard) &&
-    (who !== 'kian' ||
-      (canonicalPersona(s.adaVisit) === canonicalPersona(departure.care) && s.minute < s.adaVisit!.returnBy))
+export function nativeReturnCurrent(_s: WarrenState, _who: NativeReturnId): boolean {
+  return false;
+}
+export async function projectNativeReturn(_s: WarrenState, _who: NativeReturnId): Promise<never> {
+  throw new Error(
+    'This HF4 hill cannot make an older Watch handoff. Keep your notebook. People continue through the browser shelf when the receiving game supports this version.',
   );
-}
-export async function projectNativeReturn(s: WarrenState, who: NativeReturnId) {
-  const departure = s.nativeDepartures?.[who];
-  if (!departure)
-    throw Error(
-      'No saved state is ready for this person’s return. Continue playing, then prepare this person again after the current activity ends.',
-    );
-  const p = restore(departure.person);
-  if (!nativeReturnCurrent(s, who))
-    throw Error(
-      'The person has changed since the return was prepared. Prepare this person again. The old saved state will not be reused.',
-    );
-  if (p.id !== who || p.now > s.minute)
-    throw Error('The identity or time in the saved return does not match the current person.');
-  const care = who === 'kian' ? returnCare(departure.care, p.now, p.agenda.commitments) : undefined;
-  const captured = await project(p); // Existing clinical, activity, project, duty and owed guards remain.
-  return { ...captured, transfer: { ...captured.transfer, ...(care ? { warrenCare: care } : {}) } };
 }

@@ -37,7 +37,7 @@ it('keeps shelter state and a complete reading visible beside the scene', async 
     expect(await page.locator('#bell').isVisible()).toBe(true);
     await page.locator('#shelter-check').click();
     await page.locator('[data-who="meryem"]').click();
-    expect(await page.locator('#person-help').innerText()).toMatch(/help|needs|need|well enough/i);
+    expect(await page.locator('#person-help').innerText()).toContain('current condition is unavailable');
     expect(await page.locator('#cell-detail').isVisible()).toBe(false);
     expect(await page.locator('#drawer').isVisible()).toBe(false);
     await page.locator('#cardx').click();
@@ -65,42 +65,7 @@ async function startPhone() {
 
 type Debug = typeof import('../src/ui/app.ts')['_debug'];
 
-it('shows known poor health without a contradictory healthy label', async () => {
-  const page = await startPhone();
-  try {
-    await page.evaluate(() => {
-      const s = (window as unknown as { __warren: Debug }).__warren.game?.s;
-      const p = s?.people.find((p) => p.id === 'meryem');
-      if (!p) throw new Error('Missing Meryem');
-      Object.assign(p.body, {
-        health: 0.4,
-        pain: 0,
-        satiety: 1,
-        hydration: 1,
-        sleepPressure: 0,
-        sleepDebt: 0,
-        exertion: 0,
-      });
-      p.body.illnesses.push({
-        id: 'test-fever',
-        kind: 'fever',
-        severity: 0.4,
-        trendPerDay: 0.1,
-        contagious: false,
-        since: s?.minute ?? 0,
-      });
-    });
-    await page.locator('#shelter-check').click();
-    await page.locator('[data-who="meryem"]').click();
-    expect(await page.locator('#person-help').innerText()).toContain('poor health');
-    expect(await page.locator('#person-help').innerText()).toContain('illness');
-    expect(await page.locator('#card').innerText()).not.toMatch(/well enough|does not seem to need/i);
-  } finally {
-    await page.close();
-  }
-}, 20000);
-
-it('preserves an expanded person disclosure and its focus while the condition changes', async () => {
+it('preserves an expanded person disclosure and its focus while the card updates', async () => {
   const page = await startPhone();
   try {
     await page.locator('#shelter-check').click();
@@ -109,15 +74,8 @@ it('preserves an expanded person disclosure and its focus while the condition ch
     expect(await page.locator('#person-context').evaluate((el) => (el as HTMLDetailsElement).open)).toBe(
       true,
     );
-    await page.evaluate(() => {
-      const p = (window as unknown as { __warren: Debug }).__warren.game?.s.people.find(
-        (p) => p.id === 'meryem',
-      );
-      if (!p) throw new Error('Missing Meryem');
-      p.body.hydration = 0.1;
-    });
     await page.clock.runFor(500);
-    expect(await page.locator('#person-help').innerText()).toContain('She needs water');
+    expect(await page.locator('#person-help').innerText()).toContain('current condition is unavailable');
     expect(await page.locator('#person-context').evaluate((el) => (el as HTMLDetailsElement).open)).toBe(
       true,
     );

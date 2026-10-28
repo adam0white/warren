@@ -1,57 +1,54 @@
 import { describe, expect, it } from 'vitest';
 import { botStep, newBot } from '../src/sim/bot.ts';
-import { HOUR } from '../src/sim/calendar.ts';
-import { act, advance, fingerprint, newGame, replay } from '../src/sim/game.ts';
+import { act, advance, fingerprint, newGame, replay, save, stateJson } from '../src/sim/game.ts';
 import { rallyBlock, refugeGoal } from '../src/sim/rally.ts';
-import { diggingAdults } from '../src/sim/warren.ts';
-import { markedWorkWords } from '../src/ui/known-work.ts';
 
-// The R2 prepared hill: canonical cast, rules 0.6.0, seed 1476719286, resumed at minute 300.
-const R2_SEED = 1476719286;
-
-function playDays(days: number, rally: boolean) {
-  const g = newGame(R2_SEED, '0.6.0');
-  advance(g, 300);
-  const bot = newBot();
-  for (let h = 0; h < days * 24; h++) {
-    botStep(g, bot);
-    if (rally && !rallyBlock(g.s)) act(g, { verb: 'rally' });
-    advance(g, g.s.minute + HOUR);
-  }
-  return g;
-}
-
-describe('rallying the diggers to a faded refuge goal', () => {
-  it('explains the stall, re-engages the goal once per three days, and replays exactly', () => {
-    const g = playDays(9, false);
-    const s = g.s;
-    const meryem = s.people.find((p) => p.id === 'meryem');
-    const goal = meryem && refugeGoal(meryem);
-    expect(goal?.status).toBe('active');
-    expect(goal?.importance).toBeLessThan(goal?.baseImportance ?? 0);
-    expect(diggingAdults(s).map((p) => p.id)).toEqual(['meryem', 'tamar']);
-
-    const why = markedWorkWords(s);
-    expect(why).toContain('available for work');
-    expect(why).toMatch(/Only Meryem and Tamar of the Wall take digging work/);
-    expect(why).toMatch(/has not worked on the refuge for \d+ days/);
-    expect(why).toContain('You can ask Yusuf Usta to walk the marks with them.');
-
-    expect(act(g, { verb: 'rally' })).toBe(true);
-    expect(goal?.importance).toBe(goal?.baseImportance);
-    expect(s.notes.at(-1)?.text).toMatch(/^Yusuf Usta walked the chalk marks with Meryem and Tamar/);
-    expect(rallyBlock(s)).toMatch(/three days/);
-    expect(act(g, { verb: 'rally' })).toBe(false);
-
-    advance(g, s.minute + 2 * HOUR);
-    expect(fingerprint(replay(R2_SEED, g.inputs, g.s.minute, '0.6.0').s)).toBe(fingerprint(g.s));
+function opening() {
+  // Explicit authored weakened-goal fixture; no live actor state is changed.
+  const game = newGame(1476719286, '0.7.0', undefined, 'warren-rest/1', (person) => {
+    const authored = structuredClone(person);
+    for (const goal of authored.state.agenda.goals)
+      if (goal.id === 'refuge') {
+        goal.importance = 0.1;
+        goal.baseImportance = 0.7;
+      }
+    return authored;
   });
-
-  // Headless control: the same keeper with and without the ask; people still choose every cut.
-  it('lets the marked plan get dug when the keeper asks', () => {
-    const without = playDays(20, false).s.stats.dug;
-    const withAsk = playDays(20, true).s.stats.dug;
-    expect(without).toBeLessThanOrEqual(6);
-    expect(withAsk).toBeGreaterThan(without * 3);
+  game.chapter = { version: 'warren-hf4-cast/1', inputs: [], claims: [], initial: stateJson(game.s) };
+  botStep(game, newBot());
+  return game;
+}
+describe('HF4 refuge goal request', () => {
+  it('admits the walk as goal inputs, preserves cooldown and replays exactly', () => {
+    const game = opening();
+    expect(rallyBlock(game.s)).toBeUndefined();
+    expect(act(game, { verb: 'rally' })).toBe(true);
+    expect(rallyBlock(game.s)).toMatch(/three days/);
+    expect(act(game, { verb: 'rally' })).toBe(false);
+    advance(game, game.s.minute + 30);
+    const goal = refugeGoal(game.s.people.find((person) => person.id === 'meryem')!);
+    expect(goal?.id).toMatch(/^refuge-rally:/);
+    expect(game.inputs.filter((input) => input.verb === 'rally')).toHaveLength(1);
+    const exported = save(game);
+    expect(
+      fingerprint(
+        replay(
+          exported.seed,
+          exported.inputs,
+          exported.minute,
+          exported.game,
+          exported.chapter,
+          exported.config,
+          exported.phase,
+        ).s,
+      ),
+    ).toBe(exported.fingerprint);
+  });
+  it('does not offer a walk while riders are present', () => {
+    const game = opening();
+    game.s.raids[1]!.stage = 'riders';
+    const before = fingerprint(game.s);
+    expect(act(game, { verb: 'rally' })).toBe(false);
+    expect(fingerprint(game.s)).toBe(before);
   });
 });

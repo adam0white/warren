@@ -1,3 +1,4 @@
+import { cellsWithUse, USE } from './grid.ts';
 /** SCOPE: one keeper-requested Kian/Tamar conversation about Ada. The host owns
  * these finite words and travel/work receipts. Published HF owns every choice,
  * assent and attended percept. Speech never changes Ada's care or return duty.
@@ -10,8 +11,8 @@ import type {
   Person,
   Suggestion,
   SuggestionResolution,
-} from '@adam0white/human-framework';
-import { cellsWithUse, USE } from './grid.ts';
+} from './hf4.ts';
+import { heard } from './hf4.ts';
 import { note, positionAt, type WarrenState } from './warren.ts';
 
 export interface AdaTalk {
@@ -260,9 +261,7 @@ export function observeAdaTalk(s: WarrenState): void {
   for (const r of s.adaTalks ?? []) {
     for (const row of r.statements) {
       if (!row.heard)
-        row.heard = !!s.people
-          .find((p) => p.id === row.listener)
-          ?.memory.episodes.some((e) => e.at >= row.at && e.summary === row.text);
+        row.heard = !!((p) => !!p && heard(p, row.text, row.at))(s.people.find((p) => p.id === row.listener));
     }
     if (r.endedAt === undefined && r.statements.length === 2 && r.statements.every((x) => x.heard)) {
       r.endedAt = s.minute;

@@ -1,14 +1,14 @@
-import type { Activity } from '@adam0white/human-framework';
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/sim/game.ts';
 import { idx, SURF } from '../src/sim/grid.ts';
+import type { Activity } from '../src/sim/hf4.ts';
 import { exposureWords } from '../src/ui/exposure.ts';
 import { colonyWords } from '../src/ui/guidance.ts';
 import { bellStateWords, bellThreatWords } from '../src/ui/room-safety.ts';
 
 function ringing() {
-  const s = newGame(7, '0.3.0').s;
-  s.bell = { at: s.minute, until: s.minute + 360, real: true };
+  const s = newGame(7).s;
+  s.bell = { at: s.minute, until: s.minute + 360, real: false };
   s.notes.push({ at: s.minute, kind: 'story', text: 'You rang the bell.', weight: 1 });
   const p = s.people[0];
   if (!p) throw new Error('Missing person');
@@ -26,7 +26,7 @@ function ringing() {
 
 describe('bell duration and observed replies', () => {
   it('explains the call duration before the first ring', () => {
-    const s = newGame(7, '0.3.0').s;
+    const s = newGame(7).s;
     expect(bellStateWords(s)).toMatch(/The bell is quiet.*six game hours/);
   });
 
@@ -46,10 +46,13 @@ describe('bell duration and observed replies', () => {
     const raid = s.raids[0];
     if (!raid) throw new Error('Missing raid');
     raid.stage = 'smoke';
-    expect(colonyWords(s)).toContain('6 game hours left');
-    s.minute += 360;
+    raid.smoke = s.minute;
+    s.bell = { at: s.minute, until: raid.leave, real: true };
+    expect(colonyWords(s)).toContain('until the riders leave');
+    s.minute = raid.leave;
+    raid.stage = 'gone';
     s.bell = null;
-    expect(colonyWords(s)).toContain('call ended after six game hours');
+    expect(bellStateWords(s)).toContain('riders have gone');
   });
 
   it('pairs assent with the current task and the next choice time without promising travel', () => {
@@ -114,7 +117,7 @@ it('names only the threat the village can currently see beside the bell', () => 
   if (!raid) throw new Error('Missing raid');
   raid.stage = 'smoke';
   expect(bellThreatWords(s)).toMatch(/Smoke.*half a day or less/);
-  s.bell = { at: s.minute, until: s.minute + 360, real: true };
+  s.bell = { at: s.minute, until: s.minute + 360, real: false };
   expect(colonyWords(s)).toContain('Tap the people count');
   expect(colonyWords(s)).not.toContain('Check shelter');
   raid.stage = 'riders';
