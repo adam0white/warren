@@ -1,5 +1,5 @@
 {
-  "scope": "actual lived Warren history; public HF calls only; admission refusal is the blocker",
+  "scope": "corrected public receiving world; unchanged lived Warren passport admits",
   "engine": {
     "package": "@adam0white/human-framework@4.5.2",
     "build": "27d7215d9f75d2f8584043bef3809671a519df46395efab15256837073fa4cdd",
@@ -10,12 +10,15 @@
   "sourceProjectionMatchesTarget": true,
   "rememberedActors": ["travellers", "meryem"],
   "rememberedPlaces": ["house:usta", "field", "hearth", "surface", "below"],
-  "admission": {
+  "incompleteWorldAdmission": {
     "ok": false,
     "error": {
       "code": "invalid-admission",
       "path": "$.portable",
       "message": "This person cannot continue here with this saved history. Keep the source chapter or export it. Your saved history has not been replaced."
     }
-  }
+  },
+  "correctedWorldAdmission": "meryem",
+  "targetReplayExact": true,
+  "targetHash": "af7d51f4ae3a9ea942922a5228413152011a0d12d0150b83233437f9a0366432"
 }

@@ -1,5 +1,5 @@
-import type { Person } from '@adam0white/human-framework';
 import { SURF, yOf } from '../sim/grid.ts';
+import type { PersonReading as Person } from '../sim/hf4.ts';
 import { positionAt, riderCells, type WarrenState } from '../sim/warren.ts';
 import { gameTimeWords } from './room-safety.ts';
 import { displayWords, personWords, speechWords } from './words.ts';

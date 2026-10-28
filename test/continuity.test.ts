@@ -1,333 +1,206 @@
-/** Protocol controls use an in-memory shelf. They are not browser journey evidence. */
-
-import { snapshot } from '@adam0white/human-framework';
+/** In-memory shelf protocol controls; these do not establish a browser journey. */
 import {
   acceptPersona,
+  acceptPersonaBatch,
+  canonicalCast,
   createPersona,
   type PersonaRequest,
   type PersonaShelfState,
-  preparePersonaLife,
 } from '@adam0white/lab-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, newGame, save } from '../src/sim/game.ts';
-import { currentCareSaved } from './current-care.ts';
+import { project } from '../src/sim/cast.ts';
+import { act, advance, fingerprint, newGame, save } from '../src/sim/game.ts';
+import { FRAMEWORK_VERSION } from '../src/sim/hf4.ts';
+import { advanceFrame } from '../src/sim/warren.ts';
 
 const mock = vi.hoisted(() => ({
   enabled: false,
   ready: Promise.resolve(true),
-  gate: null as string | null,
-  allowed: false,
-  requests: [] as unknown[],
-  handle: null as null | ((request: unknown) => Promise<unknown>),
-  defer: null as null | ((request: unknown) => Promise<void>),
+  requests: [] as PersonaRequest[],
+  handle: null as null | ((r: PersonaRequest) => Promise<unknown>),
 }));
 vi.mock('../src/ui/lab.ts', () => ({
-  lab: {
-    build: () => ({ c: 'control' }),
-    setPersonaRecording: (key: string | null) => {
-      mock.gate = key;
-      mock.allowed = key === null;
-    },
-    allowPersonaRecording: (allow: boolean) => {
-      mock.allowed = allow;
-    },
-  },
+  lab: { setPersonaRecording: vi.fn(), allowPersonaRecording: vi.fn() },
 }));
-vi.mock('@adam0white/lab-client', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@adam0white/lab-client')>();
-  return {
-    ...actual,
-    personaChannel: () => ({
-      get enabled() {
-        return mock.enabled;
-      },
-      get ready() {
-        return mock.ready;
-      },
-      setEnabled: (v: boolean) => {
-        mock.enabled = v;
-      },
-      request: async (request: unknown) => {
-        mock.requests.push(request);
-        if (mock.defer) await mock.defer(request);
-        return mock.handle ? mock.handle(request) : null;
-      },
-    }),
-    watchPersonaCheckpoint: () => () => {},
-  };
-});
+vi.mock('@adam0white/lab-client', async (original) => ({
+  ...(await original<typeof import('@adam0white/lab-client')>()),
+  personaChannel: () => ({
+    get enabled() {
+      return mock.enabled;
+    },
+    get ready() {
+      return mock.ready;
+    },
+    setEnabled(v: boolean) {
+      mock.enabled = v;
+    },
+    async request(r: PersonaRequest) {
+      mock.requests.push(r);
+      return mock.handle?.(r);
+    },
+  }),
+  watchPersonaCheckpoint: () => () => {},
+}));
 
 import {
   attach,
-  bind,
   checkpoint,
   checkpointNative,
+  continuityStatus,
   fileLoad,
   fresh,
   localLoad,
 } from '../src/ui/continuity.ts';
 
-const CAST_ID = 'hf.cast.meryem.warren';
-let current: ReturnType<typeof newGame> | null = null;
+let state: PersonaShelfState;
+let current: ReturnType<typeof newGame> | null;
 beforeEach(() => {
+  state = { heads: {}, revisions: [] };
+  current = null;
   mock.enabled = false;
   mock.ready = Promise.resolve(true);
-  mock.allowed = false;
-  mock.gate = null;
   mock.requests = [];
-  mock.defer = null;
-  mock.handle = async (raw) => {
-    const request = raw as PersonaRequest;
-    const { castForGame } = await import('@adam0white/lab-client');
-    return request.action === 'prepareBatch'
-      ? {
-          expectedHeads: Object.fromEntries(castForGame('warren').map((c) => [c.castId, null])),
-          inputs: [],
-          blocked: [],
-        }
-      : {};
+  mock.handle = async (r) => {
+    if (r.action === 'get')
+      return state.revisions.find((p) => p.revision === state.heads[r.castId ?? '']) ?? null;
+    if (r.action === 'putBatch') state = acceptPersonaBatch(state, r.envelopes ?? [], r.expectedHeads);
+    return null;
   };
-  vi.stubGlobal('location', { search: '?lab=1' });
-  vi.stubGlobal('window', { addEventListener() {}, dispatchEvent: vi.fn() });
+  vi.stubGlobal('window', { addEventListener() {} });
   vi.stubGlobal('document', { querySelector: () => null });
-  current = null;
   attach(() => current);
 });
-const file = (saved: unknown) => ({ size: 100, text: async () => JSON.stringify(saved) }) as File;
-describe('continuity privacy and source receipts', () => {
-  it('refuses changed state despite valid replay and fingerprint', async () => {
-    const saved = save(newGame(7));
-    saved.state.people[0]!.name = 'Changed';
-    await expect(fileLoad(file(saved))).rejects.toThrow(/state does not match/);
-    expect(mock.allowed).toBe(false);
+const file = (value: unknown) => ({ size: 100, text: async () => JSON.stringify(value) }) as File;
+describe('HF4 shelf ownership', () => {
+  it('claims fresh public cast together with compare-and-swap and preserves exact local ownership', async () => {
+    current = await fresh(7, '0.7.0', 'warren-rest/1');
+    expect(mock.enabled).toBe(true);
+    const batch = mock.requests.find((r) => r.action === 'putBatch');
+    expect(batch?.envelopes).toHaveLength(6);
+    expect(batch?.envelopes?.map((head) => head.source.engine)).toEqual(Array(6).fill(FRAMEWORK_VERSION));
+    expect(Object.values(batch?.expectedHeads ?? {})).toEqual(Array(6).fill(null));
+    const saved = save(current);
+    const loaded = await localLoad(saved);
+    expect(loaded.ownedHeads).toEqual(current.ownedHeads);
+    expect(loaded.s.next?.config).toBe('warren-rest/1');
   });
-  it('does not return a deferred import after a fresh run supersedes its gate', async () => {
-    let release!: (s: string) => void;
+  it('keeps an older shelf record and never claims or overwrites it for a fresh story', async () => {
+    const castId = 'hf.cast.meryem.warren';
+    const older = await createPersona({
+      format: 'hf-persona/1',
+      castId,
+      castRevision: canonicalCast(castId).revision,
+      branchId: 'older',
+      parentRevision: null,
+      source: { game: 'warren', build: 'test', engine: '2.23.0', rules: 'old' },
+      transfer: {},
+      limitations: [],
+    });
+    state = acceptPersona(state, older);
+    current = await fresh(7, '0.7.0', 'warren-rest/1');
+    expect(state.heads[castId]).toBe(older.revision);
+    expect(current.ownedHeads?.[castId]).toBeUndefined();
+    await checkpoint();
+    expect(state.heads[castId]).toBe(older.revision);
+  });
+  it('keeps a valid profile-v1 shelf head and starts that person fresh locally', async () => {
+    const castId = 'hf.cast.meryem.warren';
+    const source = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+    expect(act(source, { verb: 'release', who: 'meryem' })).toBe(true);
+    advance(source, 330);
+    const captured = await project(source.s, 'meryem');
+    const portable = captured.transfer.portable;
+    if (portable.version !== 2) throw Error('Expected v2 projection');
+    // Synthetic v1 schema fixture derived from a real projection; no older journey is claimed.
+    const { retained: _retained, ...profile } = portable;
+    const older = await createPersona({
+      format: 'hf-persona/1',
+      castId,
+      castRevision: canonicalCast(castId).revision,
+      branchId: 'profile-v1',
+      parentRevision: null,
+      source: { game: 'warren', build: 'test', engine: FRAMEWORK_VERSION, rules: 'warren-hf4-1' },
+      transfer: { castPassport: 'hf-portable-person/1', portable: { ...profile, version: 1 } },
+      limitations: [],
+    });
+    state = acceptPersona(state, older);
+    current = await fresh(7, '0.7.0', 'warren-rest/1');
+    expect(state.heads[castId]).toBe(older.revision);
+    expect(current.ownedHeads?.[castId]).toBeUndefined();
+    expect(current.chapter?.inputs.some((head) => head.castId === castId) ?? false).toBe(false);
+    expect(
+      mock.requests.find((r) => r.action === 'putBatch')?.envelopes?.some((head) => head.castId === castId),
+    ).toBe(false);
+    expect(continuityStatus).toContain('older or occupied records remain on the shelf');
+    await checkpoint();
+    expect(state.heads[castId]).toBe(older.revision);
+  });
+  it('does not skip a malformed portable head', async () => {
+    const castId = 'hf.cast.meryem.warren';
+    const malformed = await createPersona({
+      format: 'hf-persona/1',
+      castId,
+      castRevision: canonicalCast(castId).revision,
+      branchId: 'malformed',
+      parentRevision: null,
+      source: { game: 'warren', build: 'test', engine: FRAMEWORK_VERSION, rules: 'warren-hf4-1' },
+      transfer: { castPassport: 'hf-portable-person/1', portable: { version: 1 } },
+      limitations: [],
+    });
+    state = acceptPersona(state, malformed);
+    await expect(fresh(7, '0.7.0', 'warren-rest/1')).rejects.toThrow();
+    expect(state.heads[castId]).toBe(malformed.revision);
+    expect(mock.requests.some((r) => r.action === 'putBatch')).toBe(false);
+  });
+  it('refuses a competing shelf head without partially claiming the group', async () => {
+    const original = mock.handle;
+    mock.handle = async (request) => {
+      if (request.action === 'putBatch') {
+        const first = request.envelopes?.[0];
+        if (!first) throw Error('Missing claim fixture');
+        const { revision: _revision, ...body } = first;
+        const competing = await createPersona({ ...body, branchId: 'competing' });
+        state = acceptPersona(state, competing);
+      }
+      return original?.(request);
+    };
+    await expect(fresh(7, '0.7.0', 'warren-rest/1')).rejects.toThrow();
+    expect(Object.keys(state.heads)).toHaveLength(1);
+    expect(state.revisions[0]?.branchId).toBe('competing');
+    expect(current).toBeNull();
+  });
+  it('strips publication authority on file import and retains file origin through local reload', async () => {
+    current = await fresh(7, '0.7.0', 'warren-rest/1');
+    const imported = await fileLoad(file(save(current)));
+    expect(imported.ownedHeads).toBeUndefined();
+    expect(imported.fileOrigin).toBe(true);
+    current = await localLoad(save(imported));
+    const before = state;
+    await checkpoint();
+    expect(state).toBe(before);
+    await expect(checkpointNative('kian')).rejects.toThrow(/older Watch/);
+  });
+  it('replays an exported partial frame and strips its publication authority', async () => {
+    current = await fresh(7, '0.7.0', 'warren-rest/1');
+    advanceFrame(current.s, 0);
+    const saved = save(current);
+    expect(saved.phase).toBeDefined();
+    const imported = await fileLoad(file(saved));
+    expect(fingerprint(imported.s)).toBe(saved.fingerprint);
+    expect(imported.ownedHeads).toBeUndefined();
+  });
+  it('does not return a deferred import after a fresh hill supersedes it', async () => {
+    const saved = save(newGame(7));
+    let release: (s: string) => void = () => {};
     const pending = fileLoad({
       size: 100,
       text: () =>
-        new Promise<string>((r) => {
-          release = r;
+        new Promise<string>((resolve) => {
+          release = resolve;
         }),
     } as File);
-    await fresh(8);
-    release(JSON.stringify(save(newGame(7))));
+    await fresh(8, '0.7.0', 'warren-rest/1');
+    release(JSON.stringify(saved));
     await expect(pending).rejects.toThrow(/replaced/);
   });
-  it('uses exact captured source snapshot when actor changes during publication', async () => {
-    current = newGame(7);
-    current.s.minute = 305; // declared boundary fixture, no real journey claim
-    const p = current.s.people.find((p) => p.id === 'meryem')!;
-    expect(act(current, { verb: 'release', who: p.id })).toBe(true);
-    const before = snapshot(p);
-    mock.enabled = true;
-    mock.defer = async (request) => {
-      if (
-        (request as { envelope?: { transfer?: { sourceRole?: string } } }).envelope?.transfer?.sourceRole ===
-        'meryem'
-      )
-        p.body.satiety = 0.01;
-    };
-    await checkpoint();
-    const archives = Object.values(current.sourceArchives ?? {});
-    expect(archives).toContainEqual(before);
-  });
-  it('keeps file origin through local reload without a local cast opt-out', async () => {
-    current = await fileLoad(file(save(newGame(7))));
-    const loaded = await localLoad(save(current));
-    expect(loaded.fileOrigin).toBe(true);
-    expect(loaded.ownedHeads).toBeUndefined();
-    const handlers: string[] = [];
-    bind({
-      querySelector: (selector: string) => {
-        handlers.push(selector);
-        return null;
-      },
-    } as unknown as HTMLElement);
-    expect(handlers).not.toContain('#local-fresh');
-    expect(handlers).not.toContain('#continuity');
-    expect(handlers).not.toContain('#native-fork');
-  });
-  it('automatically enables the public shelf for a fresh hill even with the old diagnostic query', async () => {
-    const game = await fresh(7, '0.7.0', 'warren-rest/1');
-    expect(mock.enabled).toBe(true);
-    expect(mock.requests.length).toBeGreaterThan(0);
-    expect(game.s.next?.config).toBe('warren-rest/1');
-  });
-  it('restores exact local ownership, refuses a competing head, and closes an owned death', async () => {
-    let state: PersonaShelfState = { heads: {}, revisions: [] };
-    mock.handle = async (raw) => {
-      const request = raw as PersonaRequest;
-      if (request.action === 'put' && request.envelope) state = acceptPersona(state, request.envelope);
-      return null;
-    };
-    current = newGame(7);
-    current.s.minute = 305; // explicit protocol fixture
-    expect(act(current, { verb: 'release', who: 'meryem' })).toBe(true);
-    expect(act(current, { verb: 'release', who: 'yusuf' })).toBe(true);
-    mock.enabled = true;
-    await checkpoint();
-    const first = current.ownedHeads![CAST_ID]!;
-    current = await localLoad(save(current));
-    await checkpoint();
-    const second = current.ownedHeads![CAST_ID]!;
-    expect(second.parentRevision).toBe(first.revision);
-    const { revision, ...body } = second;
-    const competing = await createPersona({
-      ...body,
-      parentRevision: revision,
-      source: { ...body.source, build: 'competing' },
-    });
-    state = acceptPersona(state, competing);
-    await checkpoint();
-    expect(current.ownedHeads![CAST_ID]!.revision).toBe(second.revision);
-    expect(state.heads[CAST_ID]).toBe(competing.revision);
-    // A separate owned actor death closes its current branch, rather than exporting alive state.
-    const yusufId = 'hf.cast.yusuf.warren';
-    current.s.people.find((p) => p.id === 'yusuf')!.body.alive = false;
-    await checkpoint();
-    const terminal = current.ownedHeads![yusufId]!;
-    expect(terminal.terminal?.kind).toBe('dead');
-    expect(() => preparePersonaLife(terminal, Date.now())).toThrow(/closed/);
-  });
-});
-
-it('does not cancel a pending hill when recording identity acknowledges', async () => {
-  vi.stubGlobal('location', { search: '?lab=1' });
-  vi.stubGlobal('window', new EventTarget());
-  attach(() => current);
-  mock.enabled = true;
-  const { castForGame } = await import('@adam0white/lab-client');
-  mock.handle = async (raw) => {
-    const request = raw as PersonaRequest;
-    return request.action === 'prepareBatch'
-      ? {
-          expectedHeads: Object.fromEntries(castForGame('warren').map((c) => [c.castId, null])),
-          inputs: [],
-          blocked: [],
-        }
-      : {};
-  };
-  let release!: (value: boolean) => void;
-  mock.ready = new Promise<boolean>((resolve) => {
-    release = resolve;
-  });
-  const pending = fresh(42);
-  window.dispatchEvent(new Event('hf-lab-preference'));
-  const storage = new Event('storage');
-  Object.defineProperty(storage, 'key', { value: 'hf-lab-player' });
-  window.dispatchEvent(storage);
-  release(true);
-  await expect(pending).resolves.toHaveProperty('s');
-});
-
-describe('selected native Watch publication from genuine care run', () => {
-  const retained = currentCareSaved;
-  function shelfOf(saved: ReturnType<typeof retained>) {
-    let state: PersonaShelfState = {
-      revisions: Object.values(saved.ownedHeads),
-      heads: Object.fromEntries(
-        Object.entries(saved.ownedHeads).map(([id, p]) => [id, (p as { revision: string }).revision]),
-      ),
-    };
-    mock.handle = async (raw) => {
-      const q = raw as PersonaRequest;
-      if (q.action === 'get')
-        return state.revisions.find((p) => p.revision === state.heads[q.castId!]) ?? null;
-      if (q.action === 'put') {
-        state = acceptPersona(state, q.envelope!, q.fork);
-        return q.envelope;
-      }
-      throw Error('Unexpected protocol call');
-    };
-    return () => state;
-  }
-  it('uses exact local parent and archives actual body/current care without publishing other people', async () => {
-    const saved = retained(),
-      get = shelfOf(saved);
-    mock.enabled = true;
-    current = await localLoad(saved);
-    act(current, { verb: 'prepare-native-return', who: 'kian' });
-    const other = get().heads[CAST_ID];
-    await checkpointNative('kian');
-    const e = current.nativeReturnHeads!['hf.cast.kian.watch']!;
-    expect(e.parentRevision).toBe(saved.ownedHeads['hf.cast.kian.watch']!.revision);
-    expect(e.source.build).toMatch(/^[a-f0-9]{40}$/); // A stale SDK release lookup cannot stamp the loaded source.
-    expect(e.transfer.warrenCare).toMatchObject({
-      version: 'warren-watch-ada/1',
-      capturedMinute: 600,
-      visit: { careCount: 1, endedAt: 570 },
-    });
-    expect(current.sourceArchives![e.revision]).toHaveProperty('person');
-    expect(get().heads[CAST_ID]).toBe(other);
-    expect(mock.requests.filter((q) => (q as PersonaRequest).action === 'put')).toHaveLength(1);
-  });
-  it('keeps file nonownership; an explicit selected alternative grants only its own new branch receipt', async () => {
-    const saved = retained(),
-      get = shelfOf(saved);
-    mock.enabled = true;
-    current = await fileLoad(file(saved));
-    act(current, { verb: 'prepare-native-return', who: 'kian' });
-    await expect(checkpointNative('kian')).rejects.toThrow(/no local permission/);
-    const other = get().heads[CAST_ID];
-    await checkpointNative('kian', true);
-    expect(current.fileOrigin).toBe(true);
-    expect(current.ownedHeads).toBeUndefined();
-    const e = current.nativeReturnHeads!['hf.cast.kian.watch']!;
-    expect(e.parentRevision).toBeNull();
-    expect(e.branchId).not.toBe(saved.ownedHeads['hf.cast.kian.watch']!.branchId);
-    expect(get().heads[CAST_ID]).toBe(other);
-    expect(Object.keys(current.nativeReturnHeads!)).toEqual(['hf.cast.kian.watch']);
-    const loaded = await localLoad(save(current));
-    expect(loaded.nativeReturnHeads).toEqual(current.nativeReturnHeads);
-    const imported = await fileLoad(file(save(current)));
-    expect(imported.nativeReturnHeads).toBeUndefined();
-    expect(imported.ownedHeads).toBeUndefined();
-    current.s.people.find((p) => p.id === 'kian')!.body.alive = false; // Explicit synthetic terminal control.
-    await checkpoint();
-    const terminal = current.nativeReturnHeads!['hf.cast.kian.watch']!;
-    expect(terminal.terminal?.kind).toBe('dead');
-    expect(terminal.parentRevision).toBe(e.revision);
-    expect(current.ownedHeads).toBeUndefined();
-    expect(get().heads[CAST_ID]).toBe(other);
-  });
-  it('refuses a competing head and a changed run before publication', async () => {
-    const saved = retained();
-    shelfOf(saved);
-    mock.enabled = true;
-    current = await localLoad(saved);
-    act(current, { verb: 'prepare-native-return', who: 'kian' });
-    mock.handle = async () => null;
-    await expect(checkpointNative('kian')).rejects.toThrow(/shared record has changed/);
-    expect(mock.requests.some((q) => (q as PersonaRequest).action === 'put')).toBe(false);
-    mock.handle = async () => {
-      current = null;
-      return null;
-    };
-    await expect(checkpointNative('kian', true)).rejects.toThrow(/game or the prepared/);
-  });
-});
-
-it('reports a real failed checkpoint without replacing prior ownership receipts', async () => {
-  current = newGame(7);
-  current.s.minute = 305;
-  expect(act(current, { verb: 'release', who: 'meryem' })).toBe(true);
-  mock.enabled = true;
-  mock.handle = async () => {
-    throw new Error('Shelf unavailable. Use a local file.');
-  };
-  const prior = JSON.stringify(current.ownedHeads ?? {});
-  await checkpoint();
-  expect(JSON.stringify(current.ownedHeads ?? {})).toBe(prior);
-  expect(window.dispatchEvent).toHaveBeenCalled();
-});
-
-it('keeps routine Kian ineligibility separate from failed publication', async () => {
-  current = newGame(7);
-  current.s.minute = 305;
-  current.s.people = current.s.people.filter((p) => p.id === 'kian');
-  mock.enabled = true;
-  await checkpoint();
-  expect(mock.requests).toEqual([]);
-  expect(window.dispatchEvent).not.toHaveBeenCalled();
 });

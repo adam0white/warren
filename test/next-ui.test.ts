@@ -29,11 +29,13 @@ for (const [width, height] of [
       await page.goto(`${url}?lab=1`);
       expect(await page.locator('.title-actions input, .title-actions select').count()).toBe(0);
       await page.evaluate(`(async()=>{
-        const {newGame,save,catchUp}=await import('/src/sim/game.ts');
+        const {newGame,save,catchUp,stateJson}=await import('/src/sim/game.ts');
         const {put}=await import('/src/ui/store.ts');
-        const g = newGame(7,'0.7.0',undefined,'warren-next/1');
-        catchUp(g,86400000,()=>false);
-        await put('hill', {...save(g),savedAt:Date.now()-86400000});
+        const g = newGame(7,'0.7.0',undefined,'warren-rest/1');
+        const raid=g.s.raids[0];raid.smoke=g.s.minute+60;raid.riders=raid.smoke+60;raid.leave=raid.riders+60;
+        const prepared=newGame(7,'0.7.0',{version:'warren-hf4-cast/1',inputs:[],claims:[],initial:stateJson(g.s)},'warren-rest/1');
+        catchUp(prepared,86400000,()=>false);
+        await put('hill', {...save(prepared),savedAt:Date.now()-86400000});
       })()`);
       await page.reload();
       await page.locator('#cont').click();
@@ -47,7 +49,7 @@ for (const [width, height] of [
       expect(await page.evaluate('window.__warren.game.s.next.attention')).toBeUndefined();
       expect(
         await page.evaluate(
-          `(async()=>{const{save,replay,fingerprint}=await import('/src/sim/game.ts'); const s=save(window.__warren.game); return fingerprint(replay(s.seed,s.inputs,s.minute,s.game,s.chapter,s.config).s)===s.fingerprint})()`,
+          `(async()=>{const{save,replay,fingerprint}=await import('/src/sim/game.ts'); const s=save(window.__warren.game); return fingerprint(replay(s.seed,s.inputs,s.minute,s.game,s.chapter,s.config,s.phase).s)===s.fingerprint})()`,
         ),
       ).toBe(true);
       expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(width);
@@ -66,21 +68,31 @@ it('keeps ordinary next-config journal reading slow through an actual new note',
     await page.clock.install();
     await page.goto(`${url}?lab=1`);
     await page.evaluate(`(async()=>{
-      const {newGame,save}=await import('/src/sim/game.ts');
+      const {newGame,save,act}=await import('/src/sim/game.ts');
+      const {idx,SURF}=await import('/src/sim/grid.ts');
       const {put}=await import('/src/ui/store.ts');
-      await put('hill',save(newGame(7,'0.7.0',undefined,'warren-next/1')));
+      const g=newGame(7,'0.7.0',undefined,'warren-rest/1');
+      act(g,{verb:'chalk',cells:[idx(15,SURF+3)],on:true});
+      await put('hill',save(g));
     })()`);
     await page.reload();
     await page.locator('#cont').click();
     await page.locator('#cellx').click();
     await page.locator('#ticker').click();
-    await page.clock.runFor(7000);
+    const openingMinute = await page.evaluate<number>('window.__warren.game.s.minute');
+    // Wait for an actual new HF4/world note; the old HF3 seed-specific minute is not a clock contract.
+    let newNote = false;
+    for (let second = 0; second < 20 && !newNote; second++) {
+      await page.clock.runFor(1000);
+      newNote = await page.evaluate<boolean>(`window.__warren.game.s.notes.at(-1).at>${openingMinute}`);
+    }
+    expect(newNote).toBe(true);
     const before = await page.evaluate<number>('window.__warren.game.s.minute');
     const note = await page.evaluate(`(async()=>{
       const {displayWords}=await import('/src/ui/words.ts');
       return displayWords(window.__warren.game.s.notes.at(-1).text);
     })()`);
-    expect(before).toBeGreaterThanOrEqual(420);
+    expect(before).toBeGreaterThan(openingMinute);
     expect(await page.evaluate('window.__warren.game.s.next.attention.length')).toBeGreaterThan(0);
     await page.clock.runFor(4000);
     expect(await page.locator('#journal-tail').textContent()).toContain(note);

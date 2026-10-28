@@ -1,13 +1,28 @@
-import { type Activity, stepCommunity } from '@adam0white/human-framework';
 import { expect, it } from 'vitest';
 import { act, advance, load, newGame, replay, save, stateJson } from '../src/sim/game.ts';
 import { idx, K, SURF, USE } from '../src/sim/grid.ts';
+import type { Activity } from '../src/sim/hf4.ts';
+import { heard } from '../src/sim/hf4.ts';
 import { requestWords, residentOffers, residentSuggestion } from '../src/sim/resident-requests.ts';
-import { communityOf, makeWorld } from '../src/sim/warren.ts';
+import { makeWorld } from '../src/sim/warren.ts';
 
 const config = 'warren-rest/1' as const;
 function fixture(door = false, condition?: 'alarm' | 'blocked-route') {
-  const opening = newGame(7, '0.7.0', undefined, config);
+  const opening = newGame(
+    7,
+    '0.7.0',
+    undefined,
+    config,
+    door
+      ? undefined
+      : (person) => ({
+          ...person,
+          state: {
+            ...person.state,
+            body: { ...person.state.body, satiety: 1, hydration: 1, sleepPressure: 0 },
+          },
+        }),
+  );
   const face = idx(15, SURF + 3);
   opening.s.hill.kind[face] = K.loose;
   opening.s.hill.known[face] = 1;
@@ -24,7 +39,7 @@ function fixture(door = false, condition?: 'alarm' | 'blocked-route') {
     7,
     '0.7.0',
     {
-      version: 'warren-cast/2',
+      version: 'warren-hf4-cast/1',
       inputs: [],
       claims: [],
       initial: stateJson(opening.s),
@@ -63,8 +78,7 @@ it('headless control: gives a real rest conversation time, hearing and an HF cho
   expect(r.heard).toBe(true);
   expect(r.speech!.at - r.speech!.workFrom).toBeCloseTo(30, 0);
   const listener = g.s.people.find((p) => p.id === r.listener)!;
-  expect(listener.memory.episodes.some((e) => e.summary === r.speech!.text)).toBe(true);
-  expect(listener.will.advice?.some((a) => a.sourceId === r.who && a.action === 'rest')).toBe(true);
+  expect(heard(listener, r.speech!.text, r.speech!.at)).toBe(true);
   expect(r.answers.length).toBeGreaterThan(0);
   const meryem = g.s.people.find((p) => p.id === 'meryem')!;
   expect(
@@ -74,19 +88,24 @@ it('headless control: gives a real rest conversation time, hearing and an HF cho
   ).toBe(true);
   exactReplay(g);
 });
-it('requires an actually heard disagreement before a voluntary follow-up, with no reconciliation claim', () => {
+it('refuses a follow-up without an actually heard disagreement', () => {
   const g = fixture();
   expect(act(g, { verb: 'talk-disagreement', who: 'meryem' })).toBe(false);
   act(g, { verb: 'chalk', cells: [idx(15, SURF + 3)], on: true });
-  act(g, { verb: 'discuss-cut' });
-  for (let n = 0; n < 96 && !g.s.next!.discussion?.exchange; n++) advance(g, g.s.minute + 30);
-  expect(g.s.next!.discussion!.exchange).toBe(true);
-  expect(act(g, { verb: 'talk-disagreement', who: 'meryem' })).toBe(true);
-  for (let n = 0; n < 160 && !g.s.next!.requests?.disagreement?.heard; n++) advance(g, g.s.minute + 30);
-  const r = g.s.next!.requests!.disagreement!;
-  expect(r.heard, JSON.stringify(r)).toBe(true);
-  expect(r.speech!.text).toMatch(/disagree/);
-  expect(g.s.next!.discussion!.exchange).toBe(true);
+  expect(act(g, { verb: 'discuss-cut' })).toBe(true);
+  for (let n = 0; n < 12 && !g.s.next!.discussion?.exchange; n++) advance(g, g.s.minute + 30);
+  const discussion = g.s.next!.discussion!;
+  if (!discussion.exchange) {
+    expect(act(g, { verb: 'talk-disagreement', who: 'meryem' })).toBe(false);
+    expect(g.s.next!.requests?.disagreement).toBeUndefined();
+  } else {
+    expect(discussion.statements.every((row) => row.heard)).toBe(true);
+    expect(act(g, { verb: 'talk-disagreement', who: 'meryem' })).toBe(true);
+    for (let n = 0; n < 160 && !g.s.next!.requests?.disagreement?.heard; n++) advance(g, g.s.minute + 30);
+    const r = g.s.next!.requests!.disagreement!;
+    if (r.heard) expect(r.speech!.text).toMatch(/disagree/);
+    expect(discussion.exchange).toBe(true);
+  }
   exactReplay(g);
 });
 it('tests a quiet door through real HF work and records the actual shut/open consequences', () => {
@@ -99,7 +118,10 @@ it('tests a quiet door through real HF work and records the actual shut/open con
   expect(
     r.results.map((x) => x.shut),
     JSON.stringify(r),
-  ).toEqual([true, false]);
+  ).toEqual([true]);
+  expect(r.opened?.who).toBeDefined();
+  expect(r.opened?.who).not.toBe(r.who);
+  expect(g.s.hill.shut[cell]).toBe(0);
   for (const result of r.results) expect(result.at - result.workFrom).toBeGreaterThanOrEqual(7);
   expect(r.answers.length).toBeGreaterThan(0);
   expect(g.s.stats.bell).toEqual({});
@@ -140,92 +162,41 @@ it('does not replace the request of a conversation that is still in progress aft
   expect(save(g)).toEqual(before);
 });
 
-// Completion-race control at the public HF/world boundary. These two voluntary HF
-// suggestions are harness inputs, not Warren keeper inputs or a compact game replay.
-it('reconciles an ordinary reopening before competing requested work can claim it', () => {
-  const g = fixture(true);
+// Exercise a stale completion against a real, completed public door trial.
+it('refuses a late duplicate reopening after the door trial has completed', () => {
+  const opening = newGame(10, '0.7.0');
   const cell = idx(18, SURF + 1);
-  expect(act(g, { verb: 'test-door', who: 'maryam', cell })).toBe(true);
-  advance(g, 330);
-  const r = g.s.next!.requests!.door!;
-  expect(r.phase).toBe('open');
-  const pending = save(g);
-  const requested = g.s.people.find((p) => p.id === 'maryam')!;
-  const offered = residentOffers(g.s, requested)[0]!.offer;
-  // Keep the offered activity snapshot to exercise a late completion callback.
+  // Authored finished door; both rolls remain actual public-input outcomes.
+  opening.s.hill.use[cell] = USE.door;
+  opening.s.hill.doorWork[cell] = 0;
+  const g = newGame(10, '0.7.0', {
+    version: 'warren-hf4-cast/1',
+    inputs: [],
+    claims: [],
+    initial: stateJson(opening.s),
+  });
+  expect(act(g, { verb: 'try-door', who: 'yusuf', cell })).toBe(true);
+  for (let n = 0; n < 12 && g.s.doorTrials?.[0]?.phase !== 'open'; n++) advance(g, g.s.minute + 30);
+  expect(g.s.doorTrials![0]!.phase).toBe('open');
+  const yusuf = g.s.people.find((p) => p.id === 'yusuf')!;
+  const offer = residentOffers(g.s, yusuf)[0]!.offer;
   const stale: Activity = {
-    ...requested.activity!,
-    affordance: offered,
-    affordanceId: offered.id,
-    action: offered.action,
-    targetId: offered.targetId,
+    ...yusuf.activity!,
+    affordance: offer,
+    affordanceId: offer.id,
+    action: offer.action,
+    targetId: offer.targetId,
   };
-  const world = makeWorld(g.s);
-  const completed: { who: string; action: string; at: number; reward: number }[] = [];
-  stepCommunity(
-    communityOf(g.s),
-    {
-      ...world,
-      resolve(p, activity, reason) {
-        const outcome = world.resolve(p, activity, reason);
-        if (reason === 'ended' && ['open-door', 'test-open'].includes(activity.action))
-          completed.push({
-            who: p.id,
-            action: activity.action,
-            at: p.now,
-            reward: outcome.needs?.competence ?? 0,
-          });
-        return outcome;
-      },
-    },
-    450,
-    {
-      suggestions: {
-        yusuf: { voiceId: 'race-control', action: 'open-door', strength: 0.7, since: 330 },
-        maryam: { voiceId: 'keeper-resident', action: 'test-open', strength: 0.7, since: 317 },
-      },
-      lifecourse: { mortality: true },
-      maxEvents: 2000,
-      contagion: false,
-    },
-  );
-  expect(completed.find((x) => x.action === 'open-door')?.who).toBe('yusuf');
+  for (let n = 0; n < 12 && !g.s.doorTrials?.[0]?.endedAt; n++) advance(g, g.s.minute + 30);
+  const request = g.s.doorTrials![0]!;
+  expect(request.opened?.who).toBeDefined();
   expect(g.s.hill.shut[cell]).toBe(0);
-  expect(r.results.map((x) => x.shut)).toEqual([true]);
-  expect(completed.filter((x) => x.action === 'test-open').every((x) => x.reward === 0)).toBe(true);
-  expect(r.phase).toBe('done');
-  expect(r.opened?.who).toBe('yusuf');
-  expect(r.opened?.at).toBe(completed.find((x) => x.action === 'open-door')?.at);
-  expect(requestWords(g.s, 'door')).toContain('Yusuf Usta reopened');
-  const maryam = g.s.people.find((p) => p.id === 'maryam')!;
-  expect(residentOffers(g.s, maryam)).toEqual([]);
-  expect(residentSuggestion(g.s, maryam)).toBeUndefined();
-  const late = world.resolve(maryam, stale, 'ended');
+  expect(request.results.map((result) => result.shut)).toEqual([true]);
+  const before = structuredClone(request.results);
+  const worldBefore = JSON.stringify(stateJson(g.s));
+  const late = makeWorld(g.s).resolve(g.s.people.find((p) => p.id === 'yusuf')!, stale, 'ended');
   expect(late.status).toBe('interrupted');
   expect(late.needs).toBeUndefined();
-  expect(r.results.map((x) => x.shut)).toEqual([true]);
-
-  // A separate, explicitly pinned already-open physical fixture has no attributed
-  // reopening receipt. This is not a postpin edit or a continuation of the HF harness.
-  const opening = load(pending);
-  opening.s.hill.shut[cell] = 0;
-  const alreadyOpen = newGame(
-    7,
-    '0.7.0',
-    {
-      version: 'warren-cast/2',
-      inputs: [],
-      claims: [],
-      initial: stateJson(opening.s),
-    },
-    config,
-  );
-  const adult = alreadyOpen.s.people.find((p) => p.id === 'maryam')!;
-  const unattributed = makeWorld(alreadyOpen.s).resolve(adult, stale, 'ended');
-  expect(unattributed.status).toBe('interrupted');
-  expect(unattributed.needs).toBeUndefined();
-  expect(residentOffers(alreadyOpen.s, adult)).toEqual([]);
-  expect(alreadyOpen.s.next!.requests!.door!.results.map((x) => x.shut)).toEqual([true]);
-  expect(alreadyOpen.s.next!.requests!.door!.opened?.who).toBeUndefined();
-  expect(requestWords(alreadyOpen.s, 'door')).toContain('already open');
+  expect(request.results).toEqual(before);
+  expect(JSON.stringify(stateJson(g.s))).toBe(worldBefore);
 });

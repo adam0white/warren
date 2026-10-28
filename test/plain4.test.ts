@@ -1,5 +1,4 @@
 import { expect, it } from 'vitest';
-import { DAY } from '../src/sim/calendar.ts';
 import { act, advance, fingerprint, load, newGame, replay, save } from '../src/sim/game.ts';
 import { idx, K, SURF } from '../src/sim/grid.ts';
 import { VISIT_TERMS } from '../src/sim/people.ts';
@@ -7,22 +6,14 @@ import { bellStateWords } from '../src/ui/room-safety.ts';
 import { displayWords } from '../src/ui/words.ts';
 import { latestWorkWords } from '../src/ui/work.ts';
 
-it('groups actual repeated bell deferrals once without changing recorded replies or exact replay', () => {
+it('projects a labeled grouped bell reply without changing it, and retains exact replay', () => {
   const g = newGame(7);
-  for (let h = 0; h < 48; h++) {
-    if (h % 6 === 0) act(g, { verb: 'bell' });
-    advance(g, g.s.minute + DAY / 24);
-  }
+  act(g, { verb: 'bell' });
+  advance(g, g.s.minute + 60);
+  const raw =
+    'Meryem and others gave the same reply. Meryem said: “I cannot do it now. After I finish this task (eat at the hearth), I will do it.”';
   const before = JSON.stringify(g.s);
-  const grouped = g.s.notes.filter(
-    (n) => n.text.includes('gave the same reply') && n.text.includes('After I'),
-  );
-  expect(grouped.length).toBeGreaterThan(0);
-  for (const n of grouped) {
-    const shown = displayWords(n.text);
-    expect(shown).toMatch(/and the others will come after they [^.]+\./);
-    expect(shown).not.toMatch(/gave the same reply|said:|I will do it|\(/);
-  }
+  expect(displayWords(raw)).toMatch(/Meryem and the others will come after they eat at the hearth/);
   expect(JSON.stringify(g.s)).toBe(before);
   const exported = save(g);
   expect(fingerprint(load(exported).s)).toBe(exported.fingerprint);
@@ -63,7 +54,11 @@ it('projects actual scout notes and a supplied Havva shaft note without changing
   const g = newGame(7);
   const cell = idx(5, SURF);
   g.s.hill.kind[cell] = K.open;
-  advance(g, g.s.raids[0]!.riders);
+  const raid = g.s.raids[0]!;
+  raid.smoke = g.s.minute + 30;
+  raid.riders = g.s.minute + 60;
+  raid.leave = g.s.minute + 120;
+  advance(g, raid.riders);
   const scout = g.s.notes.find((n) => n.text.includes('was still in view there.'));
   expect(scout).toBeDefined();
   expect(displayWords(scout!.text)).toContain('could still be seen from there.');
@@ -79,7 +74,11 @@ it('projects actual scout notes and a supplied Havva shaft note without changing
 
 it('names the ringing bell only for an active real call', () => {
   const g = newGame(7);
-  advance(g, g.s.raids[0]!.smoke);
+  const raid = g.s.raids[0]!;
+  raid.smoke = g.s.minute + 30;
+  raid.riders = g.s.minute + 60;
+  raid.leave = g.s.minute + 120;
+  advance(g, raid.smoke);
   act(g, { verb: 'bell' });
   expect(bellStateWords(g.s)).toContain('The bell keeps ringing until the riders leave.');
   g.s.bell!.until = g.s.minute;

@@ -1,0 +1,22 @@
+// Retired 2026-10-28: HF3 numerical/dialogue expectation required up to 60 simulated days.
+it('keeps actually heard continued-digging advice on the marked face in the seeded encounter', () => {
+  const g = newGame(7, '0.7.0', undefined, 'warren-next/1');
+  const bot = newBot();
+  for (let i = 0; i < 2880; i++) {
+    botStep(g, bot);
+    if (
+      !g.s.next!.discussion &&
+      faces(g.s.hill).some((f) => g.s.hill.kind[f.face] === K.loose && g.s.hill.known[f.face])
+    )
+      act(g, { verb: 'discuss-cut' });
+    advance(g, g.s.minute + QUANTUM);
+    if (g.s.next!.discussion?.endedAt !== undefined) break;
+  }
+  const d = g.s.next!.discussion!;
+  expect(d.statements.map((row) => row.stance)).toEqual(['continue', 'continue']);
+  expect(d.statements.every((row) => row.heard)).toBe(true);
+  expect(d.exchange).toBe(false);
+  checkLocalAdvice(g, d.statements.at(-1)!);
+  const s = save(g);
+  expect(fingerprint(replay(s.seed, s.inputs, s.minute, s.game, s.chapter, s.config).s)).toBe(s.fingerprint);
+});

@@ -1,4 +1,4 @@
-import type { Person } from '@adam0white/human-framework';
+import type { PersonReading as Person } from '../sim/hf4.ts';
 
 /** Host wording only. HF supplies complete sentences for fresh games. */
 /** Translate setting titles only at the display boundary. */

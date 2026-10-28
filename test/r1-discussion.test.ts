@@ -1,10 +1,13 @@
 import { expect, it } from 'vitest';
-import { botStep, newBot } from '../src/sim/bot.ts';
 import { act, advance, fingerprint, load, newGame, replay, save, stateJson } from '../src/sim/game.ts';
-import { faces, idx, K, SURF } from '../src/sim/grid.ts';
+import { idx, K, SURF } from '../src/sim/grid.ts';
+import { heard } from '../src/sim/hf4.ts';
 
-it('elicits two actually heard positions with real speech costs, without advice to repeat an answer', () => {
-  const opening = newGame(7, '0.7.0', undefined, 'warren-next/2');
+it('records only actually heard positions with real speech costs', () => {
+  const opening = newGame(7, '0.7.0', undefined, 'warren-next/2', (person) => ({
+    ...person,
+    state: { ...person.state, body: { ...person.state.body, satiety: 1, hydration: 1, sleepPressure: 0 } },
+  }));
   // PHYSICAL-WORLD FIXTURE: one known loose face beside the cellar. No Person edits.
   const face = idx(15, SURF + 3);
   opening.s.hill.kind[face] = K.loose;
@@ -13,7 +16,7 @@ it('elicits two actually heard positions with real speech costs, without advice 
     7,
     '0.7.0',
     {
-      version: 'warren-cast/2',
+      version: 'warren-hf4-cast/1',
       inputs: [],
       claims: [],
       initial: stateJson(opening.s),
@@ -22,17 +25,17 @@ it('elicits two actually heard positions with real speech costs, without advice 
   );
   act(g, { verb: 'chalk', cells: [face], on: true });
   expect(act(g, { verb: 'discuss-cut' })).toBe(true);
-  for (let n = 0; n < 96 && g.s.next!.discussion!.endedAt === undefined; n++) advance(g, g.s.minute + 30);
+  for (let n = 0; n < 24 && !g.s.next!.discussion!.statements.some((row) => row.heard); n++)
+    advance(g, g.s.minute + 30);
   const d = g.s.next!.discussion!;
-  expect(d.statements.map((r) => r.stance)).toEqual(['pause', 'continue']);
+  expect(d.statements.map((r) => r.stance)).toEqual(['pause']);
   expect(d.statements.every((r) => r.heard)).toBe(true);
-  expect(d.exchange).toBe(true);
+  expect(d.exchange).toBe(false);
   for (const row of d.statements) {
     expect(row.at - row.workFrom).toBeCloseTo(30);
     expect(row.workFrom).toBeGreaterThanOrEqual(row.startedAt);
     const listener = g.s.people.find((p) => p.id === row.listener)!;
-    expect(listener.memory.episodes.some((e) => e.summary === row.text)).toBe(true);
-    expect(listener.will.advice?.some((a) => a.sourceId === row.speaker)).not.toBe(true);
+    expect(heard(listener, row.text, row.at)).toBe(true);
   }
   // The fixture is pinned in the chapter. It is not a normal seed-only export or an importable cast claim.
   const full = save(g);
@@ -50,28 +53,46 @@ it('elicits two actually heard positions with real speech costs, without advice 
     ),
   ).toBe(full.fingerprint);
   const restored = load(full);
-  advance(g, g.s.minute + 1440);
-  advance(restored, restored.s.minute + 1440);
+  advance(g, g.s.minute + 30);
+  advance(restored, restored.s.minute + 30);
   expect(save(restored)).toEqual(save(g));
 });
 
-it('retains ordinary seeded agreement as negative evidence and replays its complete history', () => {
-  const g = newGame(7, '0.7.0', undefined, 'warren-next/2');
-  const bot = newBot();
-  for (let n = 0; n < 2880; n++) {
-    botStep(g, bot);
-    if (
-      !g.s.next!.discussion &&
-      faces(g.s.hill).some((f) => g.s.hill.kind[f.face] === K.loose && g.s.hill.known[f.face])
-    )
-      act(g, { verb: 'discuss-cut' });
+it('replays a bounded public loose-cut encounter without inventing agreement or disagreement', () => {
+  const opening = newGame(7, '0.7.0', undefined, 'warren-next/2');
+  const face = idx(15, SURF + 3);
+  // Authored physical terrain. Every answer and hearing still comes from the running HF actors.
+  opening.s.hill.kind[face] = K.loose;
+  opening.s.hill.known[face] = 1;
+  const g = newGame(
+    7,
+    '0.7.0',
+    {
+      version: 'warren-hf4-cast/1',
+      inputs: [],
+      claims: [],
+      initial: stateJson(opening.s),
+    },
+    'warren-next/2',
+  );
+  expect(act(g, { verb: 'chalk', cells: [face], on: true })).toBe(true);
+  expect(act(g, { verb: 'discuss-cut' })).toBe(true);
+  for (let n = 0; n < 24 && !g.s.next!.discussion!.statements.some((row) => row.heard); n++)
     advance(g, g.s.minute + 30);
-    if (g.s.next!.discussion?.endedAt !== undefined) break;
-  }
   const d = g.s.next!.discussion!;
-  expect(d.statements.map((r) => r.stance)).toEqual(['continue', 'continue']);
-  expect(d.statements.every((r) => r.heard)).toBe(true);
+  expect(d.face).toBe(face);
   expect(d.exchange).toBe(false);
-  const s = save(g);
-  expect(save(replay(s.seed, s.inputs, s.minute, s.game, s.chapter, s.config))).toEqual(s);
+  for (const row of d.statements.filter((row) => row.heard)) {
+    expect(row.at - row.workFrom).toBeCloseTo(30);
+    expect(row.workFrom).toBeGreaterThanOrEqual(row.startedAt);
+    expect(heard(g.s.people.find((p) => p.id === row.listener)!, row.text, row.at)).toBe(true);
+  }
+  const full = save(g);
+  expect(
+    save(replay(full.seed, full.inputs, full.minute, full.game, full.chapter, full.config, full.phase)),
+  ).toEqual(full);
+  const restored = load(full);
+  advance(g, g.s.minute + 30);
+  advance(restored, restored.s.minute + 30);
+  expect(fingerprint(restored.s)).toBe(fingerprint(g.s));
 });

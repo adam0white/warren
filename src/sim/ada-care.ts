@@ -1,5 +1,6 @@
 /** A finite referenced dependent record. Ada remains Kian's ward, not another autonomous cast actor. */
-import type { Commitment, Person } from '@adam0white/human-framework';
+import type { Commitment, Person } from './hf4.ts';
+import { enqueue } from './hf4.ts';
 import type { WarrenState } from './warren.ts';
 export interface WatchCare {
   agreement: {
@@ -218,7 +219,7 @@ export function requestAdaEnd(s: WarrenState): boolean {
   s.flags['released:kian'] = s.minute + 1;
   for (const g of p.agenda.goals)
     if (g.status === 'active' && ['refuge', 'canonical-role', 'between-games-assignment'].includes(g.id))
-      g.status = 'abandoned';
+      enqueue(s, 'agenda.requested', { person: p.id, request: { type: 'abandon-goal', goalId: g.id } });
   s.notes.push({
     at: s.minute,
     kind: 'story',

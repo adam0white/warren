@@ -1,15 +1,18 @@
-# HF4 port blocked — 2026-10-28
+# HF4 candidate resumed — 2026-10-28
 
-Remaining: G2 lived-history admission and the G6 workload constraint, then retry
-the preserved candidate. Next blocker review: 2026-11-03. Warren remains on HF3.
-No owner question is pending. See the new dated section in docs/design.md and
-the standalone public consumer under docs/probes/hf4-g2-2026-10-28.
+Remaining: full lane, signed source, one hosted review, exact source and merged CI, deployment and cleanup. Adam accepts feel separately.
 
-The candidate and untracked files are saved under
-~/code/.lab-scratch/stale-patches/warren-codex-hf4-20261028.{patch,untracked.tar.gz,manifest.json}.
-Base: 82a006ee31687eed66b7e2b07838535914eb7f25. The failed carryover is an actual
-projected lived passport, not an old save or a missing 3.x export. Its complete
-HF source archive replays exactly on 4.5.2. No production port is claimed.
+The target is published HF 4.7.0 with immutable client 0.5.3 / kit 0.5.21. Release SHA256 values were verified. Production remains HF3 until delivery.
+
+Correction to PR #8: G2 was not blocked. The receiving world omitted actual place/group declarations. Published `world.facts` registers those entities and admits the unchanged lived Meryem passport. The original incomplete-world refusal remains a negative control.
+
+Recovered source: `warren-codex-hf4-correct-20261028-final.patch` and `.untracked.tar.gz` under `~/code/.lab-scratch/stale-patches/`, base `8cdef1fc31055f6d6ad53302a8c4c63be82f9a4b`.
+
+Current 4.7 control passes actual marked cutting, full game/HF replay, pending/active and partial continuation, and read-only inspection/preview. Full HF hash: `6664ddd5e91d72517d0275d22388ed090896714b5d6ffe036d0584cec0755bef`. Exact active330 golden remains asserted in tests. Focused16/16 passed.
+
+The public menu offers Open a saved hill at `/file/`, People across games and Pace. Debug shows app/HF versions. The 360×690 headless file control opened a real saved hill and observed zero native database opens. File play strips shared ownership and cannot write native saves or start a replacement hill.
+
+One public HF call runs per simulation frame. Atomic overruns remain possible; timing controls do not prove phone or worst-case performance. Saving visibly pauses play. See the current and historical controls in docs/playtests.
 
 ## Earlier handoff evidence
 

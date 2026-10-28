@@ -1,0 +1,2 @@
+# Historical test sources are retained byte for byte, including original whitespace.
+docs/history/hf3-tests/*.txt -whitespace

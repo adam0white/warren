@@ -1,3 +1,4 @@
+import { cellsWithUse, faces, K, USE } from './grid.ts';
 /**
  * SCOPE: one authored encounter about an actual marked, known loose cut. Yusuf and Meryem
  * may spend real travel/work time to urge caution or continued digging. HF chooses among
@@ -8,9 +9,8 @@
  * next/1 retains its scoped standing advice for exact historical replay. No estimate changes.
  * No statement moves grain, completes excavation, creates a promise or overrides the chalk.
  */
-import type { Activity, Affordance, Outcome, Person, Suggestion } from '@adam0white/human-framework';
-import { interruptPerson } from '@adam0white/human-framework';
-import { cellsWithUse, faces, K, USE } from './grid.ts';
+import type { Activity, Affordance, Outcome, Person, Suggestion } from './hf4.ts';
+import { heard, interruptPerson } from './hf4.ts';
 import { communityOf, note, positionAt, type WarrenState } from './warren.ts';
 
 export interface CutDiscussion {
@@ -194,7 +194,7 @@ export function observeCutDiscussion(s: WarrenState): void {
   if (!d) return;
   for (const row of d.statements) {
     const q = s.people.find((p) => p.id === row.listener);
-    row.heard ||= !!q?.memory.episodes.some((e) => e.summary === row.text && e.at >= row.at);
+    row.heard ||= !!q && heard(q, row.text, row.at);
   }
   if (d.statements.length === 2 && d.statements.every((row) => row.heard)) d.endedAt ??= s.minute;
   if (

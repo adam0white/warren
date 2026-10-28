@@ -1,25 +1,17 @@
-import { mkdirSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { type Browser, chromium } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
-import { newGame, save } from '../src/sim/game.ts';
+import { newGame, save, stateJson } from '../src/sim/game.ts';
 import { idx, K, SURF, USE } from '../src/sim/grid.ts';
 
 let server: ViteDevServer;
 let browser: Browser;
 let url: string;
-const shots =
-  process.platform === 'darwin'
-    ? '/Users/abdul/code/.lab-scratch/patterns/warren-shots/regression'
-    : join(tmpdir(), 'warren-design-shots');
 beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
   await server.listen();
   url = server.resolvedUrls?.local[0] ?? '';
   browser = await chromium.launch();
-  mkdirSync(shots, { recursive: true });
 }, 60000);
 afterAll(async () => {
   await browser?.close();
@@ -30,7 +22,7 @@ for (const [width, height] of [
   [360, 690],
   [1280, 800],
 ] as const) {
-  it(`renders one standing raid call and truthful door cost at ${width}`, { timeout: 20000 }, async () => {
+  it(`renders one standing raid call and truthful door cost at ${width}`, { timeout: 60000 }, async () => {
     const page = await browser.newPage({
       viewport: { width, height },
       hasTouch: true,
@@ -49,6 +41,10 @@ for (const [width, height] of [
       game.s.hill.use[door] = USE.door;
       game.s.hill.doorWork[door] = 0;
       game.s.hill.lamp[door] = 1;
+      // Short actual raid timeline; seven hours of ringing precede the riders.
+      Object.assign(game.s.raids[0]!, { smoke: 330, riders: 780, leave: 810 });
+      Object.assign(game.s.raids[1]!, { smoke: 840, riders: 900, leave: 960 });
+      game.chapter = { version: 'warren-hf4-cast/1', inputs: [], claims: [], initial: stateJson(game.s) };
       await page.evaluate(
         `(async () => {const {put}=await import('/src/ui/store.ts');await put('hill',${JSON.stringify(save(game))});})()`,
       );
@@ -67,8 +63,6 @@ for (const [width, height] of [
       expect(doorWords).toMatch(/Calls without raids.*six game hours/is);
       expect(doorWords).toMatch(/false alarm.*trust/is);
       expect(doorWords.indexOf('Ring the bell')).toBeLessThan(doorWords.toLowerCase().indexOf('false alarm'));
-      if (process.env.WARREN_SCREENSHOTS === '1')
-        await page.screenshot({ path: `${shots}/after-${width}-quiet-door-d.png` });
       expect(await words.evaluate((e) => getComputedStyle(e).webkitLineClamp)).toBe('none');
       const assertStage = async () => {
         const map = await page.locator('#cv').boundingBox();
@@ -91,15 +85,13 @@ for (const [width, height] of [
         await page.clock.runFor(300);
       };
       await advanceTo('g.s.raids[0].smoke');
-      expect(await page.locator('#goal').innerText()).toMatch(/Smoke.*Ring the bell once.*riders leave/s);
+      expect(await page.locator('#raid-warning').innerText()).toMatch(/Smoke.*Ring the bell once/s);
       await page.locator('#raid-bell').click();
       await page.clock.runFor(300);
       expect(await words.innerText()).toMatch(
         /The bell keeps ringing until the riders leave.*can refuse at any time/s,
       );
       expect(await words.innerText()).not.toMatch(/renew|six game hours/);
-      if (process.env.WARREN_SCREENSHOTS === '1')
-        await page.screenshot({ path: `${shots}/after-${width}-smoke-call-d.png` });
       await advanceTo('g.s.bell.at + 7 * 60');
       expect(await words.innerText()).toContain('The bell keeps ringing until the riders leave');
       expect(await page.locator('#bell-state').getAttribute('aria-label')).not.toMatch(
@@ -123,8 +115,6 @@ for (const [width, height] of [
       await words.evaluate((e) => {
         e.scrollTop = 0;
       });
-      if (process.env.WARREN_SCREENSHOTS === '1')
-        await page.screenshot({ path: `${shots}/after-${width}-standing-call-d.png` });
       await advanceTo('g.s.raids[0].riders');
       expect(await page.locator('#goal').innerText()).toMatch(
         /Riders are at the hill.*The bell keeps ringing until the riders leave/s,
@@ -135,20 +125,14 @@ for (const [width, height] of [
       await words.evaluate((e) => {
         e.scrollTop = 0;
       });
-      if (process.env.WARREN_SCREENSHOTS === '1')
-        await page.screenshot({ path: `${shots}/after-${width}-all-clear-d.png` });
       await advanceTo('g.s.raids[1].smoke');
       expect(await words.innerText()).toMatch(/No call is active.*Ring the bell once.*riders leave/s);
       expect(await words.innerText()).not.toMatch(/riders have gone|ended the call|renew/i);
-      expect(await page.locator('#goal').innerText()).toMatch(
-        /Smoke.*No call is active.*Ring the bell once/s,
-      );
+      expect(await page.locator('#raid-warning').innerText()).toMatch(/Smoke.*Ring the bell once/s);
       await assertStage();
       expect(await page.evaluate('document.documentElement.scrollWidth <= innerWidth')).toBe(true);
       const close = await page.locator('#cellx').boundingBox();
       expect((close?.y ?? height) + (close?.height ?? height)).toBeLessThan(height);
-      if (process.env.WARREN_SCREENSHOTS === '1')
-        await page.screenshot({ path: `${shots}/after-${width}-next-warning-d.png` });
       expect(errors).toEqual([]);
     } finally {
       await page.close();

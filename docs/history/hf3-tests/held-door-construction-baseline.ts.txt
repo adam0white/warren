@@ -1,0 +1,54 @@
+import { readFileSync } from 'node:fs';
+import { chromium } from 'playwright-core';
+import { createServer } from 'vite';
+import { expect, it } from 'vitest';
+import { act, advance, load, newGame, replay, type Saved, save } from '../src/sim/game.ts';
+import { idx, SURF } from '../src/sim/grid.ts';
+import { requestWords } from '../src/sim/resident-requests.ts';
+import type { _debug } from '../src/ui/app.ts';
+
+declare global {
+  interface Window {
+    __warren: typeof _debug;
+  }
+}
+
+const cell = idx(18, SURF + 1);
+function heldHill() {
+  const g = newGame(7);
+  expect(act(g, { verb: 'door', cell })).toBe(true);
+  while (g.s.hill.doorWork[cell] && g.s.minute < 6000) advance(g, g.s.minute + 30);
+  expect(g.s.hill.doorWork[cell]).toBe(0);
+  return g;
+}
+it('tests the held hill through costed HF choices, keeping old input semantics and every trial result', () => {
+  const g = heldHill();
+  const before = save(g);
+  expect(act(g, { verb: 'test-door', who: 'meryem', cell })).toBe(false);
+  expect(save(g)).toEqual(before);
+  expect(act(g, { verb: 'try-door', who: 'yusuf', cell })).toBe(true);
+  expect(g.s.next).toBeUndefined();
+  expect(g.s.edition).toBe('0.6.0');
+  expect(g.s.hill.shut[cell]).toBe(0);
+  for (let n = 0; n < 160 && !g.s.doorTrials![0]!.endedAt; n++) advance(g, g.s.minute + 30);
+  const r = g.s.doorTrials![0]!;
+  expect(r.results.map((x) => x.shut)).toEqual([true, false]);
+  for (const result of r.results) {
+    expect(result.at - result.workFrom).toBeGreaterThanOrEqual(8);
+    expect(result.workFrom).toBeGreaterThanOrEqual(result.startedAt);
+  }
+  expect(r.answers.some((a) => a.verdict === 'assented')).toBe(true);
+  // Endogenous sleep refusal, with no Person edits, forced choice or skipped night.
+  expect(r.answers.some((a) => a.verdict === 'refused' && a.reason === 'asleep')).toBe(true);
+  expect(g.s.notes.some((n) => n.text.includes('rolled the door shut for the test'))).toBe(true);
+  expect(g.s.notes.some((n) => n.text.includes('reopened the tested door'))).toBe(true);
+  expect(g.s.stats.bell).toEqual(before.state.stats.bell);
+  expect(g.s.bell).toBeNull();
+  const finished = structuredClone(r);
+  expect(act(g, { verb: 'try-door', who: 'meryem', cell })).toBe(true);
+  expect(act(g, { verb: 'withdraw-door-trial' })).toBe(true);
+  expect(g.s.doorTrials![0]).toEqual(finished);
+  expect(g.s.doorTrials).toHaveLength(2);
+  expect(requestWords(g.s, 'door')).toContain('withdrawn');
+  exactReplay(g);
+});

@@ -1,4 +1,3 @@
-import { injure, sicken } from '@adam0white/human-framework';
 import { describe, expect, it } from 'vitest';
 import { newGame } from '../src/sim/game.ts';
 import { idx, SURF, USE } from '../src/sim/grid.ts';
@@ -9,47 +8,23 @@ function fixture() {
   const p = s.people[0];
   if (!p) throw new Error('Missing founder');
   delete s.trips[p.id];
-  Object.assign(p.body, {
-    satiety: 1,
-    hydration: 1,
-    health: 1,
-    sleepPressure: 0,
-    sleepDebt: 0,
-    exertion: 0,
-    pain: 0,
-    injuries: [],
-    illnesses: [],
-  });
   return { s, p };
 }
 
 describe('plain person help', () => {
-  it('does not call an ill or weak person well because they have no perceived pain', () => {
+  it('keeps current condition unknown and identifies recorded injury as historical', () => {
     const { s, p } = fixture();
-    sicken(p, { kind: 'fever', severity: 0.4, trendPerDay: 0.1, contagious: false });
-    expect(personHelpWords(s, p)).toContain('ill');
-    expect(personHelpWords(s, p)).not.toContain('does not seem to need');
-    p.body.illnesses = [];
-    p.body.health = 0.4;
-    expect(personHelpWords(s, p)).toContain('poor health');
-  });
-
-  it('reports deprivation, exhaustion and an actual injury without meters', () => {
-    const { s, p } = fixture();
-    Object.assign(p.body, { satiety: 0.1, hydration: 0.1, sleepPressure: 1, exertion: 1 });
-    injure(p, { part: 'leg', severity: 0.4, healRatePerDay: 0.1, bleeding: 0.1 });
+    expect(personHelpWords(s, p)).toContain(`${p.name}’s current condition is unavailable.`);
+    s.notes.push({ at: s.minute, kind: 'hurt', who: p.id, text: 'An injury was recorded.', weight: 2 });
     const words = personHelpWords(s, p);
-    expect(words).toContain('food');
-    expect(words).toContain('water');
-    expect(words).toContain('rest');
-    expect(words).toMatch(/bleeding/i);
-    expect(words).not.toMatch(/\d|%/);
+    expect(words).toContain('The journal records an earlier injury: An injury was recorded.');
+    expect(words).not.toMatch(/needs food|needs water|needs rest|poor health/i);
   });
 
   it('does not turn ordinary above-ground work into a rescue alert', () => {
     const { s, p } = fixture();
     s.pos[p.id] = idx(17, SURF - 1);
-    expect(personHelpWords(s, p)).toBe('He does not seem to need food, water, rest or care right now.');
+    expect(personHelpWords(s, p)).toBe(`${p.name}’s current condition is unavailable.`);
     const raid = s.raids[0];
     if (!raid) throw new Error('Missing raid');
     raid.stage = 'riders';
@@ -65,7 +40,7 @@ describe('plain person help', () => {
     s.hill.shut[idx(18, SURF + 1)] = 1;
     s.pos[p.id] = idx(17, SURF + 3);
     const before = JSON.stringify(s);
-    expect(personHelpWords(s, p)).toBe('He does not seem to need food, water, rest or care right now.');
+    expect(personHelpWords(s, p)).toBe(`${p.name}’s current condition is unavailable.`);
     expect(personHelpWords(s, p)).not.toMatch(/safe|guarantee/i);
     expect(JSON.stringify(s)).toBe(before);
   });

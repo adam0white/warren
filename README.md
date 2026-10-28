@@ -10,7 +10,7 @@
 4. Use **look** to inspect stone and people. Open **Journal** for events and **What the village has done** for progress. Tap the people count to inspect shelter conditions.
 5. Watch for smoke and riders. Ring the **bell** to call people below. People weigh the call; it does not command them.
 
-Choose Slow, Steady or Fast. The menu pauses play. Rules 0.7 slows gameplay readings; earlier rules retain their reading holds. Older hills without away rules wait while you are away.
+Choose Slow, Steady or Fast. The Game menu, village sheet and person cards opened from it pause play. Journal and growth readings slow play. Away catch-up stops at new records, pending choices or danger. Older HF3 hills require a fresh start.
 
 Drag in look mode to move the view. Two fingers move and pinch the view. Mouse wheel pans; Ctrl+wheel zooms. The +, − and Fit hill buttons also control the view.
 
@@ -18,7 +18,7 @@ Every new hill starts with rules 0.7.0 and the existing `warren-rest/1` configur
 
 One real minute away plays one game minute through ordinary simulation. Play stops for events, pending choices or a computation limit. The return reading reports completed play and unplayed time; unplayed time is not banked. You can invite Yusuf Usta and Meryem to discuss a marked, known loose cut, or stop waiting. Speech needs travel, thirty work minutes and an awake listener at the hearth. HF chooses their actions. Hearing a position does not force agreement or disagreement. You can ask an adult to talk about rest. A further conversation needs an actual mutually heard disagreement. People may decline. Door tests remain deliberate requests on a finished door.
 
-Native Watch preparation retains its existing refusal for next/rest configurations, including new hills. Older supported hills retain their existing Watch route. No saved hill is upgraded to enable an action.
+HF4 refuses older Watch handoffs. Keep older notebooks in their original version; start a fresh hill here.
 
 ## Saves, recording and files
 
@@ -28,11 +28,11 @@ The ordinary menu contains Resume, Feedback, Full screen, All games, Recording a
 
 Feedback’s optional **I'm stopping** and **I'm confused** choices change only the local draft. Tap the selected choice again to clear it. They leave the note field unchanged and send nothing until you choose **Submit**. Submit includes the selected choice with any verdict and note through the existing sharing path.
 
-The menu offers a link to the central browser shelf for cast controls. Shared people continue automatically on a fresh hill. Resume keeps the people, history and local receipts saved in that hill; it does not replace them from the shelf. Download and status sit in **Debug**, which starts collapsed beside **Lab privacy**. Feedback keeps its version/run preview and download in the same collapsed Debug position. The legacy native-slot file importer is removed until the separate preserving public file route is integrated. Imported files do not establish shared-history ownership.
+The menu offers a link to the central browser shelf for cast controls. Shared people continue automatically on a fresh hill. Resume keeps the people, history and local receipts saved in that hill; it does not replace them from the shelf. **Download this run** is public in the menu. Status sits in **Debug**, which starts collapsed beside **Lab privacy**. Feedback keeps its version/run preview and download in the same collapsed Debug position. **Open a saved hill** opens `/file/`. The file must replay exactly before play. This separate page never writes the hill saved on this device. Imported files do not establish shared-history ownership.
 
-Kian and Meryem have a public **Return to Watch** section on their person cards. Preparing ends only that person’s optional refuge work and tries ordinary play for a quiet checkpoint. Saving requires an owned, supported source. Duties, Ada’s care and the existing edition guards still apply. Generic fresh/fork experiments belong to the central shelf.
+HF4 uses supported available portable people automatically. Occupied, terminal or older unsupported shelf records stay unchanged; a new story cannot overwrite them. Imports have no shelf publication authority. Actor state stays in HF, including retained history and duties. The receiving game validates calendar and reference mappings.
 
-Current save loading requires matching HF package and `plain3` text metadata. A rules edition alone does not guarantee compatibility. Older text versions receive a start-new-game message. Finite historical person-source routes retain their specific identity, role, dialect, duty and care checks. Imported files do not gain ownership of browser-shelf records. The selected Kian/Meryem native Watch handoff is a bounded route; it does not establish general cross-host ownership or atomic publication. Keep complete exports and raw source histories.
+Current exports include the exact HF4 archive, complete host state and ordered player inputs. Unsupported older saves are refused with a keep-file/start-fresh message. Current exports must replay exactly on their pinned version. Person cards say when current condition information is unavailable; private bodily needs and bell trust are not displayed as outward observations. Earlier injuries remain dated journal records.
 
 ## Human Framework and versions
 
@@ -40,11 +40,11 @@ The [Human Framework](https://human.adamwhite.work/) supplies people’s needs, 
 
 | Value                                    | Current source             |
 | ---------------------------------------- | -------------------------- |
-| App package                              | 0.6.0                      |
+| App package                              | 0.7.0                      |
 | Ordinary new-hill rules / configuration  | 0.7.0 / warren-rest/1      |
-| HF npm package                           | 3.0.0                      |
-| HF engine                                | 2.23.0                     |
-| Immutable lab-client / lab-kit artifacts | 0.4.15 / 0.5.17            |
+| HF npm package                           | 4.7.0                      |
+| HF engine                                | 4.7.0                      |
+| Immutable lab-client / lab-kit artifacts | 0.5.3 / 0.5.21             |
 | TypeScript                               | 7.0.2; support requires 7+ |
 
 Package version, rules edition and engine version have different meanings. `package.json` and the lockfile pin dependencies. `/release.json` identifies a deployed build. See [HANDOFF](HANDOFF.md) for dated deployment evidence and remaining owner review.

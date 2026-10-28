@@ -6,7 +6,7 @@ import { doorDetailWords, doorWords } from '../src/ui/door-help.ts';
 
 const door = idx(17, SURF + 2);
 function state() {
-  const s = newGame(7, '0.4.0').s;
+  const s = newGame(7).s;
   s.hill.use[door] = USE.door;
   s.hill.doorWork[door] = 0;
   return s;
@@ -15,8 +15,8 @@ function state() {
 describe('door responses', () => {
   it('agrees with actual shut-door offers for alarm, age, reach and carving prerequisites', () => {
     const s = state();
-    const adult = s.people.find((p) => p.id === 'hasan');
-    const child = s.people.find((p) => p.id === 'zehra');
+    const adult = s.people.find((p) => p.id === 'meryem');
+    const child = s.people.find((p) => p.id === 'tariq');
     if (!adult || !child) throw new Error('Missing founder fixtures');
     // A short open shaft makes the finished door reachable from either person.
     for (let y = SURF; y <= SURF + 2; y++) s.hill.kind[idx(17, y)] = K.open;

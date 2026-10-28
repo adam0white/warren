@@ -1,9 +1,10 @@
 import { expect, it } from 'vitest';
-import { act, advance, newGame, save } from '../src/sim/game.ts';
+import { act, newGame, save } from '../src/sim/game.ts';
 import { idx, K, SURF, USE } from '../src/sim/grid.ts';
 import { receivedVisit } from '../src/sim/visits.ts';
 import { historyTime } from '../src/ui/event-history.ts';
 import { chalkFeedback, selectedPlan, yusufPlanWords } from '../src/ui/selected-plan.ts';
+import { authoredGame } from './authored-opening.ts';
 
 it('contrasts one copied known hill: first connection, shut door, shaft shortcut and second route', () => {
   const s = newGame(7).s;
@@ -129,13 +130,10 @@ it('keeps the complete known eight-step route unchanged by a hidden two-cell sho
 });
 
 it('binds the actual public Yusuf invitation note to current chalk without inventing endpoints or changing raw state', () => {
-  const g = newGame(7, '0.7.0', undefined, 'warren-rest/1');
-  advance(g, 360);
-  expect(g.s.people.find((p) => p.id === 'yusuf')!.activity).not.toBeNull();
+  // A new 06:00 opening, not an elapsed journey or a fabricated HF receipt.
+  const g = authoredGame(7, 360, 'warren-rest/1');
   expect(act(g, { verb: 'visit', who: 'yusuf' })).toBe(true);
-  expect(g.s.flags['invitation-pending:yusuf']).toBe(361);
-  expect(receivedVisit(g.s, 'yusuf')).toBeUndefined();
-  advance(g, 390);
+  expect(g.s.flags['visit:yusuf']).toBe(361);
   const receipt = receivedVisit(g.s, 'yusuf')!;
   expect(receipt.text).toContain('A mark must show others when they can stop me.');
   expect(receipt.at).toBe(360);

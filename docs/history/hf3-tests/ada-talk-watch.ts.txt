@@ -1,0 +1,67 @@
+it('uses the existing Ada care contract as context while real care and return still compete', () => {
+  const old = JSON.parse(
+    readFileSync(new URL('./fixtures/genuine-care-ended.json', import.meta.url), 'utf8'),
+  );
+  const opening = newGame(7);
+  // Declared host fixture: retain the complete archived starting care record.
+  // Persons are untouched. This does not claim a new canonical Watch admission.
+  opening.s.adaVisit = structuredClone(old.chapter.initial.adaVisit);
+  const g = newGame(7, '0.6.0', {
+    version: 'warren-cast/2',
+    inputs: [],
+    claims: [],
+    initial: stateJson(opening.s),
+  });
+  expect(act(g, { verb: 'care-ada' })).toBe(true);
+  expect(act(g, { verb: 'ask-ada' })).toBe(true);
+  while (g.s.minute < 1200 && !g.s.adaTalks![0]!.endedAt) advance(g, g.s.minute + 30);
+  const r = g.s.adaTalks![0]!;
+  expect(g.s.adaVisit!.careCount).toBeGreaterThan(0);
+  expect(r.statements[0]?.words, JSON.stringify(r)).toContain(
+    'We have shared more food, water and rest here',
+  );
+  expect(r.statements[0]?.words).toContain('return to the Watch together');
+  expect(r.statements[0]!.at).toBeLessThan(g.s.adaVisit!.returnBy);
+  const care = structuredClone(g.s.adaVisit);
+  expect(r.statements.length).toBeGreaterThan(0);
+  const full = JSON.parse(JSON.stringify(save(g)));
+  const restored = load(full);
+  const replayed = replay(full.seed, full.inputs, full.minute, full.game, full.chapter, full.config);
+  expect(save(replayed)).toEqual(full);
+  expect(g.s.adaVisit).toEqual(care);
+  for (const run of [restored, replayed]) advance(run, full.minute + 1440);
+  expect(save(restored)).toEqual(save(replayed));
+  expect(restored.s.adaVisit!.returnBy).toBe(care!.returnBy);
+  const before = JSON.stringify(save(restored));
+  expect(act(restored, { verb: 'ask-ada' })).toBe(false);
+  expect(JSON.stringify(save(restored))).toBe(before);
+});
+
+it('dates literal imported care facts without claiming a new observation or rewriting provenance', () => {
+  const bytes = readFileSync(new URL('./fixtures/genuine-care-ended.json', import.meta.url), 'utf8');
+  const source = JSON.parse(bytes);
+  const control = newGame(source.seed, source.game, source.chapter);
+  advance(control, 750);
+  const g = newGame(source.seed, source.game, source.chapter);
+  const care = structuredClone(g.s.adaVisit);
+  expect(act(g, { verb: 'ask-ada' })).toBe(true);
+  advance(g, 750);
+  const r = g.s.adaTalks![0]!;
+  expect(r.statements.length).toBe(2);
+  const row = r.statements[0]!;
+  expect(row.words).toContain(
+    `The last care note is from ${row.at - care!.dependent.sourceMinute} game minutes ago`,
+  );
+  expect(row.words).toContain('It recorded that she had eaten');
+  expect(row.words).toContain('I have no newer observation of her condition');
+  expect(row.words).not.toContain('looks rested');
+  expect(g.s.adaVisit).toEqual(control.s.adaVisit);
+  expect(JSON.stringify(g.chapter)).toBe(JSON.stringify(source.chapter));
+  expect(readFileSync(new URL('./fixtures/genuine-care-ended.json', import.meta.url), 'utf8')).toBe(bytes);
+  const full = save(g);
+  const replayed = replay(full.seed, full.inputs, full.minute, full.game, full.chapter, full.config);
+  expect(save(replayed)).toEqual(full);
+  const restored = load(full);
+  for (const run of [restored, replayed]) advance(run, full.minute + 1440);
+  expect(save(restored)).toEqual(save(replayed));
+});

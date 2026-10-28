@@ -1,3 +1,4 @@
+import { enqueue } from './hf4.ts';
 /** Voluntary bounded disclosures. An invitation reveals a clue, never the larger biography outcome. */
 import { CAST_IDS } from './people.ts';
 import type { WarrenState } from './warren.ts';
@@ -62,7 +63,6 @@ export function releaseVisit(s: WarrenState, id: string): boolean {
     (s.edition !== '0.5.0' && s.edition !== '0.6.0' && s.edition !== '0.7.0') ||
     !CAST_IDS[id] ||
     !p?.body.alive ||
-    p.projects?.currentGoalId ||
     s.raids.some((r) => r.stage === 'riders')
   )
     return false;
@@ -84,7 +84,15 @@ export function releaseVisit(s: WarrenState, id: string): boolean {
       goal.status === 'active' &&
       ['refuge', 'between-games-assignment', 'canonical-role'].includes(goal.id)
     )
-      goal.status = 'abandoned';
+      enqueue(s, 'agenda.requested', { person: p.id, request: { type: 'abandon-goal', goalId: goal.id } });
+  // A release accepted between physical quanta must also withdraw the stale
+  // optional-work offers. Otherwise HF can immediately start another old offer
+  // before the host reaches its next opportunity refresh.
+  if (s.hfPhase) {
+    const revision = (s.hfOffers[id]?.revision ?? 0) + 1;
+    s.hfOffers[id] = { revision, offers: [] };
+    enqueue(s, 'offers.received', { person: id, revision, offers: [] });
+  }
   s.flags[`released:${id}`] = s.minute + 1;
   s.notes.push({
     at: s.minute,

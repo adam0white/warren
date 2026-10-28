@@ -103,18 +103,5 @@ export function eventHistory(g: Game): HistoryEntry[] {
       if (!covered) rows.push({ at: n.at, kind: 'journal', cell: n.cell, text: n.text });
     }
   }
-  // These are retained outcome episodes, not today's activity or condition. Keep
-  // the original summary and status; do not turn a generic outcome into safety credit.
-  for (const p of s.people)
-    for (const e of p.memory.episodes) {
-      if (e.kind !== 'outcome' || !['shut-door', 'open-door'].includes(e.action ?? '')) continue;
-      const cell = e.targetId === undefined ? undefined : Number(e.targetId);
-      rows.push({
-        at: e.at,
-        kind: 'action',
-        cell: Number.isInteger(cell) ? cell : undefined,
-        text: `${name(p.id)} — recorded door action outcome (${e.tags.includes('completed') ? 'completed' : e.tags.includes('interrupted') ? 'interrupted' : 'status unknown'}): ${e.summary} This record does not show how long the door stayed in that state or who was protected.`,
-      });
-    }
   return rows.sort((a, b) => a.at - b.at);
 }

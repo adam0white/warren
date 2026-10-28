@@ -4,19 +4,12 @@
  * minds. The three founding houses are written by hand so that their stories are reliable; families who arrive
  * later are rolled from the seed.
  */
-import {
-  createPerson,
-  MINUTES_PER_YEAR,
-  MUSLIM_CUSTOM,
-  marry,
-  type Person,
-  type PersonSpec,
-  promise,
-  seedTie,
-} from '@adam0white/human-framework';
+import { DEFAULT_NORMS, type PersonAuthoring } from '@adam0white/human-framework';
 import { castForGame } from '@adam0white/lab-client';
 import { DAY } from './calendar.ts';
+import { authoredPerson, MINUTE, type Part } from './hf4.ts';
 import { DRAW, hashUnit, mixSeed, stream } from './rng.ts';
+import { ROLE_GOAL_LABELS, ROLE_TASKS } from './roles.ts';
 
 /** The dig-master's bell: the one voice the player has. */
 export const BELL = 'usta';
@@ -42,8 +35,8 @@ export interface Who {
   name: string;
   age: number;
   sex: 'male' | 'female';
-  traits?: PersonSpec['traits'];
-  values?: PersonSpec['values'];
+  traits?: Partial<PersonAuthoring['state']['traits']>;
+  values?: Partial<PersonAuthoring['state']['values']>;
   skills?: Record<string, number>;
   devout?: boolean;
   trust?: number;
@@ -51,51 +44,51 @@ export interface Who {
   refuge?: number;
 }
 
-const norms = (devout: boolean, honesty: number, age: number): PersonSpec['norms'] =>
-  age < 12
-    ? []
-    : [
-        { normId: 'theft', standing: 'forbidden', conviction: 0.35 + 0.6 * honesty },
-        { normId: 'salah', standing: 'obligatory', conviction: devout ? 0.85 : 0.35 },
-        { normId: 'help-neighbor', standing: 'recommended', conviction: 0.5 },
-      ];
-
-export function makePerson(w: Who, seed: number, now: number, house: string): Person {
-  const honesty = w.traits?.honesty ?? 0.5;
-  const adult = w.age >= 14;
-  const spec: PersonSpec = {
-    id: w.id,
-    name: w.name,
-    seed: mixSeed(
-      seed,
-      DRAW.person,
-      w.id.length,
-      w.id.charCodeAt(0),
-      w.id.charCodeAt(w.id.length - 1),
-      w.age,
-    ),
-    now,
-    bornAt: now - Math.round((w.age + hashUnit(seed, w.age, w.id.length) * 0.9) * MINUTES_PER_YEAR),
-    sex: w.sex,
-    traits: { ...w.traits },
-    values: { tradition: 0.55, security: 0.7, conformity: 0.5, benevolence: 0.6, ...w.values },
-    norms: norms(w.devout ?? false, honesty, w.age),
-    skills: {
-      digging: adult ? 0.3 + 0.2 * hashUnit(seed, w.age, 7) : 0.1,
-      farming: adult ? 0.45 : 0.15,
-      ...w.skills,
-    },
-    voices: [{ voiceId: BELL, trust: w.trust ?? 0.55 }],
-    retention: { trace: 0, chronicleDays: 14 },
-    lexicon: { plainEnglish: true },
-    enable: adult ? { fatigueStore: true } : {},
-    // They live with the raids in mind: safety is not felt as met (engineering assumption).
-    needs: { safety: 0.55 },
+export function makePerson(w: Who, seed: number, now: number, house: string): PersonAuthoring {
+  const p = authoredPerson(w.id, w.name, w.sex, now * MINUTE);
+  p.identity.birthAt =
+    (now - Math.round((w.age + hashUnit(seed, w.age, w.id.length) * 0.9) * 365.25 * 1440)) * MINUTE;
+  p.state.traits = { ...p.state.traits, ...w.traits };
+  p.state.values = {
+    ...p.state.values,
+    tradition: 0.55,
+    security: 0.7,
+    conformity: 0.5,
+    benevolence: 0.6,
+    ...w.values,
   };
-  // Plateau farmers who dig and reap: fit for hard work (engineering assumption).
-  if (adult && w.age < 60) spec.body = { fitness: 0.55 + 0.25 * hashUnit(seed, w.age, 11) };
+  const adult = w.age >= 14,
+    honesty = w.traits?.honesty ?? 0.5;
+  p.state.heldNorms =
+    w.age < 12
+      ? []
+      : ([
+          { normId: 'theft', standing: 'forbidden', conviction: 0.35 + 0.6 * honesty },
+          { normId: 'salah', standing: 'obligatory', conviction: w.devout ? 0.85 : 0.35 },
+          { normId: 'help-neighbor', standing: 'recommended', conviction: 0.5 },
+        ].map((n) => ({
+          ...n,
+          provenance: DEFAULT_NORMS.find((d) => d.id === n.normId)!.provenance,
+        })) as PersonAuthoring['state']['heldNorms']);
+  p.state.skills = Object.entries({
+    digging: adult ? 0.3 + 0.2 * hashUnit(seed, w.age, 7) : 0.1,
+    farming: adult ? 0.45 : 0.15,
+    ...w.skills,
+  }).map(([id, level]) => ({ id, level, practicedMs: 0, lastPracticed: now * MINUTE }));
+  p.state.voices = [{ voiceId: BELL, trust: w.trust ?? 0.55 }];
+  p.state.needs = { ...p.state.needs, safety: 0.55 };
+  if (adult && w.age < 60) p.state.body.fitness = 0.55 + 0.25 * hashUnit(seed, w.age, 11);
+  p.state.habits = [
+    {
+      cue: { placeId: `house:${house}` },
+      action: 'sleep',
+      strength: 0.4,
+      repetitions: 3000,
+      lastAt: now * MINUTE,
+    },
+  ];
   if (adult && w.id !== USTA_ID)
-    spec.goals = [
+    p.state.agenda.goals = [
       {
         id: 'refuge',
         label: 'a refuge under the hill',
@@ -107,31 +100,51 @@ export function makePerson(w: Who, seed: number, now: number, house: string): Pe
           { action: 'make-lamp', amount: 0.04 },
         ],
         importance: Math.min(0.95, (w.refuge ?? 0.55) + 0.15),
+        baseImportance: Math.min(0.95, (w.refuge ?? 0.55) + 0.15),
+        progress: 0,
+        completionHalfLifeMs: 3 * DAY * MINUTE,
       },
     ];
-  const p = createPerson(spec);
-  p.habits.push({
-    cue: { placeId: `house:${house}` },
-    action: 'sleep',
-    strength: 0.4,
-    repetitions: 3000,
-    lastAt: now,
-  });
-  if (w.devout && adult) {
-    // Prayer at dusk: a quiet part of the day, kept by those who keep it.
-    promise(p, {
-      kind: 'worship',
-      toId: 'self',
-      label: 'the evening prayer',
-      actions: ['pray'],
-      normId: 'salah',
-      from: Math.floor(now / DAY) * DAY + 19 * 60 + 30,
-      until: Math.floor(now / DAY) * DAY + 21 * 60,
-      importance: 0.5,
-      recurEvery: DAY,
-    });
-  }
+  if (w.devout && adult)
+    p.state.agenda.commitments = [
+      {
+        id: 'evening-prayer',
+        kind: 'worship',
+        toId: 'self',
+        label: 'the evening prayer',
+        actions: ['pray'],
+        normId: 'salah',
+        from: (Math.floor(now / DAY) * DAY + 19 * 60 + 30) * MINUTE,
+        until: (Math.floor(now / DAY) * DAY + 21 * 60) * MINUTE,
+        importance: 0.5,
+        recurEveryMs: DAY * MINUTE,
+      },
+    ];
+  const task = ROLE_TASKS[w.id]?.[0];
+  if (task)
+    p.state.agenda.goals = [
+      ...p.state.agenda.goals,
+      {
+        id: 'canonical-role',
+        label: ROLE_GOAL_LABELS[w.id] ?? task.label,
+        serves: ['competence'],
+        advancedBy: [{ action: task.action, amount: 0.1 }],
+        importance: 0.35,
+        baseImportance: 0.35,
+        progress: 0,
+        completionHalfLifeMs: 3 * DAY * MINUTE,
+      },
+    ];
   return p;
+}
+function seedTie(
+  p: PersonAuthoring,
+  r: Partial<Part<'relationships'>['ties'][number]> & { otherId: string },
+) {
+  p.state.relationships = [
+    ...p.state.relationships,
+    { affection: 0, trust: 0.5, respect: 0, familiarity: 0, roles: [], ledger: 0, lastInteraction: 0, ...r },
+  ];
 }
 
 interface HouseSpec {
@@ -257,7 +270,7 @@ const FOUNDERS: HouseSpec[] = [
 ];
 
 /** Kin ties inside a house: spouses married, parents and children and siblings marked. */
-function tieHouse(ps: Person[], ws: Who[], now: number) {
+function tieHouse(ps: PersonAuthoring[], ws: Who[], now: number) {
   const head = ps[0];
   for (const a of ps)
     for (const b of ps) {
@@ -272,7 +285,8 @@ function tieHouse(ps: Person[], ws: Who[], now: number) {
         wa.age >= 18 &&
         wb.age >= 18;
       if (spouses) {
-        if (a.id < b.id) marry(a, b, now, MUSLIM_CUSTOM);
+        seedTie(a, { otherId: b.id, roles: ['spouse'], affection: 0.7, familiarity: 0.95, trust: 0.75 });
+        a.state.bonds.marriages = [...a.state.bonds.marriages, { spouseId: b.id, since: now * MINUTE }];
         continue;
       }
       const roles: string[] = [];
@@ -283,9 +297,9 @@ function tieHouse(ps: Person[], ws: Who[], now: number) {
     }
 }
 
-function legacyFounders(seed: number, now: number): { houses: House[]; people: Person[] } {
+function legacyFounders(seed: number, now: number): { houses: House[]; people: PersonAuthoring[] } {
   const houses: House[] = [];
-  const people: Person[] = [];
+  const people: PersonAuthoring[] = [];
   for (const h of FOUNDERS) {
     const ps = h.people.map((w) => makePerson(w, seed, now, h.id));
     tieHouse(ps, h.people, now);
@@ -295,7 +309,7 @@ function legacyFounders(seed: number, now: number): { houses: House[]; people: P
   // Everyone in a hamlet of nine knows everyone; the dig-master is respected.
   for (const a of people)
     for (const b of people) {
-      if (a === b || a.social.relationships.some((r) => r.otherId === b.id)) continue;
+      if (a === b || a.state.relationships.some((r) => r.otherId === b.id)) continue;
       seedTie(a, {
         otherId: b.id,
         roles: ['neighbor'],
@@ -377,7 +391,7 @@ export function arrivingFamily(
   now: number,
   x: number,
   used: Set<string>,
-): { house: House; people: Person[] } {
+): { house: House; people: PersonAuthoring[] } {
   const r = stream(mixSeed(seed, DRAW.arrival, n), DRAW.arrival);
   let fam = 'Yeni';
   const start = n + Math.floor(r() * FAMILY_NAMES.length);
@@ -482,7 +496,7 @@ export function founders(
   seed: number,
   now: number,
   canonical = false,
-): { houses: House[]; people: Person[] } {
+): { houses: House[]; people: PersonAuthoring[] } {
   if (!canonical) return legacyFounders(seed, now);
   const rows = castForGame('warren');
   const houses: House[] = [
@@ -523,7 +537,7 @@ export function founders(
       house.id,
     );
     // Baseline means exactly the registry, including values previously overridden by this host.
-    p.values = structuredClone(c.values);
+    p.state.values = structuredClone(c.values);
     return p;
   });
   const relate = (a: string, b: string, roles: string[]) =>

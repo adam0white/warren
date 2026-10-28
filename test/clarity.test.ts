@@ -2,7 +2,8 @@ import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { DAY } from '../src/sim/calendar.ts';
-import { act, advance, fingerprint, newGame, replay, save } from '../src/sim/game.ts';
+import { act, fingerprint, replay, save } from '../src/sim/game.ts';
+import { authoredGame } from './authored-opening.ts';
 import { localHill } from './local-hill.ts';
 
 let server: ViteDevServer;
@@ -105,8 +106,8 @@ describe('F-213 first-minute clarity', () => {
       await page.locator('#ticker').click();
       expect(await page.locator('#drawer[data-kind="j"]').innerText()).toContain('19 August');
       // Advance the simulation, save an accepted input, and restore through the real control.
-      const game = newGame(7);
-      advance(game, 13 * DAY);
+      // Fresh authored date; no thirteen-day simulated history is implied.
+      const game = authoredGame(7, 13 * DAY);
       expect(act(game, { verb: 'bell' })).toBe(true);
       const saved = save(game);
       await page.evaluate(`(async () => {
@@ -130,9 +131,19 @@ describe('F-213 first-minute clarity', () => {
       // Time keeps moving while the player reaches Download. Check the actual export boundary.
       expect(restored.minute).toBeGreaterThanOrEqual(saved.minute);
       expect(restored.inputs).toEqual(saved.inputs);
-      expect(fingerprint(replay(restored.seed, restored.inputs, restored.minute, restored.game).s)).toBe(
-        restored.fingerprint,
-      );
+      expect(
+        fingerprint(
+          replay(
+            restored.seed,
+            restored.inputs,
+            restored.minute,
+            restored.game,
+            restored.chapter,
+            restored.config,
+            restored.phase,
+          ).s,
+        ),
+      ).toBe(restored.fingerprint);
     } finally {
       await page.close();
     }
@@ -141,8 +152,8 @@ describe('F-213 first-minute clarity', () => {
   it('restores the saved date and minute without invisible offline decisions', async () => {
     const page = await fresh();
     try {
-      const game = newGame(7);
-      advance(game, 13 * DAY);
+      // Fresh authored date; no thirteen-day simulated history is implied.
+      const game = authoredGame(7, 13 * DAY);
       await page.evaluate(`(async () => {
         const { put } = await import('/src/ui/store.ts');
         await put('hill', ${JSON.stringify(save(game))});

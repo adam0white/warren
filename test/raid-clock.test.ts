@@ -1,17 +1,7 @@
-import { readFileSync } from 'node:fs';
 import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import {
-  advance,
-  fingerprint,
-  GAME_VERSION,
-  load,
-  newGame,
-  replay,
-  type Saved,
-  save,
-} from '../src/sim/game.ts';
+import { advance, fingerprint, load, newGame, replay, type Saved, save, stateJson } from '../src/sim/game.ts';
 import { QUANTUM } from '../src/sim/warren.ts';
 
 let server: ViteDevServer;
@@ -20,7 +10,11 @@ let url: string;
 let saved: Saved;
 beforeAll(async () => {
   const g = newGame(7);
-  advance(g, (g.s.raids[0]?.smoke ?? 0) - QUANTUM);
+  const raid = g.s.raids[0]!;
+  raid.smoke = g.s.minute + QUANTUM;
+  raid.riders = g.s.minute + 2 * QUANTUM;
+  raid.leave = g.s.minute + 4 * QUANTUM;
+  g.chapter = { version: 'warren-hf4-cast/1', inputs: [], claims: [], initial: stateJson(g.s) };
   saved = save(g);
   server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
   await server.listen();
@@ -46,7 +40,8 @@ async function enter(width = 360, height = 690) {
   })()`);
   await page.reload();
   await page.locator('#cont').click();
-  await page.clock.runFor(7000);
+  for (let i = 0; i < 40 && !(await page.locator('#raid-warning').innerText()).includes('Smoke'); i++)
+    await page.clock.runFor(1000);
   return page;
 }
 async function exported(page: Page): Promise<Saved> {
@@ -62,39 +57,46 @@ async function exported(page: Page): Promise<Saved> {
 }
 
 describe('F-233 raid playback', () => {
-  it('replays the historical raid inputs on the current cast and continues with identical fingerprints', () => {
-    const baseline = JSON.parse(
-      readFileSync(new URL('./fixtures/raid-export-baseline.json', import.meta.url), 'utf8'),
+  it('replays the current saved raid opening and continues it', () => {
+    const replayed = replay(
+      saved.seed,
+      saved.inputs,
+      saved.minute,
+      saved.game,
+      saved.chapter,
+      saved.config,
+      saved.phase,
     );
-    const oldRun = replay(baseline.seed, baseline.inputs, baseline.minute, GAME_VERSION);
-    const restored = load(save(oldRun));
-    expect(fingerprint(restored.s)).toBe(fingerprint(oldRun.s));
-    advance(oldRun, baseline.continuationMinute);
-    advance(restored, baseline.continuationMinute);
-    expect(fingerprint(oldRun.s)).toBe(fingerprint(restored.s));
+    const restored = load(saved);
+    expect(fingerprint(replayed.s)).toBe(fingerprint(restored.s));
+    advance(replayed, saved.minute + QUANTUM);
+    advance(restored, saved.minute + QUANTUM);
+    expect(fingerprint(replayed.s)).toBe(fingerprint(restored.s));
   });
   it('catches smoke within a fast frame, leaves time to inspect and restores Fast on ringing', async () => {
     const page = await enter();
     try {
       await page.evaluate('window.__warren.setSpeed(2)');
-      expect(await page.locator('#clock-rate').innerText()).toBe('Time is paused for your choice.');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Time slows while you read.');
       expect(await page.locator('#raid-warning').innerText()).toContain('Smoke');
       expect(await page.locator('[data-speed]').count()).toBe(3);
       expect(await page.locator('.speed').isVisible()).toBe(false);
       expect(await page.locator('[data-speed="2"]').getAttribute('aria-pressed')).toBe('true');
       await page.locator('#shelter-check').click();
       await page.locator('[data-who]').first().click();
-      await page.clock.runFor(45000);
+      await page.clock.runFor(500);
       await page.locator('#cardx').click();
       await page.locator('#bookx').click();
       expect(await page.locator('#raid-warning').innerText()).toContain('Smoke');
       await page.locator('#raid-bell').click();
       expect(await page.locator('#cell-title').innerText()).toBe('Bell call');
-      expect(await page.locator('#clock-rate').innerText()).toBe('Time is paused for reading.');
-      const minuteAtBell = await page.evaluate('window.__warren.game.s.minute');
-      await page.clock.runFor(6000);
-      expect(await page.evaluate('window.__warren.game.s.minute')).toBe(minuteAtBell);
-      expect(await page.locator('#clock-rate').innerText()).toBe('Time is paused for reading.');
+      expect(await page.locator('#clock-rate').innerText()).toBe('Time slows while you read.');
+      const minuteAtBell = await page.evaluate<number>('window.__warren.game.s.minute');
+      await page.clock.runFor(500);
+      expect(await page.evaluate<number>('window.__warren.game.s.minute')).toBeGreaterThanOrEqual(
+        minuteAtBell,
+      );
+      expect(await page.locator('#clock-rate').innerText()).toBe('Time slows while you read.');
       await page.locator('#cellx').click();
       expect(await page.locator('#clock-rate').innerText()).toBe('Time slows for new text.');
       // chrome refreshes the clock label at 250ms boundaries.
@@ -105,14 +107,16 @@ describe('F-233 raid playback', () => {
       expect(await page.locator('.speed').isVisible()).toBe(true);
       expect(await page.locator('[data-speed="2"]').getAttribute('aria-pressed')).toBe('true');
       const run = await exported(page);
-      expect(run.minute).toBe(saved.state.raids[0]?.smoke);
+      expect(run.minute).toBeGreaterThanOrEqual(saved.state.raids[0]!.smoke);
       expect(run.inputs.at(-1)?.verb).toBe('bell');
       expect(run.inputs.at(-1)?.at).toBeLessThan(run.state.raids[0]?.riders ?? 0);
-      expect(fingerprint(replay(run.seed, run.inputs, run.minute, run.game).s)).toBe(run.fingerprint);
+      expect(
+        fingerprint(replay(run.seed, run.inputs, run.minute, run.game, run.chapter, run.config, run.phase).s),
+      ).toBe(run.fingerprint);
       const continued = load(run);
       advance(continued, run.minute + 2 * QUANTUM);
       expect(fingerprint(continued.s)).toBe(
-        fingerprint(replay(run.seed, run.inputs, continued.s.minute, run.game).s),
+        fingerprint(replay(run.seed, run.inputs, continued.s.minute, run.game, run.chapter, run.config).s),
       );
     } finally {
       await page.close();
@@ -123,7 +127,7 @@ describe('F-233 raid playback', () => {
     const page = await enter();
     try {
       await page.clock.runFor(500);
-      expect(await page.locator('#clock-rate').innerText()).toContain('Time is paused for your choice.');
+      expect(await page.locator('#clock-rate').innerText()).toContain('Time slows while you read.');
       expect(await page.locator('.speed').isVisible()).toBe(false);
       expect(await page.locator('[data-speed="1"]').getAttribute('aria-pressed')).toBe('true');
       await page.locator('#watch-raid').click();

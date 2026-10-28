@@ -1,0 +1,13 @@
+Historical HF3 tape control. HF4 requires a fresh run; legacy saves and tapes are not compatible.
+
+  it('replays the historical raid inputs on the current cast and continues with identical fingerprints', () => {
+    const baseline = JSON.parse(
+      readFileSync(new URL('./fixtures/raid-export-baseline.json', import.meta.url), 'utf8'),
+    );
+    const oldRun = replay(baseline.seed, baseline.inputs, baseline.minute, GAME_VERSION);
+    const restored = load(save(oldRun));
+    expect(fingerprint(restored.s)).toBe(fingerprint(oldRun.s));
+    advance(oldRun, baseline.continuationMinute);
+    advance(restored, baseline.continuationMinute);
+    expect(fingerprint(oldRun.s)).toBe(fingerprint(restored.s));
+  });

@@ -9,7 +9,7 @@ import {
 } from '../src/ui/shelter.ts';
 
 function withBeds(xs: number[]) {
-  const s = newGame(7, '0.4.0').s;
+  const s = newGame(7).s;
   s.hill.use.fill(USE.none);
   for (const x of xs) {
     const cell = idx(x, SURF + 3);
@@ -32,7 +32,7 @@ describe('sleeping capacity words', () => {
 
   it('labels room capacity but compares the village with all marked beds', () => {
     const s = withBeds([16, 17, 20]);
-    expect(sleepingCapacity(s)).toEqual({ places: 9, people: 9, enough: true });
+    expect(sleepingCapacity(s)).toEqual({ places: 9, people: 6, enough: true });
     const words = sleepingRoomWords(s, idx(16, SURF + 3));
     expect(words).toContain('This room has about six sleeping places.');
     expect(words).toContain(
@@ -41,7 +41,7 @@ describe('sleeping capacity words', () => {
     expect(words).not.toContain('The village needs more sleeping places');
     const person = s.people[0];
     if (!person) throw new Error('Missing villager');
-    s.people.push({ ...person, id: 'extra' });
+    for (let index = s.people.length; index <= 9; index++) s.people.push({ ...person, id: `extra${index}` });
     expect(sleepingRoomWords(s, idx(16, SURF + 3))).toContain('The village needs more sleeping places');
   });
 

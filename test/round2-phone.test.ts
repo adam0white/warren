@@ -1,6 +1,3 @@
-import { mkdirSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { type Browser, chromium, type Page } from 'playwright-core';
 import { createServer, type ViteDevServer } from 'vite';
 import { afterAll, beforeAll, expect, it } from 'vitest';
@@ -10,16 +7,11 @@ type Debug = typeof import('../src/ui/app.ts')['_debug'];
 let server: ViteDevServer;
 let browser: Browser;
 let url: string;
-const shots =
-  process.platform === 'darwin'
-    ? '/Users/abdul/code/.lab-scratch/patterns/warren-shots/round2-b'
-    : join(tmpdir(), 'warren-round2');
 beforeAll(async () => {
   server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
   await server.listen();
   url = server.resolvedUrls?.local[0] ?? '';
   browser = await chromium.launch();
-  mkdirSync(shots, { recursive: true });
 }, 60000);
 afterAll(async () => {
   await browser?.close();
@@ -105,15 +97,15 @@ for (const [width, height] of [
           before.view.cs - 2,
         ]),
       );
-      if (process.env.WARREN_SCREENSHOTS === '1')
-        await page.screenshot({ path: `${shots}/after-${width}-press-b.png` });
       await page.mouse.up();
       await page.clock.runFor(500);
       expect(await camera(page)).toEqual(before);
       expect(await page.locator('#cell-detail').isVisible()).toBe(false);
-      expect(await page.locator('#event-sentence').innerText()).toContain('square marked');
-      if (process.env.WARREN_SCREENSHOTS === '1')
-        await page.screenshot({ path: `${shots}/after-${width}-plan-b.png` });
+      expect(
+        await page.evaluate(
+          () => (window as unknown as { __warren: Debug }).__warren.game?.inputs.at(-1)?.verb,
+        ),
+      ).toBe('chalk');
     } finally {
       await page.close();
     }
@@ -202,8 +194,6 @@ it('shows a complete work sentence and opens the complete newest safety entry', 
       return r.bottom <= b.bottom + 1 && r.bottom > b.top;
     });
     expect(fit).toBe(true);
-    if (process.env.WARREN_SCREENSHOTS === '1')
-      await page.screenshot({ path: `${shots}/after-360-journal-b.png` });
     await page.locator('#bookx').click();
     await page.locator('#book').click();
     await page.locator('#sheet-body').evaluate((el) => {
@@ -245,8 +235,6 @@ it('keeps full mixed/open-door, bed and door readings accessible by scrolling ab
         const body = document.querySelector('#inspection-body')?.getBoundingClientRect();
         return !!body && text.top >= body.top && text.bottom <= body.bottom + 1;
       });
-    if (process.env.WARREN_SCREENSHOTS === '1')
-      await page.screenshot({ path: `${shots}/after-360-mixed-b.png` });
     expect(await fits()).toBe(true);
     await page.evaluate(() => {
       const raid = (window as unknown as { __warren: Debug }).__warren.game?.s.raids[0];
@@ -254,8 +242,6 @@ it('keeps full mixed/open-door, bed and door readings accessible by scrolling ab
     });
     await page.clock.runFor(300);
     expect(await fits()).toBe(true);
-    if (process.env.WARREN_SCREENSHOTS === '1')
-      await page.screenshot({ path: `${shots}/after-360-smoke-mixed-b.png` });
     await page.locator('#watch-raid').click();
     await page.locator('[data-tool="look"]').click();
     await page.evaluate(`(async()=>{
@@ -268,8 +254,6 @@ it('keeps full mixed/open-door, bed and door readings accessible by scrolling ab
     await page.clock.runFor(200);
     expect(await page.locator('#cell-title').innerText()).toBe('Sleeping room');
     expect(await fits()).toBe(true);
-    if (process.env.WARREN_SCREENSHOTS === '1')
-      await page.screenshot({ path: `${shots}/after-360-bed-b.png` });
     await page.locator('#furnish').click();
     await page.locator('[data-tool="door"]').click();
     const door = await point(page, 18, 9);
@@ -277,8 +261,6 @@ it('keeps full mixed/open-door, bed and door readings accessible by scrolling ab
     await page.clock.runFor(200);
     expect(await page.locator('#cell-title').innerText()).toBe('Stone door');
     expect(await fits()).toBe(true);
-    if (process.env.WARREN_SCREENSHOTS === '1')
-      await page.screenshot({ path: `${shots}/after-360-door-b.png` });
   } finally {
     await page.close();
   }
@@ -365,8 +347,6 @@ it('keeps mixed door conditions scrollable while marking and full route details 
     expect(await page.locator('#door-context').innerText()).toContain(
       'Keep the stone doors that block riders shut',
     );
-    if (process.env.WARREN_SCREENSHOTS === '1')
-      await page.screenshot({ path: `${shots}/after-360-complex-route-details-b.png` });
   } finally {
     await page.close();
   }

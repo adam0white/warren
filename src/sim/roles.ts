@@ -1,8 +1,9 @@
 /** Scoped guest work, not new trade qualifications. Physical outcomes stay in the host;
  * HF chooses and completes these ordinary affordances. No care/travel duty is settled here. */
-import type { Person } from '@adam0white/human-framework';
+
 import { DAY } from './calendar.ts';
 import { xOf, yOf } from './grid.ts';
+import type { Person } from './hf4.ts';
 import type { WarrenState } from './warren.ts';
 export const ROLE_TASKS: Record<string, readonly { action: string; label: string; minutes: number }[]> = {
   yusuf: [
@@ -71,7 +72,7 @@ export function supervised(
 }
 // Goal labels also become memory-retrieval tags in HF. Preserve their stored identity.
 // These labels are not used to render the current activity; ROLE_TASKS supplies that prose.
-const ROLE_GOAL_LABELS: Record<string, string> = {
+export const ROLE_GOAL_LABELS: Record<string, string> = {
   yusuf: 'compare a visible digging line with the workers',
   meryem: 'walk and label an already visible route',
   maryam: 'prepare a household pot from its own grain',
@@ -79,22 +80,6 @@ const ROLE_GOAL_LABELS: Record<string, string> = {
   tamar: 'check the near approach in daylight',
   kian: 'rehearse a short message route with Tamar',
 };
-export function seedRoleGoals(s: WarrenState) {
-  for (const p of s.people) {
-    const task = roleTask(p.id, 0);
-    if (!task) continue;
-    p.agenda.goals.push({
-      id: 'canonical-role',
-      label: ROLE_GOAL_LABELS[p.id] ?? task.label,
-      serves: ['competence'],
-      advancedBy: [{ action: task.action, amount: 0.1 }],
-      importance: 0.35,
-      progress: 0,
-      status: 'active',
-      adoptedAt: s.minute,
-    });
-  }
-}
 export function finishRoleWork(
   s: WarrenState,
   p: Person,

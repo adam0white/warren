@@ -1,5 +1,5 @@
-import { ageYears } from '@adam0white/human-framework';
 import { paths, surfaceCell } from '../sim/grid.ts';
+import { ageYears } from '../sim/hf4.ts';
 import { doorRequest, requestWords } from '../sim/resident-requests.ts';
 import { activeRaid, airAndLight, type WarrenState } from '../sim/warren.ts';
 import { displayWords } from './words.ts';

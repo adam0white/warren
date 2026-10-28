@@ -1,0 +1,16 @@
+it('leaves ordinary 0.6 and 0.7 saves byte-for-byte unchanged when away', () => {
+  for (const edition of ['0.6.0', '0.7.0']) {
+    const g = newGame(7, edition);
+    const before = save(g);
+    expect(catchUp(g, 60 * 60_000)).toBe(false);
+    expect(save(g)).toEqual(before);
+  }
+});
+it('retains the captured pre-slice raw semantic fingerprints for 0.6 and 0.7', () => {
+  const fixture = JSON.parse(readFileSync(new URL('./fixtures/next-legacy.json', import.meta.url), 'utf8'));
+  for (const row of fixture.rows) {
+    const g = newGame(row.seed, row.game);
+    advance(g, row.minute);
+    expect(fingerprint(g.s)).toBe(row.fingerprint);
+  }
+});
