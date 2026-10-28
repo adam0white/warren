@@ -1,3 +1,37 @@
+# Yusuf stopping-line source candidate — 2026-10-27
+
+Remaining: root’s one independent Codex review of the exact frozen candidate,
+then the normal lane immediately before a signed commit, rebase/push/PR and exact
+source CI. Root owns merge. Exact clean-main CI, normal deploy, live release/assets,
+Chrome title/menu checks and cleanup remain separate gates. No deployment or owner
+acceptance is claimed. This candidate starts at origin/main ac25fa42fb255d3e6b84833968fa3652f6236d38.
+
+F1193’s selected chalk reading now distinguishes the retained Yusuf invitation note
+and date from the current selected square and existing known connections. No
+historical endpoints or geometric agreement exist in the note. A trimmed note
+stays unavailable even when the visit flag survives. Keep/change remains deliberate
+through existing Chalk/Rub out. Unsupported material-specific attribution is removed.
+No simulation, input, edition, export, native, privacy, menu or playback rule changes.
+
+Proof prefix: `~/code/.lab-scratch/games-deferred/gd-resume-warren-yusuf-source-r2`.
+A real public invitation at minute360 first waited for Yusuf’s current activity;
+the existing visit wrote its authored story note during the next quantum. The note
+is dated minute360. This establishes no HF speech, hearing or conversation cost.
+A broader actual costed reply remains separate available engineering, targeted for
+2026-10-28. Focused controls cover the note, duplicate invitation refusal, historical
+omission and unchanged complete raw state.
+Actual synthetic App controls cover360×690 and1280×800, dynamic selection, original
+note/date, missing note, nonzero reading slowdown and unchanged menu pause.
+The pre-edit actual retained native state and omitted-input1440 continuation are
+frozen; full JSON equality is required against the candidate. No private Person
+winning state or stubPerson supplies these controls.
+
+The full original117+18 register remains retained and unchanged. Maryam/newcomer,
+refusal, native-contract and other invitation/event work stays available engineering
+with target2026-10-28. This closes no whole compound ask or owner acceptance.
+
+## Previous source handoff retained
+
 # Warren — source handoff, 2026-10-27
 
 Remaining: the same independent Codex reviewer must clear the revised nine-path

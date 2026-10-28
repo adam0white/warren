@@ -1,7 +1,9 @@
 import { expect, it } from 'vitest';
-import { act, newGame, save } from '../src/sim/game.ts';
+import { act, advance, newGame, save } from '../src/sim/game.ts';
 import { idx, K, SURF, USE } from '../src/sim/grid.ts';
-import { chalkFeedback, selectedPlan } from '../src/ui/selected-plan.ts';
+import { receivedVisit } from '../src/sim/visits.ts';
+import { historyTime } from '../src/ui/event-history.ts';
+import { chalkFeedback, selectedPlan, yusufPlanWords } from '../src/ui/selected-plan.ts';
 
 it('contrasts one copied known hill: first connection, shut door, shaft shortcut and second route', () => {
   const s = newGame(7).s;
@@ -124,4 +126,42 @@ it('keeps the complete known eight-step route unchanged by a hidden two-cell sho
   expect(proposed.proposed.riskPath).toEqual(route);
   expect(proposed.proposed.exposed).toBe(true);
   expect(proposed.current.exposed).toBe(false);
+});
+
+it('binds the actual public Yusuf invitation note to current chalk without inventing endpoints or changing raw state', () => {
+  const g = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  advance(g, 360);
+  expect(g.s.people.find((p) => p.id === 'yusuf')!.activity).not.toBeNull();
+  expect(act(g, { verb: 'visit', who: 'yusuf' })).toBe(true);
+  expect(g.s.flags['invitation-pending:yusuf']).toBe(361);
+  expect(receivedVisit(g.s, 'yusuf')).toBeUndefined();
+  advance(g, 390);
+  const receipt = receivedVisit(g.s, 'yusuf')!;
+  expect(receipt.text).toContain('A mark must show others when they can stop me.');
+  expect(receipt.at).toBe(360);
+  const cell = idx(15, SURF + 3);
+  expect(act(g, { verb: 'chalk', cells: [cell], on: true })).toBe(true);
+  const before = JSON.stringify(save(g));
+  const words = yusufPlanWords(g.s, cell);
+  expect(words).toContain(receipt.text);
+  expect(words).toContain(historyTime(receipt.at));
+  expect(words).toContain('Current chalk selection:');
+  expect(words).toContain('No endpoints');
+  expect(words).toContain('do not establish that line or an agreement');
+  expect(words).toContain('Use Rub out');
+  expect(JSON.stringify(save(g))).toBe(before);
+  // Ordinary public refusal: a second invitation cannot rewrite the retained invitation note.
+  expect(act(g, { verb: 'visit', who: 'yusuf' })).toBe(false);
+  expect(JSON.stringify(save(g))).toBe(before);
+  // Declared historical omission control: the trim can retain the flag without the note.
+  g.s.notes = g.s.notes.filter((n) => n !== receipt);
+  const omitted = JSON.stringify(save(g));
+  expect(g.s.flags['visit:yusuf']).toBe(361);
+  expect(yusufPlanWords(g.s, cell)).toContain('words and date are unknown');
+  expect(yusufPlanWords(g.s, cell)).not.toContain(receipt.text);
+  // A different story at the same minute is not the original invitation note.
+  g.s.notes.push({ ...receipt, text: 'An unrelated retained story.' });
+  expect(yusufPlanWords(g.s, cell)).toContain('words and date are unknown');
+  g.s.notes.pop();
+  expect(JSON.stringify(save(g))).toBe(omitted);
 });

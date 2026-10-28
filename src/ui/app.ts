@@ -80,7 +80,7 @@ import { invitationWords, personHelpWords } from './person-help.ts';
 import { type PlanSafety, planSafety } from './plan-safety.ts';
 import { eventStamp, playbackRate } from './playback.ts';
 import { bellShelterWords, bellStateWords, bellThreatWords } from './room-safety.ts';
-import { chalkFeedback, selectedPlan } from './selected-plan.ts';
+import { chalkFeedback, selectedPlan, yusufPlanWords } from './selected-plan.ts';
 import {
   compactShelterWords,
   sleepingCapacity,
@@ -1631,7 +1631,7 @@ function updateDoor() {
   if (!g || doorCell === null) return;
   if (g.s.hill.chalk[doorCell] && g.s.hill.kind[doorCell] !== K.open) {
     const reading = planSafety(g.s, [doorCell], 'chalk');
-    reading.words = `${markedWorkWords(g.s, doorCell)} ${reading.words}`;
+    reading.words = `${markedWorkWords(g.s, doorCell)} ${reading.words} ${yusufPlanWords(g.s, doorCell)}`;
     planReading('Unbuilt plan', reading, true, true, doorCell);
     return;
   }
@@ -1735,7 +1735,7 @@ function showPlan(cell: number) {
   paint.connectionCell = cell;
   paint.worldCell = cell;
   const reading = planSafety(g.s, [cell], 'chalk');
-  reading.words = `${markedWorkWords(g.s, cell)} ${reading.words}`;
+  reading.words = `${markedWorkWords(g.s, cell)} ${reading.words} ${yusufPlanWords(g.s, cell)}`;
   planReading('Unbuilt plan', reading, true, false, cell);
   showRally(cell);
   document.getElementById('cellx')?.focus();
