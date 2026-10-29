@@ -9,25 +9,15 @@ import {
   type PersonaEnvelope,
   personaChannel,
   portableWriteBlockers,
-  validatePersona,
   watchPersonaCheckpoint,
 } from '@adam0white/lab-client';
 import { adaWords } from '../sim/ada-care.ts';
 import { authoringFor, portableOf, project } from '../sim/cast.ts';
-import {
-  act,
-  fingerprint,
-  type Game,
-  load,
-  type NextConfig,
-  newGame,
-  replay,
-  type Saved,
-  stateJson,
-} from '../sim/game.ts';
+import { act, type Game, load, type NextConfig, newGame, type Saved, stateJson } from '../sim/game.ts';
 import { archiveOf, FRAMEWORK_VERSION } from '../sim/hf4.ts';
 import type { NativeReturnId } from '../sim/native-return.ts';
 import { CAST_IDS } from '../sim/people.ts';
+import { assertReplay, sourceReceipt, validateIncoming, validateSource } from '../sim/source-history.ts';
 import { lab } from './lab.ts';
 import { sourceBuild } from './source-build.ts';
 
@@ -113,7 +103,7 @@ export async function fresh(
     }
     if (!head) continue;
     try {
-      await validatePersona(head);
+      await validateIncoming(head);
       if (head.castId !== id) throw Error('Different person');
       // A skipped person keeps their shared record and starts a local story.
       if (!head.transfer.portable || head.terminal || activeClaim(head)) throw Error('Unavailable person');
@@ -151,8 +141,15 @@ export async function fresh(
       }),
     );
   }
+  if (claims.length || incoming.length)
+    game.chapter = { version: 'warren-hf4-cast/1', inputs: incoming, claims, initial: stateJson(game.s) };
+  game.ownedHeads = Object.fromEntries(claims.map((head) => [head.castId, head]));
+  const sourceUnchanged = await validateSource(game);
   unchanged(token);
+  if (!sourceUnchanged()) throw Error('This hill changed while its history was checked.');
   if (claims.length) {
+    if (claims.some((claim) => portableWriteBlockers(claim.castId, 'warren').length))
+      throw Error('The shared records changed while this hill was being prepared. Try again.');
     await shelf.request({
       action: 'putBatch',
       envelopes: claims,
@@ -160,9 +157,6 @@ export async function fresh(
     });
     unchanged(token);
   }
-  if (incoming.length)
-    game.chapter = { version: 'warren-hf4-cast/1', inputs: incoming, claims, initial: stateJson(game.s) };
-  game.ownedHeads = Object.fromEntries(claims.map((head) => [head.castId, head]));
   lab.setPersonaRecording(claims.length ? crypto.randomUUID() : null);
   continuityStatus = skipped.size
     ? `Some people start a new story here while their shared records stay unchanged: ${[...skipped].map((id) => canonicalCast(id).name).join(', ')}.`
@@ -172,12 +166,15 @@ export async function fresh(
 export async function localLoad(saved: Saved): Promise<Game> {
   const token = ++generation;
   const game = load(saved);
-  for (const [castId, head] of Object.entries(game.ownedHeads ?? {})) {
-    await validatePersona(head);
-    if (head.castId !== castId) throw Error('The local permission record is invalid.');
-  }
+  const ownsPeople =
+    Object.keys(game.ownedHeads ?? {}).length || Object.keys(game.nativeReturnHeads ?? {}).length;
+  let sourceUnchanged = () => true;
+  if (ownsPeople) sourceUnchanged = await validateSource(game);
+  // Unowned native snapshots remain readable. This grants no source permission;
+  // checkpoints have no head to publish and preparation remains unsupported.
   unchanged(token);
   await readyShelf(token);
+  if (!sourceUnchanged()) throw Error('This hill changed while its history was checked.');
   lab.setPersonaRecording(Object.keys(game.ownedHeads ?? {}).length ? crypto.randomUUID() : null);
   return game;
 }
@@ -186,17 +183,7 @@ export async function fileLoad(file: File): Promise<Game> {
   if (file.size > 256 * 1024 * 1024) throw Error('The file is too large to import on this device.');
   const saved = JSON.parse(await file.text()) as Saved;
   const game = load(saved);
-  const recreated = replay(
-    saved.seed,
-    saved.inputs,
-    saved.minute,
-    saved.game,
-    saved.chapter,
-    saved.config,
-    saved.phase,
-  );
-  if (fingerprint(recreated.s) !== saved.fingerprint || fingerprint(game.s) !== saved.fingerprint)
-    throw Error('This file does not replay exactly on this version. Keep it and start a fresh hill.');
+  assertReplay(game);
   unchanged(token);
   delete game.ownedHeads;
   delete game.nativeReturnHeads;
@@ -219,6 +206,9 @@ export async function checkpoint(): Promise<void> {
         continue;
       }
       try {
+        const sourceUnchanged = await validateSource(game, true, castId);
+        unchanged(token);
+        if (current() !== game || !sourceUnchanged()) return;
         const captured = person.body.alive ? await project(game.s, person.id) : undefined;
         const envelope = captured
           ? await createPersona({
@@ -235,13 +225,17 @@ export async function checkpoint(): Promise<void> {
             })
           : await closePersonaBranch(parent, stamps(), game.s.minute * 60_000);
         unchanged(token);
-        if (current() !== game) return;
+        if (current() !== game || !sourceUnchanged()) return;
+        if (portableWriteBlockers(castId, 'warren').length) continue;
+        const receipt = sourceReceipt(game, envelope);
         await shelf.request({
           action: 'putBatch',
           envelopes: [envelope],
           expectedHeads: { [castId]: parent.revision },
         });
         // Preserve a successful shelf receipt even if saving this device subsequently fails.
+        game.sourceArchives ??= {};
+        game.sourceArchives[envelope.revision] = receipt;
         game.ownedHeads![castId] = envelope;
         if (!(await persistAccepted(game)))
           throw Error(
@@ -251,6 +245,7 @@ export async function checkpoint(): Promise<void> {
         if (current() !== game) return;
         continuityStatus = `Saved ${person.name} between activities. The receiving game still checks their history and responsibilities.`;
       } catch (error) {
+        if (token !== generation || current() !== game) return;
         continuityStatus = `${person.name}: ${String(error)}`;
       }
     }

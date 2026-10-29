@@ -10,8 +10,10 @@ import type { Chapter } from './cast.ts';
 import { endCutDiscussion, inviteCutDiscussion } from './cut-discussion.ts';
 import { H, USE, type UseName, W } from './grid.ts';
 import { FRAMEWORK_VERSION, need, syncReadings } from './hf4.ts';
+import { type Handling, requestPuzzle, withdrawPuzzle } from './maryam-puzzle.ts';
 import { prepareNativeReturn } from './native-return.ts';
 import { rally } from './rally.ts';
+import { requestRefusalReply, withdrawRefusalReply } from './refusal-reply.ts';
 import {
   requestDoor,
   requestDoorTrial,
@@ -48,6 +50,10 @@ export function editionOf(version: string): Edition {
 }
 
 export type Input =
+  | { at: number; verb: 'reply-refusal'; who: string }
+  | { at: number; verb: 'withdraw-refusal-reply' }
+  | { at: number; verb: 'try-maryam-puzzle'; handling: Handling }
+  | { at: number; verb: 'withdraw-maryam-puzzle' }
   | { at: number; verb: 'ask-ada' | 'withdraw-ada-talk' }
   | { at: number; verb: 'chalk'; cells: number[]; on: boolean }
   | { at: number; verb: 'use'; cells: number[]; use: UseName }
@@ -113,6 +119,8 @@ export function newGame(
 
 /** Apply an input now and log it. Inputs wait for the next quantum boundary (the UI steps in quanta). */
 export function act(g: Game, o: Order): boolean {
+  // Unsupported native preparation must not even settle a pending quantum.
+  if (o.verb === 'prepare-native-return') return false;
   drainAdvance(g.s);
   const i = { ...o, at: g.s.minute } as Input;
   const ok = apply(g.s, i);
@@ -122,13 +130,23 @@ export function act(g: Game, o: Order): boolean {
 
 function apply(s: WarrenState, i: Input): boolean {
   switch (i.verb) {
+    case 'reply-refusal':
+      return requestRefusalReply(s, i.who);
+    case 'withdraw-refusal-reply':
+      return withdrawRefusalReply(s);
+    case 'try-maryam-puzzle':
+      return requestPuzzle(s, i.handling);
+    case 'withdraw-maryam-puzzle':
+      return withdrawPuzzle(s);
     case 'ask-ada':
       return askAda(s);
     case 'withdraw-ada-talk':
       return withdrawAdaTalk(s);
     case 'talk-rest':
+      if (i.who === 'maryam' && s.maryamPuzzle && s.maryamPuzzle.endedAt === undefined) return false;
       return requestTalk(s, i.who, 'rest');
     case 'talk-disagreement':
+      if (s.refusalReply && s.refusalReply.endedAt === undefined) return false;
       return requestTalk(s, i.who, 'disagreement');
     case 'try-door':
       return requestDoorTrial(s, i.who, i.cell);
@@ -382,6 +400,12 @@ function validInput(value: unknown): value is Input {
   const who = typeof input.who === 'string' && input.who.length > 0;
   let keys: string[];
   switch (input.verb) {
+    case 'try-maryam-puzzle':
+      if (!['loosen', 'draw'].includes(String(input.handling))) return false;
+      keys = ['handling'];
+      break;
+    case 'withdraw-refusal-reply':
+    case 'withdraw-maryam-puzzle':
     case 'ask-ada':
     case 'withdraw-ada-talk':
     case 'bell':
@@ -415,6 +439,7 @@ function validInput(value: unknown): value is Input {
       if (!cell(input.cell)) return false;
       keys = ['cell'];
       break;
+    case 'reply-refusal':
     case 'talk-rest':
     case 'talk-disagreement':
     case 'visit':
@@ -513,6 +538,26 @@ export function load(saved: Saved): Game {
     throw unreadableHill(
       'The saved state does not match its verification code. Keep the file and start fresh.',
     );
+  // The exercise is host geometry as well as an HF history. Reconstruct every
+  // recorded byte before admitting it locally, including stripped host markers.
+  // This is consistency, not authentication of an independently rewritten tape.
+  if (
+    game.s.maryamPuzzle ||
+    game.inputs.some((i) => i.verb === 'try-maryam-puzzle' || i.verb === 'withdraw-maryam-puzzle') ||
+    JSON.stringify(game.s.hf).includes('maryam-puzzle-')
+  ) {
+    const recreated = replay(
+      saved.seed,
+      saved.inputs,
+      saved.minute,
+      saved.game,
+      saved.chapter,
+      saved.config,
+      saved.phase,
+    );
+    if (JSON.stringify(sorted(stateJson(recreated.s))) !== JSON.stringify(sorted(stateJson(game.s))))
+      throw unreadableHill('The physical exercise history does not match its complete replay.');
+  }
   return game;
 }
 

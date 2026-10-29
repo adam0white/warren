@@ -94,7 +94,23 @@ import {
   syncReadings,
   type World,
 } from './hf4.ts';
+import {
+  capturePuzzleAnswer,
+  finishPuzzle,
+  type MaryamPuzzle,
+  observePuzzle,
+  puzzleOffers,
+  puzzleSuggestion,
+} from './maryam-puzzle.ts';
 import { arrivingFamily, BELL, founders, type House, USTA_ID } from './people.ts';
+import {
+  captureRefusalReplyAnswer,
+  finishRefusalReply,
+  observeRefusalReply,
+  type RefusalReply,
+  refusalReplyOffers,
+  refusalReplySuggestion,
+} from './refusal-reply.ts';
 import {
   captureResidentAnswer,
   type DoorRequest,
@@ -201,6 +217,8 @@ export interface WarrenState {
   adaVisit?: AdaVisit;
   /** Created only by a recorded public ask-ada input. */
   adaTalks?: AdaTalk[];
+  maryamPuzzle?: MaryamPuzzle;
+  refusalReply?: RefusalReply;
   nativeDepartures?: Record<
     string,
     {
@@ -689,6 +707,19 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
   const sleepy = !light || p.body.sleepPressure > 0.7 || p.body.sleepDebtHours > 0.5 || p.body.health < 0.5;
   const winter = season === 'winter';
   const hearth = hearthCell(s);
+  for (const r of refusalReplyOffers(s, p)) {
+    const journey = plan(s, f, at, r.cell, r.minutes, lit);
+    if (!journey) continue;
+    offer(r.offer, journey, r.minutes);
+    r.offer.duration = Math.ceil((journey.times.at(-1) ?? at) - (journey.times[0] ?? at) + r.minutes);
+  }
+  for (const a of puzzleOffers(s, p)) {
+    const journey = plan(s, f, at, hearth, 30, lit);
+    if (!journey) continue;
+    offer(a, journey, 30);
+    // Do not round travel down into the required terminal half hour.
+    a.duration = Math.ceil((journey.times.at(-1) ?? at) - (journey.times[0] ?? at) + 30);
+  }
   for (const a of adaTalkOffers(s, p)) offer(a, plan(s, f, at, hearth, 30, lit), 30);
   for (const a of cutOffers(s, p)) offer(a, plan(s, f, at, hearth, 30, lit), 30);
   for (const r of residentOffers(s, p)) offer(r.offer, plan(s, f, at, r.cell, r.minutes, lit), r.minutes);
@@ -1569,8 +1600,12 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
   const hours = workDone(t, act, now);
   // Where they are now.
   s.pos[p.id] = done ? (t?.end ?? s.pos[p.id] ?? 0) : positionAt(s, p.id, now);
+  const puzzle = finishPuzzle(s, p, act, done);
+  if (puzzle) return { ...base, ...puzzle };
   const adaTalk = finishAdaTalk(s, p, act, done);
   if (adaTalk) return { ...base, ...adaTalk };
+  const contextualReply = finishRefusalReply(s, p, act, done);
+  if (contextualReply) return { ...base, ...contextualReply };
   const residentWork = finishResidentWork(s, p, act, done);
   if (residentWork) return { ...base, ...residentWork };
   const cutSpeech = finishCutStatement(s, p, act, done);
@@ -2144,6 +2179,8 @@ export function makeWorld(s: WarrenState): World {
       const minute = s.minute;
       s.minute = at;
       try {
+        observeRefusalReply(s);
+        observePuzzle(s);
         observeAdaTalk(s);
         observeCutDiscussion(s);
         observeResidentTalk(s, false);
@@ -2183,6 +2220,8 @@ export function makeWorld(s: WarrenState): World {
       captureAnswer(s, p, offer, record);
       captureResidentAnswer(s, p, offer, record);
       captureAdaTalkAnswer(s, p, offer, record);
+      capturePuzzleAnswer(s, p, offer, record);
+      captureRefusalReplyAnswer(s, p, offer, record);
       return undefined;
     },
     resolve: (p, act, reason) => resolveActivity(s, p, act, reason),
@@ -2253,7 +2292,12 @@ function* advancing(
     const next = s.hfPhase?.to ?? Math.min(to, (Math.floor(s.minute / QUANTUM) + 1) * QUANTUM);
     const suggestions: Record<string, Suggestion> = {};
     for (const p of s.people) {
-      const suggestion = residentSuggestion(s, p) ?? cutSuggestion(s, p) ?? adaTalkSuggestion(s, p);
+      const suggestion =
+        refusalReplySuggestion(s, p) ??
+        residentSuggestion(s, p) ??
+        cutSuggestion(s, p) ??
+        adaTalkSuggestion(s, p) ??
+        puzzleSuggestion(s, p);
       if (suggestion) suggestions[p.id] = suggestion;
     }
     if (s.bell && s.bell.until > s.minute)
@@ -2309,6 +2353,8 @@ export function observeRefuge(s: WarrenState) {
 }
 
 function afterQuantum(s: WarrenState, ev: SimEvent[]) {
+  observeRefusalReply(s);
+  observePuzzle(s);
   observeAdaTalk(s);
   observeCutDiscussion(s);
   observeResidentTalk(s);

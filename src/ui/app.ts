@@ -35,8 +35,10 @@ import {
   yOf,
 } from '../sim/grid.ts';
 import { ageYears, type PersonReading as Person } from '../sim/hf4.ts';
+import { puzzleUnavailable, puzzleWords } from '../sim/maryam-puzzle.ts';
 import { VISIT_TERMS } from '../sim/people.ts';
 import { rallyBlock } from '../sim/rally.ts';
+import { canReplyToRefusal, refusalReplyWords } from '../sim/refusal-reply.ts';
 import {
   doorRequest,
   type ResidentRequests,
@@ -79,7 +81,13 @@ import {
 import { lab } from './lab.ts';
 import { invitationWords, personHelpWords } from './person-help.ts';
 import { type PlanSafety, planSafety } from './plan-safety.ts';
-import { eventStamp, playbackRate } from './playback.ts';
+import {
+  eventStamp,
+  type InvitationObservation,
+  invitationNotices,
+  invitationObservation,
+  playbackRate,
+} from './playback.ts';
 import { bellShelterWords, bellStateWords, bellThreatWords } from './room-safety.ts';
 import { chalkFeedback, selectedPlan, yusufPlanWords } from './selected-plan.ts';
 import {
@@ -110,6 +118,7 @@ let g: Game | null = null;
 let observedGame: Game | null = null;
 let observedWork: WorkObservation | undefined;
 let observedSetups: SetupObservation | undefined;
+let observedInvitations: InvitationObservation | undefined;
 /** Display only, this sitting: changes to what the keeper set up, shown at the top of the Journal. */
 let seenWhileWatching: { at: number; text: string }[] = [];
 let generation = 0;
@@ -995,6 +1004,8 @@ function chrome() {
   const completedBefore = observedGame === g ? (observedWork?.completed.length ?? 0) : undefined;
   observedWork = observeMarkedWork(s, observedGame === g ? observedWork : undefined);
   const setups = observeSetups(s, observedGame === g ? observedSetups : undefined);
+  setups.seen.push(...invitationNotices(s, observedGame === g ? observedInvitations : undefined));
+  observedInvitations = invitationObservation(s);
   for (const c of observedWork.completed.slice(completedBefore ?? observedWork.completed.length))
     setups.seen.push(`Your marked square ${cellLocationWords(s, c)} is dug open now.`);
   observedSetups = setups.observation;
@@ -1005,7 +1016,8 @@ function chrome() {
     seenWhileWatching = [...seenWhileWatching, ...setups.seen.map((text) => ({ at: s.minute, text }))].slice(
       -12,
     );
-    // Display only: the line stays in view for six seconds. Playback is not paused or slowed for it.
+    // Display only: retain the reading and use the ordinary nonzero reading slowdown.
+    readUntil = performance.now() + 6000;
     hintUntil = performance.now() + 6000;
     if (event) event.textContent = settingWords(words);
   }
@@ -1202,8 +1214,10 @@ function card() {
         <p id="person-help">${esc(personHelpWords(s, p))}</p>
     <div>${esc(activityWords(doing, walking, p.name))}</div>
     ${s.next && ['yusuf', 'meryem'].includes(p.id) ? `<p>${esc(discussionWords(s))}</p>${!s.next.discussion && markedLooseCut(s) >= 0 ? '<button id="discuss-cut">Invite Yusuf Usta and Meryem to discuss the marked loose cut</button>' : s.next.discussion && s.next.discussion.endedAt === undefined ? '<button id="end-cut-discussion">Stop waiting for this discussion</button>' : ''}` : ''}
-    ${residualEnabled(s) && ageYears(p) >= 18 ? `<p>${esc(s.next?.requests?.rest?.who === p.id ? requestWords(s, 'rest') : 'You can ask to talk about taking a break. The person may keep working or rest instead.')}</p>${s.next?.requests?.rest?.who === p.id && s.next.requests.rest.endedAt === undefined ? '<button data-withdraw="rest">Withdraw the rest request</button>' : '<button id="talk-rest">Ask to talk about rest</button>'}${s.next?.discussion?.exchange && s.next.discussion.statements.some((r) => r.speaker === p.id) ? `<p>${esc(s.next?.requests?.disagreement?.who === p.id ? requestWords(s, 'disagreement') : 'Both people heard the disagreement about the cut. You can invite another conversation. You may leave or change the chalk yourself.')}</p>${s.next?.requests?.disagreement?.who === p.id && s.next.requests.disagreement.endedAt === undefined ? '<button data-withdraw="disagreement">Withdraw the conversation request</button>' : '<button id="talk-disagreement">Ask to talk after the disagreement</button>'}` : ''}` : ''}
+    ${residualEnabled(s) && ageYears(p) >= 18 ? `<p>${esc(s.next?.requests?.rest?.who === p.id ? requestWords(s, 'rest') : 'You can ask to talk about taking a break. The person may keep working or rest instead.')}</p>${s.next?.requests?.rest?.who === p.id && s.next.requests.rest.endedAt === undefined ? '<button data-withdraw="rest">Withdraw the rest request</button>' : '<button id="talk-rest">Ask to talk about rest</button>'}${!canReplyToRefusal(s, p.id) && !(s.refusalReply?.who === p.id && s.refusalReply.endedAt === undefined) && s.next?.discussion?.exchange && s.next.discussion.statements.some((r) => r.speaker === p.id) ? `<p>${esc(s.next?.requests?.disagreement?.who === p.id ? requestWords(s, 'disagreement') : 'Both people heard the disagreement about the cut. You can invite another conversation. You may leave or change the chalk yourself.')}</p>${s.next?.requests?.disagreement?.who === p.id && s.next.requests.disagreement.endedAt === undefined ? '<button data-withdraw="disagreement">Withdraw the conversation request</button>' : '<button id="talk-disagreement">Ask to talk after the disagreement</button>'}` : ''}` : ''}
     ${p.id === 'kian' && (s.edition === '0.6.0' || s.edition === '0.7.0') ? `<section id="ada-conversation"><p id="ada-talk-status">${esc(adaTalkWords(s))}</p>${s.adaTalks?.at(-1)?.endedAt === undefined && s.adaTalks?.length ? '<button id="withdraw-ada-talk">Stop waiting for this conversation</button>' : `<button id="ask-ada" ${adaTalkUnavailable(s) ? 'disabled' : ''}>Ask Kian about Ada</button>${adaTalkUnavailable(s) ? `<p>${esc(adaTalkUnavailable(s)!)}</p>` : ''}`}</section>` : ''}
+    ${p.id === 'maryam' ? `<section id="maryam-puzzle"><p id="maryam-puzzle-status">${esc(puzzleWords(s))}</p>${s.maryamPuzzle ? (s.maryamPuzzle.endedAt === undefined ? '<button id="withdraw-maryam-puzzle">Stop waiting for the exercise</button>' : '') : `<button id="maryam-puzzle-loosen" ${puzzleUnavailable(s) ? 'disabled' : ''}>Ask Maryam to loosen the crossing</button><button id="maryam-puzzle-draw" ${puzzleUnavailable(s) ? 'disabled' : ''}>Ask Maryam to draw the crossing toward the ring</button>`}</section>` : ''}
+    ${canReplyToRefusal(s, p.id) || s.refusalReply?.who === p.id ? `<section id="contextual-refusal"><p>${esc(refusalReplyWords(s))}</p>${canReplyToRefusal(s, p.id) ? '<button id="reply-refusal">Invite a reply to the heard disagreement</button>' : s.refusalReply?.endedAt === undefined ? '<button id="withdraw-refusal-reply">Stop waiting for this reply</button>' : ''}</section>` : ''}
     <div class="shelter-person">${esc(exposureWords(s, p))}</div>
     ${(s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') && VISIT_TERMS[p.id] ? `<p id="invitation-status">${esc(displayWords(invitationWords(s, p)))}</p><p>${esc(displayWords(VISIT_TERMS[p.id]!))}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] || s.flags[`invitation-pending:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><p class="soft small">${esc(s.flags[`released:${p.id}`] ? `${p.name} no longer works on the refuge. Promises and household duties still apply.` : `Releasing ${p.name} stops their digging and other work on the refuge for the rest of this hill.${p.id === 'yusuf' ? ' He will no longer walk the marks with the diggers when you ask.' : ''} It cannot be taken back. Promises and household duties still apply.`)}</p><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>${esc(`Release ${p.name} from refuge work`)}</button>` : ''}
 
@@ -1218,6 +1232,25 @@ function card() {
     el.dataset.html = html;
     el.innerHTML = html;
     continuity.bind(el);
+    el.querySelector('#reply-refusal')?.addEventListener('click', () => {
+      order({ verb: 'reply-refusal', who: p.id });
+      card();
+    });
+    el.querySelector('#withdraw-refusal-reply')?.addEventListener('click', () => {
+      order({ verb: 'withdraw-refusal-reply' });
+      card();
+    });
+    for (const handling of ['loosen', 'draw'] as const)
+      el.querySelector(`#maryam-puzzle-${handling}`)?.addEventListener('click', () => {
+        if (!g) return;
+        const ok = order({ verb: 'try-maryam-puzzle', handling });
+        card();
+        if (!ok) flash(puzzleUnavailable(g.s) ?? 'The exercise could not begin.');
+      });
+    el.querySelector('#withdraw-maryam-puzzle')?.addEventListener('click', () => {
+      order({ verb: 'withdraw-maryam-puzzle' });
+      card();
+    });
     for (const verb of ['ask-ada', 'withdraw-ada-talk'] as const)
       el.querySelector(`#${verb}`)?.addEventListener('click', () => {
         if (!g) return;
