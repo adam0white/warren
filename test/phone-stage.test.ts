@@ -37,7 +37,9 @@ it('keeps shelter state and a complete reading visible beside the scene', async 
     expect(await page.locator('#bell').isVisible()).toBe(true);
     await page.locator('#shelter-check').click();
     await page.locator('[data-who="meryem"]').click();
-    expect(await page.locator('#person-help').innerText()).toContain('current condition is unavailable');
+    expect(await page.locator('#person-help').innerText()).toContain(
+      'This is an approximate reading of current condition.',
+    );
     expect(await page.locator('#cell-detail').isVisible()).toBe(false);
     expect(await page.locator('#drawer').isVisible()).toBe(false);
     await page.locator('#cardx').click();
@@ -75,7 +77,9 @@ it('preserves an expanded person disclosure and its focus while the card updates
       true,
     );
     await page.clock.runFor(500);
-    expect(await page.locator('#person-help').innerText()).toContain('current condition is unavailable');
+    expect(await page.locator('#person-help').innerText()).toContain(
+      'This is an approximate reading of current condition.',
+    );
     expect(await page.locator('#person-context').evaluate((el) => (el as HTMLDetailsElement).open)).toBe(
       true,
     );

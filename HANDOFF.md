@@ -1,3 +1,9 @@
+# Condition signs restored — 2026-10-28
+
+Remaining: one hosted review, exact source and merged CI, deployment, live clean-release verification and worktree cleanup. Adam accepts game feel separately.
+
+The person panel again uses HF host-inspected body state and perceived needs, with an explicit approximate-reading label and Warren's pre-port phrases. Fatigue and sleepiness affect lean and stride; active injuries add the shoulder mark. Journal injury evidence stays historical. No numbers, narration fallback, gameplay switch, dependency or simulation/replay change is added. The design decision supersedes the earlier unavailable-condition policy under the owner's voice-restoration brief.
+
 # Held follow-through composed on HF4 — 2026-10-28
 
 Remaining: final normal lane, signed source, one hosted Codex review, exact source and merged CI, normal deployment, live release/assets and phone/wide verification, then cleanup. Adam accepts game feel separately. This entry describes the candidate, not a completed delivery.
