@@ -1,6 +1,7 @@
 import { beforeAll, expect, it } from 'vitest';
 import { project } from '../src/sim/cast.ts';
 import { act, advance, fingerprintJson, load, newGame, replay, type Saved, save } from '../src/sim/game.ts';
+import { idx, SURF, USE } from '../src/sim/grid.ts';
 import { observePuzzle, puzzleUnavailable } from '../src/sim/maryam-puzzle.ts';
 import { receivedVisit } from '../src/sim/visits.ts';
 import { advanceFrame } from '../src/sim/warren.ts';
@@ -146,4 +147,20 @@ it('requires the exact retained offer and keeps withdrawal finite and replayable
   const trimmed = offer();
   trimmed.s.notes = trimmed.s.notes.filter((n) => n !== receivedVisit(trimmed.s, 'maryam'));
   expect(puzzleUnavailable(trimmed.s)).toContain('not retained');
+});
+
+it('refuses the exercise during Maryam’s actual pending held-hill door trial', () => {
+  const g = newGame(7);
+  const cell = idx(18, SURF + 1);
+  // Declared physical door fixture; no person, activity or HF choice is fabricated.
+  g.s.hill.use[cell] = USE.door;
+  g.s.hill.doorWork[cell] = 0;
+  expect(act(g, { verb: 'visit', who: 'maryam' })).toBe(true);
+  expect(act(g, { verb: 'try-door', who: 'maryam', cell })).toBe(true);
+  expect(g.s.next).toBeUndefined();
+  expect(g.s.doorTrials!.at(-1)!.who).toBe('maryam');
+  const pending = save(g);
+  expect(act(g, { verb: 'try-maryam-puzzle', handling: 'loosen' })).toBe(false);
+  expect(save(g)).toEqual(pending);
+  expect(g.s.maryamPuzzle).toBeUndefined();
 });

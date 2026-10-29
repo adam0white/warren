@@ -15,6 +15,7 @@ import type {
   SuggestionResolution,
 } from './hf4.ts';
 import { heard } from './hf4.ts';
+import { doorRequest } from './resident-requests.ts';
 import { receivedVisit } from './visits.ts';
 import { note, positionAt, type WarrenState } from './warren.ts';
 
@@ -68,12 +69,18 @@ export function puzzleUnavailable(s: WarrenState): string | undefined {
   if (s.maryamPuzzle) return 'This exercise has already been requested. Its time and result remain recorded.';
   if (!receivedVisit(s, 'maryam'))
     return 'Maryam’s original puzzle offer is not retained here. A visit mark cannot recover it.';
-  if (Object.values(s.next?.requests ?? {}).some((r) => r.who === 'maryam' && r.endedAt === undefined))
+  if (
+    [...Object.values(s.next?.requests ?? {}), doorRequest(s)].some(
+      (r) => r?.who === 'maryam' && r.endedAt === undefined,
+    )
+  )
     return 'Maryam already has a pending request. Finish or withdraw it first.';
   if (!quiet(s)) return 'Wait until the bell call and danger have passed.';
   const p = s.people.find((p) => p.id === 'maryam');
   if (!p || !present(s, p, s.minute))
     return 'Maryam is absent, released or has a household duty due. The exercise cannot begin.';
+  if (p.activity?.affordanceId.startsWith('resident-'))
+    return 'Maryam is still finishing another request. Wait until that work ends.';
   return undefined;
 }
 export function requestPuzzle(s: WarrenState, handling: Handling): boolean {
