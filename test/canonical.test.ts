@@ -42,7 +42,8 @@ describe('canonical Warren chapter', () => {
     advance(g, 720);
     expect(g.s.notes.some((n) => /impossible knots/.test(n.text))).toBe(true);
     const sv = save(g);
-    const restored = restore === 'native' ? load(sv) : replay(sv.seed, sv.inputs, sv.minute, sv.game);
+    const restored =
+      restore === 'native' ? load(sv) : replay(sv.seed, sv.inputs, sv.minute, sv.game, sv.chapter, sv.config);
     expect(fingerprint(restored.s)).toBe(sv.fingerprint);
   }
   it('only reveals private clues after an invitation and retains them in native restoration', () =>

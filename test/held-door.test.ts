@@ -34,6 +34,7 @@ function heldHill(nourished = false) {
       )
     : newGame(7).s;
   s.edition = '0.7.0';
+  s.next = { config: 'warren-rest/2' };
   s.refuge = { slept: {}, raids: {}, forage: { day: -1, gathered: 0 } };
   s.hill.use[cell] = USE.door;
   s.hill.doorWork[cell] = 0;
@@ -63,14 +64,13 @@ function exactReplay(g: ReturnType<typeof newGame>) {
 it('records a costed completed close and keeps reopening pending until an actual choice', () => {
   const g = heldHill();
   const before = save(g);
-  expect(act(g, { verb: 'test-door', who: 'yusuf', cell })).toBe(false);
+  expect(act(g, { verb: 'try-door', who: 'yusuf', cell })).toBe(false);
   expect(save(g)).toEqual(before);
-  expect(act(g, { verb: 'try-door', who: 'yusuf', cell })).toBe(true);
-  expect(g.s.next).toBeUndefined();
+  expect(act(g, { verb: 'test-door', who: 'yusuf', cell })).toBe(true);
   expect(g.s.edition).toBe('0.7.0');
   expect(g.s.hill.shut[cell]).toBe(0);
-  for (let n = 0; n < 12 && !g.s.doorTrials![0]!.results.length; n++) advance(g, g.s.minute + 30);
-  const r = g.s.doorTrials![0]!;
+  for (let n = 0; n < 12 && !g.s.next!.requests!.door!.results.length; n++) advance(g, g.s.minute + 30);
+  const r = g.s.next!.requests!.door!;
   expect(r.results[0]?.shut, JSON.stringify(r)).toBe(true);
   expect(r.phase).toBe('open');
   expect(r.opened).toBeUndefined();
@@ -86,29 +86,29 @@ it('records a costed completed close and keeps reopening pending until an actual
   expect(g.s.stats.bell).toEqual(before.state.stats.bell);
   expect(g.s.bell).toBeNull();
   const pending = save(g);
-  expect(act(g, { verb: 'try-door', who: 'yusuf', cell })).toBe(false);
+  expect(act(g, { verb: 'test-door', who: 'yusuf', cell })).toBe(false);
   expect(save(g)).toEqual(pending);
-  expect(act(g, { verb: 'withdraw-door-trial' })).toBe(true);
-  expect(g.s.doorTrials![0]!.results).toEqual(r.results);
-  expect(g.s.doorTrials).toHaveLength(1);
+  expect(act(g, { verb: 'withdraw-request', kind: 'door' })).toBe(true);
+  expect(g.s.next!.requests!.door!.results).toEqual(r.results);
+  expect(g.s.next!.requests!.door).toBeDefined();
   expect(requestWords(g.s, 'door')).toContain('withdrawn');
   exactReplay(g);
 });
 it('refuses unqualified work and preserves a withdrawn request without a completed roll', () => {
   const g = heldHill(),
     before = save(g);
-  expect(act(g, { verb: 'try-door', who: 'kian', cell })).toBe(false);
+  expect(act(g, { verb: 'test-door', who: 'kian', cell })).toBe(false);
   expect(save(g)).toEqual(before);
-  expect(act(g, { verb: 'try-door', who: 'maryam', cell })).toBe(true);
-  expect(act(g, { verb: 'withdraw-door-trial' })).toBe(true);
-  expect(g.s.doorTrials![0]!.results).toEqual([]);
+  expect(act(g, { verb: 'test-door', who: 'maryam', cell })).toBe(true);
+  expect(act(g, { verb: 'withdraw-request', kind: 'door' })).toBe(true);
+  expect(g.s.next!.requests!.door!.results).toEqual([]);
   expect(g.s.hill.shut[cell]).toBe(0);
   expect(requestWords(g.s, 'door')).toContain('withdrawn');
   exactReplay(g);
 });
 it('settles a real HF interruption of an active close without awarding a roll', () => {
   const g = heldHill(true);
-  expect(act(g, { verb: 'try-door', who: 'meryem', cell })).toBe(true);
+  expect(act(g, { verb: 'test-door', who: 'meryem', cell })).toBe(true);
   let actor = g.s.people.find((p) => p.activity?.action === 'test-close');
   while (!actor && g.s.minute < 1200) {
     advanceFrame(g.s, 0);
@@ -133,7 +133,7 @@ it('settles a real HF interruption of an active close without awarding a roll', 
     }),
   );
   advance(g, (g.s.hfPhase?.to ?? g.s.minute) + 30);
-  expect(g.s.doorTrials![0]!.results).toEqual([]);
+  expect(g.s.next!.requests!.door!.results).toEqual([]);
   expect(g.s.hill.shut[cell]).toBe(0);
   const final = archiveOf(g.s),
     verified = need(replayHF(final));
@@ -168,12 +168,12 @@ it('headless actual-app control: resumes an authored current hill and publicly r
     expect(await page.locator('#test-door').isVisible()).toBe(true);
     await page.locator('#door-tester').selectOption('yusuf');
     await page.locator('#test-door').click();
-    expect(await page.evaluate(() => window.__warren.game!.inputs.at(-1)?.verb)).toBe('try-door');
+    expect(await page.evaluate(() => window.__warren.game!.inputs.at(-1)?.verb)).toBe('test-door');
     // Only the ordinary simulation clock advances; no state/Person edits or forced resolution.
     await page.evaluate(`(async () => {
       const { advance } = await import('/src/sim/game.ts');
       const g = window.__warren.game;
-      for (let n = 0; n < 12 && !g.s.doorTrials?.[0]?.results.length; n++) advance(g, g.s.minute + 30);
+      for (let n = 0; n < 12 && !g.s.next?.requests?.door?.results.length; n++) advance(g, g.s.minute + 30);
     })()`);
     await page.clock.runFor(300);
     expect(await page.locator('#resident-door-controls').textContent()).toContain(
@@ -185,10 +185,10 @@ it('headless actual-app control: resumes an authored current hill and publicly r
     const download = page.waitForEvent('download');
     await page.locator('#download-run').click();
     const native: Saved = JSON.parse(readFileSync((await (await download).path())!, 'utf8'));
-    expect(native.state.doorTrials![0]!.phase).toBe('open');
-    expect(native.state.doorTrials![0]!.results.map((r) => r.shut)).toEqual([true]);
-    expect(native.state.doorTrials![0]!.opened).toBeUndefined();
-    expect(native.state.next).toBeUndefined();
+    expect(native.state.next!.requests!.door!.phase).toBe('open');
+    expect(native.state.next!.requests!.door!.results.map((r) => r.shut)).toEqual([true]);
+    expect(native.state.next!.requests!.door!.opened).toBeUndefined();
+    expect(native.state.next?.config).toBe('warren-rest/2');
     expect(native.state.stats.bell).toEqual({});
     expect(native.state.hill.shut[cell]).toBe(1);
     const replayed = replay(

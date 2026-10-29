@@ -4,7 +4,7 @@ import { idx, K, SURF } from '../src/sim/grid.ts';
 import { heard } from '../src/sim/hf4.ts';
 
 it('records only actually heard positions with real speech costs', () => {
-  const opening = newGame(7, '0.7.0', undefined, 'warren-next/2', (person) => ({
+  const opening = newGame(7, '0.7.0', undefined, 'warren-rest/2', (person) => ({
     ...person,
     state: { ...person.state, body: { ...person.state.body, satiety: 1, hydration: 1, sleepPressure: 0 } },
   }));
@@ -21,7 +21,7 @@ it('records only actually heard positions with real speech costs', () => {
       claims: [],
       initial: stateJson(opening.s),
     },
-    'warren-next/2',
+    'warren-rest/2',
   );
   act(g, { verb: 'chalk', cells: [face], on: true });
   expect(act(g, { verb: 'discuss-cut' })).toBe(true);
@@ -59,7 +59,7 @@ it('records only actually heard positions with real speech costs', () => {
 });
 
 it('replays a bounded public loose-cut encounter without inventing agreement or disagreement', () => {
-  const opening = newGame(7, '0.7.0', undefined, 'warren-next/2');
+  const opening = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   const face = idx(15, SURF + 3);
   // Authored physical terrain. Every answer and hearing still comes from the running HF actors.
   opening.s.hill.kind[face] = K.loose;
@@ -73,7 +73,7 @@ it('replays a bounded public loose-cut encounter without inventing agreement or 
       claims: [],
       initial: stateJson(opening.s),
     },
-    'warren-next/2',
+    'warren-rest/2',
   );
   expect(act(g, { verb: 'chalk', cells: [face], on: true })).toBe(true);
   expect(act(g, { verb: 'discuss-cut' })).toBe(true);

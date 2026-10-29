@@ -7,7 +7,7 @@ import { canReplyToRefusal, refusalReplyOffers, refusalReplySuggestion } from '.
 
 const face = idx(15, SURF + 3);
 function fixture(seed = 7) {
-  const opening = newGame(seed, '0.7.0', undefined, 'warren-rest/1', (p) =>
+  const opening = newGame(seed, '0.7.0', undefined, 'warren-rest/2', (p) =>
     p.id !== 'meryem'
       ? p
       : {
@@ -26,7 +26,7 @@ function fixture(seed = 7) {
     seed,
     '0.7.0',
     { version: 'warren-hf4-cast/1', inputs: [], claims: [], initial: stateJson(opening.s) },
-    'warren-rest/1',
+    'warren-rest/2',
   );
 }
 function exchange(g: ReturnType<typeof newGame>) {

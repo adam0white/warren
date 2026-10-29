@@ -58,7 +58,7 @@ it('restores accepted active work and keeps self preview read-only', () => {
 });
 
 it('finishes an in-flight quantum before logging a player input, then exports exact replay', () => {
-  const original = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  const original = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   for (let n = 0; n < 13; n++) advanceFrame(original.s, 0);
   expect(original.s.hfPhase).toBeDefined();
   expect(act(original, { verb: 'bell' })).toBe(true);

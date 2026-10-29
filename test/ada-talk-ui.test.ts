@@ -37,6 +37,7 @@ it('actual App synthetic control: publicly asks Kian, sees heard speech, downloa
       }),
       720,
     );
+    state.next = { config: 'warren-rest/2' };
     const hearth = cellsWithUse(state.hill, USE.hearth)[0]!;
     state.pos.kian = hearth;
     state.pos.tamar = hearth;

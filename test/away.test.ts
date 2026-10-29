@@ -10,11 +10,11 @@ import {
   save,
   stateJson,
 } from '../src/sim/game.ts';
-import { advanceFrame, QUANTUM } from '../src/sim/warren.ts';
+import { QUANTUM } from '../src/sim/warren.ts';
 
 /** Authored physical raid schedule, not skipped play or a changed Person. */
 function eventHill() {
-  const opening = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  const opening = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   const raid = opening.s.raids[0]!;
   raid.smoke = opening.s.minute + 60;
   raid.riders = raid.smoke + 60;
@@ -23,18 +23,9 @@ function eventHill() {
     7,
     '0.7.0',
     { version: 'warren-hf4-cast/1', inputs: [], claims: [], initial: stateJson(opening.s) },
-    'warren-rest/1',
+    'warren-rest/2',
   );
 }
-it('leaves a current hill without away configuration unchanged while absent', () => {
-  {
-    const g = newGame(7, '0.7.0');
-    advanceFrame(g.s, 0);
-    const before = save(g);
-    expect(catchUp(g, 60 * 60_000)).toBe(false);
-    expect(save(g)).toEqual(before);
-  }
-});
 it('pins actual away duration and real world steps, then replays and resumes exactly', () => {
   const g = eventHill();
   const before = save(g);
@@ -59,7 +50,7 @@ it('pins actual away duration and real world steps, then replays and resumes exa
   expect(fingerprint(restored.s)).toBe(fingerprint(g.s));
 });
 it('stops at the existing bell and records computational remainder without a gameplay cap', () => {
-  const g = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  const g = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   const at = g.s.minute;
   catchUp(g, Number.MAX_SAFE_INTEGER, () => true);
   expect(g.s.minute).toBe(at + QUANTUM);
@@ -72,7 +63,7 @@ it('stops at the existing bell and records computational remainder without a gam
   expect(g.s.next!.away!.simulatedMinutes).toBe(0);
 });
 it('rejects invalid elapsed input and does not let a replay request spend more time than elapsed', () => {
-  const g = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  const g = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   const before = save(g);
   for (const elapsedMs of [-1, NaN, Infinity]) expect(catchUp(g, elapsedMs)).toBe(false);
   expect(act(g, { verb: 'away', elapsedMs: 1, quanta: 1 })).toBe(false);
@@ -97,8 +88,8 @@ it('cannot pass an unread return event by reopening the hill again', () => {
   expect(loaded.s.minute).toBeGreaterThan(quietAt);
 });
 it('keeps event attention independent of how many quanta an advance call groups', () => {
-  const single = newGame(7, '0.7.0', undefined, 'warren-rest/1');
-  const grouped = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  const single = newGame(7, '0.7.0', undefined, 'warren-rest/2');
+  const grouped = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   const end = single.s.minute + 180;
   while (single.s.minute < end) advance(single, single.s.minute + QUANTUM);
   advance(grouped, end);

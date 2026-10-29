@@ -131,7 +131,7 @@ it('keeps the complete known eight-step route unchanged by a hidden two-cell sho
 
 it('binds the actual public Yusuf invitation note to current chalk without inventing endpoints or changing raw state', () => {
   // A new 06:00 opening, not an elapsed journey or a fabricated HF receipt.
-  const g = authoredGame(7, 360, 'warren-rest/1');
+  const g = authoredGame(7, 360, 'warren-rest/2');
   expect(act(g, { verb: 'visit', who: 'yusuf' })).toBe(true);
   expect(g.s.flags['visit:yusuf']).toBe(361);
   const receipt = receivedVisit(g.s, 'yusuf')!;

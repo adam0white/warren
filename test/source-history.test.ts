@@ -55,7 +55,7 @@ async function genuineArrival() {
 
 describe('current complete source authority', () => {
   it('accepts genuine seeded, partial and actual admitted current producers', async () => {
-    const seeded = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+    const seeded = newGame(7, '0.7.0', undefined, 'warren-rest/2');
     expect((await validateSource(seeded))()).toBe(true);
     advanceFrame(seeded.s, 0);
     expect((await validateSource(load(save(seeded))))()).toBe(true);

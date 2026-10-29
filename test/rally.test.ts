@@ -5,7 +5,7 @@ import { rallyBlock, refugeGoal } from '../src/sim/rally.ts';
 
 function opening() {
   // Explicit authored weakened-goal fixture; no live actor state is changed.
-  const game = newGame(1476719286, '0.7.0', undefined, 'warren-rest/1', (person) => {
+  const game = newGame(1476719286, '0.7.0', undefined, 'warren-rest/2', (person) => {
     const authored = structuredClone(person);
     for (const goal of authored.state.agenda.goals)
       if (goal.id === 'refuge') {

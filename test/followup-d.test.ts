@@ -72,9 +72,18 @@ describe('edition 0.4.0 raid call', () => {
     advance(g, g.s.minute + HOUR);
     const exported = save(g);
     expect(exported.game).toBe('0.7.0');
-    expect(fingerprint(replay(exported.seed, exported.inputs, exported.minute, exported.game).s)).toBe(
-      exported.fingerprint,
-    );
+    expect(
+      fingerprint(
+        replay(
+          exported.seed,
+          exported.inputs,
+          exported.minute,
+          exported.game,
+          exported.chapter,
+          exported.config,
+        ).s,
+      ),
+    ).toBe(exported.fingerprint);
     const restored = load(JSON.parse(JSON.stringify(exported)));
     advance(g, g.s.minute + HOUR);
     advance(restored, restored.s.minute + HOUR);

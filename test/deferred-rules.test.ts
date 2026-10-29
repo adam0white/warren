@@ -73,9 +73,18 @@ it('replays the opted edition and continues its saved state exactly', () => {
   act(g, { verb: 'bell' });
   advance(g, g.s.minute + 6 * HOUR);
   const exported = save(g);
-  expect(fingerprint(replay(exported.seed, exported.inputs, exported.minute, exported.game).s)).toBe(
-    exported.fingerprint,
-  );
+  expect(
+    fingerprint(
+      replay(
+        exported.seed,
+        exported.inputs,
+        exported.minute,
+        exported.game,
+        exported.chapter,
+        exported.config,
+      ).s,
+    ),
+  ).toBe(exported.fingerprint);
   const loaded = load(exported);
   advance(g, g.s.minute + 3 * HOUR);
   advance(loaded, loaded.s.minute + 3 * HOUR);

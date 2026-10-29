@@ -31,7 +31,7 @@ it('notices an invitation note without calling it an HF answer or inventing an e
 it('stamps actual request speech and hearing even if unrelated notes hide them', () => {
   const s = newGame(7, '0.7.0').s;
   s.next = {
-    config: 'warren-rest/1',
+    config: 'warren-rest/2',
     requests: { rest: { who: 'yusuf', listener: 'meryem', at: 1, answers: [], heard: false } },
   };
   const rest = s.next.requests?.rest;

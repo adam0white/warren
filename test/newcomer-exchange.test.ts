@@ -12,7 +12,7 @@ function opening(seed = 7, declared = true) {
   const s = newWarren(seed, true, undefined, 1740);
   s.edition = '0.7.0';
   s.refuge = { slept: {}, raids: {}, forage: { day: -1, gathered: 0 } };
-  s.next = { config: 'warren-rest/1' };
+  s.next = { config: 'warren-rest/2' };
   const used = new Set(s.usedNames);
   const family = arrivingFamily(seed, 1, s.minute, 8, used);
   s.arrivals = 1;
@@ -31,7 +31,7 @@ function opening(seed = 7, declared = true) {
     cell: surfaceCell(8),
   });
   const chapter = { version: 'warren-hf4-cast/1' as const, inputs: [], claims: [], initial: stateJson(s) };
-  const g = newGame(seed, '0.7.0', chapter, 'warren-rest/1');
+  const g = newGame(seed, '0.7.0', chapter, 'warren-rest/2');
   return { g, family, who: family.people[0]!.id };
 }
 function admitted(seed = 7) {

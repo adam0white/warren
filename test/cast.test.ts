@@ -16,7 +16,7 @@ import { archiveOf, FRAMEWORK_VERSION, need } from '../src/sim/hf4.ts';
 async function source() {
   // Actual public release ends optional local goals through admitted HF inputs.
   // Projection must refuse the still-active ordinary opening without dropping history.
-  const game = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  const game = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   await expect(project(game.s, 'meryem')).rejects.toThrow();
   expect(act(game, { verb: 'release', who: 'meryem' })).toBe(true);
   advance(game, 330);
@@ -53,12 +53,12 @@ describe('HF4 retained cast', () => {
   });
   it('retains admission inputs and exact opening state in export replay', async () => {
     const { envelope } = await source();
-    const base = newGame(8, '0.7.0', undefined, 'warren-rest/1');
+    const base = newGame(8, '0.7.0', undefined, 'warren-rest/2');
     const target = newGame(
       8,
       '0.7.0',
       undefined,
-      'warren-rest/1',
+      'warren-rest/2',
       authoringFor([envelope], archiveOf(base.s).initial.spec.start),
     );
     expect(
@@ -76,7 +76,7 @@ describe('HF4 retained cast', () => {
       claims: [],
       initial: stateJson(target.s),
     };
-    const run = newGame(8, '0.7.0', chapter, 'warren-rest/1');
+    const run = newGame(8, '0.7.0', chapter, 'warren-rest/2');
     const saved = save(run);
     expect(fingerprint(load(saved).s)).toBe(saved.fingerprint);
     expect(
@@ -105,7 +105,7 @@ describe('HF4 retained cast', () => {
 });
 
 it('admits an actual lived Warren passport with remembered world references and replays the receiving run', async () => {
-  const game = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  const game = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   advance(game, 900);
   expect(act(game, { verb: 'release', who: 'meryem' })).toBe(true);
   advance(game, 930);
@@ -133,7 +133,7 @@ it('admits an actual lived Warren passport with remembered world references and 
     limitations: [],
   });
   const before = archiveOf(game.s);
-  const target = newGame(8, '0.7.0', undefined, 'warren-rest/1', authoringFor([envelope], 300 * 60000));
+  const target = newGame(8, '0.7.0', undefined, 'warren-rest/2', authoringFor([envelope], 300 * 60000));
   const received = archiveOf(target.s);
   expect(received.initial.spec.world.facts.some((f) => f.subject === 'travellers')).toBe(true);
   expect(archiveOf(game.s)).toEqual(before);
@@ -241,7 +241,7 @@ it('preserves a current foreign chapter place as historical evidence without cla
     limitations: [],
   });
   const before = exportRun(run);
-  const target = newGame(8, '0.7.0', undefined, 'warren-rest/1', authoringFor([envelope], spec.start));
+  const target = newGame(8, '0.7.0', undefined, 'warren-rest/2', authoringFor([envelope], spec.start));
   const received = archiveOf(target.s);
   expect(
     received.initial.spec.world.facts.find((f) => f.subject === 'history:watch:watch-courtyard')?.value,
@@ -289,7 +289,7 @@ it('retains an unfamiliar duty without making it a local action', async () => {
     at: portable.retained.at,
   });
   const incoming = { ...envelope, transfer: { ...envelope.transfer, portable } };
-  const target = newGame(8, '0.7.0', undefined, 'warren-rest/1', authoringFor([incoming], 300 * 60000));
+  const target = newGame(8, '0.7.0', undefined, 'warren-rest/2', authoringFor([incoming], 300 * 60000));
   const archive = archiveOf(target.s);
   const duty = archive.current.people.meryem!.agenda.commitments.find((c) => c.id === 'foreign-duty');
   expect(duty?.actions).toEqual(['history:warren:return-to-source', 'cook']);

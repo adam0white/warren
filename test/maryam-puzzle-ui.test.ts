@@ -24,7 +24,7 @@ it('phone and wide public controls create a real exercise, download complete nat
         const page = await context.newPage();
         await page.clock.install();
         await page.goto(url);
-        const g = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+        const g = newGame(7, '0.7.0', undefined, 'warren-rest/2');
         await page.evaluate(
           `(async()=>{const {put}=await import('/src/ui/store.ts');return put('hill',${JSON.stringify(save(g))});})()`,
         );

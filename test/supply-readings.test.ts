@@ -165,7 +165,7 @@ it('keeps later door and Bell readings authoritative after inspecting a completi
 });
 
 it('follows a real person’s grain work without attributing words or moving supplies', () => {
-  const g = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  const g = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   advance(g, 600);
   for (let n = 0; n < 24 && !g.s.people.some((p) => p.activity?.action === 'reap'); n++)
     advance(g, g.s.minute + 30);

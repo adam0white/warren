@@ -14,7 +14,7 @@ Choose Slow, Steady or Fast. The Game menu, village sheet and person cards opene
 
 Drag in look mode to move the view. Two fingers move and pinch the view. Mouse wheel pans; Ctrl+wheel zooms. The +, − and Fit hill buttons also control the view.
 
-Every new hill starts with rules 0.7.0 and the existing `warren-rest/1` configuration. Sleep and shelter outcomes, limited wild food, warned furnishing damage, quiet away play and resident conversation requests are public. Existing hills keep their recorded rules and configuration.
+Every new hill starts with rules 0.7.0 and the `warren-rest/2` configuration. Sleep and shelter outcomes, limited wild food, warned furnishing damage, quiet away play and resident conversation requests are public. Only hills with that configuration can be opened; keep unsupported originals and start fresh.
 
 One real minute away plays one game minute through ordinary simulation. Play stops for events, pending choices or a computation limit. The return reading reports completed play and unplayed time; unplayed time is not banked. You can invite Yusuf Usta and Meryem to discuss a marked, known loose cut, or stop waiting. Speech needs travel, thirty work minutes and an awake listener at the hearth. HF chooses their actions. Hearing a position does not force agreement or disagreement. You can ask an adult to talk about rest. A further conversation needs an actual mutually heard disagreement. People may decline. Door tests remain deliberate requests on a finished door.
 
@@ -41,7 +41,7 @@ The [Human Framework](https://human.adamwhite.work/) supplies people’s needs, 
 | Value                                    | Current source             |
 | ---------------------------------------- | -------------------------- |
 | App package                              | 0.7.0                      |
-| Ordinary new-hill rules / configuration  | 0.7.0 / warren-rest/1      |
+| Ordinary new-hill rules / configuration  | 0.7.0 / warren-rest/2      |
 | HF npm package                           | 4.7.0                      |
 | HF engine                                | 4.7.0                      |
 | Immutable lab-client / lab-kit artifacts | 0.5.3 / 0.5.21             |

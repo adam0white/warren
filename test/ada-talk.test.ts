@@ -20,6 +20,7 @@ function opening(at = 720, nourished = true) {
     at,
   );
   s.edition = '0.7.0';
+  s.next = { config: 'warren-rest/2' };
   s.refuge = { slept: {}, raids: {}, forage: { day: -1, gathered: 0 } };
   if (nourished) {
     const hearth = s.hill.use.findIndex((use) => use === USE.hearth);

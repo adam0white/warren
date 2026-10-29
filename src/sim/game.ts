@@ -107,9 +107,11 @@ export function newGame(
   seed: number,
   edition: string = DEFAULT_EDITION,
   chapter?: Chapter,
-  config?: NextConfig,
+  config: NextConfig = 'warren-rest/2',
   incoming?: (opening: PersonAuthoring) => PersonAuthoring,
 ): Game {
+  if (config !== 'warren-rest/2')
+    throw new Error('This hill cannot be opened. Keep the original and start fresh.');
   resetCaches();
   const rules = editionOf(edition);
   const s = chapter ? restoreState(chapter.initial) : newWarren(seed, true, incoming);
@@ -556,11 +558,9 @@ export function load(saved: Saved): Game {
     saved.phase?.steps !== saved.state.hfPhase?.steps
   )
     throw unreadableHill('The saved progress does not match the hill.');
+  if (saved.game !== GAME_VERSION) throw unreadableHill('The saved game version is not current.');
   const edition = editionOf(saved.game);
-  if (
-    saved.config !== saved.state.next?.config ||
-    (saved.config && (!supportedConfig(saved.config) || edition !== '0.7.0'))
-  )
+  if (saved.config !== 'warren-rest/2' || saved.config !== saved.state.next?.config || edition !== '0.7.0')
     throw unreadableHill('The saved configuration does not match its state.');
   if ((saved.state.edition ?? '0.2.0') !== edition)
     throw unreadableHill('The saved game’s version does not match its recorded state. Start a new game.');
@@ -616,6 +616,7 @@ export function replay(
   config?: NextConfig,
   phase?: PhaseCheckpoint,
 ): Game {
+  if (config !== 'warren-rest/2') throw unreadableHill('The replay configuration is not current.');
   const g = newGame(seed, edition, chapter, config);
   if (
     !Number.isFinite(minute) ||
