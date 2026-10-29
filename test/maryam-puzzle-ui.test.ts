@@ -15,7 +15,10 @@ it('phone and wide public controls create a real exercise, download complete nat
       [360, 690],
       [1280, 800],
     ]) {
-      const context = await browser.newContext({ viewport: { width: width!, height: height! } });
+      const context = await browser.newContext({
+        viewport: { width: width!, height: height! },
+        serviceWorkers: 'block',
+      });
       try {
         await context.route('**/*', (r) => (r.request().url().startsWith(url) ? r.continue() : r.abort()));
         const page = await context.newPage();

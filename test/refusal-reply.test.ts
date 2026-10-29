@@ -57,6 +57,10 @@ it('costs an actual contextual reply, records HF choice and public hearing, and 
   expect(heard(p, source.text, source.at)).toBe(true);
   expect(act(g, { verb: 'reply-refusal', who: 'kian' })).toBe(false);
   expect(act(g, { verb: 'reply-refusal', who })).toBe(true);
+  const pendingReply = save(g);
+  expect(act(g, { verb: 'talk-rest', who })).toBe(false);
+  expect(save(g)).toEqual(pendingReply);
+  expect(g.s.next?.requests?.rest).toBeUndefined();
   expect(act(g, { verb: 'reply-refusal', who })).toBe(false);
   for (let n = 0; n < 12 && !g.s.refusalReply!.heard; n++) advance(g, g.s.minute + 30);
   const r = g.s.refusalReply!;

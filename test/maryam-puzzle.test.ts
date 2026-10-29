@@ -1,6 +1,6 @@
-import { expect, it } from 'vitest';
+import { beforeAll, expect, it } from 'vitest';
 import { project } from '../src/sim/cast.ts';
-import { act, advance, fingerprintJson, load, newGame, replay, save } from '../src/sim/game.ts';
+import { act, advance, fingerprintJson, load, newGame, replay, type Saved, save } from '../src/sim/game.ts';
 import { observePuzzle, puzzleUnavailable } from '../src/sim/maryam-puzzle.ts';
 import { receivedVisit } from '../src/sim/visits.ts';
 import { advanceFrame } from '../src/sim/warren.ts';
@@ -11,7 +11,23 @@ function offer() {
   expect(receivedVisit(g.s, 'maryam')).toBeDefined();
   return g;
 }
-it('real Run chooses, travels and pays for one observed crossing; complete native replay continues', async () => {
+let completeReceipt: Saved;
+let continuedReceipt: Saved;
+// Keep all three complete 1,440-minute branches. Each branch gets the existing
+// sixty-second deadline, rather than combining their CPU time into one test.
+beforeAll(() => {
+  const g = offer();
+  expect(act(g, { verb: 'try-maryam-puzzle', handling: 'loosen' })).toBe(true);
+  for (let n = 0; n < 80 && !g.s.maryamPuzzle?.result; n++) advance(g, g.s.minute + 30);
+  expect(g.s.maryamPuzzle?.result).toBeDefined();
+  advance(g, g.s.minute + 30);
+  expect(g.s.maryamPuzzle!.result!.observed).toBe(true);
+  completeReceipt = JSON.parse(JSON.stringify(save(g)));
+  advance(g, completeReceipt.minute + 1440);
+  continuedReceipt = save(g);
+}, 60000);
+
+it('real Run chooses, travels and pays for one observed crossing with complete native and replay data', async () => {
   const g = offer();
   const before = save(g);
   expect(act(g, { verb: 'try-maryam-puzzle', handling: 'loosen' })).toBe(true);
@@ -60,11 +76,24 @@ it('real Run chooses, travels and pays for one observed crossing; complete nativ
     full.phase,
   );
   expect(save(replayed)).toEqual(full);
-  for (const run of [g, restored, replayed]) advance(run, full.minute + 1440);
-  expect(save(restored)).toEqual(save(g));
-  expect(save(replayed)).toEqual(save(g));
+  expect(full).toEqual(completeReceipt);
+  expect(save(restored)).toEqual(full);
   await expect(project(g.s, 'maryam')).rejects.toThrow(/shared history cannot carry/);
 });
+it.each(['native', 'replay'] as const)(
+  'continues the complete %s branch for the original 1,440-minute horizon',
+  async (mode) => {
+    const full = completeReceipt;
+    const continued =
+      mode === 'native'
+        ? load(full)
+        : replay(full.seed, full.inputs, full.minute, full.game, full.chapter, full.config, full.phase);
+    expect(save(continued)).toEqual(full);
+    advance(continued, full.minute + 1440);
+    expect(save(continued)).toEqual(continuedReceipt);
+    await expect(project(continued.s, 'maryam')).rejects.toThrow(/shared history cannot carry/);
+  },
+);
 it('host result alone does not establish attendance; alarm interrupts real work without changing the crossing', () => {
   const g = offer();
   expect(act(g, { verb: 'try-maryam-puzzle', handling: 'draw' })).toBe(true);

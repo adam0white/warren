@@ -143,7 +143,6 @@ function apply(s: WarrenState, i: Input): boolean {
     case 'withdraw-ada-talk':
       return withdrawAdaTalk(s);
     case 'talk-rest':
-      if (i.who === 'maryam' && s.maryamPuzzle && s.maryamPuzzle.endedAt === undefined) return false;
       return requestTalk(s, i.who, 'rest');
     case 'talk-disagreement':
       if (s.refusalReply && s.refusalReply.endedAt === undefined) return false;

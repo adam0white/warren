@@ -65,7 +65,16 @@ const adult = (s: WarrenState, id: string) =>
   s.people.find((p) => p.id === id && p.body.alive && ageYears(p) >= 18 && !s.flags[`released:${id}`]);
 function active(s: WarrenState, id: string) {
   // A withdrawn request does not turn its still-running work into a new request.
-  if (s.people.find((p) => p.id === id)?.activity?.affordanceId.startsWith('resident-')) return true;
+  const activity = s.people.find((p) => p.id === id)?.activity?.affordanceId;
+  if (
+    activity &&
+    ['resident-', 'contextual-refusal-', 'maryam-puzzle-'].some((prefix) => activity.startsWith(prefix))
+  )
+    return true;
+  // One keeper request per person owns this voice's answer. A different request
+  // cannot claim a verdict sent for the exercise or the contextual reply.
+  if (s.refusalReply?.who === id && s.refusalReply.endedAt === undefined) return true;
+  if (id === 'maryam' && s.maryamPuzzle && s.maryamPuzzle.endedAt === undefined) return true;
   const r = s.next?.requests;
   return [r?.rest, r?.disagreement, doorRequest(s)].some((x) => x?.who === id && x.endedAt === undefined);
 }
