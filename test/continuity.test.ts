@@ -196,6 +196,48 @@ describe('HF4 shelf ownership', () => {
     expect(state.heads[castId]).toBe(head.revision);
     expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
   });
+  it('publishes a genuine current producer and retains its complete source receipt', async () => {
+    mock.eligible = 'hf.cast.meryem.warren';
+    current = await fresh(7);
+    // The released local-only path had no chapter; keep its positive resume control.
+    delete current.chapter;
+    current = await localLoad(save(current));
+    act(current, { verb: 'release', who: 'meryem' });
+    advance(current, 330);
+    mock.requests = [];
+    await checkpoint();
+    const head = current.ownedHeads!['hf.cast.meryem.warren']!;
+    expect(mock.requests.filter((request) => request.action === 'putBatch')).toHaveLength(1);
+    expect(current.sourceArchives?.[head.revision]).toBeDefined();
+    const restored = await localLoad(save(current));
+    expect(restored.ownedHeads).toEqual(current.ownedHeads);
+    expect(restored.sourceArchives).toEqual(current.sourceArchives);
+  });
+  it('refuses forged full history before shared, archive or head writes', async () => {
+    mock.eligible = 'hf.cast.meryem.warren';
+    current = await fresh(7);
+    const head = structuredClone(current.ownedHeads);
+    current.s.notes[0]!.text += ' forged';
+    mock.requests = [];
+    await checkpoint();
+    expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
+    expect(current.ownedHeads).toEqual(head);
+    expect(current.sourceArchives).toBeUndefined();
+  });
+  it('cancels an async checkpoint before any shared, archive or head write', async () => {
+    mock.eligible = 'hf.cast.meryem.warren';
+    current = await fresh(7);
+    const original = current;
+    const head = structuredClone(original.ownedHeads);
+    mock.requests = [];
+    const pending = checkpoint();
+    mock.eligible = '';
+    current = await fresh(8);
+    await pending;
+    expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
+    expect(original.ownedHeads).toEqual(head);
+    expect(original.sourceArchives).toBeUndefined();
+  });
   it('strips publication authority on file import and retains file origin through local reload', async () => {
     current = await fresh(7, '0.7.0', 'warren-rest/1');
     const imported = await fileLoad(file(save(current)));
@@ -230,4 +272,19 @@ describe('HF4 shelf ownership', () => {
     release(JSON.stringify(saved));
     await expect(pending).rejects.toThrow(/replaced/);
   });
+});
+
+it('reads an unowned current native snapshot without granting source permission', async () => {
+  const snapshot = newGame(7);
+  snapshot.s.notes[0]!.text += ' retained local snapshot';
+  const full = save(snapshot);
+  const readable = await localLoad(full);
+  expect(save(readable)).toEqual(full);
+  current = readable;
+  mock.requests = [];
+  await checkpoint();
+  expect(mock.requests.filter((r) => r.action === 'putBatch')).toEqual([]);
+  const { validateSource } = await import('../src/sim/source-history.ts');
+  await expect(validateSource(readable, true)).rejects.toThrow(/complete creation/);
+  expect(save(readable)).toEqual(full);
 });

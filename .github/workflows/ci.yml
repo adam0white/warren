@@ -11,7 +11,12 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 jobs:
-  ci:
+  verify:
+    name: verify (${{ matrix.shard }})
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ["1/2", "2/2"]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -26,5 +31,15 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm audit --audit-level=high
       - run: pnpm exec playwright-core install --with-deps chromium webkit
-      - run: pnpm run check
+      - run: pnpm run lint
+      - run: pnpm run typecheck
+      - run: pnpm exec vitest run --testTimeout=60000 --maxWorkers=2 --shard=${{ matrix.shard }}
       - run: pnpm run build
+  ci:
+    if: ${{ always() }}
+    needs: [verify]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Require every unchanged-deadline shard
+        run: test "${{ needs.verify.result }}" = success

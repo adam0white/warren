@@ -233,15 +233,17 @@ files gain no shared-history ownership. Do not infer a public import feature fro
 historical generic notes. Recording and explicit Feedback sharing retain SDK privacy
 contracts. Feedback drafts send nothing until Submit.
 
-Public Kian/Meryem Watch preparation retains its finite source guards. It refuses
-next/rest configurations, including ordinary new hills. Older supported sources
-retain their exact path. Kian/Ada need the released accompaniment contract, both
-assents, a completed source meal and the exact pending return duty. Ada's reservoirs
-and dependent provenance remain pinned; further care consumes real grain/water.
-Ending optional refuge work does not complete return or erase duties. Native
-preparation spends ordinary play toward a quiet boundary. Preserve complete raw
-archives, care/dialect/role/identity/calendar checks and recorded permissions.
-No general cross-host ownership or atomic compare-and-swap is established.
+Current HF4 hills explicitly refuse older Kian/Meryem Watch preparation before any new input, departure or pending-quantum settlement. They preserve the complete notebook. The historical Watch care/dialect/role/identity/calendar contracts remain evidence, not an active HF4 route. Shared portable publication uses current HF projection, exact source/claim/parent validation and the published per-person peer gate. No completed cross-game journey is established.
+
+## Optional ring and string exercise — 2026-10-28
+
+After the exact retained Maryam invitation note, the keeper can ask her to loosen one crossing or draw it toward the wooden ring. A visit flag alone cannot recover the offer. This is one prospective authored prop: the ring is threaded on a closed loop with one loose crossing. Loosening leaves slack; drawing cinches it. Neither frees the ring. Maryam keeps the prop. No skill, gift, duty, expertise or agreement is awarded.
+
+Published HF chooses among the unique exercise offer and ordinary work/rest. Warren uses its registered leisure action and keeper request voice; existing Run definitions stay literal. Routes determine real travel. The exercise then needs at least thirty minutes at the hearth. New exercise duration rounds upward so fractional travel cannot shorten that work. Danger, absence, duty, sleep and withdrawal prevent completion. Host geometry and authored words describe only actual completed work. A public attended observation, checked at each result boundary, establishes observation; a host story note alone does not.
+
+Complete native and downloaded files retain the inputs, host fixture, full Run archive and continuation. Local physical-history checks compare complete replay, including when removable exercise markers were stripped. Unowned current native snapshots remain readable. Files require complete replay consistency. Neither form grants permission to prepare or publish a source. Shared publication refuses exercise history until the published generic prop contract supports it. Exact creation, claims, current source metadata, parent heads and complete producer receipts govern other shared checkpoints. A producer must match this hill’s complete opening and ordered input prefix; stale async work stops before writes. Replay equality is consistency, not authentication of independently rewritten history.
+
+Invitation host notes surface in the working view without reopening a person. No deadline or expiry is invented. Actual request answers/speech/hearing, marked-work starts/completion, Ada conversation, cut discussion, physical exercise and contextual reply use the normal nonzero reading slowdown. Menus still pause. The bounded contextual reply quotes an opposed loose-cut statement that the original listener actually attended. It uses a new voluntary choice, travel, thirty minutes and an awake listener; it changes no chalk and forces no agreement. Existing Yusuf note/date and Kian/Tamar words remain intact.
 
 ## Deferred and acceptance
 
@@ -250,10 +252,9 @@ qualifications, dates and aliases. This batch changes access, not whole-ask clos
 Door trial, Kian/Ada and retained door-history mechanisms already exist in the source
 base above; their source presence is distinct from current live delivery evidence.
 
-Engineering target2026-10-28: F1189 costed Maryam knot/gift/story continuation;
-F649/F655/F1200 actual newcomer exchanges and Ada actor contract; contextual replies
-to heard refusals; any F1193 clauses beyond the bounded invitation-note projection; F1192 invitation-answer
-notice; F1199 other actual setup-event coverage; every uncovered compound clause.
+The current candidate addresses only the bounded F1189/GDI1334 physical exercise, F1192/GDI1337 actual invitation cue, additional actual F1199/GDI1344 setup-event slowdown and one contextual reply to a heard loose-cut disagreement. Technical delivery still requires the gates in HANDOFF. Broader gift/story clauses, F1193 beyond the existing Yusuf note, new-family exchanges F1200/GDI1345 and general spontaneous quarrels stay open; this does not close compound asks.
+
+F649/GDI835 and F655/GDI841 meeting Ada need a maintained shared cast identity/profile, authored biography/backstory/secrets, age-appropriate agency and outcome/carry/return contract. Current dependent care and Kian/Tamar’s conversation do not establish meeting her. Owner: central HF cast/release director; its source is reserved by the release train. Checkpoint2026-10-29. Do not invent an Ada actor or family facts. New family/prop custody and generic lifecycle remain separate. Original Maya’s conditional return requires understanding stalled digging; this exercise does not establish it.
 F595's rest request and F629's door request remain bounded mechanisms. F678 stays
 a compound ask. GDI089's general/spontaneous quarrels remain wider than this finite
 heard-disagreement encounter. No fabricated game end or unsupported onward route.

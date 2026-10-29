@@ -1,3 +1,15 @@
+# Held follow-through composed on HF4 — 2026-10-28
+
+Remaining: final normal lane, signed source, one hosted Codex review, exact source and merged CI, normal deployment, live release/assets and phone/wide verification, then cleanup. Adam accepts game feel separately. This entry describes the candidate, not a completed delivery.
+
+Maryam’s retained wooden-ring offer now leads to one optional exercise. HF chooses whether she participates. Actual travel and a full half hour at the hearth precede one crossing becoming slack or cinched. The ring stays threaded on the closed loop. No gift, skill, duty, expertise or agreement is awarded. Danger or withdrawal can interrupt it. Public attended observation establishes that she observed the result. The exercise remains in complete native and downloaded files and replays; shared publication refuses because the published portable contract cannot carry the prop.
+
+Current unowned native snapshots remain readable. File playback requires complete replay consistency. Exact seeded/admitted creation, current producer metadata, claims, heads and parent receipts govern new shared publication. Each producer must match this hill’s opening and ordered input prefix; an independent valid hill is not its ancestor. Complete producer saves remain in flat source receipts; stale source or hill generations stop before writes. Replay equality and SDK integrity do not authenticate arbitrary independently rewritten histories. Unsupported Watch preparation refuses before settling a pending quantum. No hidden HF3 engine or migration exists. The six published peer blockers and per-person skipped heads remain unchanged.
+
+The working view notices actual invitation notes without reopening a person. It distinguishes authored notes from HF speech and hearing; no expiry is invented. Actual marked-work, request, discussion, Ada-conversation, exercise and contextual-reply transitions use ordinary readable slowdown. A bounded reply quotes an actually heard opposed loose-cut statement and current stone context. It needs a new voluntary HF choice, travel, work and an awake listener; it settles no disagreement. The existing Yusuf note and Kian/Tamar conversation are preserved.
+
+Missing input, owner and checkpoint: meeting Ada needs a maintained shared cast identity/profile, biography/backstory/secrets, age-appropriate agency and outcome/carry/return contract. The central HF cast/release director owns that contract; central source is reserved by the release train; checkpoint2026-10-29. Existing Ada dependent care does not supply it. Keep F649/F655 meeting clauses open. New-family exchanges and generic family/prop custody remain separate. Broader gifts/stories and spontaneous quarrels remain open. Original Maya’s return condition was understanding stalled digging, not receiving this exercise. No player, friends or Show HN round is claimed.
+
 # HF4 taste fixes — 2026-10-28
 
 Remaining: signed source, one hosted review, exact source and merged CI, deployment, live release verification and cleanup. Adam accepts game feel separately.
