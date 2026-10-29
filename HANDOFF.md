@@ -1,3 +1,42 @@
+# Coherent Warren remainder candidate — 2026-10-29
+
+Remaining: qualify the complete remainder in focused/full and production-bundle
+controls, then signed rebased source/one coherent PR/one coordinator review via ROOT/exact CI.
+Current integration uses the delivered HF4.10 recorded voice variants. Both new
+request observers retain residentReply from the actual suggestion event. Person
+status drops old bell quotes; the dedicated bell reading retains historical replies.
+
+Root owns guarded integration, exact main CI, normal fresh deployment, live
+SHA/dirty:false/assets/controls and cleanup. Do not merge/deploy from this author.
+No widened Warren completion or owner/player acceptance is claimed.
+
+Base88de249 delivered the newcomer batch. Its source/main CI, completed review and
+live10 first-party browser/native-file controls belong to root’s bounded delivery
+report, not the stale candidate text below. Root disclosed merging before the
+available remainder was exhausted; this candidate composes it before a new PR.
+
+The source plan and literal135+328 row map live in games-deferred under
+recovery-warren-remainder-plan.md and recovery-warren-remainder-rowmap.json/.md.
+First four inventory identities and complete original returns are retained;
+canonical inventory/ledger and the prior48 patch are root-owned and untouched.
+
+New source: one prospective Tariq dry balance trial with actual HF participation,
+work and observation; one autonomous optional known loose-cut encounter without
+keeper suggestion or forced interruption; quiet-bell confirmation and one costed
+voluntary hearing of an actual false-call apology; current activity in place of
+expired bell quotations; and a person-linked current grain-work reading. Full
+native/file/replay/Run/RNG history remains. No forgiveness, gifted prop, skill,
+safety, duty, private motive or reconciliation is created. Unsupported physical
+publication refuses before writes. Exact dimensions/provenance stay in Debug and
+exports. Public wording uses people, actual places/actions/results and uncertainty.
+
+Preserve Maryam/held-door/source authority, PR14 voice fixes and all newcomer
+controls, including all11 actors and3x1440 continuation branches. HF4.10.0/client
+0.5.9/kit0.5.26 and the delivered recorded voices stay. No framework source, hidden edition path or legacy engine.
+Ada and the unidentified injured worker still need actual authoritative cast
+contracts (central cast/release; target2026-10-29/checkOct30). Generic custody/peer
+certification and owner Nov3 play/camera remain separate, not blanket blockers.
+
 # Resident voices and HF 4.10 — 2026-10-29
 
 Remaining: exact CI, merge and clean deployment. Adam accepts feel by playing.

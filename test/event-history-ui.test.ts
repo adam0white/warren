@@ -59,6 +59,7 @@ it('actual App synthetic phone/wide route shows real request and alarm records w
     await page.locator('#cellx').click();
     // The existing public Bell button records a real call, not a synthetic history row.
     await page.locator('#bell').click();
+    await page.locator('#confirm-bell').click();
     await page.evaluate(`(async () => {
       const { advance } = await import('/src/sim/game.ts');
       const g = window.__warren.game;

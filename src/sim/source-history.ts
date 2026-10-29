@@ -13,6 +13,7 @@ import { type Game, load, newGame, replay, type Saved, save, stateJson } from '.
 import { archiveOf, FRAMEWORK_VERSION } from './hf4.ts';
 import { refusePuzzlePublication } from './maryam-puzzle.ts';
 import { CAST_IDS } from './people.ts';
+import { refuseTrialPublication } from './tariq-trial.ts';
 
 const equal = (a: unknown, b: unknown) => canonicalPersona(a) === canonicalPersona(b);
 const fail = () =>
@@ -213,6 +214,7 @@ export async function validateSource(g: Game, publication = false, cast?: string
   if (publication) {
     if (g.fileOrigin) throw fail();
     refusePuzzlePublication(g.s);
+    refuseTrialPublication(g.s);
   }
   if (identity() !== captured) throw fail();
   return () => identity() === captured;

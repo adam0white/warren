@@ -3,7 +3,7 @@ import { runInNewContext } from 'node:vm';
 import { expect, it } from 'vitest';
 import { act, advance, load, newGame, save } from '../src/sim/game.ts';
 import { cellsWithUse, idx, K, STORE_CAP, SURF, USE } from '../src/sim/grid.ts';
-import { grainHelpWords, waterHelpWords } from '../src/ui/known-work.ts';
+import { grainHelpWords, personGrainWords, waterHelpWords } from '../src/ui/known-work.ts';
 import { journalEntries, observeMarkedWork, workDigestWords } from '../src/ui/work.ts';
 
 it('projects supply and completed-mark readings without changing the authored run', () => {
@@ -162,4 +162,19 @@ it('keeps later door and Bell readings authoritative after inspecting a completi
   calls.length = 0;
   handlers.get('completed-work')?.();
   expect(calls).toEqual([]);
+});
+
+it('follows a real person’s grain work without attributing words or moving supplies', () => {
+  const g = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  advance(g, 600);
+  for (let n = 0; n < 24 && !g.s.people.some((p) => p.activity?.action === 'reap'); n++)
+    advance(g, g.s.minute + 30);
+  const p = g.s.people.find((p) => p.activity?.action === 'reap')!;
+  expect(p).toBeDefined();
+  const before = JSON.stringify(save(g));
+  const words = personGrainWords(g.s, p.id)!;
+  expect(words).toContain(p.name);
+  expect(words).toContain('harvest goes from the threshing floor or home jars to stores below');
+  expect(words).not.toContain('says');
+  expect(JSON.stringify(save(g))).toBe(before);
 });

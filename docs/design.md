@@ -178,8 +178,9 @@ its existing known-ground geometry. The note is matched to the existing
 visit flag's actor, minute and authored words. A surviving visit flag alone
 cannot supply a trimmed note. Missing original words and date remain unknown. The
 legacy public visit writes an authored story note when Yusuf is free. It does not
-establish HF speech, hearing or a conversation cost. A broader actual costed reply
-remains separate available engineering, targeted for 2026-10-28.
+establish HF speech, hearing or a conversation cost. The literal planning ask does not require a new conversation. A costed reply is
+not an additional delivery condition. Actual understanding and Emre’s return
+remain separate player outcomes.
 
 The clue records no stopping-line endpoints or agreement about the selected work.
 The reading says so. It leaves the keeper to keep the plan, use Rub out to remove
@@ -290,12 +291,13 @@ qualifications, dates and aliases. This batch changes access, not whole-ask clos
 Door trial, Kian/Ada and retained door-history mechanisms already exist in the source
 base above; their source presence is distinct from current live delivery evidence.
 
-The newcomer candidate addresses F1200/GDI1345 and the existing-arrival clauses of F649/GDI835 and F655/GDI841 with finite local invitations and walks. Public readings use names, practical places and completed words. Exact source attribution, identifiers, times and HF decisions remain in Debug and exports. The delivered Maryam exercise, invitation cue, event slowdown and contextual reply remain intact. Technical integration still requires HANDOFF's gates. Broader gifts/stories, F1193 beyond Yusuf's note, spontaneous quarrels and owner acceptance stay open.
+The bounded newcomer delivery88de249 addresses F1200/GDI1345 and the existing-arrival clauses of F649/GDI835 and F655/GDI841 with finite local invitations and walks. Public readings use names, practical places and completed words. Exact source attribution, identifiers, times and HF decisions remain in Debug and exports. The delivered Maryam exercise, invitation cue, event slowdown and contextual reply remain intact. Its source/main CI and live controls belong to root’s bounded newcomer delivery receipt. This remainder still requires HANDOFF’s gates. The bounded remainder below composes another prospective story trial, optional autonomous cut words and false-bell repair. F1193’s note/plan mechanism remains read-only; no extra conversation is required by the literal ask. Owner acceptance remains separate.
 
 F649/GDI835 and F655/GDI841 meeting Ada need a maintained shared cast identity/profile, authored biography/backstory/secrets, age-appropriate agency and outcome/carry/return contract. Current dependent care and Kian/Tamar’s conversation do not establish meeting her. Owner: central HF cast/release director; its source is reserved by the release train. Checkpoint2026-10-29. Do not invent an Ada actor or family facts. New family/prop custody and generic lifecycle remain separate. Original Maya’s conditional return requires understanding stalled digging; this exercise does not establish it.
 F595's rest request and F629's door request remain bounded mechanisms. F678 stays
-a compound ask. GDI089's general/spontaneous quarrels remain wider than this finite
-heard-disagreement encounter. No fabricated game end or unsupported onward route.
+a compound ask. GDI089 now has the finite autonomous opportunity below as well as the prior
+keeper-initiated encounter and heard reply. Neither guarantees a quarrel or
+establishes a motive or reconciliation. No fabricated game end or unsupported onward route.
 
 F199 automatic widening versus the fixed working camera remains Adam's actual
 2026-11-03 decision. Feel, food pressure, losses, goals, pacing and readability also
@@ -311,3 +313,61 @@ Historical source design and handoff notes were preserved completely in the priv
 verified before replacing source guidance. The receipt and complete117+18 register
 are beside `~/code/.lab-scratch/games-deferred/gd-resume-warren-public-rules`.
 See [HANDOFF](../HANDOFF.md) for this candidate's remaining delivery gates.
+
+## Coherent local remainder candidate — 2026-10-29
+
+Remaining: focused/full and production-bundle proof, signed rebased source, one
+coordinator review via ROOT and exact CI, then root integration/deployment/live/cleanup. This
+is not delivery or Adam’s acceptance. The original117+18 and328 inventory aliases
+are reconciled externally in recovery-warren-remainder-rowmap.json; root owns
+canonical inventory/ledger edits. No previous evidence was overwritten.
+
+Tariq’s exact retained boat note unlocks one prospective dry balance trial. The
+keeper supplies the test pieces now; a historical gift is not authenticated. A
+wooden hull spans forty millimetres, on a support twenty millimetres wide. A clay
+load weighs twice the centered hull. With the load in the middle, the combined
+center of mass lies over the support; at the hull’s edge it lies outside and the
+boat tips into the dry tray. This is a finite authored balance model, not
+buoyancy or boat expertise. Drinking water is unused. HF chooses participation,
+real travel and at least half an hour of terminal work. Public observation alone
+establishes Tariq’s receipt. No gift/skill/duty/ownership transfer is awarded.
+Refusal, other work, withdrawal, release/death/danger and finite expiry remain.
+Full host/Run/RNG/input data replay; stripped or inconsistent physical history refuses. Replay equality is consistency, not authentication of an independently rewritten whole history.
+The current portable prop contract cannot carry it, so preparation/publication
+refuses before writes. Local reading/download stays available.
+
+A known marked loose cut now supplies one autonomous conversation opportunity for
+Yusuf Usta and Meryem. There is no keeper request, standing advice or forced
+interruption. They can choose either opposed position, ordinary work or rest.
+Only completed real travel and speech work can produce an invitation. The other
+person can answer only after actual public hearing. Opposed mutually heard words
+alone count as disagreement. Initial opportunity lasts three hours; a heard first
+statement leaves a bounded reply window, capped at six hours from opening. The
+chalk, difficulty, collapse risk and RNG draw sites remain unchanged. No anger,
+private motive, agreement, reconciliation or safe ground is inferred.
+
+F651/GDI837 and F656/GDI842 were actual remaining source gaps. A quiet-hill bell
+tap now asks before ringing; cancellation adds no bell input. Reading still slows
+rather than pauses. Actual smoke/riders still permit a direct alarm. After a
+retained false call, one adult who actually answered it can choose to hear the
+keeper’s apology at the hearth. Travel and half an hour precede the words. Public
+hearing establishes receipt; a review’s assent followed by cooking or other work
+does not. No forgiveness, trust refund, duty or erased cost follows. Current person
+readings drop ended bell quotations; the complete dated past remains in Journal
+and exports. The player’s Nov3 judgment remains separate.
+
+F676/GDI862 and related F664 receive a person-linked reading of actual current
+grain work. From an actual harvester/carrier/cook, Follow this grain work explains
+the known harvest/threshing-floor/home-jar/store chain, current carriers/routes
+and practical existing tools. This is a read-only observation of work, not invented
+person speech, a paid conversation or moved grain. It preserves Samir’s full
+conditional return. F1193 retains its exact Yusuf note/date, selected known chalk,
+unknown endpoints and actual Chalk/Rub out choices; an extra conversation is not
+required by Emre’s literal ask.
+
+Actual Ada and the unidentified injured worker still need authoritative identities
+and maintained backstory/agency/outcome contracts from central cast/release, target
+2026-10-29/check2026-10-30. No substitute person is invented. Generic peer/custody
+and HF reach/performance contracts remain separate. They do not block these local
+experiments. Camera widening and taste/return acceptance require Adam’s actual
+Nov3 choice/play. Player/panel/friends/ShowHN remain paused.

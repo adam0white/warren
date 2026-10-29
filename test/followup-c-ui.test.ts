@@ -153,6 +153,7 @@ for (const [width, height] of [
       await page.evaluate('window.__warren.setSpeed(0)');
       await page.clock.runFor(100);
       await page.locator('#bell').click();
+      await page.locator('#confirm-bell').click();
       await page.evaluate(`(() => {
         const s=window.__warren.game.s;
         for (const p of s.people) {
@@ -189,6 +190,10 @@ for (const [width, height] of [
       await page.locator('#last-reading').click();
       await page.clock.runFor(300);
       expect(await words.innerText()).toMatch(/The call has ended.*call ended after six game hours/s);
+      // The dedicated historical bell reading retains its dated replies, while
+      // ordinary person status moves on to current work.
+      await replies.locator('summary').click();
+      expect(await page.locator('#door-context').innerText()).toContain('I agree.');
       await assertStage(page, width, height);
       await words.evaluate((e) => {
         e.scrollTop = 0;

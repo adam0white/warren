@@ -75,11 +75,13 @@ export function puzzleUnavailable(s: WarrenState): string | undefined {
     )
   )
     return 'Maryam already has a pending request. Finish or withdraw it first.';
+  if (s.bellAmends?.who === 'maryam' && s.bellAmends.endedAt === undefined)
+    return 'Maryam already has another request.';
   if (!quiet(s)) return 'Wait until the bell call and danger have passed.';
   const p = s.people.find((p) => p.id === 'maryam');
   if (!p || !present(s, p, s.minute))
     return 'Maryam is absent, released or has a household duty due. The exercise cannot begin.';
-  if (p.activity?.affordanceId.startsWith('resident-'))
+  if (p.activity?.affordanceId.match(/^(resident-|bell-amends-)/))
     return 'Maryam is still finishing another request. Wait until that work ends.';
   return undefined;
 }
