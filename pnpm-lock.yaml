@@ -174,11 +174,11 @@ importers:
         specifier: 4.10.0
         version: 4.10.0
       '@adam0white/lab-client':
-        specifier: file:vendor/adam0white-lab-client-0.5.9.tgz
-        version: file:vendor/adam0white-lab-client-0.5.9.tgz
+        specifier: file:vendor/adam0white-lab-client-0.5.12.tgz
+        version: file:vendor/adam0white-lab-client-0.5.12.tgz
       '@adam0white/lab-kit':
-        specifier: file:vendor/adam0white-lab-kit-0.5.26.tgz
-        version: file:vendor/adam0white-lab-kit-0.5.26.tgz(@adam0white/lab-client@file:vendor/adam0white-lab-client-0.5.9.tgz)
+        specifier: file:vendor/adam0white-lab-kit-0.5.29.tgz
+        version: file:vendor/adam0white-lab-kit-0.5.29.tgz(@adam0white/lab-client@file:vendor/adam0white-lab-client-0.5.12.tgz)
     devDependencies:
       '@biomejs/biome':
         specifier: 2.6.3
@@ -215,17 +215,21 @@ packages:
     resolution: {integrity: sha512-uAm9YqTrSzIsBoXL8uryaosPJ8UaQ+GW2ykkWnjAHFwYqX5Nu6lguUxWZyJMHB3sqS8jlTWoruAPYRUbGlnmQg==}
     engines: {node: '>=24'}
 
-  '@adam0white/lab-client@file:vendor/adam0white-lab-client-0.5.9.tgz':
-    resolution: {integrity: sha512-ks5cm6nGFh/OGON0oVEOibwp++lnKKWP4VsghJ57Qf0xpX0PveK/uKIpkdWD+/cnH7IO+R8lkhw/TuE48MRxPA==, tarball: file:vendor/adam0white-lab-client-0.5.9.tgz}
-    version: 0.5.9
+  '@adam0white/human-framework@4.12.0':
+    resolution: {integrity: sha512-IQrb9+ETKnPH4h5wL7ZdBLY5BCimmzjvu4SJJfuBa3Y7D3YOi0wggSH6SFxPgoSesD/lqlK3XtI8RZ60pyrWsQ==}
+    engines: {node: '>=24'}
 
-  '@adam0white/lab-kit@file:vendor/adam0white-lab-kit-0.5.26.tgz':
-    resolution: {integrity: sha512-Ep7v9Did8tHiUl38mLNMNBtfEem5l9UibPVM81XPtgFkohnQcbe8yiWN9q5EgdOSVFomyP4RpRNUZwhAESzoyA==, tarball: file:vendor/adam0white-lab-kit-0.5.26.tgz}
-    version: 0.5.26
+  '@adam0white/lab-client@file:vendor/adam0white-lab-client-0.5.12.tgz':
+    resolution: {integrity: sha512-hhn9etL7KJEpqho6Dur8mQNA1kOf7xHz59hAA6Ur7Fu5l6KJgAN1L18nBPr28fgQt74q7fqrXux78dpq/C8xRg==, tarball: file:vendor/adam0white-lab-client-0.5.12.tgz}
+    version: 0.5.12
+
+  '@adam0white/lab-kit@file:vendor/adam0white-lab-kit-0.5.29.tgz':
+    resolution: {integrity: sha512-R2Crec0XjSNt5tMo7TvxqeqiRtcoaDc4qnBlkUihiKAfCf47WEW4N+6cGnB9depuoE+k8fIpADi/L7f0APrPxw==, tarball: file:vendor/adam0white-lab-kit-0.5.29.tgz}
+    version: 0.5.29
     engines: {node: '>=24'}
     hasBin: true
     peerDependencies:
-      '@adam0white/lab-client': 0.4.11 || 0.4.12 || 0.4.13 || 0.4.14 || 0.4.15 || 0.5.0 || 0.5.1 || 0.5.2 || 0.5.3 || 0.5.4 || 0.5.5 || 0.5.6 || 0.5.7 || 0.5.8 || 0.5.9
+      '@adam0white/lab-client': 0.4.11 || 0.4.12 || 0.4.13 || 0.4.14 || 0.4.15 || 0.5.0 || 0.5.1 || 0.5.2 || 0.5.3 || 0.5.4 || 0.5.5 || 0.5.6 || 0.5.7 || 0.5.8 || 0.5.9 || 0.5.10 || 0.5.11 || 0.5.12
     peerDependenciesMeta:
       '@adam0white/lab-client':
         optional: true
@@ -1603,14 +1607,16 @@ snapshots:
 
   '@adam0white/human-framework@4.10.0': {}
 
-  '@adam0white/lab-client@file:vendor/adam0white-lab-client-0.5.9.tgz':
+  '@adam0white/human-framework@4.12.0': {}
+
+  '@adam0white/lab-client@file:vendor/adam0white-lab-client-0.5.12.tgz':
     dependencies:
       '@adam0white/hf-legacy': '@adam0white/human-framework@3.0.0'
-      '@adam0white/human-framework': 4.10.0
+      '@adam0white/human-framework': 4.12.0
 
-  '@adam0white/lab-kit@file:vendor/adam0white-lab-kit-0.5.26.tgz(@adam0white/lab-client@file:vendor/adam0white-lab-client-0.5.9.tgz)':
+  '@adam0white/lab-kit@file:vendor/adam0white-lab-kit-0.5.29.tgz(@adam0white/lab-client@file:vendor/adam0white-lab-client-0.5.12.tgz)':
     optionalDependencies:
-      '@adam0white/lab-client': file:vendor/adam0white-lab-client-0.5.9.tgz
+      '@adam0white/lab-client': file:vendor/adam0white-lab-client-0.5.12.tgz
 
   '@biomejs/biome@2.6.3':
     optionalDependencies:

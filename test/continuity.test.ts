@@ -7,6 +7,7 @@ import {
   createPersona,
   type PersonaRequest,
   type PersonaShelfState,
+  portableWriteBlockers,
 } from '@adam0white/lab-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { project } from '../src/sim/cast.ts';
@@ -86,6 +87,37 @@ beforeEach(() => {
 });
 const file = (value: unknown) => ({ size: 100, text: async () => JSON.stringify(value) }) as File;
 describe('HF4 shelf ownership', () => {
+  it('keeps every existing head untouched under the published six-person peer gate', async () => {
+    const expected: Record<string, string[]> = {
+      'hf.cast.maryam.well': ['valley'],
+      'hf.cast.tariq.well': ['lefthand'],
+      'hf.cast.yusuf.warren': ['valley'],
+      'hf.cast.meryem.warren': ['valley', 'watch'],
+      'hf.cast.tamar.watch': ['watch'],
+      'hf.cast.kian.watch': ['watch'],
+    };
+    for (const cast of castForGame('warren')) {
+      expect(portableWriteBlockers(cast.castId, 'warren').slice().sort()).toEqual(expected[cast.castId]);
+      const head = await createPersona({
+        format: 'hf-persona/1',
+        castId: cast.castId,
+        castRevision: cast.revision,
+        branchId: 'blocked-head',
+        parentRevision: null,
+        source: { game: 'warren', build: 'test', engine: FRAMEWORK_VERSION, rules: 'warren-hf4-1' },
+        transfer: {},
+        limitations: [],
+      });
+      state = acceptPersona(state, head);
+    }
+    expect(Object.keys(expected)).toHaveLength(6);
+    const heads = { ...state.heads };
+    current = await fresh(7);
+    expect(current.s.people).toHaveLength(6);
+    expect(current.ownedHeads ?? {}).toEqual({});
+    expect(state.heads).toEqual(heads);
+    expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
+  });
   it('admits a retained person while another eligible record is refused individually', async () => {
     const source = newGame(7);
     act(source, { verb: 'release', who: 'meryem' });

@@ -1,3 +1,9 @@
+# SDK adoption candidate — 2026-10-29
+
+Remaining: root verifies this candidate, reviews and qualifies its exact source and CI, then owns integration and normal deployment. Live delivery and Adam's acceptance remain separate. This is partial shared-people readiness, not a completed shared journey.
+
+The candidate retains host HF 4.10.0 and adopts immutable client 0.5.12 and kit 0.5.29. The client resolves its own HF 4.12.0 and legacy 3.0.0; no host core upgrade is inferred. The published catalog removes Well as a blocker for Maryam and Tariq. All six roles remain blocked by their actual missing Valley, Watch or Lefthand peers; source-history guards still govern publication. Recheck peer certification on 2026-10-30. No certification, shared source or write permission is implied.
+
 # Resident voices and HF 4.10 — 2026-10-29
 
 Remaining: exact CI, merge and clean deployment. Adam accepts feel by playing.
