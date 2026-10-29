@@ -1,3 +1,11 @@
+# CI job allowance follow-up — 2026-10-29
+
+Remaining: root reviews this correction and runs exact-commit CI before deployment.
+Main 87e2c8c shard 1 hit the 10-minute verify job limit during Vitest; shard 2
+passed and the aggregate failed. No 87 deployment occurred. The verify job now
+has 20 minutes; test deadlines and coverage remain unchanged. Owner acceptance
+remains separate.
+
 # PR17 review correction — recorded rest/2
 
 Remaining: root rechecks this delta in the same Opus session, qualifies exact source
