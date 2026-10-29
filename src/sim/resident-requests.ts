@@ -58,7 +58,8 @@ export interface ResidentRequests {
 export const doorRequest = (s: WarrenState) => s.doorTrials?.at(-1) ?? s.next?.requests?.door;
 const requestsEnabled = (s: WarrenState) => residualEnabled(s) || !!s.doorTrials;
 export const RESIDENT_VOICE = 'keeper-resident';
-export const residualEnabled = (s: WarrenState) => s.next?.config === 'warren-rest/1';
+export const residualEnabled = (s: WarrenState) =>
+  s.next?.config === 'warren-rest/1' || s.next?.config === 'warren-rest/2';
 const quiet = (s: WarrenState) =>
   !s.bell && !s.raids.some((r) => r.stage === 'smoke' || r.stage === 'riders');
 const adult = (s: WarrenState, id: string) =>

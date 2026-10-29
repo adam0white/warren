@@ -11,6 +11,7 @@ import { cellsWithUse, faces, K, USE } from './grid.ts';
  */
 import type { Activity, Affordance, Outcome, Person, Suggestion } from './hf4.ts';
 import { ageYears, heard, interruptPerson } from './hf4.ts';
+import { residualEnabled } from './resident-requests.ts';
 import { communityOf, note, positionAt, type WarrenState } from './warren.ts';
 
 export interface CutDiscussion {
@@ -40,8 +41,13 @@ export function canInviteCutDiscussion(s: WarrenState): boolean {
   if (
     !s.next ||
     face < 0 ||
-    (s.next.discussion && !(s.next.discussion.origin && s.next.discussion.endedAt !== undefined)) ||
-    (s.refusalReply && s.refusalReply.endedAt === undefined) ||
+    (s.next.discussion &&
+      !(
+        s.next.config === 'warren-rest/2' &&
+        s.next.discussion.origin &&
+        s.next.discussion.endedAt !== undefined
+      )) ||
+    (s.next.config === 'warren-rest/2' && s.refusalReply && s.refusalReply.endedAt === undefined) ||
     s.raids.some((r) => r.stage === 'smoke' || r.stage === 'riders') ||
     ids.some((id) => !s.people.find((p) => p.id === id)?.body.alive)
   )
@@ -150,7 +156,7 @@ export function finishCutStatement(
       summary: 'The loose-stone discussion did not reach an awake listener at the hearth.',
     };
   const stance = activity.affordanceId === `cut-pause-${d.face}` ? 'pause' : 'continue';
-  const eliciting = s.next?.config === 'warren-next/2' || s.next?.config === 'warren-rest/1';
+  const eliciting = s.next?.config === 'warren-next/2' || residualEnabled(s);
   const position = eliciting
     ? stance === 'pause'
       ? `${p.name} tells ${q.name}, “I think that loose cut should wait. Stone can fall on the person digging.”`
@@ -208,11 +214,12 @@ export function finishCutStatement(
 }
 /** One autonomous opportunity from actual known marked loose ground. No keeper voice or
  * interruption. HF may finish work, rest, decline or choose either position.
+ * Recorded rest/1 hills never gain this observer opportunity.
  * Opposed words count only after public hearing; expiry settles no disagreement. */
 export function observeCutDiscussion(s: WarrenState): void {
   if (
     s.edition === '0.7.0' &&
-    s.next?.config === 'warren-rest/1' &&
+    s.next?.config === 'warren-rest/2' &&
     !s.next.discussion &&
     !s.bell &&
     !s.raids.some((r) => r.stage === 'smoke' || r.stage === 'riders')
@@ -282,7 +289,7 @@ export function discussionWords(s: WarrenState): string {
     return 'A marked loose cut can be discussed with Yusuf Usta and Meryem at the hearth. An invitation does not make them come.';
   if (d.origin && d.endedAt === undefined && !d.statements.length)
     return 'Neither Yusuf Usta nor Meryem has spoken about the marked loose cut. Their work and rest may come first.';
-  if (d.endedAt !== undefined && !d.exchange)
+  if (s.next?.config === 'warren-rest/2' && d.endedAt !== undefined && !d.exchange)
     return 'The loose-cut discussion ended. Earlier words remain in the journal.';
   return d.exchange
     ? 'Yusuf Usta and Meryem disagree about the loose cut.'

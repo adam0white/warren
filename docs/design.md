@@ -91,7 +91,7 @@ This nine-path public-rules candidate is based on origin/main
 it does not establish the current live deployment. Review, signed source, exact CI,
 root merge, clean deploy, live checks and cleanup remain separate delivery gates.
 
-Ordinary Begin and confirmed New game use existing rules 0.7.0 with `warren-rest/1`.
+Ordinary Begin and confirmed New game use rules 0.7.0 with `warren-rest/2`. Recorded rest/1 hills keep the exact served f4 continuation. Rest/2 includes every rest/1 faculty and adds the autonomous marked-cut opportunity and its refusal-reply guard.
 There is no gameplay feature selector. Loaded hills retain their exact recorded
 edition/configuration. The app package and low-level constructor default stay
 0.6.0 for compatibility. HF stays 3.0.0, engine 2.23.0. No framework logic belongs

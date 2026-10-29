@@ -387,7 +387,7 @@ async function beginNewHill(errorHost?: HTMLElement): Promise<boolean> {
     const prepared = await continuity.fresh(
       (Date.now() ^ (Math.random() * 0x7fffffff)) >>> 0,
       '0.7.0',
-      'warren-rest/1',
+      'warren-rest/2',
     );
     if (expected !== generation) return false;
     await store.drop(SAVE_KEY);

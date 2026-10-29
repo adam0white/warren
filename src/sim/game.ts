@@ -94,9 +94,14 @@ export interface Game {
   fileOrigin?: boolean;
 }
 
-export type NextConfig = 'warren-next/1' | 'warren-next/2' | 'warren-rest/1';
+export type NextConfig = 'warren-next/1' | 'warren-next/2' | 'warren-rest/1' | 'warren-rest/2';
 function supportedConfig(config: unknown): config is NextConfig {
-  return config === 'warren-next/1' || config === 'warren-next/2' || config === 'warren-rest/1';
+  return (
+    config === 'warren-next/1' ||
+    config === 'warren-next/2' ||
+    config === 'warren-rest/1' ||
+    config === 'warren-rest/2'
+  );
 }
 export function newGame(
   seed: number,

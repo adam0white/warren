@@ -1,3 +1,14 @@
+# PR17 review correction — recorded rest/2
+
+Remaining: root rechecks this delta in the same Opus session, qualifies exact source
+CI, then owns guarded integration/deployment. No owner acceptance is claimed.
+Fresh Begin/New game use rest/2. Existing rest/1 stays on the exact served f4 path:
+no autonomous cut opportunity, original invitation acceptance and existing full
+body fields. Rest/2 retains all rest/1 requests and elicited-position semantics.
+No text-version bump, migration, dependency or legacy engine is introduced.
+Genuine immutable-f4 producer controls live in test/fixtures/f4-rest1; they are
+labelled authored openings, not player rounds or source authentication.
+
 # Coherent Warren remainder candidate — 2026-10-29
 
 Remaining: qualify the complete remainder in focused/full and production-bundle
@@ -137,7 +148,7 @@ One public HF call runs per simulation frame. Atomic overruns remain possible; t
 
 Remaining: final lane, signed commit, PR and exact CI; merge, deploy and live release verification remain separate. Adam accepts game feel by playing.
 
-The ordinary game menu offers Download this run. It is disabled when no hill is active; it does not silently load a saved hill. Debug remains collapsed beside Lab privacy and contains status. Feedback has its own collapsed Debug beside privacy. Fresh hills claim supported shared people automatically; local resumes retain their recorded people. Cast controls remain on the central shelf. Begin uses rules 0.7.0 with warren-rest/1.
+The ordinary game menu offers Download this run. It is disabled when no hill is active; it does not silently load a saved hill. Debug remains collapsed beside Lab privacy and contains status. Feedback has its own collapsed Debug beside privacy. Fresh hills claim supported shared people automatically; local resumes retain their recorded people. Cast controls remain on the central shelf. Begin uses rules 0.7.0 with warren-rest/2.
 
 The source audit covered menu and person actions, hidden controls, query parameters, local storage, development-only branches and Debug. No gameplay query or local-storage switch was found. Development-only window access exposes test controls; context-dependent actions use actual game state. No game simulation, save or replay rule changed. Independent review found no blockers. Frozen install and 55 focused tests passed; the initial-title disabled control and three viewport/touch-target checks passed separately. The full lane exposed an outdated menu-control count; its expectation now includes public download.
 
@@ -202,7 +213,7 @@ CI on the exact source and exact main commits. Never replace vendor archives.
 
 ## Ordinary play and retained hills
 
-Begin and confirmed New game start existing rules 0.7.0 with `warren-rest/1`.
+Begin and confirmed New game start rules 0.7.0 with `warren-rest/2`. Recorded rest/1 hills retain the exact served f4 continuation; rest/2 adds the autonomous marked-cut opportunity and its refusal-reply guard while retaining every rest/1 faculty.
 There is no gameplay feature selector. Sleep and actual shelter outcomes, bounded
 wild food, warned furnishing damage, quiet away play and resident requests are
 public. Slow, Steady and Fast remain public choices. Ordinary 0.7 readings slow
