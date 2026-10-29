@@ -15,11 +15,6 @@ export function speechWords(text: string): string {
 export function displayWords(text: string): string {
   return settingWords(text)
     .replace(
-      /([^.!?]+) and others gave the same reply\. \1 said: “(?:I cannot do it now\. )?After I (?:finish this task \(([^)]+)\)|([^().”]+)), I will do it\.”/gu,
-      (_, name: string, task: string | undefined, action: string | undefined) =>
-        `${name} and the others will come after they ${task ?? action}.`,
-    )
-    .replace(
       /([^.!?]+) and others gave the same reply\. \1 said: “([^”]+)”/gu,
       '$1 and the others said: “$2”',
     )

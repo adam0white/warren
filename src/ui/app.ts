@@ -290,7 +290,7 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
   app().innerHTML = `<div class="page">${topbar(true)}
     <div class="title-art"><canvas id="title-cv" aria-label="The village above its cellar"></canvas><h1>The Warren</h1></div>
     <p class="title-goal">${PURPOSE}</p>
-    ${sv && !compatible ? '<p class="soft">This hill was saved by a different version and cannot open here. You can download it to keep it. Your people across games are kept.</p><button id="download-old-run">Download this saved hill</button>' : ''}
+    ${sv && !compatible ? '<p class="soft">This hill was saved by an older version and cannot open here. Start fresh with Begin. You can download the old hill to keep it. Your people across games are kept.</p><button id="download-old-run">Download this saved hill</button>' : ''}
     <div class="title-actions">${compatible ? `<button class="primary" id="cont">Resume <span class="soft">· ${esc(hillDate(sv.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
       <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'New game' : 'Begin'}</button>
       <div id="new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="new-yes">Yes, begin</button><button id="new-no">No</button></div>
@@ -366,7 +366,8 @@ function openFilePage() {
       speedIx = 0;
       enter();
     } catch (error) {
-      status.textContent = 'This file cannot be opened in this version. Keep it.';
+      status.textContent =
+        'This file cannot be opened in this version. Keep it and start fresh with a new game.';
       const detail = document.getElementById('file-detail');
       if (detail) {
         detail.textContent = String(error instanceof Error ? (error.cause ?? error) : error);

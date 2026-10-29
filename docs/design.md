@@ -1,3 +1,13 @@
+# Resident voices and HF 4.10 — 2026-10-29
+
+Remaining: exact CI, merge and clean deployment. Adam accepts feel by playing.
+
+The focused voice/protocol tests pass (5/5). The headless control proves exact complete game/HF replay, pending-boundary identity, active continuation and read-only preview. The 360×690 browser control uses public Begin, bell and download, then verifies the complete simulation state and input log; it reports no page errors. See `docs/playtests/hf410-voice-*-2026-10-29.json` and `scripts/voice-control.ts`.
+
+HF 4.10.0, client 0.5.9 and kit 0.5.26 are pinned. New hills carry Warren’s four-alternative general phrasebook and six resident voices in the HF lexicon. HF owns event-time seeded selection and its no-repeat history. Replies use the actual suggestion-resolved event and its verdict; Warren explains its recorded reason using the same recorded variant. Deferred and modified replies include the chosen activity through HF narration. Unknown reasons add no invented explanation. Sleeping and dead people produce no spoken reply. No raw reason-code fallback or old HF sentence rewrite remains.
+
+HF’s closed narration catalog has no reason slot in suggestion.resolved. The host’s reason table therefore accompanies the narrated verdict; it does not parse HF prose or select another random phrase. This is an ordinary wording decision, not a second decision model. Per-person peer skips and existing shared heads remain intact. New arrivals without a named profile use the general phrasebook. Archives use HF’s public history reader. Old HF saves remain downloadable and receive a plain start-fresh message; no migration is attempted.
+
 # The Warren: design
 
 **What done means.** The first increment ends with a public playable build at
