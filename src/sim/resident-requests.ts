@@ -68,13 +68,16 @@ function active(s: WarrenState, id: string) {
   const activity = s.people.find((p) => p.id === id)?.activity?.affordanceId;
   if (
     activity &&
-    ['resident-', 'contextual-refusal-', 'maryam-puzzle-'].some((prefix) => activity.startsWith(prefix))
+    ['resident-', 'contextual-refusal-', 'maryam-puzzle-', 'newcomer-'].some((prefix) =>
+      activity.startsWith(prefix),
+    )
   )
     return true;
   // One keeper request per person owns this voice's answer. A different request
   // cannot claim a verdict sent for the exercise or the contextual reply.
   if (s.refusalReply?.who === id && s.refusalReply.endedAt === undefined) return true;
   if (id === 'maryam' && s.maryamPuzzle && s.maryamPuzzle.endedAt === undefined) return true;
+  if (s.newcomerExchanges?.some((r) => r.who === id && r.endedAt === undefined)) return true;
   const r = s.next?.requests;
   return [r?.rest, r?.disagreement, doorRequest(s)].some((x) => x?.who === id && x.endedAt === undefined);
 }

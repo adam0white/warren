@@ -70,6 +70,7 @@ export function eventStamp(s: WarrenState): string {
     invitationObservation(s),
     s.maryamPuzzle,
     s.refusalReply,
+    s.newcomerExchanges,
     [s.next?.requests?.rest, s.next?.requests?.disagreement].map(
       (r) => r && [r.at, r.answers.at(-1), r.speech, r.heard, r.endedAt, r.withdrawn],
     ),

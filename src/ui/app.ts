@@ -36,6 +36,7 @@ import {
 } from '../sim/grid.ts';
 import { ageYears, type PersonReading as Person } from '../sim/hf4.ts';
 import { puzzleUnavailable, puzzleWords } from '../sim/maryam-puzzle.ts';
+import { newcomerEligible, newcomerWords } from '../sim/newcomer-exchange.ts';
 import { VISIT_TERMS } from '../sim/people.ts';
 import { rallyBlock } from '../sim/rally.ts';
 import { canReplyToRefusal, refusalReplyWords } from '../sim/refusal-reply.ts';
@@ -143,6 +144,7 @@ let ctx: CanvasRenderingContext2D | null = null;
 let sceneObserver: ResizeObserver | null = null;
 let stage: PhoneStage | null = null;
 let focusCell: number | null = null;
+let newcomerPlace: number | undefined;
 let framedPerson: string | null = null;
 let zoomCell: number | null = null;
 let sceneTop = 0;
@@ -1209,6 +1211,16 @@ function card() {
   const walking = tr && paint.t < tr.workFrom && tr.cells.length > 1;
   const why = walking ? undefined : s.why?.[p.id];
   const about = s.notes.filter((n) => n.who === p.id).slice(-2);
+  const newcomerHouse = s.houses.find((h) => /^h[1-9]\d*$/.test(h.id) && h.members.includes(p.id));
+  const exchange = s.newcomerExchanges?.find((r) => r.who === p.id);
+  const openPlaces = s.hill.kind.flatMap((kind, cell) =>
+    kind === K.open && s.hill.known[cell] ? [cell] : [],
+  );
+  if (newcomerPlace === undefined || !openPlaces.includes(newcomerPlace)) newcomerPlace = openPlaces[0];
+  const newcomerHtml = newcomerHouse
+    ? `<section id="newcomer-exchange"><p id="newcomer-status">${esc(newcomerWords(s, p.id))}</p>${!exchange ? `<button id="invite-newcomer" ${newcomerEligible(s, p.id) ? '' : 'disabled'}>Invite ${esc(p.name)} to share a visit at the hearth</button>` : exchange.endedAt === undefined ? `${exchange.phase === 'choose' ? `<label for="newcomer-place">A visible open place to look at together</label><select id="newcomer-place">${openPlaces.map((c) => `<option value="${c}" ${c === newcomerPlace ? 'selected' : ''}>${esc(cellLocationWords(s, c))}</option>`).join('')}</select><button id="walk-newcomer">Ask to look at this place together</button>` : ''}<button id="withdraw-newcomer">Leave the exchange here</button>` : ''}</section>`
+    : '';
+
   const html = `
     <div class="who">${personOpener ? `<button id="cardback" aria-label="Back to The village">← ${esc(p.name)}</button>` : `<b>${esc(p.name)}</b>`} <span class="soft">${Math.floor(ageYears(p))}, ${esc(house?.name ?? 'from elsewhere')}</span><button class="x" id="cardx" aria-label="Close">×</button></div>
         <p id="person-help">${esc(personHelpWords(s, p))}</p>
@@ -1218,6 +1230,7 @@ function card() {
     ${p.id === 'kian' && (s.edition === '0.6.0' || s.edition === '0.7.0') ? `<section id="ada-conversation"><p id="ada-talk-status">${esc(adaTalkWords(s))}</p>${s.adaTalks?.at(-1)?.endedAt === undefined && s.adaTalks?.length ? '<button id="withdraw-ada-talk">Stop waiting for this conversation</button>' : `<button id="ask-ada" ${adaTalkUnavailable(s) ? 'disabled' : ''}>Ask Kian about Ada</button>${adaTalkUnavailable(s) ? `<p>${esc(adaTalkUnavailable(s)!)}</p>` : ''}`}</section>` : ''}
     ${p.id === 'maryam' ? `<section id="maryam-puzzle"><p id="maryam-puzzle-status">${esc(puzzleWords(s))}</p>${s.maryamPuzzle ? (s.maryamPuzzle.endedAt === undefined ? '<button id="withdraw-maryam-puzzle">Stop waiting for the exercise</button>' : '') : `<button id="maryam-puzzle-loosen" ${puzzleUnavailable(s) ? 'disabled' : ''}>Ask Maryam to loosen the crossing</button><button id="maryam-puzzle-draw" ${puzzleUnavailable(s) ? 'disabled' : ''}>Ask Maryam to draw the crossing toward the ring</button>`}</section>` : ''}
     ${canReplyToRefusal(s, p.id) || s.refusalReply?.who === p.id ? `<section id="contextual-refusal"><p>${esc(refusalReplyWords(s))}</p>${canReplyToRefusal(s, p.id) ? '<button id="reply-refusal">Invite a reply to the heard disagreement</button>' : s.refusalReply?.endedAt === undefined ? '<button id="withdraw-refusal-reply">Stop waiting for this reply</button>' : ''}</section>` : ''}
+    ${newcomerHtml}
     <div class="shelter-person">${esc(exposureWords(s, p))}</div>
     ${(s.edition === '0.5.0' || s.edition === '0.6.0' || s.edition === '0.7.0') && VISIT_TERMS[p.id] ? `<p id="invitation-status">${esc(displayWords(invitationWords(s, p)))}</p><p>${esc(displayWords(VISIT_TERMS[p.id]!))}</p><button id="visit-person" ${s.flags[`visit:${p.id}`] || s.flags[`invitation-pending:${p.id}`] ? 'disabled' : ''}>${esc(INVITATIONS[p.id]!)}</button><p class="soft small">${esc(s.flags[`released:${p.id}`] ? `${p.name} no longer works on the refuge. Promises and household duties still apply.` : `Releasing ${p.name} stops their digging and other work on the refuge for the rest of this hill.${p.id === 'yusuf' ? ' He will no longer walk the marks with the diggers when you ask.' : ''} It cannot be taken back. Promises and household duties still apply.`)}</p><button id="release-person" ${s.flags[`released:${p.id}`] ? 'disabled' : ''}>${esc(`Release ${p.name} from refuge work`)}</button>` : ''}
 
@@ -1232,6 +1245,23 @@ function card() {
     el.dataset.html = html;
     el.innerHTML = html;
     continuity.bind(el);
+    el.querySelector('#invite-newcomer')?.addEventListener('click', () => {
+      if (!order({ verb: 'invite-newcomer', who: p.id }))
+        flash('The visit could not begin. The person may be busy with another request.');
+      card();
+    });
+    el.querySelector<HTMLSelectElement>('#newcomer-place')?.addEventListener('change', (event) => {
+      newcomerPlace = Number((event.target as HTMLSelectElement).value);
+    });
+    el.querySelector('#walk-newcomer')?.addEventListener('click', () => {
+      if (newcomerPlace !== undefined && !order({ verb: 'walk-newcomer', who: p.id, cell: newcomerPlace }))
+        flash('The first visit must finish before this walk. The place must still be visible and open.');
+      card();
+    });
+    el.querySelector('#withdraw-newcomer')?.addEventListener('click', () => {
+      order({ verb: 'withdraw-newcomer', who: p.id });
+      card();
+    });
     el.querySelector('#reply-refusal')?.addEventListener('click', () => {
       order({ verb: 'reply-refusal', who: p.id });
       card();
@@ -1929,7 +1959,7 @@ function closeBook() {
 }
 
 function menuRows() {
-  return `<p>The game is paused while the menu is open.</p><p>Pace: ${SPEED_NAMES[speedIx]}</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a href="/file/" target="_blank" rel="noopener">Open a saved hill</a><button id="download-run" ${g ? '' : 'disabled'}>Download this run</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a>${g?.fileOrigin ? '<a href="/">Return to your hill</a>' : '<button id="to-title">New game</button>'}</div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div><a class="shelf-link" href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">People across games</a><div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noopener">Lab privacy</a><details class="game-debug"><summary>Debug</summary><p>The Warren ${GAME_VERSION} · HF ${FRAMEWORK_VERSION}</p><div>${continuity.controls()}</div></details></div><button class="primary" id="resume">Resume</button>`;
+  return `<p>The game is paused while the menu is open.</p><p>Pace: ${SPEED_NAMES[speedIx]}</p><div class="menu-rows"><button id="send">Feedback</button><button id="fullscreen">Full screen</button><a href="/file/" target="_blank" rel="noopener">Open a saved hill</a><button id="download-run" ${g ? '' : 'disabled'}>Download this run</button><a target="_top" href="https://human.adamwhite.work/games/">All games</a>${g?.fileOrigin ? '<a href="/">Return to your hill</a>' : '<button id="to-title">New game</button>'}</div><div id="menu-new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="menu-new-yes">Start new game</button><button id="menu-new-no">Cancel</button></div><a class="shelf-link" href="https://human.adamwhite.work/lab/people/" target="_blank" rel="noopener">People across games</a><div class="menu-footer"><label><input id="record-play" type="checkbox" ${lab.telemetryOn ? 'checked' : ''}> Recording</label><a href="https://human.adamwhite.work/lab/privacy/" target="_blank" rel="noopener">Lab privacy</a><details class="game-debug"><summary>Debug</summary><p>The Warren ${GAME_VERSION} · HF ${FRAMEWORK_VERSION}</p><div>${continuity.controls()}</div>${g?.s.newcomerExchanges?.length ? `<details id="newcomer-debug"><summary>Newcomer exchange receipts</summary><p>Scripted dialogue is authored by Warren after completed work. Decision narration is HF output. The keeper is a player office; no HF listener or hearing is claimed.</p><pre style="white-space:pre-wrap;overflow-wrap:anywhere">${esc(JSON.stringify(g.s.newcomerExchanges, null, 2))}</pre></details>` : ''}</details></div><button class="primary" id="resume">Resume</button>`;
 }
 let feedbackCleanup: (() => void) | undefined;
 function showFeedback(host: HTMLElement, onBack: () => void) {
