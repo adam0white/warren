@@ -1,0 +1,49 @@
+{
+  "scope": "synthetic browser play, no owner acceptance",
+  "viewport": [
+    360,
+    690
+  ],
+  "minute": 952,
+  "reading": "Afternoon · 19 Aug · year 1\ni\n≡\n○\n○\n○\n○\n○\n○\npeople\n⚱\n⚱\n⚱\n⚱\n◒\n🔔\nTime slows while you read.\nSlow\nSteady\nFast\nChoose chalk, then drag across stone beside the cellar.\n+\n−\n⤢\nBell call\n×\n\nNo smoke or riders are in sight. The call has ended. The call ended after six game hours. The bell asks people to shelter below. A reply does not promise a journey. Latest heard reply and current task: Master Yusuf is near an entrance. Riders can reach this passage. His current task is to sit by the hearth and talk. When the bell rang, he said: “I considered your suggestion. I refused the advice. I cannot do that here now.”\n\nHeard replies and current tasks ▸\n◎\nlook\n□\nchalk\n⌫\nrub out\nfurnish ▾\nbell\n\nWe record and link play across games on this device.",
+  "answers": [
+    {
+      "at": 300.0000166666667,
+      "who": "tamar",
+      "verdict": "assented",
+      "says": "I accepted the advice. That is my decision."
+    },
+    {
+      "at": 300.0000166666667,
+      "who": "meryem",
+      "verdict": "assented",
+      "says": "I accepted the advice. I have given it some thought."
+    },
+    {
+      "at": 300.0000166666667,
+      "who": "maryam",
+      "verdict": "assented",
+      "says": "I accepted the advice, after giving it some thought."
+    },
+    {
+      "at": 300.0000166666667,
+      "who": "kian",
+      "verdict": "assented",
+      "says": "I considered it and accepted the advice."
+    },
+    {
+      "at": 300.0000166666667,
+      "who": "tariq",
+      "verdict": "assented",
+      "says": "I thought about it and accepted the advice."
+    },
+    {
+      "at": 300.0000166666667,
+      "who": "yusuf",
+      "verdict": "refused",
+      "says": "I considered your suggestion. I refused the advice. I cannot do that here now."
+    }
+  ],
+  "publicDownloadReplayExact": true,
+  "errors": []
+}

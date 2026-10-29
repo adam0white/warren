@@ -15,6 +15,7 @@ import {
   type Run,
   type RunArchive,
   type RunSpec,
+  readRunHistory,
   restoreRun,
   type StepResult,
   type VisibleEvent,
@@ -22,6 +23,7 @@ import {
 import frameworkPackage from '@adam0white/human-framework/package.json' with { type: 'json' };
 import { castNorms } from './cast-norms.ts';
 import { H, W } from './grid.ts';
+import { phrasebookFor, replyReason } from './voice.ts';
 import type { WarrenState } from './warren.ts';
 export const FRAMEWORK_VERSION = frameworkPackage.version;
 /** Diagnostic timings for each actual public step call; excludes host work and archive export. */
@@ -193,7 +195,7 @@ function runtimeOf(s: WarrenState): Runtime {
   let runtime = runtimes.get(s);
   if (!runtime) {
     const identities = new Map(s.hf.initial.people.map((p) => [p.id, p.identity]));
-    for (const tx of s.hf.history)
+    for (const tx of readRunHistory(s.hf))
       for (const input of tx.inputs)
         if (input.kind === 'person.arrived')
           identities.set(input.payload.authored.id, input.payload.authored.identity);
@@ -409,6 +411,25 @@ export const ACTIONS = [
   'watch-running',
   'well-advice',
 ];
+const ACTION_WORDS: Record<string, string> = {
+  'talk-rest': 'talk about rest',
+  'talk-disagreement': 'talk about our disagreement',
+  'test-close': 'try closing the door',
+  'test-open': 'try opening the door',
+  'building-assistance': 'help with building',
+  'building-preparation': 'prepare for building',
+  'care-ada': 'care for Ada',
+  'digging-advice': 'advise on digging',
+  'equipment-check': 'check the equipment',
+  'household-work': 'do household work',
+  'perimeter-watch': 'watch the boundary',
+  'store-check': 'check the stores',
+  'stores-assistance': 'help with the stores',
+  'survey-route': 'survey the route',
+  'talk-ada': 'talk about Ada',
+  'watch-running': 'run a watch message',
+  'well-advice': 'advise on the well',
+};
 /** Real world identities must exist before retained memory is admitted. These facts
  * declare places/groups, never substitute people or kin for remembered locations. */
 function openingWorldFacts(s: WarrenState, people: PersonAuthoring[]): RunSpec['world']['facts'] {
@@ -521,7 +542,10 @@ export function createWarrenRun(s: WarrenState, people: PersonAuthoring[]): void
       names: Object.fromEntries(people.map((p) => [p.id, p.identity.name])),
       roles: { usta: 'the keeper' },
       prefer: 'name',
-      actions: {},
+      actions: Object.fromEntries(
+        ACTIONS.map((id) => [id, { base: ACTION_WORDS[id] ?? id.replaceAll('-', ' ') }]),
+      ),
+      ...phrasebookFor(people),
     },
     calendar: {
       id: 'warren-calendar',
@@ -693,14 +717,42 @@ export function heard(p: Person, text: string, at: number): boolean {
       e.data.attention > 0,
   );
 }
+/** Use the actual suggestion event, never a decision motive or a raw reason code.
+ * HF records the selected phrase variant; the matching reason uses that same choice.
+ * Rendering adds no RNG draw and cannot change HF's verdict. */
+export function residentReply(p: Person, event: VisibleEvent): string {
+  if (event.data.kind !== 'suggestion-resolved') return '';
+  if (['dead', 'asleep'].includes(event.data.resolution.reason)) return '';
+  const line = event.narration[0];
+  if (!line) return '';
+  const index = Number(line.variantId.split(':').at(-1));
+  const reason = replyReason(p.id, event.data.resolution.reason, Number.isInteger(index) ? index : 0);
+  const decisionId = event.data.decisionId;
+  const decision = p.events.find((e) => e.data.kind === 'decision' && e.data.decision.id === decisionId);
+  const verdict = event.data.resolution.verdict;
+  const alternative =
+    verdict === 'deferred' || verdict === 'modified'
+      ? (decision?.narration.map((l) => l.text).join(' ') ?? '')
+      : '';
+  return [line.text, reason, alternative].filter(Boolean).join(' ');
+}
 function decisionAt(p: Person, offer: Affordance): DecisionRecord {
   const e = p.events.findLast(
     (e) => e.data.kind === 'decision' && e.data.decision.chosenAffordanceId === offer.id,
   );
   if (!e || e.data.kind !== 'decision') return {};
+  const decisionId = e.data.decision.id;
   const convert = (r: NonNullable<typeof e.data.decision.suggestion>): SuggestionResolution => ({
     ...r,
-    says: e.narration.map((l) => l.text).join(' ') || r.reason,
+    says: (() => {
+      const reply = p.events.findLast(
+        (reply) =>
+          reply.data.kind === 'suggestion-resolved' &&
+          reply.data.decisionId === decisionId &&
+          reply.data.resolution.voiceId === r.voiceId,
+      );
+      return reply ? residentReply(p, reply) : '';
+    })(),
   });
   return {
     ...e.data.decision,

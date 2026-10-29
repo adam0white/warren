@@ -499,7 +499,9 @@ function validTape(inputs: unknown, start: number, end: number): inputs is Input
 }
 
 function unreadableHill(detail: string): Error {
-  return new Error('This file cannot be opened in this version. Keep it.', { cause: new Error(detail) });
+  return new Error('This file cannot be opened in this version. Keep it and start fresh with a new game.', {
+    cause: new Error(detail),
+  });
 }
 
 export function load(saved: Saved): Game {

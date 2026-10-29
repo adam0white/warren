@@ -13,7 +13,7 @@ it('projects a labeled grouped bell reply without changing it, and retains exact
   const raw =
     'Meryem and others gave the same reply. Meryem said: “I cannot do it now. After I finish this task (eat at the hearth), I will do it.”';
   const before = JSON.stringify(g.s);
-  expect(displayWords(raw)).toMatch(/Meryem and the others will come after they eat at the hearth/);
+  expect(displayWords(raw)).toMatch(/Meryem and the others said:/);
   expect(JSON.stringify(g.s)).toBe(before);
   const exported = save(g);
   expect(fingerprint(load(exported).s)).toBe(exported.fingerprint);
@@ -25,7 +25,9 @@ it('projects a labeled grouped bell reply without changing it, and retains exact
 it('projects only matching grouped promises and keeps distinct answers and unfinished phrases intact', () => {
   const raw =
     'Tamar of the Wall and others gave the same reply. Tamar of the Wall said: “I cannot do it now. After I finish this task (eat at the hearth), I will do it.”';
-  expect(displayWords(raw)).toBe('Tamar of the Wall and the others will come after they eat at the hearth.');
+  expect(displayWords(raw)).toBe(
+    'Tamar of the Wall and the others said: “I cannot do it now. After I finish this task (eat at the hearth), I will do it.”',
+  );
   expect(
     displayWords(
       'Tamar of the Wall and others gave the same reply. Tamar of the Wall said: “I will not come.”',

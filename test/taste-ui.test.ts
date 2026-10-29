@@ -95,7 +95,7 @@ it('keeps an old hill downloadable, starts with shared records present, and open
     });
     await expect
       .poll(() => filePage.locator('#file-status').textContent())
-      .toBe('This file cannot be opened in this version. Keep it.');
+      .toBe('This file cannot be opened in this version. Keep it and start fresh with a new game.');
     expect(await filePage.locator('#file-debug').getAttribute('open')).toBeNull();
     expect(await filePage.locator('#file-debug').getAttribute('hidden')).toBeNull();
     expect(await filePage.locator('#file-detail').textContent()).toContain('older version');

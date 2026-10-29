@@ -1,3 +1,4 @@
+import { readRunHistory } from '@adam0white/human-framework';
 import { expect, it } from 'vitest';
 import { discussionWords } from '../src/sim/cut-discussion.ts';
 import { act, advance, fingerprint, load, newGame, replay, save, stateJson } from '../src/sim/game.ts';
@@ -55,8 +56,8 @@ function checkLocalAdvice(
   const face = g.s.next!.discussion!.face;
   const listener = g.s.people.find((p) => p.id === row.listener)!;
   expect(heard(listener, row.text, row.at)).toBe(true);
-  const observations = archiveOf(g.s)
-    .history.flatMap((transaction) => transaction.inputs)
+  const observations = readRunHistory(archiveOf(g.s))
+    .flatMap((transaction) => transaction.inputs)
     .filter((input) => input.kind === 'observation.received');
   expect(
     observations.some(

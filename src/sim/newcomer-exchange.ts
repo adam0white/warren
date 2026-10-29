@@ -8,6 +8,7 @@ import {
   type DecisionRecord,
   type Outcome,
   type Person,
+  residentReply,
   type Suggestion,
   type SuggestionResolution,
 } from './hf4.ts';
@@ -282,7 +283,7 @@ export function observeNewcomers(s: WarrenState): void {
         const chosen =
           s.hfOffers[p.id]?.offers.find((o) => o.id === chosenId) ??
           (p.activity && p.activity.affordanceId === chosenId ? p.activity.affordance : undefined);
-        const narration = decision.narration.map((line) => line.text).join(' ');
+        const narration = residentReply(p, event);
         const at = event.at / 60000;
         r.answers.push({
           at,
@@ -291,7 +292,7 @@ export function observeNewcomers(s: WarrenState): void {
           action: chosen?.action ?? 'none',
           label: chosen?.label ?? 'continue the current activity',
           verdict: data.resolution.verdict,
-          says: narration || data.resolution.reason,
+          says: narration,
           reason: data.resolution.reason,
         });
         note(s, {
@@ -299,7 +300,7 @@ export function observeNewcomers(s: WarrenState): void {
           kind: 'answer',
           who: p.id,
           weight: 1,
-          text: `${p.name}'s actual response: ${narration || data.resolution.reason}`,
+          text: `${p.name}'s actual response: ${narration}`,
         });
         if (chosenId !== offerId(r))
           close(s, r, at, `${p.name} chose another activity. This invitation has ended.`);

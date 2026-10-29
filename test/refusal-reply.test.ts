@@ -1,3 +1,4 @@
+import { readRunHistory } from '@adam0white/human-framework';
 import { expect, it } from 'vitest';
 import { act, advance, load, newGame, replay, save, stateJson } from '../src/sim/game.ts';
 import { idx, K, SURF } from '../src/sim/grid.ts';
@@ -73,7 +74,7 @@ it('costs an actual contextual reply, records HF choice and public hearing, and 
   expect(r.heard).toBe(true);
   expect(r.answers.length).toBeGreaterThan(0);
   expect(heard(g.s.people.find((p) => p.id === r.listener)!, r.speech!.text, r.speech!.at)).toBe(true);
-  const inputs = archiveOf(g.s).history.flatMap((t) => t.inputs);
+  const inputs = readRunHistory(archiveOf(g.s)).flatMap((t) => t.inputs);
   expect(
     inputs.some(
       (i) =>
