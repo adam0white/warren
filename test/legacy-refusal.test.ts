@@ -6,17 +6,21 @@ describe('explicit old-save and old-link refusal', () => {
   it('keeps old HF3 notebooks distinguishable from fresh games', () => {
     const saved = save(newGame(7));
     saved.framework = '3.0.0';
-    expect(() => load(saved)).toThrow(/Start fresh/);
-    expect(() => newGame(7, '0.6.0')).toThrow(/Start|fresh|supported/i);
+    expect(() => load(saved)).toThrow(/cannot be opened/);
+    expect(() => newGame(7, '0.6.0')).toThrow(/cannot be opened/i);
   });
   it('refuses damaged current host state and unsupported input records', () => {
     const saved = save(newGame(7));
     const changed = structuredClone(saved);
     changed.state.houses[0]!.jars += 1;
-    expect(() => load(changed)).toThrow(/verification/);
-    expect(() => load({ ...saved, seed: saved.seed + 1 })).toThrow(/invalid/);
-    expect(() => load({ ...saved, inputs: [{ at: 300, verb: 'unknown' } as never] })).toThrow(/invalid/);
-    expect(() => replay(7, [{ at: 300, verb: 'bell', extra: true } as never], 330)).toThrow(/invalid/);
+    expect(() => load(changed)).toThrow(/cannot be opened/);
+    expect(() => load({ ...saved, seed: saved.seed + 1 })).toThrow(/cannot be opened/);
+    expect(() => load({ ...saved, inputs: [{ at: 300, verb: 'unknown' } as never] })).toThrow(
+      /cannot be opened/,
+    );
+    expect(() => replay(7, [{ at: 300, verb: 'bell', extra: true } as never], 330)).toThrow(
+      /cannot be opened/,
+    );
   });
   it('refuses old Watch handoffs without changing the hill or marking a journey complete', async () => {
     const game = newGame(7);

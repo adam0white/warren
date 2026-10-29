@@ -6,6 +6,14 @@ playtest-and-fix rounds recorded verbatim in `docs/playtests/`, and an entry at
 https://human.adamwhite.work/games/. Adam accepts it by playing. Technical delivery
 and acceptance are separate. Later work belongs in Deferred with a date.
 
+## Imported duties and individual arrival — 2026-10-28
+
+A failed arrival skips only that person. Each shelf head is read and validated separately; HF admits a candidate before Warren claims it. A refused person begins locally and keeps their shared head. Successful candidates retain their source projections in the chapter export. The existing batch compare-and-swap still refuses concurrent ownership changes rather than overwriting them. Peer certification remains the published client's responsibility.
+
+Imported norm definitions retain their exact source meaning and provenance. Exact matching Warren action IDs remain usable locally; unsupported actions are retained as historical obligations. Warren never turns a duty to return to another place into a local watch duty or claims it was fulfilled. Conflicting norm definitions remain subject to HF admission. Native save/replay and fresh local opening catalogues stay unchanged.
+
+Old hills are downloadable before replacement. The title keeps the existing explicit replacement confirmation. `/file/` shows one plain refusal and keeps diagnostic detail inside collapsed Debug.
+
 ## Shared people readiness — 2026-10-28
 
 HF 4.8.1, client 0.5.7 and kit 0.5.24 form the published compatible graph. Before each shared arrival claim, checkpoint or terminal write, the client checks whether other games bound to that person have verified compatible live deployments and per-person skips. The current certification list is empty; all six Warren shared roles are skipped and named, their prior records stay unchanged, and new hills still start locally. A permitted role can use the retained-person bridge and shelf compare-and-swap. Loaded hills retain their recorded actors. Recheck peer certification by 2026-11-03. This is not proof of a completed shared journey. Saves from a different HF version are refused and preserved.

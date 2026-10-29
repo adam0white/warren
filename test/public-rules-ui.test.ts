@@ -104,7 +104,7 @@ it('Begin uses existing latest public rules at phone and wide sizes, with exact 
   }
 }, 60000);
 
-it('retains saved configurations on Resume and preserves an unsupported saved hill through confirmation and failed admission', async () => {
+it('retains saved configurations on Resume and preserves an unsupported saved hill until replacement is confirmed', async () => {
   const server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
   const browser = await chromium.launch({ headless: true });
   try {
@@ -150,20 +150,26 @@ it('retains saved configurations on Resume and preserves an unsupported saved hi
     );
     await page.reload();
     expect(await page.locator('.title-actions').count()).toBe(1);
-    expect(await page.locator('.page').textContent()).toContain('cannot be loaded');
+    expect(await page.locator('.page').textContent()).toContain('cannot open here');
     expect(await page.locator('#cont').count()).toBe(0);
     await page.locator('#new').click();
     expect(await page.locator('#new-confirm').isVisible()).toBe(true);
     expect(await page.locator('#cv').count()).toBe(0);
     await page.locator('#new-no').click();
-    await page.locator('#new').click();
-    await page.locator('#new-yes').click();
-    await expect.poll(() => page.locator('#start-error').innerText()).toContain('could not be started');
     expect(
       await page.evaluate(
-        `(async()=>{const {get}=await import('/src/ui/store.ts');return (await get('hill')).value;})()`,
+        `(async()=>{const {get}=await import('/src/ui/store.ts');return (await get('hill'))?.value;})()`,
       ),
     ).toEqual(unsupported);
+    await page.locator('#new').click();
+    await page.locator('#new-yes').click();
+    await page.locator('#cv').waitFor();
+    expect(await page.locator('#start-error').count()).toBe(0);
+    expect(
+      await page.evaluate(
+        `(async()=>{const {get}=await import('/src/ui/store.ts');return (await get('hill'))?.value;})()`,
+      ),
+    ).not.toEqual(unsupported);
     await page.close();
   } finally {
     await browser.close();

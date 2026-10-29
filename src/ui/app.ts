@@ -279,7 +279,7 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
   app().innerHTML = `<div class="page">${topbar(true)}
     <div class="title-art"><canvas id="title-cv" aria-label="The village above its cellar"></canvas><h1>The Warren</h1></div>
     <p class="title-goal">${PURPOSE}</p>
-    ${sv && !compatible ? '<p class="soft">This saved game comes from an older version and cannot be loaded. Start a new game.</p>' : ''}
+    ${sv && !compatible ? '<p class="soft">This hill was saved by a different version and cannot open here. You can download it to keep it. Your people across games are kept.</p><button id="download-old-run">Download this saved hill</button>' : ''}
     <div class="title-actions">${compatible ? `<button class="primary" id="cont">Resume <span class="soft">· ${esc(hillDate(sv.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
       <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'New game' : 'Begin'}</button>
       <div id="new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="new-yes">Yes, begin</button><button id="new-no">No</button></div>
@@ -296,6 +296,9 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
       t: demo.s.minute,
     });
   document.getElementById('book')?.addEventListener('click', () => titleMenu());
+  document.getElementById('download-old-run')?.addEventListener('click', () => {
+    if (sv) downloadSaved(sv, 'the-warren-saved-hill.json');
+  });
   document.getElementById('cont')?.addEventListener('click', async () => {
     if (!sv) return;
     const expected = ++generation;
@@ -335,7 +338,7 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
 
 function openFilePage() {
   ink = readInk();
-  app().innerHTML = `<main class="title"><h1>Open a saved hill</h1><p>Choose a Warren run you downloaded. It plays here without replacing the hill saved on this device or changing shared people.</p><p>Keep your original file. Older versions may need a fresh hill.</p><input id="hill-file" type="file" accept=".json,application/json"><p id="file-status" role="status"></p><a href="/">Return to your hill</a></main>`;
+  app().innerHTML = `<main class="title"><h1>Open a saved hill</h1><p>Choose a Warren run you downloaded. It plays here without replacing the hill saved on this device or changing shared people.</p><p>Keep your original file. Older versions may need a fresh hill.</p><input id="hill-file" type="file" accept=".json,application/json"><p id="file-status" role="status"></p><details hidden id="file-debug"><summary>Debug</summary><pre id="file-detail"></pre></details><a href="/">Return to your hill</a></main>`;
   document.getElementById('hill-file')?.addEventListener('change', async (event) => {
     const input = event.target as HTMLInputElement,
       file = input.files?.[0];
@@ -344,6 +347,7 @@ function openFilePage() {
     const status = document.getElementById('file-status');
     if (!status) return;
     status.textContent = 'Checking the saved hill and its history…';
+    document.getElementById('file-debug')?.setAttribute('hidden', '');
     try {
       const expected = ++generation;
       const prepared = await continuity.fileLoad(file);
@@ -351,10 +355,12 @@ function openFilePage() {
       speedIx = 0;
       enter();
     } catch (error) {
-      status.textContent =
-        error instanceof Error
-          ? error.message
-          : 'This hill could not be opened. Keep the file and start a fresh hill.';
+      status.textContent = 'This file cannot be opened in this version. Keep it.';
+      const detail = document.getElementById('file-detail');
+      if (detail) {
+        detail.textContent = String(error instanceof Error ? (error.cause ?? error) : error);
+        document.getElementById('file-debug')?.removeAttribute('hidden');
+      }
       input.disabled = false;
     }
   });
@@ -2135,12 +2141,16 @@ function runOf() {
 
 function download() {
   if (!g) return;
-  const blob = new Blob([JSON.stringify(runOf())], {
+  downloadSaved(runOf(), `the-warren-${g.s.seed}-day${Math.floor(g.s.minute / DAY)}.json`);
+}
+
+function downloadSaved(value: unknown, filename: string) {
+  const blob = new Blob([JSON.stringify(value)], {
     type: 'application/json',
   });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `the-warren-${g.s.seed}-day${Math.floor(g.s.minute / DAY)}.json`;
+  a.download = filename;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }

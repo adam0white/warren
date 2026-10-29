@@ -91,41 +91,43 @@ export async function fresh(
   const token = ++generation;
   await readyShelf(token);
   const ids = castForGame('warren').map((cast) => cast.castId);
+  const skipped = new Set<string>();
   const heads = await Promise.all(
-    ids.map(
-      async (castId) =>
-        [castId, await shelf.request<PersonaEnvelope | null>({ action: 'get', castId })] as const,
-    ),
+    ids.map(async (castId) => {
+      try {
+        return [castId, await shelf.request<PersonaEnvelope | null>({ action: 'get', castId })] as const;
+      } catch {
+        skipped.add(castId);
+        return [castId, null] as const;
+      }
+    }),
   );
   unchanged(token);
   const incoming: PersonaEnvelope[] = [];
-  const skipped = new Set<string>();
+  let game = newGame(seed, edition, undefined, config);
+  const start = archiveOf(game.s).initial.spec.start;
   for (const [id, head] of heads) {
-    if (portableWriteBlockers(id, 'warren').length) {
+    if (skipped.has(id) || portableWriteBlockers(id, 'warren').length) {
       skipped.add(id);
       continue;
     }
     if (!head) continue;
-    await validatePersona(head);
-    // HF3 sources are kept on the shelf. A fresh story cannot overwrite them.
-    if (!head.transfer.portable || head.terminal || activeClaim(head)) {
+    try {
+      await validatePersona(head);
+      if (head.castId !== id) throw Error('Different person');
+      // A skipped person keeps their shared record and starts a local story.
+      if (!head.transfer.portable || head.terminal || activeClaim(head)) throw Error('Unavailable person');
+      if (validatePortablePerson(head.transfer.portable).version === 1) throw Error('Older person');
+      portableOf(head);
+      // HF admits each person before we claim them. One refused arrival must not
+      // prevent the others from continuing, or delete the refused shelf head.
+      const prepared = newGame(seed, edition, undefined, config, authoringFor([...incoming, head], start));
+      incoming.push(head);
+      game = prepared;
+    } catch {
       skipped.add(id);
-      continue;
     }
-    // Profile-only v1 cannot preserve the person's retained history.
-    // Validate before classifying it so malformed records still refuse.
-    if (validatePortablePerson(head.transfer.portable).version === 1) {
-      skipped.add(id);
-      continue;
-    }
-    portableOf(head);
-    incoming.push(head);
   }
-  const base = newGame(seed, edition, undefined, config);
-  const start = archiveOf(base.s).initial.spec.start;
-  const game = incoming.length
-    ? newGame(seed, edition, undefined, config, authoringFor(incoming, start))
-    : base;
   const claims: PersonaEnvelope[] = [];
   for (const [castId, head] of heads) {
     if (skipped.has(castId)) continue;

@@ -48,7 +48,7 @@ export function portableOf(envelope: PersonaEnvelope): PortablePerson {
   return portable;
 }
 /** Explicit retained vocabulary preserves foreign history without claiming its places
- * or people are present in this hill. Unsupported future duties still refuse. */
+ * or people are present in this hill. Unknown actions remain historical duties. */
 function retainedReferences(portable: PortablePerson, person: string) {
   type Kind = 'action' | 'entity' | 'source' | 'norm' | 'proposition';
   const references: { kind: Kind; source: string; target: string }[] = [];
@@ -106,8 +106,6 @@ function retainedReferences(portable: PortablePerson, person: string) {
   }
   for (const duty of [...portable.retained.agenda.commitments, ...portable.retained.agenda.owed]) {
     for (const action of [...duty.actions, ...(duty.violatedBy ?? [])]) {
-      if (!ACTIONS.includes(action))
-        throw Error('This person has a responsibility this hill cannot support. Keep the source chapter.');
       add('action', action);
     }
     if ('toId' in duty) add('entity', duty.toId);

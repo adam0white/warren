@@ -1,3 +1,15 @@
+# HF4 taste fixes — 2026-10-28
+
+Remaining: signed source, one hosted review, exact source and merged CI, deployment, live release verification and cleanup. Adam accepts game feel separately.
+
+Old hills stay downloadable from the title before the existing replacement confirmation. The download preserves the stored object without loading, migrating or adding current-version fields. File refusals use plain English, with diagnostic detail in collapsed Debug.
+
+Each of the six shared roles can be admitted or skipped independently. Unreadable records, unsupported history and HF admission refusals keep that person's shelf head unchanged and start a local person; other eligible people can still arrive. The published client gate still checks peer certification before claims and writes. No peer is certified in client 0.5.7, so current production eligibility remains read-only until the separate certification release. This work does not claim a completed shared journey.
+
+Imported commitments, owed duties and exact sourced norm definitions survive HF admission. Matching action IDs (for example cook and pray) map to Warren's actions. Actions with no local equivalent stay historical duties, not fictional fulfillment. Imported definitions do not add duties to a fresh local opening or alter existing save/replay rules.
+
+Browser controls cover a six-person shelf, old-save refusal, exact old-object download, cancellation before replacement, Begin, old-file refusal with Debug and a current file opening. The separate file control checks 35 seconds without native database access or recurring save pauses. No screenshots are retained.
+
 # Shared people readiness — 2026-10-28
 
 The current published graph is HF 4.8.1, client 0.5.7 and kit 0.5.24. Each shared claim, checkpoint and terminal write checks the client peer gate before any projection or write. All six Warren roles are currently blocked because no peer is certified; fresh hills name skipped people and start locally without changing their shared heads. Eligible roles use the retained bridge and shelf CAS. Recheck peer certification by 2026-11-03. Saves from another HF version are refused and preserved. Adam accepts feel separately.

@@ -27,7 +27,7 @@ it('keeps HF sentences and composes current activity text without changing its i
   );
 });
 
-it('keeps an existing saved hill after real local-origin admission fails, without technical instructions', async () => {
+it('starts a local hill when individual shared records cannot be read, without technical instructions', async () => {
   const browser = await chromium.launch();
   const page = await browser.newPage();
   try {
@@ -39,13 +39,15 @@ it('keeps an existing saved hill after real local-origin admission fails, withou
       const {get} = await import('/src/ui/store.ts'); const row = await get('hill'); if (row) delete row.value.savedAt; return JSON.stringify(row?.value);
     })()`);
     await page.locator('#menu-new-yes').click();
-    await expect.poll(() => page.locator('#start-error').innerText()).toContain('could not be started');
-    expect(await page.locator('#start-error').innerText()).not.toMatch(/Continuity|Shelf|file|Error:/);
+    await page.locator('#menu-new-confirm').waitFor({ state: 'detached' });
+    await page.locator('#cv').waitFor();
+    expect(await page.locator('#start-error').count()).toBe(0);
+    expect(await page.evaluate('Object.keys(window.__warren.game.ownedHeads).length')).toBe(0);
     expect(
       await page.evaluate(`(async () => {
       const {get} = await import('/src/ui/store.ts'); const row = await get('hill'); if (row) delete row.value.savedAt; return JSON.stringify(row?.value);
     })()`),
-    ).toBe(before);
+    ).not.toBe(before);
   } finally {
     await browser.close();
   }

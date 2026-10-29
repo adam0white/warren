@@ -3,7 +3,6 @@ import {
   type ActionResolution,
   createPerson,
   createRun,
-  DEFAULT_NORMS,
   exportRun,
   step as frameworkStep,
   type Input,
@@ -21,6 +20,7 @@ import {
   type VisibleEvent,
 } from '@adam0white/human-framework';
 import frameworkPackage from '@adam0white/human-framework/package.json' with { type: 'json' };
+import { castNorms } from './cast-norms.ts';
 import { H, W } from './grid.ts';
 import type { WarrenState } from './warren.ts';
 export const FRAMEWORK_VERSION = frameworkPackage.version;
@@ -482,7 +482,7 @@ export function createWarrenRun(s: WarrenState, people: PersonAuthoring[]): void
       tags: [],
       norms: [],
     })),
-    norms: DEFAULT_NORMS,
+    norms: castNorms(people),
     marriageCustoms: [],
     skills: ['digging', 'farming'].map((id) => ({ id, label: id, domain: 'motor' })),
     skillTransfers: [],

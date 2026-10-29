@@ -3,12 +3,15 @@ import {
   acceptPersona,
   acceptPersonaBatch,
   canonicalCast,
+  castForGame,
   createPersona,
   type PersonaRequest,
   type PersonaShelfState,
 } from '@adam0white/lab-client';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fingerprint, newGame, save } from '../src/sim/game.ts';
+import { project } from '../src/sim/cast.ts';
+import { act, advance, fingerprint, newGame, save } from '../src/sim/game.ts';
+import { FRAMEWORK_VERSION } from '../src/sim/hf4.ts';
 import { advanceFrame } from '../src/sim/warren.ts';
 
 const mock = vi.hoisted(() => ({
@@ -26,7 +29,13 @@ vi.mock('@adam0white/lab-client', async (original) => {
   return {
     ...sdk,
     portableWriteBlockers: (castId: string, game: string) =>
-      castId === mock.eligible ? [] : sdk.portableWriteBlockers(castId, game),
+      castId === mock.eligible || mock.eligible === '*' ? [] : sdk.portableWriteBlockers(castId, game),
+    // Certification is a transport fixture here. Actual admission and shelf CAS
+    // run below; this control does not certify any deployed peer.
+    claimPortablePerson: (parent: import('@adam0white/lab-client').PersonaEnvelope, game: string) =>
+      mock.eligible === '*'
+        ? { ...parent.transfer, portableClaim: { game } }
+        : sdk.claimPortablePerson(parent, game),
     personaChannel: () => ({
       get enabled() {
         return mock.enabled;
@@ -77,6 +86,56 @@ beforeEach(() => {
 });
 const file = (value: unknown) => ({ size: 100, text: async () => JSON.stringify(value) }) as File;
 describe('HF4 shelf ownership', () => {
+  it('admits a retained person while another eligible record is refused individually', async () => {
+    const source = newGame(7);
+    act(source, { verb: 'release', who: 'meryem' });
+    advance(source, 330);
+    const captured = await project(source.s, 'meryem');
+    const castId = 'hf.cast.meryem.warren';
+    const head = await createPersona({
+      format: 'hf-persona/1',
+      castId,
+      castRevision: canonicalCast(castId).revision,
+      branchId: 'mixed-arrival',
+      parentRevision: null,
+      source: { game: 'warren', build: 'test', engine: FRAMEWORK_VERSION, rules: 'warren-hf4-1' },
+      transfer: captured.transfer,
+      limitations: [],
+    });
+    state = acceptPersona(state, head);
+    mock.eligible = '*';
+    const handle = mock.handle;
+    mock.handle = async (request) => {
+      if (request.action === 'get' && request.castId === 'hf.cast.yusuf.warren') return { broken: true };
+      return handle?.(request);
+    };
+    current = await fresh(8);
+    expect(current.chapter?.inputs.map((person) => person.castId)).toEqual([castId]);
+    expect(current.ownedHeads?.[castId]?.parentRevision).toBe(head.revision);
+    expect(current.ownedHeads?.['hf.cast.yusuf.warren']).toBeUndefined();
+    expect(Object.keys(current.ownedHeads ?? {})).toHaveLength(5);
+  });
+  for (const cast of castForGame('warren')) {
+    it(`starts with ${cast.name} eligible and skips the other people individually`, async () => {
+      mock.eligible = cast.castId;
+      current = await fresh(7);
+      expect(Object.keys(current.ownedHeads ?? {})).toEqual([cast.castId]);
+      expect(Object.keys(state.heads)).toEqual([cast.castId]);
+    });
+  }
+  it('skips an unreadable eligible record without refusing a new hill or writing that head', async () => {
+    mock.eligible = 'hf.cast.meryem.warren';
+    const handle = mock.handle;
+    mock.handle = async (request) => {
+      if (request.action === 'get' && request.castId === mock.eligible) return { broken: true };
+      return handle?.(request);
+    };
+    current = await fresh(7);
+    expect(current.s.people).toHaveLength(6);
+    expect(Object.keys(current.ownedHeads ?? {})).toHaveLength(0);
+    expect(continuityStatus).toContain('Meryem');
+    expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
+  });
   it('starts a local hill without making shared claims while shared writes are unavailable', async () => {
     current = await fresh(7, '0.7.0', 'warren-rest/1');
     expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
