@@ -244,6 +244,35 @@ Complete native and downloaded files retain the inputs, host fixture, full Run a
 
 Invitation host notes surface in the working view without reopening a person. No deadline or expiry is invented. Actual request answers/speech/hearing, marked-work starts/completion, Ada conversation, cut discussion, physical exercise and contextual reply use the normal nonzero reading slowdown. Menus still pause. The bounded contextual reply quotes an opposed loose-cut statement that the original listener actually attended. It uses a new voluntary choice, travel, thirty minutes and an awake listener; it changes no chalk and forces no agreement. Existing Yusuf note/date and Kian/Tamar words remain intact.
 
+## Later household visits — 2026-10-29
+
+Actual admitted later households have their own optional visits. Their seeded names,
+members and arrival day remain their own identity; matching a canonical name adds
+no biography. A retained arrival or personal hill-work note can supply exact dated
+context. Missing history stays unknown. Children younger than six have no
+independent keeper invitation. Older children may visit and look with the keeper;
+this assigns no adult work or expertise.
+
+The keeper invites one person to the hearth. HF chooses whether to take the offer,
+with ordinary activities, needs and faith still competing. Authored words follow
+only a completed choice, real travel and thirty minutes at the hearth. HF's actual
+answer is labeled separately. The visitor asks which visible open place the keeper
+would like to look at together. The keeper can leave the exchange there or choose
+one place. A second voluntary choice, travel and thirty minutes there precede a
+reading of its actual current furnishings and ground. Initial and final readings
+remain distinct. No safety, assent, duty, reconciliation or private feeling is
+inferred. The keeper is a player office; no HF listener attendance is claimed.
+Danger, sleep, death, withdrawal or another chosen activity can end the finite
+exchange. Time and actual answers remain. No invitation changes arrival frequency,
+family-generation RNG draws or uninvited hill choices. The public arrival bridge
+registers actual forward household identities with partial scopes and no new kin
+premises before admitting the unchanged generated people. Full saved population
+order survives cold HF restoration. Public invitation decisions are observed even
+when a review continues the person's current activity. Complete host/HF/RNG saves,
+files and deterministic replay retain these records. Existing source authority and
+publication refusals remain binding. This local existing-person feature does not
+require generic family custody or an Ada actor.
+
 ## Deferred and acceptance
 
 The original117 plus18 R2 register preserves literal asks, source hashes, return
@@ -251,7 +280,7 @@ qualifications, dates and aliases. This batch changes access, not whole-ask clos
 Door trial, Kian/Ada and retained door-history mechanisms already exist in the source
 base above; their source presence is distinct from current live delivery evidence.
 
-The current candidate addresses only the bounded F1189/GDI1334 physical exercise, F1192/GDI1337 actual invitation cue, additional actual F1199/GDI1344 setup-event slowdown and one contextual reply to a heard loose-cut disagreement. Technical delivery still requires the gates in HANDOFF. Broader gift/story clauses, F1193 beyond the existing Yusuf note, new-family exchanges F1200/GDI1345 and general spontaneous quarrels stay open; this does not close compound asks.
+The newcomer candidate addresses F1200/GDI1345 and the existing-arrival clauses of F649/GDI835 and F655/GDI841 with finite local invitations and walks. Public readings use names, practical places and completed words. Exact source attribution, identifiers, times and HF decisions remain in Debug and exports. The delivered Maryam exercise, invitation cue, event slowdown and contextual reply remain intact. Technical integration still requires HANDOFF's gates. Broader gifts/stories, F1193 beyond Yusuf's note, spontaneous quarrels and owner acceptance stay open.
 
 F649/GDI835 and F655/GDI841 meeting Ada need a maintained shared cast identity/profile, authored biography/backstory/secrets, age-appropriate agency and outcome/carry/return contract. Current dependent care and Kian/Tamar’s conversation do not establish meeting her. Owner: central HF cast/release director; its source is reserved by the release train. Checkpoint2026-10-29. Do not invent an Ada actor or family facts. New family/prop custody and generic lifecycle remain separate. Original Maya’s conditional return requires understanding stalled digging; this exercise does not establish it.
 F595's rest request and F629's door request remain bounded mechanisms. F678 stays

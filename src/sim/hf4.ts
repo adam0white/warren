@@ -225,39 +225,47 @@ export function syncReadings(s: WarrenState): void {
       ...(s.hfEventCursor ? { afterEvent: s.hfEventCursor } : {}),
     }),
   );
-  s.people = views.people.map((view) => {
-    if (view.kind !== 'host') throw new Error('Host reading required');
-    const part = <K extends HostParts['select']>(key: K): Part<K> => {
-      const p = view.parts.find((p) => p.select === key);
-      if (!p) throw new Error(`Missing ${key}`);
-      return p.value as Part<K>;
-    };
-    const identity = runtime.identities.get(view.id)!;
-    const body = part('body');
-    const agenda = structuredClone(part('agenda'));
-    for (const c of agenda.commitments) {
-      c.from /= MINUTE;
-      c.until /= MINUTE;
-    }
-    for (const g of agenda.goals) {
-      g.adoptedAt /= MINUTE;
-      g.lastAdvancedAt /= MINUTE;
-      if (g.deadline !== undefined) g.deadline /= MINUTE;
-    }
-    return {
-      id: view.id,
-      name: identity.name,
-      now: runtime.at / MINUTE,
-      life: { bornAt: identity.birthAt / MINUTE, sex: identity.sex },
-      body: structuredClone(body.state),
-      bodyReadout: structuredClone(body.readout),
-      skills: Object.fromEntries(part('skills').map((v) => [v.id, { level: v.competence }])),
-      agenda,
-      will: structuredClone(part('relationships')),
-      activity: s.hfActive?.[view.id] ?? null,
-      events: [...(oldPeople.get(view.id)?.events ?? []), ...part('events')].slice(-128),
-    } as Person;
-  });
+  // The host's retained population order is part of a full save. A cold HF
+  // archive may enumerate later arrivals in canonical input order instead.
+  // Preserve every existing reading's order, then append actual new identities.
+  const order = new Map(
+    [...new Set([...oldPeople.keys(), ...runtime.identities.keys()])].map((id, i) => [id, i]),
+  );
+  s.people = [...views.people]
+    .sort((a, b) => (order.get(a.id) ?? 0) - (order.get(b.id) ?? 0))
+    .map((view) => {
+      if (view.kind !== 'host') throw new Error('Host reading required');
+      const part = <K extends HostParts['select']>(key: K): Part<K> => {
+        const p = view.parts.find((p) => p.select === key);
+        if (!p) throw new Error(`Missing ${key}`);
+        return p.value as Part<K>;
+      };
+      const identity = runtime.identities.get(view.id)!;
+      const body = part('body');
+      const agenda = structuredClone(part('agenda'));
+      for (const c of agenda.commitments) {
+        c.from /= MINUTE;
+        c.until /= MINUTE;
+      }
+      for (const g of agenda.goals) {
+        g.adoptedAt /= MINUTE;
+        g.lastAdvancedAt /= MINUTE;
+        if (g.deadline !== undefined) g.deadline /= MINUTE;
+      }
+      return {
+        id: view.id,
+        name: identity.name,
+        now: runtime.at / MINUTE,
+        life: { bornAt: identity.birthAt / MINUTE, sex: identity.sex },
+        body: structuredClone(body.state),
+        bodyReadout: structuredClone(body.readout),
+        skills: Object.fromEntries(part('skills').map((v) => [v.id, { level: v.competence }])),
+        agenda,
+        will: structuredClone(part('relationships')),
+        activity: s.hfActive?.[view.id] ?? null,
+        events: [...(oldPeople.get(view.id)?.events ?? []), ...part('events')].slice(-128),
+      } as Person;
+    });
 }
 export function authoredPerson(
   id: string,
@@ -551,6 +559,43 @@ export function enqueue<K extends Input['kind']>(
     kind,
     payload,
   } as Input);
+}
+/** Late households already carry authored ties. Declare their actual identities in
+ * partial public scopes before admission; this asserts no new kin premise or
+ * completeness. Keep all authored people, marriages and generation draws exact. */
+export function enqueueHouseholdArrival(s: WarrenState, people: PersonAuthoring[]): void {
+  const first = people[0];
+  if (!first) return;
+  const current = archiveOf(s).current;
+  const at = Math.round(s.minute * MINUTE) + 1;
+  for (const other of people.slice(1)) {
+    enqueue(s, 'lifecycle.received', {
+      type: 'kin-premise',
+      premises: [],
+      scope: {
+        id: `arrival-identities:${first.id}:${other.id}`,
+        people: [
+          { kind: 'entity', id: first.id },
+          { kind: 'entity', id: other.id },
+        ],
+        at,
+        kinRevision: current.lifecycle.kinRevision,
+        premiseIds: [],
+        degrees: 'source-two-step',
+        completeness: 'partial',
+        basis: { kind: 'evidence', id: `arrival:${first.id}:${other.id}` },
+      },
+      basis: {
+        evidence: { kind: 'evidence', id: `arrival:${first.id}:${other.id}` },
+        worldRevision: current.world.revision,
+      },
+    });
+    s.hfQueue.at(-1)!.id = `arrival:0-identities:${at}:${other.id}`;
+  }
+  for (const authored of people) {
+    enqueue(s, 'person.arrived', { authored, arrivalEvidenceId: `arrival:${authored.id}` });
+    s.hfQueue.at(-1)!.id = `arrival:1-person:${at}:${authored.id}`;
+  }
 }
 export function interruptPerson(c: { state: WarrenState }, p: Person, _at: number, reason: string): void {
   if (!p.activity) return;

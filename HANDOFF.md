@@ -1,3 +1,31 @@
+# Later household follow-through candidate — 2026-10-29
+
+Remaining: production-bundle QA, normal lane, signed rebased push and one hosted
+Codex request. Then the author transfers source/PR/tree ownership to root. Root
+owns exact source CI, further hosted findings, fail-fast expected-head/unresolved-
+thread guards, merge, exact main CI, fresh clean managed normal deployment, live
+SHA/dirty:false/assets/controls and merged tree/ref cleanup. This is not delivered.
+Adam accepts feel separately; no new player round ran.
+
+Actual generated family members can receive finite voluntary hearth visits and one
+optional look at visible open ground. HF may keep ordinary work, rest or another
+choice. A review's assent does not replace the fresh executable choice after an
+interruption. Real paths and a full half hour at each place precede dialogue.
+Public words use names, practical places and current results. Full member IDs,
+positions, times, initial/current ground, decisions and script attribution remain
+in complete exports and collapsed Debug. No private biography, feeling, skill,
+safety, duty or agreement is invented. No listener attendance is claimed for the
+keeper. Runtime arrival registers forward identities without new kin premises;
+cold restoration preserves population order and all actors/history/RNG.
+
+Current pins, Maryam physical/source/held-door closure and PR14 approximate
+condition/voice fixes remain. Local family work needs no generic custody contract.
+Meeting Ada still needs central cast/release's maintained identity/profile,
+backstory/secrets, age-appropriate agency and outcome/carry/return contract;
+checkpoint2026-10-29. Broader gifts/stories and actual owner acceptance remain open.
+Nia's return stays conditional on new people with words to discover. Maya's return
+stays conditional on understanding stalled digging.
+
 # Condition signs restored — 2026-10-28
 
 Remaining: one hosted review, exact source and merged CI, deployment, live clean-release verification and worktree cleanup. Adam accepts game feel separately.

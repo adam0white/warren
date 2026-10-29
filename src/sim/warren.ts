@@ -80,6 +80,7 @@ import {
   createWarrenRun,
   type DecisionRecord,
   enqueue,
+  enqueueHouseholdArrival,
   hfRunOf,
   interruptPerson,
   type Outcome,
@@ -102,6 +103,14 @@ import {
   puzzleOffers,
   puzzleSuggestion,
 } from './maryam-puzzle.ts';
+import {
+  captureNewcomerAnswer,
+  finishNewcomer,
+  type NewcomerExchange,
+  newcomerOffers,
+  newcomerSuggestion,
+  observeNewcomers,
+} from './newcomer-exchange.ts';
 import { arrivingFamily, BELL, founders, type House, USTA_ID } from './people.ts';
 import {
   captureRefusalReplyAnswer,
@@ -219,6 +228,8 @@ export interface WarrenState {
   adaTalks?: AdaTalk[];
   maryamPuzzle?: MaryamPuzzle;
   refusalReply?: RefusalReply;
+  /** Only explicit keeper invitations create these finite existing-person exchanges. */
+  newcomerExchanges?: NewcomerExchange[];
   nativeDepartures?: Record<
     string,
     {
@@ -707,6 +718,12 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
   const sleepy = !light || p.body.sleepPressure > 0.7 || p.body.sleepDebtHours > 0.5 || p.body.health < 0.5;
   const winter = season === 'winter';
   const hearth = hearthCell(s);
+  for (const r of newcomerOffers(s, p)) {
+    const journey = plan(s, f, at, r.cell, r.minutes, lit);
+    if (!journey) continue;
+    offer(r.offer, journey, r.minutes);
+    r.offer.duration = Math.ceil((journey.times.at(-1) ?? at) - (journey.times[0] ?? at) + r.minutes);
+  }
   for (const r of refusalReplyOffers(s, p)) {
     const journey = plan(s, f, at, r.cell, r.minutes, lit);
     if (!journey) continue;
@@ -1600,6 +1617,8 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
   const hours = workDone(t, act, now);
   // Where they are now.
   s.pos[p.id] = done ? (t?.end ?? s.pos[p.id] ?? 0) : positionAt(s, p.id, now);
+  const newcomer = finishNewcomer(s, p, act, done);
+  if (newcomer) return { ...base, ...newcomer };
   const puzzle = finishPuzzle(s, p, act, done);
   if (puzzle) return { ...base, ...puzzle };
   const adaTalk = finishAdaTalk(s, p, act, done);
@@ -2179,6 +2198,7 @@ export function makeWorld(s: WarrenState): World {
       const minute = s.minute;
       s.minute = at;
       try {
+        observeNewcomers(s);
         observeRefusalReply(s);
         observePuzzle(s);
         observeAdaTalk(s);
@@ -2222,6 +2242,7 @@ export function makeWorld(s: WarrenState): World {
       captureAdaTalkAnswer(s, p, offer, record);
       capturePuzzleAnswer(s, p, offer, record);
       captureRefusalReplyAnswer(s, p, offer, record);
+      captureNewcomerAnswer(s, p, offer, record);
       return undefined;
     },
     resolve: (p, act, reason) => resolveActivity(s, p, act, reason),
@@ -2293,6 +2314,7 @@ function* advancing(
     const suggestions: Record<string, Suggestion> = {};
     for (const p of s.people) {
       const suggestion =
+        newcomerSuggestion(s, p) ??
         refusalReplySuggestion(s, p) ??
         residentSuggestion(s, p) ??
         cutSuggestion(s, p) ??
@@ -2353,6 +2375,7 @@ export function observeRefuge(s: WarrenState) {
 }
 
 function afterQuantum(s: WarrenState, ev: SimEvent[]) {
+  observeNewcomers(s);
   observeRefusalReply(s);
   observePuzzle(s);
   observeAdaTalk(s);
@@ -2870,8 +2893,8 @@ function wordStep(s: WarrenState, day: number) {
   );
   for (const p of fam.people) {
     s.pos[p.id] = surfaceCell(x);
-    enqueue(s, 'person.arrived', { authored: p, arrivalEvidenceId: `arrival:${p.id}` });
   }
+  enqueueHouseholdArrival(s, fam.people);
   const head = fam.people[0];
   note(s, {
     kind: 'arrival',

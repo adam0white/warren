@@ -12,6 +12,7 @@ import { H, USE, type UseName, W } from './grid.ts';
 import { FRAMEWORK_VERSION, need, syncReadings } from './hf4.ts';
 import { type Handling, requestPuzzle, withdrawPuzzle } from './maryam-puzzle.ts';
 import { prepareNativeReturn } from './native-return.ts';
+import { requestNewcomer, walkWithNewcomer, withdrawNewcomer } from './newcomer-exchange.ts';
 import { rally } from './rally.ts';
 import { requestRefusalReply, withdrawRefusalReply } from './refusal-reply.ts';
 import {
@@ -50,6 +51,8 @@ export function editionOf(version: string): Edition {
 }
 
 export type Input =
+  | { at: number; verb: 'invite-newcomer' | 'withdraw-newcomer'; who: string }
+  | { at: number; verb: 'walk-newcomer'; who: string; cell: number }
   | { at: number; verb: 'reply-refusal'; who: string }
   | { at: number; verb: 'withdraw-refusal-reply' }
   | { at: number; verb: 'try-maryam-puzzle'; handling: Handling }
@@ -130,6 +133,12 @@ export function act(g: Game, o: Order): boolean {
 
 function apply(s: WarrenState, i: Input): boolean {
   switch (i.verb) {
+    case 'invite-newcomer':
+      return requestNewcomer(s, i.who);
+    case 'walk-newcomer':
+      return walkWithNewcomer(s, i.who, i.cell);
+    case 'withdraw-newcomer':
+      return withdrawNewcomer(s, i.who);
     case 'reply-refusal':
       return requestRefusalReply(s, i.who);
     case 'withdraw-refusal-reply':
@@ -438,6 +447,8 @@ function validInput(value: unknown): value is Input {
       if (!cell(input.cell)) return false;
       keys = ['cell'];
       break;
+    case 'invite-newcomer':
+    case 'withdraw-newcomer':
     case 'reply-refusal':
     case 'talk-rest':
     case 'talk-disagreement':
@@ -446,6 +457,7 @@ function validInput(value: unknown): value is Input {
       if (!who) return false;
       keys = ['who'];
       break;
+    case 'walk-newcomer':
     case 'test-door':
     case 'try-door':
       if (!who || !cell(input.cell)) return false;
