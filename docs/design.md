@@ -63,17 +63,16 @@ correction. Apply both only in a fresh managed worktree and reconcile later docs
 
 ## Player evidence on HF4 — design decision, 2026-10-28
 
-The bridge may inspect private body/agenda/relationships for world settlement.
-The player UI cannot use that privileged reading as someone else’s knowledge.
-Published 4.6.0 returns `unobserved` for another person’s body. The candidate
-therefore draws actual work/motion and retains dated journal injury evidence;
-it does not infer fatigue, pain, health or trust from private state. Current
-condition is explicitly unavailable where no public observation exists. This
-removes the earlier privileged fatigue/injury poses and current-need summary;
-it is a visible design change, not equivalent condition-sign support. Physiology,
-care costs, bodily interruption and HF decisions remain in HF. Wider observed
-condition projection belongs to shared G4, not a host body model. Adam’s feel
-acceptance remains separate from technical delivery.
+The condition panel gives an approximate reading from HF host inspection. It uses
+Warren's authored phrases for inability to stand, poor health, illness, bleeding,
+injury, pain, hunger, thirst and need for rest. It shows no condition numbers.
+Fatigue and sleepiness change figure lean and walking stride; active injuries add
+a shoulder mark. These are display cues from HF state, not another resident's
+knowledge, a diagnosis, or a promise of safety. Historical journal injuries remain
+explicitly historical. No body model, gameplay switch, simulation or replay rule is
+added. This restores the pre-port signs under the owner's 2026-10-28 brief and
+supersedes the earlier decision to hide host condition readings. Adam accepts
+feel separately from technical delivery.
 
 ## Source and public rules
 
