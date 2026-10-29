@@ -197,25 +197,37 @@ it('distinguishes generated young children from older children', () => {
   expect(olderOpening.g.s.notes.at(-1)!.text).toMatch(/No work is assigned/i);
 });
 
-it('completes one optional walk after a real visit and retains the current ground', () => {
-  const { g } = admitted(3);
-  const who = 'kadir1';
-  expect(act(g, { verb: 'invite-newcomer', who })).toBe(true);
-  for (let n = 0; n < 20 && g.s.newcomerExchanges![0]!.phase === 'visit'; n++) advance(g, g.s.minute + 30);
-  expect(g.s.newcomerExchanges![0]!.phase).toBe('choose');
-  advance(g, 2400);
-  if (process.env.WARREN_NEWCOMER_WALK_PROOF)
-    writeFileSync(process.env.WARREN_NEWCOMER_WALK_PROOF, JSON.stringify(save(g)));
-  const cell = g.s.hill.use.indexOf(USE.hearth);
-  expect(act(g, { verb: 'walk-newcomer', who, cell })).toBe(true);
-  for (let n = 0; n < 16 && g.s.newcomerExchanges![0]!.phase === 'walk'; n++) advance(g, g.s.minute + 30);
-  const r = g.s.newcomerExchanges![0]!;
-  expect(r.phase, JSON.stringify(r)).toBe('done');
-  expect(r.walk?.result, JSON.stringify(r)).toBeDefined();
-  expect(r.walk!.result!.at - r.walk!.result!.workFrom).toBeGreaterThanOrEqual(30);
-  expect(r.walk!.result!.ground.use).toBe(g.s.hill.use[cell]);
-  expect(r.walk!.result!.ground.cell).toBe(cell);
-  expect(act(g, { verb: 'walk-newcomer', who, cell })).toBe(false);
-  expect(act(g, { verb: 'invite-newcomer', who })).toBe(false);
-  exactReplay(g);
-});
+// Each restoration path includes the complete live journey inside its own 60s
+// deadline. Check cold HF restoration and host-input replay separately, with
+// full save equality for each. Keep the actual setup inside both timed controls.
+it.each(['native', 'replay'] as const)(
+  'completes one optional walk after a real visit and retains the current ground through %s',
+  (mode) => {
+    const { g } = admitted(3);
+    const who = 'kadir1';
+    expect(act(g, { verb: 'invite-newcomer', who })).toBe(true);
+    for (let n = 0; n < 20 && g.s.newcomerExchanges![0]!.phase === 'visit'; n++) advance(g, g.s.minute + 30);
+    expect(g.s.newcomerExchanges![0]!.phase).toBe('choose');
+    advance(g, 2400);
+    if (process.env.WARREN_NEWCOMER_WALK_PROOF)
+      writeFileSync(process.env.WARREN_NEWCOMER_WALK_PROOF, JSON.stringify(save(g)));
+    const cell = g.s.hill.use.indexOf(USE.hearth);
+    expect(act(g, { verb: 'walk-newcomer', who, cell })).toBe(true);
+    for (let n = 0; n < 16 && g.s.newcomerExchanges![0]!.phase === 'walk'; n++) advance(g, g.s.minute + 30);
+    const r = g.s.newcomerExchanges![0]!;
+    expect(r.phase, JSON.stringify(r)).toBe('done');
+    expect(r.walk?.result, JSON.stringify(r)).toBeDefined();
+    expect(r.walk!.result!.at - r.walk!.result!.workFrom).toBeGreaterThanOrEqual(30);
+    expect(r.walk!.result!.ground.use).toBe(g.s.hill.use[cell]);
+    expect(r.walk!.result!.ground.cell).toBe(cell);
+    expect(act(g, { verb: 'walk-newcomer', who, cell })).toBe(false);
+    expect(act(g, { verb: 'invite-newcomer', who })).toBe(false);
+    const full = JSON.parse(JSON.stringify(save(g)));
+    const restored =
+      mode === 'native'
+        ? load(full)
+        : replay(full.seed, full.inputs, full.minute, full.game, full.chapter, full.config, full.phase);
+    expect(save(restored)).toEqual(full);
+  },
+  60000,
+);
