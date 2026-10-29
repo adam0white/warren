@@ -13,6 +13,24 @@ const functions = names
   .join('\n');
 afterEach(() => vi.restoreAllMocks());
 
+it('shows the shared-record refusal when a new hill cannot start', () => {
+  const source = appSource.match(/function startError\([\s\S]*?\n\}/)?.[0] ?? '';
+  const status = { textContent: '' };
+  const context = vm.createContext({
+    Error,
+    console: { error() {} },
+    document: { getElementById: () => status },
+  });
+  vm.runInContext(stripTypeScriptTypes(`${source}\nglobalThis.show = startError;`), context);
+  (context.show as (error: Error, message: string) => void)(
+    new Error(
+      'People across games are temporarily unavailable. Your shared records and current hill are unchanged.',
+    ),
+    'A new hill could not be started.',
+  );
+  expect(status.textContent).toContain('People across games are temporarily unavailable');
+});
+
 for (const delay of ['compression', 'open']) {
   it(`cannot write or capture A after ${delay === 'compression' ? 'New game' : 'load'} installs B with A pending ${delay}`, async () => {
     let release!: () => void;

@@ -6,12 +6,16 @@ playtest-and-fix rounds recorded verbatim in `docs/playtests/`, and an entry at
 https://human.adamwhite.work/games/. Adam accepts it by playing. Technical delivery
 and acceptance are separate. Later work belongs in Deferred with a date.
 
+## Shared people safety — 2026-10-28
+
+The published compatible graph is HF 4.8.0, client 0.5.5 and kit 0.5.23. Client 0.5.6 adds a per-person shared write gate, but kit 0.5.23 does not support that client. Until a compatible kit is published and integrated, fresh hills refuse when any shelf head exists; an empty shelf permits local play without claims. Checkpoints and terminal writes are disabled, including for retained local ownership. Existing shared records and local hills remain intact; saves made with another HF version are refused rather than migrated. This is a temporary host capability refusal, not an HF gap or proof of a shared journey. Revisit the compatible graph on 2026-10-29, or earlier on release; recheck peer deployment certification by 2026-11-03.
+
 ## HF4 port correction — 2026-10-28
 
 **Remaining:** finish the restored HF4 candidate, prove complete game export/replay
 and the existing ten-millisecond simulation/frame budget, then deliver through
 review, exact CI and a clean verified deployment. Adam accepts feel separately.
-The candidate targets published HF 4.7.0 with immutable client 0.5.3 / kit 0.5.21.
+The historical candidate targeted HF 4.7.0 with client 0.5.3 / kit 0.5.21; see the current safety entry above.
 The public menu opens `/file/`. A file must replay exactly before play. File play does not open native storage or claim shared people. It cannot replace the native hill.
 Production remains on HF3 until delivery. Profile-only portable v1 refuses explicitly; it cannot stand in for retained v2 runtime history. No HF or vendor source is patched.
 
@@ -208,11 +212,11 @@ Historical next/1 keeps its original scoped standing-advice path. Recorded next/
 and rest/1 retain their elicited-position semantics. No old save gains an action,
 configuration, rewritten word or away play just because new hills use latest rules.
 
-Fresh hills automatically claim supported shared people through the released shelf.
+The earlier port automatically claimed supported shared people; the current safety entry above suspends those writes.
 Loaded hills never refresh actors from newer shelf heads. Cast controls and generic
 persona experiments belong on the central shelf. Few diagnostics sit in one closed
 Debug beside Lab privacy; gameplay remains public. The host offers download/status,
-not a file chooser. Low-level canonical file compatibility remains as implemented;
+and opens saved files at /file/. Low-level canonical file compatibility remains as implemented;
 files gain no shared-history ownership. Do not infer a public import feature from
 historical generic notes. Recording and explicit Feedback sharing retain SDK privacy
 contracts. Feedback drafts send nothing until Submit.

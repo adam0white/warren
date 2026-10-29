@@ -32,9 +32,9 @@ it('restores accepted active work and keeps self preview read-only', () => {
   const original = newGame(7);
   advance(original, 330);
   expect(original.s.people.some((person) => person.activity)).toBe(true);
-  // Exact4.7.0 engine plus the declared world-entity registry are replay identity.
+  // Exact 4.8.0 engine plus the declared world-entity registry are replay identity.
   expect(save(original).state.hf.hashes.full).toBe(
-    'f2842755ecc9ae667f61cc900ac1ffe217a6cabae737eec6115f4508de5e1852',
+    '9280c0e28e23e02b698bbf02e281ad807c177f5e25e3e2ba9dc10b9997b64e19',
   );
   const checkpoint = JSON.parse(JSON.stringify(save(original))),
     resumed = load(checkpoint);
@@ -75,5 +75,5 @@ it('finishes an in-flight quantum before logging a player input, then exports ex
     checkpoint.phase,
   );
   expect(save(reconstructed)).toEqual(checkpoint);
-  expect(checkpoint.state.hf.engine.package).toBe('@adam0white/human-framework@4.7.0');
+  expect(checkpoint.state.hf.engine.package).toBe('@adam0white/human-framework@4.8.0');
 });
