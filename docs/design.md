@@ -6,7 +6,11 @@ playtest-and-fix rounds recorded verbatim in `docs/playtests/`, and an entry at
 https://human.adamwhite.work/games/. Adam accepts it by playing. Technical delivery
 and acceptance are separate. Later work belongs in Deferred with a date.
 
-## Shared people safety — 2026-10-28
+## Shared people readiness — 2026-10-28
+
+HF 4.8.1, client 0.5.7 and kit 0.5.24 form the published compatible graph. Before each shared arrival claim, checkpoint or terminal write, the client checks whether other games bound to that person have verified compatible live deployments and per-person skips. The current certification list is empty; all six Warren shared roles are skipped and named, their prior records stay unchanged, and new hills still start locally. A permitted role can use the retained-person bridge and shelf compare-and-swap. Loaded hills retain their recorded actors. Recheck peer certification by 2026-11-03. This is not proof of a completed shared journey. Saves from a different HF version are refused and preserved.
+
+## Earlier shared people safety — 2026-10-28
 
 The published compatible graph is HF 4.8.0, client 0.5.5 and kit 0.5.23. Client 0.5.6 adds a per-person shared write gate, but kit 0.5.23 does not support that client. Until a compatible kit is published and integrated, fresh hills refuse when any shelf head exists; an empty shelf permits local play without claims. Checkpoints and terminal writes are disabled, including for retained local ownership. Existing shared records and local hills remain intact; saves made with another HF version are refused rather than migrated. This is a temporary host capability refusal, not an HF gap or proof of a shared journey. Revisit the compatible graph on 2026-10-29, or earlier on release; recheck peer deployment certification by 2026-11-03.
 

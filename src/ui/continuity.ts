@@ -1,12 +1,19 @@
+import { validatePortablePerson } from '@adam0white/human-framework';
 /** The shelf transports validated HF projections. Loading a hill never refreshes its people. */
 import {
+  canonicalCast,
   castForGame,
+  claimPortablePerson,
+  closePersonaBranch,
+  createPersona,
   type PersonaEnvelope,
   personaChannel,
+  portableWriteBlockers,
   validatePersona,
   watchPersonaCheckpoint,
 } from '@adam0white/lab-client';
 import { adaWords } from '../sim/ada-care.ts';
+import { authoringFor, portableOf, project } from '../sim/cast.ts';
 import {
   act,
   fingerprint,
@@ -16,16 +23,28 @@ import {
   newGame,
   replay,
   type Saved,
+  stateJson,
 } from '../sim/game.ts';
+import { archiveOf, FRAMEWORK_VERSION } from '../sim/hf4.ts';
 import type { NativeReturnId } from '../sim/native-return.ts';
+import { CAST_IDS } from '../sim/people.ts';
 import { lab } from './lab.ts';
+import { sourceBuild } from './source-build.ts';
 
 const shelf = personaChannel();
 let generation = 0;
+let busy = false;
 let current: () => Game | null = () => null;
 let persistAccepted: (game: Game) => Promise<boolean> = async () => true;
 export let continuityStatus =
-  'People across games are temporarily unavailable. A loaded hill keeps its saved people and history.';
+  'People can continue across games when their shared records are ready. A loaded hill keeps its saved people and history.';
+const stamps = () => ({
+  game: 'warren',
+  build: sourceBuild(),
+  engine: FRAMEWORK_VERSION,
+  rules: 'warren-hf4-1',
+});
+const activeClaim = (p: PersonaEnvelope) => p.transfer.portableClaim !== undefined;
 function unchanged(token: number) {
   if (token !== generation) throw Error('Another action replaced this hill.');
 }
@@ -79,14 +98,73 @@ export async function fresh(
     ),
   );
   unchanged(token);
-  if (heads.some(([, head]) => head !== null)) {
-    throw Error(
-      'People across games are temporarily unavailable. Your shared records and current hill are unchanged.',
+  const incoming: PersonaEnvelope[] = [];
+  const skipped = new Set<string>();
+  for (const [id, head] of heads) {
+    if (portableWriteBlockers(id, 'warren').length) {
+      skipped.add(id);
+      continue;
+    }
+    if (!head) continue;
+    await validatePersona(head);
+    // HF3 sources are kept on the shelf. A fresh story cannot overwrite them.
+    if (!head.transfer.portable || head.terminal || activeClaim(head)) {
+      skipped.add(id);
+      continue;
+    }
+    // Profile-only v1 cannot preserve the person's retained history.
+    // Validate before classifying it so malformed records still refuse.
+    if (validatePortablePerson(head.transfer.portable).version === 1) {
+      skipped.add(id);
+      continue;
+    }
+    portableOf(head);
+    incoming.push(head);
+  }
+  const base = newGame(seed, edition, undefined, config);
+  const start = archiveOf(base.s).initial.spec.start;
+  const game = incoming.length
+    ? newGame(seed, edition, undefined, config, authoringFor(incoming, start))
+    : base;
+  const claims: PersonaEnvelope[] = [];
+  for (const [castId, head] of heads) {
+    if (skipped.has(castId)) continue;
+    const who = Object.keys(CAST_IDS).find((id) => CAST_IDS[id] === castId);
+    if (!who) throw Error('This continuing person has no role in the hill.');
+    const transfer = head
+      ? claimPortablePerson(head, 'warren')
+      : { castPassport: 'warren-hf4-active/1', portableClaim: { game: 'warren' } };
+    claims.push(
+      await createPersona({
+        format: 'hf-persona/1',
+        castId,
+        castRevision: canonicalCast(castId).revision,
+        branchId: head?.branchId ?? crypto.randomUUID(),
+        parentRevision: head?.revision ?? null,
+        source: head?.source ?? stamps(),
+        transfer,
+        limitations: [
+          'This person belongs to this hill until a current HF projection can be saved between activities.',
+        ],
+      }),
     );
   }
-  const game = newGame(seed, edition, undefined, config);
-  lab.setPersonaRecording(null);
-  continuityStatus = 'People across games are temporarily unavailable. This hill stays on this device.';
+  unchanged(token);
+  if (claims.length) {
+    await shelf.request({
+      action: 'putBatch',
+      envelopes: claims,
+      expectedHeads: Object.fromEntries(claims.map((claim) => [claim.castId, claim.parentRevision])),
+    });
+    unchanged(token);
+  }
+  if (incoming.length)
+    game.chapter = { version: 'warren-hf4-cast/1', inputs: incoming, claims, initial: stateJson(game.s) };
+  game.ownedHeads = Object.fromEntries(claims.map((head) => [head.castId, head]));
+  lab.setPersonaRecording(claims.length ? crypto.randomUUID() : null);
+  continuityStatus = skipped.size
+    ? `Some people start a new story here while their shared records stay unchanged: ${[...skipped].map((id) => canonicalCast(id).name).join(', ')}.`
+    : 'Available people continued automatically. This hill keeps their records until it can save a current checkpoint.';
   return game;
 }
 export async function localLoad(saved: Saved): Promise<Game> {
@@ -125,10 +203,60 @@ export async function fileLoad(file: File): Promise<Game> {
   return game;
 }
 export async function checkpoint(): Promise<void> {
-  if (!current() || current()?.fileOrigin) return;
-  continuityStatus = 'People across games are temporarily unavailable. Your shared records are unchanged.';
-  const status = document.querySelector('[data-cast-status]');
-  if (status) status.textContent = continuityStatus;
+  const game = current();
+  if (busy || !game || game.fileOrigin || !shelf.enabled) return;
+  const token = generation;
+  busy = true;
+  try {
+    for (const person of game.s.people) {
+      const castId = CAST_IDS[person.id];
+      const parent = castId && game.ownedHeads?.[castId];
+      if (!castId || !parent || parent.terminal) continue;
+      if (portableWriteBlockers(castId, 'warren').length) {
+        continuityStatus = `${person.name}: shared history is read-only until the other games are ready.`;
+        continue;
+      }
+      try {
+        const captured = person.body.alive ? await project(game.s, person.id) : undefined;
+        const envelope = captured
+          ? await createPersona({
+              format: 'hf-persona/1',
+              castId,
+              castRevision: canonicalCast(castId).revision,
+              branchId: parent.branchId,
+              parentRevision: parent.revision,
+              source: stamps(),
+              transfer: captured.transfer,
+              limitations: [
+                'HF retains supported history and duties. The receiving game validates its own calendar and references.',
+              ],
+            })
+          : await closePersonaBranch(parent, stamps(), game.s.minute * 60_000);
+        unchanged(token);
+        if (current() !== game) return;
+        await shelf.request({
+          action: 'putBatch',
+          envelopes: [envelope],
+          expectedHeads: { [castId]: parent.revision },
+        });
+        // Preserve a successful shelf receipt even if saving this device subsequently fails.
+        game.ownedHeads![castId] = envelope;
+        if (!(await persistAccepted(game)))
+          throw Error(
+            'The shared record was saved, but this device could not save its receipt. Export this hill now.',
+          );
+        unchanged(token);
+        if (current() !== game) return;
+        continuityStatus = `Saved ${person.name} between activities. The receiving game still checks their history and responsibilities.`;
+      } catch (error) {
+        continuityStatus = `${person.name}: ${String(error)}`;
+      }
+    }
+  } finally {
+    busy = false;
+    const status = document.querySelector('[data-cast-status]');
+    if (status) status.textContent = continuityStatus;
+  }
 }
 export async function checkpointNative(_who: NativeReturnId, _alternative = false): Promise<void> {
   throw Error(
