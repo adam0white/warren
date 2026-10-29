@@ -1,0 +1,29 @@
+{
+  "source": "f4c0df3f6def6d532aaa20c329e9b775ad15e9a1",
+  "framework": "4.10.0",
+  "config": "warren-rest/1",
+  "textVersion": "plain3",
+  "sourceTree": "7538e837a1f871f21c94494fecab624baa2acf59",
+  "fixtures": [
+    {
+      "file": "marked-native.json.gz",
+      "bodySha256": "807f84d9cee28121ce6eb7027addffb913f8b4a6b900ff6be5f2af2e51de5e11",
+      "gzipSha256": "c45ecffc4c4a35ad1ae72a8ee6cfa437a95779c0a8055a9c308ad53aaec7bae5"
+    },
+    {
+      "file": "marked-next.json.gz",
+      "bodySha256": "e5d2a99ba1fcc95155bdf3ff09e64eb0fdf4cc2a278fb46547986163fc2e51e8",
+      "gzipSha256": "5b5309fab50e40f90feb6beadcafe1ad6dd6ddd2a7a3f3921dd3792a4c37b68d"
+    },
+    {
+      "file": "refusal-native.json.gz",
+      "bodySha256": "1aa967d076e7e99580a1b516c130b9b9ced1950fb063c4ae8d3b3326e114c95e",
+      "gzipSha256": "ac8219b19318e7c5df1618697c12653da1a50f4d250c888f0c098fe20909954e"
+    },
+    {
+      "file": "refusal-next.json.gz",
+      "bodySha256": "3a9104b21efed98d60b6b75bc92e73f58325ed5109d66d6f1defcc29af8df270",
+      "gzipSha256": "0e853781577726a68df6bb7348a9db5d11f3a7e4cf3268090ffbc9f061f4ea81"
+    }
+  ]
+}

@@ -31,7 +31,9 @@ describe('canonical Warren chapter', () => {
     );
     expect(ROLE_TASKS.maryam?.[0]?.label).toBe('cook a household meal from its own grain');
   });
-  it('only reveals private clues after an invitation and preserves them through replay and load', () => {
+  // Complete opening, actual invitation and history remain within each original
+  // deadline. Cold native restore and replay are independently useful journeys.
+  function privateClue(restore: 'native' | 'file') {
     const g = newGame(7);
     expect(g.s.notes.some((n) => /impossible knots|Very Small King/.test(n.text))).toBe(false);
     advance(g, 300 + QUANTUM);
@@ -40,9 +42,13 @@ describe('canonical Warren chapter', () => {
     advance(g, 720);
     expect(g.s.notes.some((n) => /impossible knots/.test(n.text))).toBe(true);
     const sv = save(g);
-    expect(fingerprint(load(sv).s)).toBe(sv.fingerprint);
-    expect(fingerprint(replay(sv.seed, sv.inputs, sv.minute, sv.game).s)).toBe(sv.fingerprint);
-  });
+    const restored = restore === 'native' ? load(sv) : replay(sv.seed, sv.inputs, sv.minute, sv.game);
+    expect(fingerprint(restored.s)).toBe(sv.fingerprint);
+  }
+  it('only reveals private clues after an invitation and retains them in native restoration', () =>
+    privateClue('native'));
+  it('only reveals private clues after an invitation and retains them in file replay', () =>
+    privateClue('file'));
   it('waits for current work before releasing optional work at a real source boundary', () => {
     const g = newGame(7);
     advance(g, 300 + QUANTUM);

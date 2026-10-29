@@ -6,6 +6,7 @@ import { type PersonAuthoring, restoreRun } from '@adam0white/human-framework';
 import type { PersonaEnvelope } from '@adam0white/lab-client';
 import { requestAdaEnd } from './ada-care.ts';
 import { askAda, withdrawAdaTalk } from './ada-talk.ts';
+import { requestAmends, withdrawAmends } from './bell-amends.ts';
 import type { Chapter } from './cast.ts';
 import { endCutDiscussion, inviteCutDiscussion } from './cut-discussion.ts';
 import { H, USE, type UseName, W } from './grid.ts';
@@ -22,6 +23,7 @@ import {
   withdrawDoorTrial,
   withdrawRequest,
 } from './resident-requests.ts';
+import { type LoadPosition, requestTrial, withdrawTrial } from './tariq-trial.ts';
 import { releaseVisit, visit } from './visits.ts';
 import {
   advanceFrame,
@@ -55,6 +57,10 @@ export type Input =
   | { at: number; verb: 'walk-newcomer'; who: string; cell: number }
   | { at: number; verb: 'reply-refusal'; who: string }
   | { at: number; verb: 'withdraw-refusal-reply' }
+  | { at: number; verb: 'ask-bell-amends'; who: string }
+  | { at: number; verb: 'withdraw-bell-amends' }
+  | { at: number; verb: 'try-tariq-trial'; load: LoadPosition }
+  | { at: number; verb: 'withdraw-tariq-trial' }
   | { at: number; verb: 'try-maryam-puzzle'; handling: Handling }
   | { at: number; verb: 'withdraw-maryam-puzzle' }
   | { at: number; verb: 'ask-ada' | 'withdraw-ada-talk' }
@@ -88,9 +94,14 @@ export interface Game {
   fileOrigin?: boolean;
 }
 
-export type NextConfig = 'warren-next/1' | 'warren-next/2' | 'warren-rest/1';
+export type NextConfig = 'warren-next/1' | 'warren-next/2' | 'warren-rest/1' | 'warren-rest/2';
 function supportedConfig(config: unknown): config is NextConfig {
-  return config === 'warren-next/1' || config === 'warren-next/2' || config === 'warren-rest/1';
+  return (
+    config === 'warren-next/1' ||
+    config === 'warren-next/2' ||
+    config === 'warren-rest/1' ||
+    config === 'warren-rest/2'
+  );
 }
 export function newGame(
   seed: number,
@@ -143,6 +154,14 @@ function apply(s: WarrenState, i: Input): boolean {
       return requestRefusalReply(s, i.who);
     case 'withdraw-refusal-reply':
       return withdrawRefusalReply(s);
+    case 'ask-bell-amends':
+      return requestAmends(s, i.who);
+    case 'withdraw-bell-amends':
+      return withdrawAmends(s);
+    case 'try-tariq-trial':
+      return requestTrial(s, i.load);
+    case 'withdraw-tariq-trial':
+      return withdrawTrial(s);
     case 'try-maryam-puzzle':
       return requestPuzzle(s, i.handling);
     case 'withdraw-maryam-puzzle':
@@ -408,12 +427,18 @@ function validInput(value: unknown): value is Input {
   const who = typeof input.who === 'string' && input.who.length > 0;
   let keys: string[];
   switch (input.verb) {
+    case 'try-tariq-trial':
+      if (!['middle', 'edge'].includes(String(input.load))) return false;
+      keys = ['load'];
+      break;
     case 'try-maryam-puzzle':
       if (!['loosen', 'draw'].includes(String(input.handling))) return false;
       keys = ['handling'];
       break;
     case 'withdraw-refusal-reply':
     case 'withdraw-maryam-puzzle':
+    case 'withdraw-tariq-trial':
+    case 'withdraw-bell-amends':
     case 'ask-ada':
     case 'withdraw-ada-talk':
     case 'bell':
@@ -447,6 +472,7 @@ function validInput(value: unknown): value is Input {
       if (!cell(input.cell)) return false;
       keys = ['cell'];
       break;
+    case 'ask-bell-amends':
     case 'invite-newcomer':
     case 'withdraw-newcomer':
     case 'reply-refusal':
@@ -555,6 +581,12 @@ export function load(saved: Saved): Game {
   // recorded byte before admitting it locally, including stripped host markers.
   // This is consistency, not authentication of an independently rewritten tape.
   if (
+    game.s.bellAmends ||
+    game.inputs.some((i) => i.verb === 'ask-bell-amends' || i.verb === 'withdraw-bell-amends') ||
+    JSON.stringify(game.s.hf).includes('bell-amends-') ||
+    game.s.tariqTrial ||
+    game.inputs.some((i) => i.verb === 'try-tariq-trial' || i.verb === 'withdraw-tariq-trial') ||
+    JSON.stringify(game.s.hf).includes('tariq-trial-') ||
     game.s.maryamPuzzle ||
     game.inputs.some((i) => i.verb === 'try-maryam-puzzle' || i.verb === 'withdraw-maryam-puzzle') ||
     JSON.stringify(game.s.hf).includes('maryam-puzzle-')

@@ -93,13 +93,13 @@ function busy(s: WarrenState, who: string) {
   const id = s.people.find((p) => p.id === who)?.activity?.affordanceId;
   if (
     id &&
-    ['resident-', 'contextual-refusal-', 'maryam-puzzle-', 'newcomer-'].some((prefix) =>
+    ['resident-', 'contextual-refusal-', 'maryam-puzzle-', 'newcomer-', 'bell-amends-'].some((prefix) =>
       id.startsWith(prefix),
     )
   )
     return true;
   return (
-    [...Object.values(s.next?.requests ?? {}), doorRequest(s), s.refusalReply].some(
+    [...Object.values(s.next?.requests ?? {}), doorRequest(s), s.refusalReply, s.bellAmends].some(
       (r) => r?.endedAt === undefined && r?.who === who,
     ) ||
     (who === 'maryam' && !!s.maryamPuzzle && s.maryamPuzzle.endedAt === undefined)

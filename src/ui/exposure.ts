@@ -5,7 +5,7 @@ import { gameTimeWords } from './room-safety.ts';
 import { displayWords, personWords, speechWords } from './words.ts';
 
 /** Visible whereabouts and recorded words, never an inferred motive or a promise of safety. */
-export function exposureWords(s: WarrenState, p: Person): string {
+export function exposureWords(s: WarrenState, p: Person, includePastBell = false): string {
   const { subject, lower, possessive } = personWords(p);
   const cell = positionAt(s, p.id, s.minute);
   const above = yOf(cell) < SURF;
@@ -33,7 +33,9 @@ export function exposureWords(s: WarrenState, p: Person): string {
   // A historical answer is not an explanation of a later bell or a present choice.
   const bellAt = s.bell?.at ?? s.notes.findLast((n) => /^You rang the bell[.,]/.test(n.text))?.at;
   const answer =
-    bellAt === undefined ? undefined : s.answers.findLast((a) => a.who === p.id && a.at >= bellAt && a.says);
+    bellAt === undefined || (!includePastBell && (!s.bell || s.bell.until <= s.minute))
+      ? undefined
+      : s.answers.findLast((a) => a.who === p.id && a.at >= bellAt && a.says);
   let response = '';
   if (
     answer?.verdict === 'assented' &&

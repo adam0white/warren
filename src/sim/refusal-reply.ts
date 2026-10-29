@@ -51,6 +51,8 @@ function sourceFor(s: WarrenState, who: string) {
 }
 export function canReplyToRefusal(s: WarrenState, who: string): boolean {
   if (s.edition !== '0.7.0' || !quiet(s) || s.refusalReply || !sourceFor(s, who)) return false;
+  if (s.bellAmends?.who === who && s.bellAmends.endedAt === undefined) return false;
+  if (adult(s, who)?.activity?.affordanceId.startsWith('bell-amends-')) return false;
   const r = s.next?.requests;
   if (r?.disagreement && r.disagreement.endedAt === undefined) return false;
   if ([r?.rest, r?.door, s.doorTrials?.at(-1)].some((x) => x?.who === who && x.endedAt === undefined))

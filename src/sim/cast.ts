@@ -9,6 +9,7 @@ import { canonicalCast, type PersonaEnvelope } from '@adam0white/lab-client';
 import { ACTIONS, archiveOf, hfRunOf } from './hf4.ts';
 import { refusePuzzlePublication } from './maryam-puzzle.ts';
 import { CAST_IDS } from './people.ts';
+import { refuseTrialPublication } from './tariq-trial.ts';
 import type { WarrenState } from './warren.ts';
 
 export interface Chapter {
@@ -148,6 +149,7 @@ export function authoringFor(envelopes: PersonaEnvelope[], startMs: number) {
 }
 export async function project(s: WarrenState, who: string) {
   refusePuzzlePublication(s);
+  refuseTrialPublication(s);
   if (s.hfQueue.length || s.hfPhase)
     throw Error(
       'This hill still has inputs waiting for its people. Continue playing before saving shared history.',

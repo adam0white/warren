@@ -53,7 +53,24 @@ for (const width of [360, 1280]) {
         );
         await page.locator('#cellx').click();
       }
+      const beforeBell = await page.evaluate(
+        'JSON.stringify({inputs:window.__warren.game.inputs,bell:window.__warren.game.s.bell})',
+      );
       await page.locator('#bell').click();
+      expect(await page.locator('#confirm-bell').isVisible()).toBe(true);
+      expect(
+        await page.evaluate(
+          'JSON.stringify({inputs:window.__warren.game.inputs,bell:window.__warren.game.s.bell})',
+        ),
+      ).toBe(beforeBell);
+      await page.locator('#cancel-bell').click();
+      expect(
+        await page.evaluate(
+          'JSON.stringify({inputs:window.__warren.game.inputs,bell:window.__warren.game.s.bell})',
+        ),
+      ).toBe(beforeBell);
+      await page.locator('#bell').click();
+      await page.locator('#confirm-bell').click();
       expect(await page.locator('#cell-words').innerText()).toContain('No smoke or riders are in sight.');
     } finally {
       await page.close();

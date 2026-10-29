@@ -57,7 +57,7 @@ it('Begin uses existing latest public rules at phone and wide sizes, with exact 
         await page.locator('#new').click();
         await page.waitForSelector('#cv');
         expect(await page.evaluate('window.__warren.game.s.edition')).toBe('0.7.0');
-        expect(await page.evaluate('window.__warren.game.s.next.config')).toBe('warren-rest/1');
+        expect(await page.evaluate('window.__warren.game.s.next.config')).toBe('warren-rest/2');
         expect(await page.evaluate('window.__warren.game.inputs')).toEqual([]);
         await page.locator('#shelter-check').click();
         await page.locator('[data-who="meryem"]').click();

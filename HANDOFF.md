@@ -1,3 +1,53 @@
+# PR17 review correction — recorded rest/2
+
+Remaining: root rechecks this delta in the same Opus session, qualifies exact source
+CI, then owns guarded integration/deployment. No owner acceptance is claimed.
+Fresh Begin/New game use rest/2. Existing rest/1 stays on the exact served f4 path:
+no autonomous cut opportunity, original invitation acceptance and existing full
+body fields. Rest/2 retains all rest/1 requests and elicited-position semantics.
+No text-version bump, migration, dependency or legacy engine is introduced.
+Genuine immutable-f4 producer controls live in test/fixtures/f4-rest1; they are
+labelled authored openings, not player rounds or source authentication.
+
+# Coherent Warren remainder candidate — 2026-10-29
+
+Remaining: qualify the complete remainder in focused/full and production-bundle
+controls, then signed rebased source/one coherent PR/one coordinator review via ROOT/exact CI.
+Current integration uses the delivered HF4.10 recorded voice variants. Both new
+request observers retain residentReply from the actual suggestion event. Person
+status drops old bell quotes; the dedicated bell reading retains historical replies.
+
+Root owns guarded integration, exact main CI, normal fresh deployment, live
+SHA/dirty:false/assets/controls and cleanup. Do not merge/deploy from this author.
+No widened Warren completion or owner/player acceptance is claimed.
+
+Base88de249 delivered the newcomer batch. Its source/main CI, completed review and
+live10 first-party browser/native-file controls belong to root’s bounded delivery
+report, not the stale candidate text below. Root disclosed merging before the
+available remainder was exhausted; this candidate composes it before a new PR.
+
+The source plan and literal135+328 row map live in games-deferred under
+recovery-warren-remainder-plan.md and recovery-warren-remainder-rowmap.json/.md.
+First four inventory identities and complete original returns are retained;
+canonical inventory/ledger and the prior48 patch are root-owned and untouched.
+
+New source: one prospective Tariq dry balance trial with actual HF participation,
+work and observation; one autonomous optional known loose-cut encounter without
+keeper suggestion or forced interruption; quiet-bell confirmation and one costed
+voluntary hearing of an actual false-call apology; current activity in place of
+expired bell quotations; and a person-linked current grain-work reading. Full
+native/file/replay/Run/RNG history remains. No forgiveness, gifted prop, skill,
+safety, duty, private motive or reconciliation is created. Unsupported physical
+publication refuses before writes. Exact dimensions/provenance stay in Debug and
+exports. Public wording uses people, actual places/actions/results and uncertainty.
+
+Preserve Maryam/held-door/source authority, PR14 voice fixes and all newcomer
+controls, including all11 actors and3x1440 continuation branches. HF4.10.0/client
+0.5.9/kit0.5.26 and the delivered recorded voices stay. No framework source, hidden edition path or legacy engine.
+Ada and the unidentified injured worker still need actual authoritative cast
+contracts (central cast/release; target2026-10-29/checkOct30). Generic custody/peer
+certification and owner Nov3 play/camera remain separate, not blanket blockers.
+
 # Resident voices and HF 4.10 — 2026-10-29
 
 Remaining: exact CI, merge and clean deployment. Adam accepts feel by playing.
@@ -98,7 +148,7 @@ One public HF call runs per simulation frame. Atomic overruns remain possible; t
 
 Remaining: final lane, signed commit, PR and exact CI; merge, deploy and live release verification remain separate. Adam accepts game feel by playing.
 
-The ordinary game menu offers Download this run. It is disabled when no hill is active; it does not silently load a saved hill. Debug remains collapsed beside Lab privacy and contains status. Feedback has its own collapsed Debug beside privacy. Fresh hills claim supported shared people automatically; local resumes retain their recorded people. Cast controls remain on the central shelf. Begin uses rules 0.7.0 with warren-rest/1.
+The ordinary game menu offers Download this run. It is disabled when no hill is active; it does not silently load a saved hill. Debug remains collapsed beside Lab privacy and contains status. Feedback has its own collapsed Debug beside privacy. Fresh hills claim supported shared people automatically; local resumes retain their recorded people. Cast controls remain on the central shelf. Begin uses rules 0.7.0 with warren-rest/2.
 
 The source audit covered menu and person actions, hidden controls, query parameters, local storage, development-only branches and Debug. No gameplay query or local-storage switch was found. Development-only window access exposes test controls; context-dependent actions use actual game state. No game simulation, save or replay rule changed. Independent review found no blockers. Frozen install and 55 focused tests passed; the initial-title disabled control and three viewport/touch-target checks passed separately. The full lane exposed an outdated menu-control count; its expectation now includes public download.
 
@@ -163,7 +213,7 @@ CI on the exact source and exact main commits. Never replace vendor archives.
 
 ## Ordinary play and retained hills
 
-Begin and confirmed New game start existing rules 0.7.0 with `warren-rest/1`.
+Begin and confirmed New game start rules 0.7.0 with `warren-rest/2`. Recorded rest/1 hills retain the exact served f4 continuation; rest/2 adds the autonomous marked-cut opportunity and its refusal-reply guard while retaining every rest/1 faculty.
 There is no gameplay feature selector. Sleep and actual shelter outcomes, bounded
 wild food, warned furnishing damage, quiet away play and resident requests are
 public. Slow, Steady and Fast remain public choices. Ordinary 0.7 readings slow

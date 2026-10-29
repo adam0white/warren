@@ -69,6 +69,8 @@ export function eventStamp(s: WarrenState): string {
     s.answers.at(-1),
     invitationObservation(s),
     s.maryamPuzzle,
+    s.tariqTrial,
+    s.bellAmends,
     s.refusalReply,
     s.newcomerExchanges,
     [s.next?.requests?.rest, s.next?.requests?.disagreement].map(

@@ -28,7 +28,7 @@ import {
   V,
   type WarrenState,
 } from '../sim/warren.ts';
-import { activityWords } from './words.ts';
+import { activityWords, displayWords } from './words.ts';
 
 export const ROUTE_HELP = `An open route is a connected passage from an opening to the sky. Riders search ${V.riderReach} passage steps from each opening. Space more than ${V.riderReach} steps along every route is beyond that search. Count passage steps, not just depth. A finished stone door blocks a route only while shut. A new shaft can create a shorter route.`;
 
@@ -260,4 +260,13 @@ export function cellLocationWords(s: WarrenState, cell: number): string {
   const dx = xOf(cell) - s.hill.surface.entrance;
   const down = yOf(cell) - SURF;
   return `${dx === 0 ? 'in the entrance column' : `${Math.abs(dx)} ${Math.abs(dx) === 1 ? 'square' : 'squares'} ${dx < 0 ? 'left' : 'right'} of the entrance`}, ${down === 0 ? 'on its row' : `${down} rows below its row`}`;
+}
+
+/** Follow actual public grain work from a person, without inventing their words
+ * or a private explanation. The existing known route/supply reading stays read-only. */
+export function personGrainWords(s: WarrenState, who: string): string | undefined {
+  const p = s.people.find((p) => p.id === who && p.body.alive);
+  if (!p?.activity || !['reap', 'carry-grain', 'cook', 'store-check', 'thresh'].includes(p.activity.action))
+    return;
+  return `${p.name}'s current task is to ${displayWords(p.activity.affordance.label)}. ${grainHelpWords(s)}`;
 }

@@ -1,3 +1,19 @@
+import {
+  amendsOffers,
+  amendsSuggestion,
+  type BellAmends,
+  captureAmends,
+  finishAmends,
+  observeAmends,
+} from './bell-amends.ts';
+import {
+  captureTrialAnswer,
+  finishTrial,
+  observeTrial,
+  type TariqTrial,
+  trialOffers,
+  trialSuggestion,
+} from './tariq-trial.ts';
 /**
  * The hill as an HF host: world truth (rock, rooms, grain, water, raids, the neighbours) and the HF `World` its
  * people decide in. Every figure is a full HF4 actor in one community Run; there are no
@@ -226,6 +242,9 @@ export interface WarrenState {
   adaVisit?: AdaVisit;
   /** Created only by a recorded public ask-ada input. */
   adaTalks?: AdaTalk[];
+  cutDiscussionHistory?: import('./cut-discussion.ts').CutDiscussion[];
+  bellAmends?: BellAmends;
+  tariqTrial?: TariqTrial;
   maryamPuzzle?: MaryamPuzzle;
   refusalReply?: RefusalReply;
   /** Only explicit keeper invitations create these finite existing-person exchanges. */
@@ -289,7 +308,7 @@ export interface WarrenState {
   };
   /** Unchecked next-slice configuration only; ordinary 0.6/0.7 state never gains this field. */
   next?: {
-    config: 'warren-next/1' | 'warren-next/2' | 'warren-rest/1';
+    config: 'warren-next/1' | 'warren-next/2' | 'warren-rest/1' | 'warren-rest/2';
     requests?: ResidentRequests;
     discussion?: CutDiscussion;
     attention?: string[];
@@ -730,7 +749,7 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
     offer(r.offer, journey, r.minutes);
     r.offer.duration = Math.ceil((journey.times.at(-1) ?? at) - (journey.times[0] ?? at) + r.minutes);
   }
-  for (const a of puzzleOffers(s, p)) {
+  for (const a of [...amendsOffers(s, p), ...trialOffers(s, p), ...puzzleOffers(s, p)]) {
     const journey = plan(s, f, at, hearth, 30, lit);
     if (!journey) continue;
     offer(a, journey, 30);
@@ -738,7 +757,12 @@ export function offersFor(s: WarrenState, p: Person): Affordance[] {
     a.duration = Math.ceil((journey.times.at(-1) ?? at) - (journey.times[0] ?? at) + 30);
   }
   for (const a of adaTalkOffers(s, p)) offer(a, plan(s, f, at, hearth, 30, lit), 30);
-  for (const a of cutOffers(s, p)) offer(a, plan(s, f, at, hearth, 30, lit), 30);
+  for (const a of cutOffers(s, p)) {
+    const journey = plan(s, f, at, hearth, 30, lit);
+    offer(a, journey, 30);
+    if (journey && s.next?.discussion?.origin)
+      a.duration = Math.ceil((journey.times.at(-1) ?? at) - (journey.times[0] ?? at) + 30);
+  }
   for (const r of residentOffers(s, p)) offer(r.offer, plan(s, f, at, r.cell, r.minutes, lit), r.minutes);
   const below = yOf(from) >= SURF;
   const isAdult = s.edition === '0.6.0' || s.edition === '0.7.0' ? ageYears(p) >= 18 : adult(p);
@@ -1619,6 +1643,10 @@ function resolveActivity(s: WarrenState, p: Person, act: Activity, reason: 'ende
   s.pos[p.id] = done ? (t?.end ?? s.pos[p.id] ?? 0) : positionAt(s, p.id, now);
   const newcomer = finishNewcomer(s, p, act, done);
   if (newcomer) return { ...base, ...newcomer };
+  const amends = finishAmends(s, p, act, done);
+  if (amends) return { ...base, ...amends };
+  const trial = finishTrial(s, p, act, done);
+  if (trial) return { ...base, ...trial };
   const puzzle = finishPuzzle(s, p, act, done);
   if (puzzle) return { ...base, ...puzzle };
   const adaTalk = finishAdaTalk(s, p, act, done);
@@ -2201,6 +2229,8 @@ export function makeWorld(s: WarrenState): World {
         observeNewcomers(s);
         observeRefusalReply(s);
         observePuzzle(s);
+        observeTrial(s);
+        observeAmends(s);
         observeAdaTalk(s);
         observeCutDiscussion(s);
         observeResidentTalk(s, false);
@@ -2241,6 +2271,8 @@ export function makeWorld(s: WarrenState): World {
       captureResidentAnswer(s, p, offer, record);
       captureAdaTalkAnswer(s, p, offer, record);
       capturePuzzleAnswer(s, p, offer, record);
+      captureTrialAnswer(s, p, offer, record);
+      captureAmends(s, p, offer, record);
       captureRefusalReplyAnswer(s, p, offer, record);
       captureNewcomerAnswer(s, p, offer, record);
       return undefined;
@@ -2319,6 +2351,8 @@ function* advancing(
         residentSuggestion(s, p) ??
         cutSuggestion(s, p) ??
         adaTalkSuggestion(s, p) ??
+        amendsSuggestion(s, p) ??
+        trialSuggestion(s, p) ??
         puzzleSuggestion(s, p);
       if (suggestion) suggestions[p.id] = suggestion;
     }
@@ -2378,6 +2412,8 @@ function afterQuantum(s: WarrenState, ev: SimEvent[]) {
   observeNewcomers(s);
   observeRefusalReply(s);
   observePuzzle(s);
+  observeTrial(s);
+  observeAmends(s);
   observeAdaTalk(s);
   observeCutDiscussion(s);
   observeResidentTalk(s);

@@ -10,12 +10,14 @@ import { cellsWithUse, faces, K, USE } from './grid.ts';
  * No statement moves grain, completes excavation, creates a promise or overrides the chalk.
  */
 import type { Activity, Affordance, Outcome, Person, Suggestion } from './hf4.ts';
-import { heard, interruptPerson } from './hf4.ts';
+import { ageYears, heard, interruptPerson } from './hf4.ts';
+import { residualEnabled } from './resident-requests.ts';
 import { communityOf, note, positionAt, type WarrenState } from './warren.ts';
 
 export interface CutDiscussion {
   face: number;
   requestedAt: number;
+  origin?: { kind: 'marked-cut'; at: number };
   statements: {
     speaker: string;
     listener: string;
@@ -34,17 +36,32 @@ const ids = ['yusuf', 'meryem'];
 export function markedLooseCut(s: WarrenState): number {
   return faces(s.hill).find((f) => s.hill.kind[f.face] === K.loose && !!s.hill.known[f.face])?.face ?? -1;
 }
-export function inviteCutDiscussion(s: WarrenState): boolean {
+export function canInviteCutDiscussion(s: WarrenState): boolean {
   const face = markedLooseCut(s);
   if (
     !s.next ||
     face < 0 ||
-    s.next.discussion ||
+    (s.next.discussion &&
+      !(
+        s.next.config === 'warren-rest/2' &&
+        s.next.discussion.origin &&
+        s.next.discussion.endedAt !== undefined
+      )) ||
+    (s.next.config === 'warren-rest/2' && s.refusalReply && s.refusalReply.endedAt === undefined) ||
     s.raids.some((r) => r.stage === 'smoke' || r.stage === 'riders') ||
     ids.some((id) => !s.people.find((p) => p.id === id)?.body.alive)
   )
     return false;
-  s.next.discussion = { face, requestedAt: s.minute, statements: [], exchange: false };
+  return true;
+}
+export function inviteCutDiscussion(s: WarrenState): boolean {
+  if (!canInviteCutDiscussion(s)) return false;
+  const face = markedLooseCut(s);
+  if (s.next!.discussion) {
+    s.cutDiscussionHistory ??= [];
+    s.cutDiscussionHistory.push(structuredClone(s.next!.discussion));
+  }
+  s.next!.discussion = { face, requestedAt: s.minute, statements: [], exchange: false };
   for (const id of ids) {
     const p = s.people.find((p) => p.id === id);
     if (!p) return false;
@@ -63,6 +80,7 @@ function canSpeak(s: WarrenState, p: Person): boolean {
   if (
     !d ||
     d.endedAt !== undefined ||
+    (!!d.origin && (!p.body.alive || !!s.flags[`released:${p.id}`])) ||
     !ids.includes(p.id) ||
     d.statements.some((row) => row.speaker === p.id) ||
     s.hill.kind[d.face] !== K.loose ||
@@ -77,7 +95,7 @@ function canSpeak(s: WarrenState, p: Person): boolean {
 }
 export function cutSuggestion(s: WarrenState, p: Person): Suggestion | undefined {
   const discussion = s.next?.discussion;
-  return discussion && canSpeak(s, p)
+  return discussion && !discussion.origin && canSpeak(s, p)
     ? { voiceId: 'keeper-cut', action: 'discuss-cut', strength: 0.7, since: discussion.requestedAt }
     : undefined;
 }
@@ -127,6 +145,7 @@ export function finishCutStatement(
     !q ||
     !canSpeak(s, p) ||
     (d.statements[0] && activity.startedAt < d.statements[0].at) ||
+    (!!d?.origin && p.now - (s.trips[p.id]?.workFrom ?? activity.startedAt) < 30) ||
     !q.body.alive ||
     q.body.asleep ||
     positionAt(s, p.id, p.now) !== hearth ||
@@ -137,14 +156,18 @@ export function finishCutStatement(
       summary: 'The loose-stone discussion did not reach an awake listener at the hearth.',
     };
   const stance = activity.affordanceId === `cut-pause-${d.face}` ? 'pause' : 'continue';
-  const eliciting = s.next?.config === 'warren-next/2' || s.next?.config === 'warren-rest/1';
-  const text = eliciting
+  const eliciting = s.next?.config === 'warren-next/2' || residualEnabled(s);
+  const position = eliciting
     ? stance === 'pause'
       ? `${p.name} tells ${q.name}, “I think that loose cut should wait. Stone can fall on the person digging.”`
       : `${p.name} tells ${q.name}, “I think we should keep digging the marked room. We need the space, even with loose stone.”`
     : stance === 'pause'
       ? `${p.name} tells ${q.name}, “Leave that loose cut alone. Stone can fall on the person digging.”`
       : `${p.name} tells ${q.name}, “Keep digging the marked room. We need the space, even with loose stone.”`;
+  const text =
+    d.origin && d.statements.length === 0
+      ? `${position} ${p.name} asks, “Will you look at that cut with me?”`
+      : position;
   d.statements.push({
     speaker: p.id,
     listener: q.id,
@@ -189,8 +212,56 @@ export function finishCutStatement(
   note(s, { at: p.now, kind: 'story', who: p.id, cell: d.face, text, weight: 1 });
   return { summary: text, needs: { belonging: 0.1 } };
 }
+/** One autonomous opportunity from actual known marked loose ground. No keeper voice or
+ * interruption. HF may finish work, rest, decline or choose either position.
+ * Recorded rest/1 hills never gain this observer opportunity.
+ * Opposed words count only after public hearing; expiry settles no disagreement. */
 export function observeCutDiscussion(s: WarrenState): void {
+  if (
+    s.edition === '0.7.0' &&
+    s.next?.config === 'warren-rest/2' &&
+    !s.next.discussion &&
+    !s.bell &&
+    !s.raids.some((r) => r.stage === 'smoke' || r.stage === 'riders')
+  ) {
+    const face = markedLooseCut(s);
+    if (
+      face >= 0 &&
+      ids.every((id) =>
+        s.people.some((p) => p.id === id && p.body.alive && ageYears(p) >= 18 && !s.flags[`released:${id}`]),
+      )
+    ) {
+      s.next.discussion = {
+        face,
+        requestedAt: s.minute,
+        statements: [],
+        exchange: false,
+        origin: { kind: 'marked-cut', at: s.minute },
+      };
+    }
+  }
   const d = s.next?.discussion;
+  if (
+    d?.origin &&
+    d.endedAt === undefined &&
+    (s.minute >=
+      (d.statements[0]?.heard
+        ? Math.min(d.requestedAt + 360, d.statements[0].at + 180)
+        : d.requestedAt + 180) ||
+      s.bell ||
+      s.raids.some((r) => r.stage === 'smoke' || r.stage === 'riders') ||
+      ids.some((id) => !s.people.some((p) => p.id === id && p.body.alive && !s.flags[`released:${id}`])) ||
+      !s.hill.chalk[d.face] ||
+      s.hill.kind[d.face] !== K.loose)
+  ) {
+    d.endedAt = s.minute;
+    note(s, {
+      kind: 'story',
+      cell: d.face,
+      weight: 1,
+      text: 'The opportunity to discuss this loose cut has ended. Earlier words remain in the journal. The chalk stays as you left it.',
+    });
+  }
   if (!d) return;
   for (const row of d.statements) {
     const q = s.people.find((p) => p.id === row.listener);
@@ -216,6 +287,10 @@ export function discussionWords(s: WarrenState): string {
   const d = s.next?.discussion;
   if (!d)
     return 'A marked loose cut can be discussed with Yusuf Usta and Meryem at the hearth. An invitation does not make them come.';
+  if (d.origin && d.endedAt === undefined && !d.statements.length)
+    return 'Neither Yusuf Usta nor Meryem has spoken about the marked loose cut. Their work and rest may come first.';
+  if (s.next?.config === 'warren-rest/2' && d.endedAt !== undefined && !d.exchange)
+    return 'The loose-cut discussion ended. Earlier words remain in the journal.';
   return d.exchange
     ? 'Yusuf Usta and Meryem disagree about the loose cut.'
     : d.statements.length
