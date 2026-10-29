@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
 import { newGame, save } from '../src/sim/game.ts';
+import { FRAMEWORK_VERSION } from '../src/sim/hf4.ts';
 
 const server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
 await server.listen();
@@ -46,7 +47,7 @@ try {
   await page.locator('#book').click();
   assert.equal(await page.getByRole('link', { name: 'People across games', exact: true }).count(), 1);
   assert.equal(await page.locator('#to-title').count(), 0);
-  assert.match((await page.locator('.game-debug').textContent()) ?? '', /HF 4.7.0/);
+  assert.ok(((await page.locator('.game-debug').textContent()) ?? '').includes(`HF ${FRAMEWORK_VERSION}`));
   assert.equal(await page.evaluate(() => (window as unknown as { nativeOpens: number }).nativeOpens), 0);
   console.log(
     JSON.stringify({

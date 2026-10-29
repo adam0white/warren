@@ -1,8 +1,12 @@
+# Shared people safety — 2026-10-28
+
+HF 4.8.0, client 0.5.5 and kit 0.5.23 form the current compatible graph. Client 0.5.6 supplies the per-person write gate but kit 0.5.23 excludes it. Until a compatible kit is published and integrated, nonempty shelves refuse new hills, empty shelves start local hills without claims, and checkpoints cannot write. Existing local hills and shelf records are preserved; saves from another HF version are refused rather than migrated. Revisit on 2026-10-29 or earlier on release; recheck peer certification by 2026-11-03. Adam accepts feel separately.
+
 # HF4 candidate resumed — 2026-10-28
 
 Remaining: full lane, signed source, one hosted review, exact source and merged CI, deployment and cleanup. Adam accepts feel separately.
 
-The target is published HF 4.7.0 with immutable client 0.5.3 / kit 0.5.21. Release SHA256 values were verified. Production remains HF3 until delivery.
+The historical target was published HF 4.7.0 with immutable client 0.5.3 / kit 0.5.21; the entry above supersedes it. Release SHA256 values were verified. Production remains HF3 until delivery.
 
 Correction to PR #8: G2 was not blocked. The receiving world omitted actual place/group declarations. Published `world.facts` registers those entities and admits the unchanged lived Meryem passport. The original incomplete-world refusal remains a negative control.
 

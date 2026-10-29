@@ -394,7 +394,13 @@ function startError(error: unknown, message: string, host?: HTMLElement) {
     status.setAttribute('role', 'alert');
     (host ?? document.querySelector('.title-actions'))?.prepend(status);
   }
-  status.textContent = `${message} Your saved hill has not been replaced. You can retry or open Feedback in the menu.`;
+  const sharedUnavailable =
+    error instanceof Error &&
+    error.message ===
+      'People across games are temporarily unavailable. Your shared records and current hill are unchanged.';
+  status.textContent = sharedUnavailable
+    ? error.message
+    : `${message} Your saved hill has not been replaced. You can retry or open Feedback in the menu.`;
 }
 
 // ---------- the scene ----------
