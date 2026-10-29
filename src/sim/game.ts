@@ -44,7 +44,7 @@ export type Edition = '0.2.0' | '0.3.0' | '0.4.0' | '0.5.0' | '0.6.0' | '0.7.0';
 
 export function editionOf(version: string): Edition {
   if (version === '0.7.0') return version;
-  throw new Error('This hill uses an older game version. Keep its file and start fresh with a new hill.');
+  throw new Error('This hill cannot be opened in this version. Start fresh with a new hill.');
 }
 
 export type Input =
@@ -312,7 +312,7 @@ export function restoreState(json: WarrenState): WarrenState {
     !json.hfOffers ||
     !Array.isArray(json.hfQueue)
   )
-    throw new Error('This saved hill is unsupported. Keep its file and start fresh.');
+    throw new Error('This hill cannot be opened in this version. Start fresh with a new hill.');
   need(restoreRun(json.hf));
   const restored = structuredClone(json);
   syncReadings(restored);
@@ -462,6 +462,10 @@ function validTape(inputs: unknown, start: number, end: number): inputs is Input
   return true;
 }
 
+function unreadableHill(detail: string): Error {
+  return new Error('This file cannot be opened in this version. Keep it.', { cause: new Error(detail) });
+}
+
 export function load(saved: Saved): Game {
   if (
     !saved ||
@@ -475,27 +479,27 @@ export function load(saved: Saved): Game {
     saved.minute !== Math.floor(saved.state.hf.current.at / 60_000) ||
     !validTape(saved.inputs, saved.state.hf.initial.spec.start / 60_000, saved.minute)
   )
-    throw Error('This saved hill or input log is invalid. Keep its file and start fresh.');
+    throw unreadableHill('This saved hill or input log is invalid. Keep its file and start fresh.');
   if (saved.framework !== FRAMEWORK_VERSION)
-    throw new Error(
+    throw unreadableHill(
       'This saved game uses an older version of the Human Framework. Start fresh with a new game.',
     );
   if (saved.textVersion !== TEXT_VERSION)
-    throw new Error('This saved game uses a different version. Start a new game.');
+    throw unreadableHill('This saved game uses a different version. Start a new game.');
   if (
     saved.phase?.from !== saved.state.hfPhase?.from ||
     saved.phase?.to !== saved.state.hfPhase?.to ||
     saved.phase?.steps !== saved.state.hfPhase?.steps
   )
-    throw Error('The partial checkpoint header is invalid. Keep the file and start fresh.');
+    throw unreadableHill('The saved progress does not match the hill.');
   const edition = editionOf(saved.game);
   if (
     saved.config !== saved.state.next?.config ||
     (saved.config && (!supportedConfig(saved.config) || edition !== '0.7.0'))
   )
-    throw new Error('The saved configuration does not match its state.');
+    throw unreadableHill('The saved configuration does not match its state.');
   if ((saved.state.edition ?? '0.2.0') !== edition)
-    throw new Error('The saved game’s version does not match its recorded state. Start a new game.');
+    throw unreadableHill('The saved game’s version does not match its recorded state. Start a new game.');
   const game: Game = {
     s: restoreState(saved.state),
     inputs: structuredClone(saved.inputs),
@@ -506,7 +510,9 @@ export function load(saved: Saved): Game {
     ...(saved.fileOrigin ? { fileOrigin: true } : {}),
   };
   if (fingerprint(game.s) !== saved.fingerprint)
-    throw Error('The saved state does not match its verification code. Keep the file and start fresh.');
+    throw unreadableHill(
+      'The saved state does not match its verification code. Keep the file and start fresh.',
+    );
   return game;
 }
 
@@ -526,11 +532,11 @@ export function replay(
     minute < g.s.minute ||
     !validTape(inputs, g.s.minute, phase?.from ?? minute)
   )
-    throw Error('The input log or replay time is invalid. Keep the file and start fresh.');
+    throw unreadableHill('The input log or replay time is invalid. Keep the file and start fresh.');
   for (const i of inputs) {
     advance(g, i.at);
     if (g.s.minute !== i.at || !apply(g.s, i))
-      throw Error('A recorded input is not accepted by this game. Keep its file and start fresh.');
+      throw unreadableHill('A recorded input is not accepted by this game. Keep its file and start fresh.');
     g.inputs.push(structuredClone(i));
   }
   advance(g, phase?.from ?? minute);
@@ -541,7 +547,7 @@ export function replay(
       phase.steps > 10000 ||
       phase.to !== phase.from + QUANTUM
     )
-      throw new Error('Unsupported partial hill checkpoint. Keep the file and start fresh.');
+      throw unreadableHill('Unsupported partial hill checkpoint. Keep the file and start fresh.');
     for (let n = 0; n < phase.steps; n++) advanceFrame(g.s, 0);
     if (
       g.s.minute !== minute ||
@@ -549,9 +555,9 @@ export function replay(
       g.s.hfPhase?.to !== phase.to ||
       g.s.hfPhase?.steps !== phase.steps
     )
-      throw new Error('The partial hill checkpoint does not match its input log.');
+      throw unreadableHill('The partial hill checkpoint does not match its input log.');
   }
   if (!phase && g.s.minute !== minute)
-    throw Error('The replay time does not name a complete quantum. Keep the file and start fresh.');
+    throw unreadableHill('The recorded time does not match a finished turn.');
   return g;
 }

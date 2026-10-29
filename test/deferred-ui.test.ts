@@ -109,7 +109,7 @@ it('resumes an opted hill with slowed readings and a paused menu, without changi
     await page.close();
   }
 }, 20000);
-it('refuses failed new-hill admission without gameplay flags or a local cast opt-out', async () => {
+it('starts a local hill with individual skips and no gameplay flags or cast opt-out', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   try {
     await page.clock.install();
@@ -122,8 +122,9 @@ it('refuses failed new-hill admission without gameplay flags or a local cast opt
     expect(await page.locator('#menu-new-confirm input, #menu-new-confirm select').count()).toBe(0);
     expect(await page.locator('#continuity, #local-fresh').count()).toBe(0);
     await page.locator('#menu-new-yes').click();
-    await expect.poll(() => page.locator('#start-error').innerText()).toContain('could not be started');
-    expect(await page.locator('#menu-new-yes').isVisible()).toBe(true);
+    await page.locator('#cv').waitFor();
+    expect(await page.locator('#start-error').count()).toBe(0);
+    expect(await page.evaluate('Object.keys(window.__warren.game.ownedHeads).length')).toBe(0);
   } finally {
     await page.close();
   }

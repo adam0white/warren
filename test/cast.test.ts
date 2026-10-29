@@ -251,3 +251,54 @@ it('preserves a current foreign chapter place as historical evidence without cla
   expect(exportRun(run)).toEqual(before);
   expect(replayHF(received).ok).toBe(true);
 });
+
+it('retains an unfamiliar duty without making it a local action', async () => {
+  const { envelope } = await source();
+  const portable = structuredClone(portableOf(envelope));
+  if (portable.version !== 2) throw Error('Expected retained source');
+  portable.retained.agenda.commitments.push({
+    id: 'foreign-duty',
+    kind: 'duty',
+    actions: ['return-to-source', 'cook'],
+    from: portable.retained.at,
+    until: portable.retained.at + 60000,
+    importance: 0.8,
+    label: 'Return to the source',
+    status: 'pending',
+  });
+  const foreignNorm = { ...structuredClone(portable.retained.calendar.norms[0]!), id: 'keep-watch' };
+  (portable.retained.calendar.norms as (typeof foreignNorm)[]).push(foreignNorm);
+  (
+    portable.retained.heldNorms as {
+      normId: string;
+      standing: typeof foreignNorm.standing;
+      conviction: number;
+      provenance: typeof foreignNorm.provenance;
+    }[]
+  ).push({
+    normId: foreignNorm.id,
+    standing: foreignNorm.standing,
+    conviction: 0.5,
+    provenance: foreignNorm.provenance,
+  });
+  portable.retained.agenda.owed.push({
+    ofId: 'old-duty',
+    kind: 'duty',
+    actions: ['return-to-source'],
+    reason: 'missed',
+    at: portable.retained.at,
+  });
+  const incoming = { ...envelope, transfer: { ...envelope.transfer, portable } };
+  const target = newGame(8, '0.7.0', undefined, 'warren-rest/1', authoringFor([incoming], 300 * 60000));
+  const archive = archiveOf(target.s);
+  const duty = archive.current.people.meryem!.agenda.commitments.find((c) => c.id === 'foreign-duty');
+  expect(duty?.actions).toEqual(['history:warren:return-to-source', 'cook']);
+  expect(duty?.status).toBe('pending');
+  expect(archive.initial.spec.definitions.norms.find((norm) => norm.id === 'keep-watch')).toEqual(
+    foreignNorm,
+  );
+  expect(
+    archive.current.people.meryem!.agenda.owed.find((owed) => owed.ofId === 'old-duty')?.actions,
+  ).toEqual(['history:warren:return-to-source']);
+  expect(replayHF(archive).ok).toBe(true);
+});
