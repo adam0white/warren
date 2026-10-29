@@ -2,11 +2,11 @@
 
 Read HANDOFF.md and docs/design.md before changing the game. Follow [the plain-English policy](docs/lab/plain-english.md) for player-facing text.
 
-Stack: HF 4.8.0, lab-client 0.5.5, lab-kit 0.5.23, TypeScript 7.0.2, Vite 8.3.5, Vitest 5.0.5, Biome 2.6.3, Wrangler 4.152.0, Playwright 1.64.1 and Knip 6.43.0. Worker compatibility date: 2026-10-25.
+Stack: HF 4.8.1, lab-client 0.5.7, lab-kit 0.5.24, TypeScript 7.0.2, Vite 8.3.5, Vitest 5.0.5, Biome 2.6.3, Wrangler 4.152.0, Playwright 1.64.1 and Knip 6.43.0. Worker compatibility date: 2026-10-25.
 
 Use the shared Node 26.12.0 and pnpm 12.14.0, with `/opt/homebrew/bin` first in PATH. Use managed worktrees. Run full suites and check:lane through the machine-wide human-framework/scripts/suite-lock.ts wrapper. Run check:lane before every signed commit. Rebase origin/main before pushing. Preserve simulation, save and replay contracts. Adam accepts game feel by playing; technical delivery is separate.
 
-App package and constructor default are 0.7.0. Ordinary new hills use rules0.7.0 with warren-rest/1. There is no gameplay feature selector. Loaded hills retain their exact recorded rules and configuration. HF is pinned exactly to 4.8.0. Older HF3 saves and Watch links are refused explicitly. TypeScript support requires 7+. Lab client/kit remain immutable release artifacts; do not replace archives in place or adopt an npm SDK route. Read current HANDOFF before copying historical status.
+App package and constructor default are 0.7.0. Ordinary new hills use rules0.7.0 with warren-rest/1. There is no gameplay feature selector. Loaded hills retain their exact recorded rules and configuration. HF is pinned exactly to 4.8.1. Older HF3 saves and Watch links are refused explicitly. TypeScript support requires 7+. Lab client/kit remain immutable release artifacts; do not replace archives in place or adopt an npm SDK route. Read current HANDOFF before copying historical status.
 
 Lab-panel rounds on HF 3 builds are allowed under the playtest director. Friends’ playtests and Show HN remain paused. Owner readiness review is targeted for 2026-11-03; technical delivery does not establish acceptance.
 

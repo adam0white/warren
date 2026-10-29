@@ -1,3 +1,7 @@
+# Shared people readiness — 2026-10-28
+
+The current published graph is HF 4.8.1, client 0.5.7 and kit 0.5.24. Each shared claim, checkpoint and terminal write checks the client peer gate before any projection or write. All six Warren roles are currently blocked because no peer is certified; fresh hills name skipped people and start locally without changing their shared heads. Eligible roles use the retained bridge and shelf CAS. Recheck peer certification by 2026-11-03. Saves from another HF version are refused and preserved. Adam accepts feel separately.
+
 # Shared people safety — 2026-10-28
 
 HF 4.8.0, client 0.5.5 and kit 0.5.23 form the current compatible graph. Client 0.5.6 supplies the per-person write gate but kit 0.5.23 excludes it. Until a compatible kit is published and integrated, nonempty shelves refuse new hills, empty shelves start local hills without claims, and checkpoints cannot write. Existing local hills and shelf records are preserved; saves from another HF version are refused rather than migrated. Revisit on 2026-10-29 or earlier on release; recheck peer certification by 2026-11-03. Adam accepts feel separately.

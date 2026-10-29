@@ -1,6 +1,7 @@
 /** In-memory shelf protocol controls; these do not establish a browser journey. */
 import {
   acceptPersona,
+  acceptPersonaBatch,
   canonicalCast,
   createPersona,
   type PersonaRequest,
@@ -11,6 +12,7 @@ import { fingerprint, newGame, save } from '../src/sim/game.ts';
 import { advanceFrame } from '../src/sim/warren.ts';
 
 const mock = vi.hoisted(() => ({
+  eligible: '',
   enabled: false,
   ready: Promise.resolve(true),
   requests: [] as PersonaRequest[],
@@ -19,25 +21,30 @@ const mock = vi.hoisted(() => ({
 vi.mock('../src/ui/lab.ts', () => ({
   lab: { setPersonaRecording: vi.fn(), allowPersonaRecording: vi.fn() },
 }));
-vi.mock('@adam0white/lab-client', async (original) => ({
-  ...(await original<typeof import('@adam0white/lab-client')>()),
-  personaChannel: () => ({
-    get enabled() {
-      return mock.enabled;
-    },
-    get ready() {
-      return mock.ready;
-    },
-    setEnabled(v: boolean) {
-      mock.enabled = v;
-    },
-    async request(r: PersonaRequest) {
-      mock.requests.push(r);
-      return mock.handle?.(r);
-    },
-  }),
-  watchPersonaCheckpoint: () => () => {},
-}));
+vi.mock('@adam0white/lab-client', async (original) => {
+  const sdk = await original<typeof import('@adam0white/lab-client')>();
+  return {
+    ...sdk,
+    portableWriteBlockers: (castId: string, game: string) =>
+      castId === mock.eligible ? [] : sdk.portableWriteBlockers(castId, game),
+    personaChannel: () => ({
+      get enabled() {
+        return mock.enabled;
+      },
+      get ready() {
+        return mock.ready;
+      },
+      setEnabled(v: boolean) {
+        mock.enabled = v;
+      },
+      async request(r: PersonaRequest) {
+        mock.requests.push(r);
+        return mock.handle?.(r);
+      },
+    }),
+    watchPersonaCheckpoint: () => () => {},
+  };
+});
 
 import {
   attach,
@@ -54,12 +61,14 @@ let current: ReturnType<typeof newGame> | null;
 beforeEach(() => {
   state = { heads: {}, revisions: [] };
   current = null;
+  mock.eligible = '';
   mock.enabled = false;
   mock.ready = Promise.resolve(true);
   mock.requests = [];
   mock.handle = async (r) => {
     if (r.action === 'get')
       return state.revisions.find((p) => p.revision === state.heads[r.castId ?? '']) ?? null;
+    if (r.action === 'putBatch') state = acceptPersonaBatch(state, r.envelopes ?? [], r.expectedHeads);
     return null;
   };
   vi.stubGlobal('window', { addEventListener() {} });
@@ -73,7 +82,16 @@ describe('HF4 shelf ownership', () => {
     expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
     expect(Object.keys(current.ownedHeads ?? {})).toHaveLength(0);
   });
-  it('refuses a new hill when a shared record exists and leaves that record intact', async () => {
+  it('claims only an eligible person using the real shelf CAS while skipping blocked peers', async () => {
+    mock.eligible = 'hf.cast.yusuf.warren';
+    current = await fresh(7);
+    const batch = mock.requests.find((request) => request.action === 'putBatch');
+    expect(batch?.envelopes?.map((person) => person.castId)).toEqual([mock.eligible]);
+    expect(state.heads[mock.eligible]).toBeTruthy();
+    expect(Object.keys(current.ownedHeads ?? {})).toEqual([mock.eligible]);
+    expect(continuityStatus).toContain('Meryem');
+  });
+  it('skips a blocked shared person and leaves their record intact', async () => {
     const castId = 'hf.cast.meryem.warren';
     const head = await createPersona({
       format: 'hf-persona/1',
@@ -86,7 +104,9 @@ describe('HF4 shelf ownership', () => {
       limitations: [],
     });
     state = acceptPersona(state, head);
-    await expect(fresh(7)).rejects.toThrow(/shared records and current hill are unchanged/);
+    current = await fresh(7);
+    expect(continuityStatus).toContain('Meryem');
+    expect(current.ownedHeads?.[castId]).toBeUndefined();
     expect(state.heads[castId]).toBe(head.revision);
     expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
   });
@@ -105,10 +125,17 @@ describe('HF4 shelf ownership', () => {
     state = acceptPersona(state, head);
     current = newGame(7);
     current.ownedHeads = { [castId]: head };
+    mock.enabled = true;
     await checkpoint();
     expect(state.heads[castId]).toBe(head.revision);
     expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
-    expect(continuityStatus).toContain('temporarily unavailable');
+    expect(continuityStatus).toContain('read-only');
+    const person = current.s.people.find((entry) => entry.id === 'meryem');
+    if (!person) throw Error('Missing Meryem');
+    person.body.alive = false;
+    await checkpoint();
+    expect(state.heads[castId]).toBe(head.revision);
+    expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
   });
   it('strips publication authority on file import and retains file origin through local reload', async () => {
     current = await fresh(7, '0.7.0', 'warren-rest/1');
