@@ -371,3 +371,7 @@ and maintained backstory/agency/outcome contracts from central cast/release, tar
 and HF reach/performance contracts remain separate. They do not block these local
 experiments. Camera widening and taste/return acceptance require Adam’s actual
 Nov3 choice/play. Player/panel/friends/ShowHN remain paused.
+
+## Watch care admission candidate — 2026-10-29
+
+A current Watch Kian passport may carry a finite care record beside its retained HF4 person. The agreement and completed-care timestamp are minutes. The copied HF care commitment and dependent clock are milliseconds; the receiver converts those fields to minutes before validating them against the pending portable return duty, whose calendar is also in milliseconds. Completed care remains in retained history. A missing care record with a pending Ada return, or an invalid record, skips Kian independently and preserves his shelf head. The synthetic controls establish admission and replay only. Peer certification, actual source capture and the return leg remain separate. Ada remains a referenced dependent rather than an admitted person.

@@ -147,6 +147,47 @@ describe('HF4 shelf ownership', () => {
     expect(current.ownedHeads?.['hf.cast.yusuf.warren']).toBeUndefined();
     expect(Object.keys(current.ownedHeads ?? {})).toHaveLength(5);
   });
+  it('names Kian when malformed Watch care is skipped while another person continues', async () => {
+    const source = newGame(7);
+    act(source, { verb: 'release', who: 'meryem' });
+    advance(source, 330);
+    const captured = await project(source.s, 'meryem');
+    const meryemId = 'hf.cast.meryem.warren';
+    const kianId = 'hf.cast.kian.watch';
+    const portable = structuredClone(captured.transfer.portable);
+    if (portable.version !== 2) throw Error('Expected retained portable');
+    portable.castId = kianId;
+    portable.castRevision = canonicalCast(kianId).revision;
+    portable.source = { ...portable.source, game: 'watch', personId: 'kian' };
+    const meryem = await createPersona({
+      format: 'hf-persona/1',
+      castId: meryemId,
+      castRevision: canonicalCast(meryemId).revision,
+      branchId: 'meryem-control',
+      parentRevision: null,
+      source: { game: 'warren', build: 'test', engine: FRAMEWORK_VERSION, rules: 'warren-hf4-1' },
+      transfer: captured.transfer,
+      limitations: [],
+    });
+    const kian = await createPersona({
+      format: 'hf-persona/1',
+      castId: kianId,
+      castRevision: portable.castRevision,
+      branchId: 'kian-control',
+      parentRevision: null,
+      source: { game: 'watch', build: 'test', engine: FRAMEWORK_VERSION, rules: 'test' },
+      transfer: { castPassport: 'hf-portable-person/2', portable, watchCare: { invalid: true } },
+      limitations: [],
+    });
+    state = acceptPersona(acceptPersona(state, meryem), kian);
+    mock.eligible = '*';
+    current = await fresh(8);
+    expect(continuityStatus).toContain('Kian');
+    expect(current.chapter?.inputs.map((p) => p.castId)).toEqual([meryemId]);
+    expect(state.heads[kianId]).toBe(kian.revision);
+    expect(current.ownedHeads?.[kianId]).toBeUndefined();
+    expect(current.ownedHeads?.[meryemId]?.parentRevision).toBe(meryem.revision);
+  });
   for (const cast of castForGame('warren')) {
     it(`starts with ${cast.name} eligible and skips the other people individually`, async () => {
       mock.eligible = cast.castId;

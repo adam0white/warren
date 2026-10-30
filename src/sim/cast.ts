@@ -6,6 +6,7 @@ import {
   validatePortablePerson,
 } from '@adam0white/human-framework';
 import { canonicalCast, type PersonaEnvelope } from '@adam0white/lab-client';
+import { type AdaVisit, shiftWatchCare, validateWatchCare, type WatchCare } from './ada-care.ts';
 import { ACTIONS, archiveOf, hfRunOf } from './hf4.ts';
 import { refusePuzzlePublication } from './maryam-puzzle.ts';
 import { CAST_IDS } from './people.ts';
@@ -120,7 +121,50 @@ function retainedReferences(portable: PortablePerson, person: string) {
 export function authoringFor(envelopes: PersonaEnvelope[], startMs: number) {
   const incoming = new Map(envelopes.map((envelope) => [envelope.castId, portableOf(envelope)]));
   if (incoming.size !== envelopes.length) throw Error('The continuing group contains a person twice.');
-  return (opening: PersonAuthoring): PersonAuthoring => {
+  let adaVisit: AdaVisit | undefined;
+  for (const envelope of envelopes) {
+    const portable = incoming.get(envelope.castId)!;
+    if (envelope.transfer.watchCare === undefined) {
+      if (
+        envelope.castId === CAST_IDS.kian &&
+        envelope.source.game === 'watch' &&
+        portable.version === 2 &&
+        portable.retained.agenda.commitments.some(
+          (c) => c.status === 'pending' && c.actions.includes('return-with-ada'),
+        )
+      )
+        throw Error('The return duty needs its care record.');
+      continue;
+    }
+    if (
+      envelope.castId !== CAST_IDS.kian ||
+      envelope.source.game !== 'watch' ||
+      portable.version !== 2 ||
+      !Number.isSafeInteger(portable.retained.at / 60000) ||
+      !Number.isSafeInteger(startMs / 60000)
+    )
+      throw Error('This care record cannot be admitted here.');
+    const captured = portable.retained.at / 60000;
+    const commitments = portable.retained.agenda.commitments
+      .filter((c) => c.status === 'pending')
+      .map((c) => ({
+        ...structuredClone(c),
+        from: c.from / 60000,
+        until: c.until / 60000,
+      }));
+    // Watch's HF4 passport leaves agreement and completion times in minutes,
+    // but copies the HF commitment and dependent's clock in milliseconds.
+    const raw = structuredClone(envelope.transfer.watchCare) as WatchCare;
+    if (raw?.care?.commitment && raw?.dependent) {
+      raw.care.commitment.from /= 60000;
+      raw.care.commitment.until /= 60000;
+      raw.dependent.sourceMinute /= 60000;
+      raw.dependent.ageMinutes /= 60000;
+    }
+    const care = validateWatchCare(raw, captured, commitments);
+    adaVisit = shiftWatchCare(care, startMs / 60000 - captured);
+  }
+  const author = (opening: PersonAuthoring): PersonAuthoring => {
     const castId = CAST_IDS[opening.id];
     const portable = castId && incoming.get(castId);
     if (!portable) return opening;
@@ -146,6 +190,7 @@ export function authoringFor(envelopes: PersonaEnvelope[], startMs: number) {
     };
     return result;
   };
+  return Object.assign(author, { adaVisit });
 }
 export async function project(s: WarrenState, who: string) {
   refusePuzzlePublication(s);

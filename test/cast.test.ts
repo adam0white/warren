@@ -8,6 +8,8 @@ import {
   validatePortablePerson,
 } from '@adam0white/human-framework';
 import { canonicalCast, createPersona } from '@adam0white/lab-client';
+import { chromium } from 'playwright-core';
+import { createServer } from 'vite';
 import { describe, expect, it } from 'vitest';
 import { authoringFor, portableOf, project } from '../src/sim/cast.ts';
 import { act, advance, fingerprint, load, newGame, replay, save, stateJson } from '../src/sim/game.ts';
@@ -301,4 +303,135 @@ it('retains an unfamiliar duty without making it a local action', async () => {
     archive.current.people.meryem!.agenda.owed.find((owed) => owed.ofId === 'old-duty')?.actions,
   ).toEqual(['history:warren:return-to-source']);
   expect(replayHF(archive).ok).toBe(true);
+});
+
+it('admits Watch care with the retained return duty and replays the visit', async () => {
+  const { envelope } = await source();
+  const portable = structuredClone(portableOf(envelope));
+  if (portable.version !== 2) throw Error('Expected retained source');
+  const castId = 'hf.cast.kian.watch';
+  portable.castId = castId;
+  portable.castRevision = canonicalCast(castId).revision;
+  portable.source = { ...portable.source, game: 'watch', personId: 'kian' };
+  const captured = portable.retained.at / 60000;
+  const from = captured - 60;
+  const until = from + 1440;
+  const duty = {
+    id: 'return',
+    kind: 'duty' as const,
+    toId: 'ada',
+    targetId: 'ada',
+    actions: ['return-with-ada'],
+    from: from * 60000,
+    until: until * 60000,
+    importance: 0.9,
+    label: 'Return with Ada',
+    status: 'pending' as const,
+  };
+  portable.retained.agenda.commitments = [
+    duty,
+    { ...duty, id: 'care', actions: ['care-ada'], importance: 0.8, status: 'kept' },
+  ];
+  const care = {
+    agreement: {
+      version: 'watch-warren-ada/1',
+      guardian: 'kian',
+      dependent: 'ada',
+      sourceMinute: from,
+      returnBy: until,
+      kianAssented: true,
+      adaAssented: true,
+      commitmentId: 'care',
+      returnCommitmentId: 'return',
+      careCompletedAt: captured,
+      status: 'agreed',
+    },
+    care: {
+      commitment: { ...duty, id: 'care', actions: ['care-ada'], from, until, status: 'kept' },
+      completedAt: captured,
+    },
+    dependent: {
+      id: 'ada',
+      guardian: 'kian',
+      sourceMinute: captured,
+      ageMinutes: 8 * 525600,
+      alive: true,
+      satiety: 1,
+      hydration: 1,
+      sleepPressure: 0.2,
+    },
+  };
+  const hf4Care = structuredClone(care);
+  hf4Care.care.commitment.from *= 60000;
+  hf4Care.care.commitment.until *= 60000;
+  hf4Care.dependent.sourceMinute *= 60000;
+  hf4Care.dependent.ageMinutes *= 60000;
+  const incoming = {
+    ...envelope,
+    castId,
+    castRevision: portable.castRevision,
+    source: { ...envelope.source, game: 'watch' },
+    transfer: { ...envelope.transfer, portable, watchCare: hf4Care },
+  };
+  const target = newGame(8, '0.7.0', undefined, 'warren-rest/2', authoringFor([incoming], 300 * 60000));
+  expect(target.s.adaVisit?.returnBy).toBe(300 + until - captured);
+  expect(target.s.adaVisit?.source).toEqual(care);
+  const retained = archiveOf(target.s).current.people.kian!.agenda.commitments.find((c) => c.id === 'return');
+  expect(retained?.status).toBe('pending');
+  expect(retained?.actions).toEqual(['history:watch:return-with-ada']);
+  const chapter = {
+    version: 'warren-hf4-cast/1' as const,
+    inputs: [incoming],
+    claims: [],
+    initial: stateJson(target.s),
+  };
+  const run = newGame(8, '0.7.0', chapter, 'warren-rest/2');
+  const openingMinute = run.s.minute;
+  advance(run, openingMinute + 30);
+  expect(run.s.minute).toBe(openingMinute + 30);
+  const saved = save(run);
+  expect(fingerprint(replay(8, saved.inputs, saved.minute, saved.game, saved.chapter, saved.config).s)).toBe(
+    saved.fingerprint,
+  );
+  const archive = archiveOf(run.s);
+  const hfReplay = replayHF(archive);
+  expect(hfReplay.ok).toBe(true);
+  if (hfReplay.ok) expect(hfReplay.value.fullHash).toBe(archive.hashes.full);
+  expect(() =>
+    authoringFor(
+      [
+        {
+          ...incoming,
+          transfer: {
+            ...incoming.transfer,
+            watchCare: { ...hf4Care, dependent: { ...hf4Care.dependent, guardian: 'other' } },
+          },
+        },
+      ],
+      300 * 60000,
+    ),
+  ).toThrow();
+  expect(() =>
+    authoringFor(
+      [{ ...incoming, transfer: { castPassport: 'hf-portable-person/2', portable } }],
+      300 * 60000,
+    ),
+  ).toThrow(/care record/);
+  const server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
+  const browser = await chromium.launch({ headless: true });
+  try {
+    await server.listen();
+    const page = await browser.newPage();
+    await page.goto(server.resolvedUrls!.local[0]!);
+    const result = await page.evaluate(`(async () => {
+      const { newGame } = await import('/src/sim/game.ts');
+      const { authoringFor } = await import('/src/sim/cast.ts');
+      const game = newGame(8, '0.7.0', undefined, 'warren-rest/2', authoringFor([${JSON.stringify(incoming)}], 300 * 60000));
+      return { returnBy: game.s.adaVisit?.returnBy, guardian: game.s.adaVisit?.dependent.guardian };
+    })()`);
+    expect(result).toEqual({ returnBy: 300 + until - captured, guardian: 'kian' });
+  } finally {
+    await browser.close();
+    await server.close();
+  }
 });

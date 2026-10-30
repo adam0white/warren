@@ -1,3 +1,7 @@
+# Watch care admission candidate — 2026-10-29
+
+Remaining: root review, exact CI, integration, deployment and live verification. Adam accepts feel separately. This change admits a validated Watch care record with Kian at a fresh hill opening. The HF4 Watch record uses minutes for the agreement and completion, and milliseconds for the copied HF commitment and dependent clock; Warren converts those copied fields before validation. The portable calendar uses milliseconds. Validation checks continuing pending duties; HF retains the completed care and pending return duties. Missing or invalid care for a pending Ada return skips Kian and keeps his shelf head. Other people can continue. The controls use an authored synthetic passport and do not establish a real journey. Published peer certification still gates shared writes.
+
 # Current-only policy candidate — 2026-10-29
 
 Remaining: root review, exact CI, integration, deployment and live verification; Adam accepts feel separately. Only rest/2 is admitted. Older, missing and unknown configurations are kept as original evidence and refused with a start-fresh choice. The historical entries below describe their time and are superseded where they claim legacy playability.
