@@ -97,12 +97,7 @@ This nine-path public-rules candidate is based on origin/main
 it does not establish the current live deployment. Review, signed source, exact CI,
 root merge, clean deploy, live checks and cleanup remain separate delivery gates.
 
-Ordinary Begin and confirmed New game use rules 0.7.0 with `warren-rest/2`. Recorded rest/1 hills keep the exact served f4 continuation. Rest/2 includes every rest/1 faculty and adds the autonomous marked-cut opportunity and its refusal-reply guard.
-There is no gameplay feature selector. Loaded hills retain their exact recorded
-edition/configuration. The app package and low-level constructor default stay
-0.6.0 for compatibility. HF stays 3.0.0, engine 2.23.0. No framework logic belongs
-in the game. Client/kit remain immutable release artifacts; the npm SDK route is
-excluded by the owner artifact rule. No private framework or vendor patch is used.
+Ordinary Begin, the default constructor, native resume and file playback use rules 0.7.0 with `warren-rest/2`. Other or missing configurations are refused, without changing the original. There is no gameplay selector or migration. HF remains pinned to 4.10.0; client and kit remain immutable release artifacts.
 
 ## The game and people
 
@@ -143,8 +138,7 @@ falls and injuries remain. Work can replace damaged furnishings.
 
 A marked, known loose cut allows an invitation on Yusuf/Meryem's card. Speech
 requires travel, thirty work minutes and an awake listener at the hearth. Offers
-compete with ordinary work, food, sleep and rest. Actual hearing matters. Current
-rest/1 uses the existing elicited-position encounter: a heard position enters HF
+compete with ordinary work, food, sleep and rest. Actual hearing matters. The current encounter uses elicited positions: a heard position enters HF
 as a claim, not a command or standing advice to repeat it. Both people may agree.
 Only mutually attended opposing statements establish the bounded disagreement.
 No anger, insult, motive, promise, excavation or protection is invented.
@@ -166,8 +160,7 @@ A finished-door reading offers a quiet test on held hills. The keeper chooses a
 reachable adult; assent does not roll the door. Closing and reopening each need
 existing travel and eight work minutes. Another adult may choose reopening.
 A refusal, interruption or incomplete reopening does not finish the trial. A shut
-door stays shut until actual reopening. Old held hills append `try-door`; rest/1
-keeps its existing `test-door`. No bell, alarm erasure or legacy conversion occurs.
+door stays shut until actual reopening. No bell, alarm erasure or legacy conversion occurs.
 Night, sleep, care, coverage and faith rules still apply. Withdrawal keeps history.
 
 The public Journal's Door requests and bell calls reading projects retained times,
@@ -210,7 +203,7 @@ Food, sleep, work, travel and ageing retain their costs. Events, pending choices
 calls, smoke/riders, active discussion or imminent recorded care return can prevent
 further stepping. Computation stops after the existing budget; an atomic quantum
 may exceed it. Unplayed elapsed time and partial quanta are reported and discarded.
-Old hills without away configuration keep waiting while absent.
+Unsupported hills without the current configuration are refused.
 
 The working camera stays fixed during reading, construction and card refresh.
 Selecting a person may frame them once. Zoom, gestures and Fit hill remain deliberate.
@@ -231,14 +224,12 @@ places, arrivals, injuries and results remain. Raw histories are never rewritten
 
 Full native saves retain state, seed, inputs, rules, configuration, fingerprints,
 complete Persons/RNG and source archives. Compact replay uses the recorded edition,
-configuration and pinned chapter initial state. Current exports require HF3 and
+configuration and pinned chapter initial state. Current exports require HF 4.10.0 and
 plain3 text metadata. Unsupported versions retain a visible refusal. Starting over
 requires confirmation even for an unsupported hill. Failed preparation preserves it.
 Do not clear storage or manufacture recovery. Preserve full/compact readers and caps.
 
-Historical next/1 keeps its original scoped standing-advice path. Recorded next/2
-and rest/1 retain their elicited-position semantics. No old save gains an action,
-configuration, rewritten word or away play just because new hills use latest rules.
+Historical next/1, next/2 and rest/1 files remain evidence, but are not playable. They are never relabelled or migrated to rest/2.
 
 The earlier port automatically claimed supported shared people; the current safety entry above suspends those writes.
 Loaded hills never refresh actors from newer shelf heads. Cast controls and generic
@@ -291,6 +282,9 @@ publication refusals remain binding. This local existing-person feature does not
 require generic family custody or an Ada actor.
 
 ## Deferred and acceptance
+
+Current-only policy: unsupported configurations must be kept as originals and refused with a start-fresh choice. Root still owns peer/source review, exact CI, integration, deployment and live verification. Peer certification remains blocked by the specific Valley, Watch and Lefthand dependencies above; source replay and receipt checks do not authenticate independently rewritten histories. Adam's 2026-11-03 play and camera decision remain separate; no player or shared journey is claimed.
+
 
 The original117 plus18 R2 register preserves literal asks, source hashes, return
 qualifications, dates and aliases. This batch changes access, not whole-ask closure.

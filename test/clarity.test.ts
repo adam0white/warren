@@ -130,7 +130,10 @@ describe('F-213 first-minute clarity', () => {
       const restored = JSON.parse(json);
       // Time keeps moving while the player reaches Download. Check the actual export boundary.
       expect(restored.minute).toBeGreaterThanOrEqual(saved.minute);
-      expect(restored.inputs).toEqual(saved.inputs);
+      expect(restored.inputs.slice(0, saved.inputs.length)).toEqual(saved.inputs);
+      expect(
+        restored.inputs.slice(saved.inputs.length).every((input: { verb: string }) => input.verb === 'away'),
+      ).toBe(true);
       expect(
         fingerprint(
           replay(

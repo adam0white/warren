@@ -18,7 +18,6 @@ import {
   type Order,
   type Saved,
   save,
-  TEXT_VERSION,
 } from '../sim/game.ts';
 import {
   AIR_REACH,
@@ -281,11 +280,15 @@ export async function start() {
 function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
   lab.screen('title');
   feedbackCleanup?.();
-  const compatible =
-    sv &&
-    sv.framework === FRAMEWORK_VERSION &&
-    (sv.game === GAME_VERSION || sv.game === '0.7.0') &&
-    sv.textVersion === TEXT_VERSION;
+  let demo: Game | undefined;
+  if (sv) {
+    try {
+      demo = load(sv);
+    } catch {
+      // Keep the saved object available for download and explicit replacement.
+    }
+  }
+  const compatible = !!demo;
   cancelAnimationFrame(raf);
   canvas = null;
   stage?.destroy();
@@ -293,14 +296,14 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
   app().innerHTML = `<div class="page">${topbar(true)}
     <div class="title-art"><canvas id="title-cv" aria-label="The village above its cellar"></canvas><h1>The Warren</h1></div>
     <p class="title-goal">${PURPOSE}</p>
-    ${sv && !compatible ? '<p class="soft">This hill was saved by an older version and cannot open here. Start fresh with Begin. You can download the old hill to keep it. Your people across games are kept.</p><button id="download-old-run">Download this saved hill</button>' : ''}
-    <div class="title-actions">${compatible ? `<button class="primary" id="cont">Resume <span class="soft">· ${esc(hillDate(sv.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
+    ${sv && !compatible ? '<p class="soft">This saved hill cannot open here. Download it to keep the original, or start fresh with Begin. Your people across games are kept.</p><button id="download-old-run">Download this saved hill</button>' : ''}
+    <div class="title-actions">${compatible ? `<button class="primary" id="cont">Resume <span class="soft">· ${esc(hillDate(sv!.minute).split(' · ')[0] ?? '')}</span></button>` : ''}
       <button ${compatible ? '' : 'class="primary"'} id="new">${compatible ? 'New game' : 'Begin'}</button>
       <div id="new-confirm" hidden><p>Starting a new game replaces this saved hill.</p><button id="new-yes">Yes, begin</button><button id="new-no">No</button></div>
       ${footer}</div><div id="title-drawer" hidden></div></div>`;
   const art = document.getElementById('title-cv') as HTMLCanvasElement;
   const artCtx = art.getContext('2d');
-  const demo = sv && compatible ? load(sv) : newGame(7);
+  demo ??= newGame(7);
   art.width = art.clientWidth * devicePixelRatio;
   art.height = art.clientHeight * devicePixelRatio;
   artCtx?.scale(devicePixelRatio, devicePixelRatio);
@@ -335,6 +338,17 @@ function title(sv: (Saved & { savedAt?: number }) | null, at: number) {
         dirty = true;
       }
       startError(error, 'The saved hill could not be opened.');
+      const status = document.getElementById('start-error');
+      if (status)
+        status.textContent =
+          'The saved hill could not be opened. Download it to keep the original, retry, or start fresh with New game.';
+      if (!document.getElementById('download-old-run')) {
+        const keep = document.createElement('button');
+        keep.id = 'download-old-run';
+        keep.textContent = 'Download this saved hill';
+        keep.addEventListener('click', () => downloadSaved(sv, 'the-warren-saved-hill.json'));
+        status?.after(keep);
+      }
     }
   });
   document.getElementById('new')?.addEventListener('click', () => {

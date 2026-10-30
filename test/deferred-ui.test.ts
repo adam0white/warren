@@ -65,7 +65,7 @@ for (const [width, height] of [
     }
   }, 20000);
 }
-it('resumes an opted hill with slowed readings and a paused menu, without changing its edition', async () => {
+it('resumes a current hill with slowed readings and a paused menu, without changing its edition', async () => {
   const page = await browser.newPage({ viewport: { width: 360, height: 690 } });
   try {
     await page.clock.install();
@@ -75,6 +75,8 @@ it('resumes an opted hill with slowed readings and a paused menu, without changi
     );
     await page.reload();
     await page.locator('#cont').click();
+    if ((await page.locator('#cell-title').textContent()) === 'While you were away')
+      await page.locator('#cellx').click();
     await page.locator('#last-reading').click();
     const minute = () => page.evaluate<number>('window.__warren.game.s.minute');
     const before = await minute();
@@ -158,6 +160,8 @@ it('slows Journal and growth while village-opened person readings and the Game m
     );
     await page.reload();
     await page.locator('#cont').click();
+    if ((await page.locator('#cell-title').textContent()) === 'While you were away')
+      await page.locator('#cellx').click();
     const minute = () => page.evaluate<number>('window.__warren.game.s.minute');
     await page.locator('#ticker').click();
     let before = await minute();

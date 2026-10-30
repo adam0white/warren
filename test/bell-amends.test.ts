@@ -5,7 +5,7 @@ import { heard, residentReply } from '../src/sim/hf4.ts';
 import { exposureWords } from '../src/ui/exposure.ts';
 
 function falseCall(seed = 7, at = 660) {
-  const g = newGame(seed, '0.7.0', undefined, 'warren-rest/1');
+  const g = newGame(seed, '0.7.0', undefined, 'warren-rest/2');
   expect(act(g, { verb: 'ask-bell-amends', who: 'maryam' })).toBe(false);
   expect(act(g, { verb: 'bell' })).toBe(true);
   advance(g, at);

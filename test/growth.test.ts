@@ -33,17 +33,17 @@ describe('the village growth record', () => {
     expect(words).toMatch(/zero cells/);
     expect(words).toMatch(/Zero families/);
     expect(words).toMatch(/Riders have not yet come and gone/);
-    expect(words).toMatch(/saved hill waits while you are away/i);
+    expect(words).toMatch(/hill can play quietly while you are away/i);
     expect(JSON.stringify(s)).toBe(before);
     expect(growthWords(s)).toBe(words);
   });
 });
-it('keeps a bounded account of real simulated events and says that absence does not run the hill', () => {
+it('keeps a bounded account of real simulated events and describes current away play', () => {
   const s = newGame(7, '0.7.0').s;
   s.notes.push({ at: s.minute, kind: 'find', text: 'Meryem found water under the hill.', weight: 2 });
   const before = JSON.stringify(s);
   expect(growthWords(s)).toContain('During simulated play');
   expect(growthWords(s)).toContain('Meryem found water under the hill.');
-  expect(growthWords(s)).toContain('saved hill waits while you are away');
+  expect(growthWords(s)).toContain('hill can play quietly while you are away');
   expect(JSON.stringify(s)).toBe(before);
 });

@@ -169,7 +169,7 @@ describe('HF4 shelf ownership', () => {
     expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
   });
   it('starts a local hill without making shared claims while shared writes are unavailable', async () => {
-    current = await fresh(7, '0.7.0', 'warren-rest/1');
+    current = await fresh(7, '0.7.0', 'warren-rest/2');
     expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
     expect(Object.keys(current.ownedHeads ?? {})).toHaveLength(0);
   });
@@ -271,7 +271,7 @@ describe('HF4 shelf ownership', () => {
     expect(original.sourceArchives).toBeUndefined();
   });
   it('strips publication authority on file import and retains file origin through local reload', async () => {
-    current = await fresh(7, '0.7.0', 'warren-rest/1');
+    current = await fresh(7, '0.7.0', 'warren-rest/2');
     const imported = await fileLoad(file(save(current)));
     expect(imported.ownedHeads).toBeUndefined();
     expect(imported.fileOrigin).toBe(true);
@@ -282,7 +282,7 @@ describe('HF4 shelf ownership', () => {
     await expect(checkpointNative('kian')).rejects.toThrow(/older Watch/);
   });
   it('replays an exported partial frame and strips its publication authority', async () => {
-    current = await fresh(7, '0.7.0', 'warren-rest/1');
+    current = await fresh(7, '0.7.0', 'warren-rest/2');
     advanceFrame(current.s, 0);
     const saved = save(current);
     expect(saved.phase).toBeDefined();
@@ -300,7 +300,7 @@ describe('HF4 shelf ownership', () => {
           release = resolve;
         }),
     } as File);
-    await fresh(8, '0.7.0', 'warren-rest/1');
+    await fresh(8, '0.7.0', 'warren-rest/2');
     release(JSON.stringify(saved));
     await expect(pending).rejects.toThrow(/replaced/);
   });

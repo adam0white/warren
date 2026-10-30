@@ -7,7 +7,7 @@ import { receivedVisit } from '../src/sim/visits.ts';
 import { advanceFrame } from '../src/sim/warren.ts';
 
 function offer() {
-  const g = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  const g = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   expect(act(g, { verb: 'visit', who: 'maryam' })).toBe(true);
   expect(receivedVisit(g.s, 'maryam')).toBeDefined();
   return g;
@@ -156,9 +156,8 @@ it('refuses the exercise during Maryam’s actual pending held-hill door trial',
   g.s.hill.use[cell] = USE.door;
   g.s.hill.doorWork[cell] = 0;
   expect(act(g, { verb: 'visit', who: 'maryam' })).toBe(true);
-  expect(act(g, { verb: 'try-door', who: 'maryam', cell })).toBe(true);
-  expect(g.s.next).toBeUndefined();
-  expect(g.s.doorTrials!.at(-1)!.who).toBe('maryam');
+  expect(act(g, { verb: 'test-door', who: 'maryam', cell })).toBe(true);
+  expect(g.s.next!.requests!.door!.who).toBe('maryam');
   const pending = save(g);
   expect(act(g, { verb: 'try-maryam-puzzle', handling: 'loosen' })).toBe(false);
   expect(save(g)).toEqual(pending);

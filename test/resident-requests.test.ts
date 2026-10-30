@@ -6,7 +6,7 @@ import { heard } from '../src/sim/hf4.ts';
 import { requestWords, residentOffers, residentSuggestion } from '../src/sim/resident-requests.ts';
 import { makeWorld } from '../src/sim/warren.ts';
 
-const config = 'warren-rest/1' as const;
+const config = 'warren-rest/2' as const;
 function fixture(door = false, condition?: 'alarm' | 'blocked-route') {
   const opening = newGame(
     7,
@@ -58,15 +58,9 @@ function exactReplay(g: ReturnType<typeof newGame>) {
   expect(save(restored)).toEqual(save(g));
   expect(save(replayed)).toEqual(save(g));
 }
-it('keeps new resident requests outside every retained configuration', () => {
-  for (const config of [undefined, 'warren-next/1', 'warren-next/2'] as const) {
-    const g = newGame(7, '0.7.0', undefined, config);
-    const before = save(g);
-    expect(act(g, { verb: 'talk-rest', who: 'meryem' })).toBe(false);
-    expect(act(g, { verb: 'test-door', who: 'meryem', cell: idx(18, SURF + 1) })).toBe(false);
-    expect(act(g, { verb: 'talk-disagreement', who: 'meryem' })).toBe(false);
-    expect(save(g)).toEqual(before);
-  }
+it('refuses obsolete resident configurations before any request can play', () => {
+  for (const config of ['warren-next/1', 'warren-next/2', 'warren-rest/1'] as const)
+    expect(() => newGame(7, '0.7.0', undefined, config)).toThrow(/start fresh/i);
 });
 it('headless control: gives a real rest conversation time, hearing and an HF choice', () => {
   const g = fixture();
@@ -175,9 +169,9 @@ it('refuses a late duplicate reopening after the door trial has completed', () =
     claims: [],
     initial: stateJson(opening.s),
   });
-  expect(act(g, { verb: 'try-door', who: 'yusuf', cell })).toBe(true);
-  for (let n = 0; n < 12 && g.s.doorTrials?.[0]?.phase !== 'open'; n++) advance(g, g.s.minute + 30);
-  expect(g.s.doorTrials![0]!.phase).toBe('open');
+  expect(act(g, { verb: 'test-door', who: 'yusuf', cell })).toBe(true);
+  for (let n = 0; n < 12 && g.s.next?.requests?.door?.phase !== 'open'; n++) advance(g, g.s.minute + 30);
+  expect(g.s.next!.requests!.door!.phase).toBe('open');
   const yusuf = g.s.people.find((p) => p.id === 'yusuf')!;
   const offer = residentOffers(g.s, yusuf)[0]!.offer;
   const stale: Activity = {
@@ -187,8 +181,8 @@ it('refuses a late duplicate reopening after the door trial has completed', () =
     action: offer.action,
     targetId: offer.targetId,
   };
-  for (let n = 0; n < 12 && !g.s.doorTrials?.[0]?.endedAt; n++) advance(g, g.s.minute + 30);
-  const request = g.s.doorTrials![0]!;
+  for (let n = 0; n < 12 && !g.s.next?.requests?.door?.endedAt; n++) advance(g, g.s.minute + 30);
+  const request = g.s.next!.requests!.door!;
   expect(request.opened?.who).toBeDefined();
   expect(g.s.hill.shut[cell]).toBe(0);
   expect(request.results.map((result) => result.shut)).toEqual([true]);

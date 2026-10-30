@@ -18,9 +18,9 @@ describe('explicit old-save and old-link refusal', () => {
     expect(() => load({ ...saved, inputs: [{ at: 300, verb: 'unknown' } as never] })).toThrow(
       /cannot be opened/,
     );
-    expect(() => replay(7, [{ at: 300, verb: 'bell', extra: true } as never], 330)).toThrow(
-      /cannot be opened/,
-    );
+    expect(() =>
+      replay(7, [{ at: 300, verb: 'bell', extra: true } as never], 330, '0.7.0', undefined, 'warren-rest/2'),
+    ).toThrow(/cannot be opened/);
   });
   it('refuses old Watch handoffs without changing the hill or marking a journey complete', async () => {
     const game = newGame(7);

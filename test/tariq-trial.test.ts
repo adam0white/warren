@@ -6,7 +6,7 @@ import { observeTrial } from '../src/sim/tariq-trial.ts';
 
 // Full current six-person Run: the keeper supplies only the new physical trial.
 function opening(load: 'middle' | 'edge') {
-  const g = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  const g = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   expect(act(g, { verb: 'visit', who: 'tariq' })).toBe(true);
   expect(act(g, { verb: 'try-tariq-trial', load })).toBe(true);
   return g;
@@ -106,7 +106,7 @@ it('records an actual interrupted trial and refuses stripped prop history before
 });
 
 it('retains a real choice of other activity rather than inventing a completed trial', () => {
-  const g = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  const g = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   expect(act(g, { verb: 'visit', who: 'tariq' })).toBe(true);
   advance(g, 330);
   expect(act(g, { verb: 'try-tariq-trial', load: 'middle' })).toBe(true);

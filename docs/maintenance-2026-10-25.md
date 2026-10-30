@@ -1,5 +1,7 @@
 # Warren maintenance — 2026-10-25
 
+Historical snapshot: current admission policy is in [design.md](design.md); the older configuration proposals below are not playable.
+
 The next source candidate is recorded separately in `/Users/abdul/code/.lab-scratch/games-deferred/warren-next-report.md`. It is held off main and production while Warren round1 is open. The widened Deferred batch and remaining player input are described in docs/design.md. Current source/check/review/CI/live/cleanup receipts belong in `/Users/abdul/code/.lab-scratch/games-deferred/warren-report.md`. Historical HF3 maintenance receipts remain in the v3 report. Source preparation is not a deployed release.
 
 | Ask                         | Current disposition                                                                                                                                                                                                                                 | Owner and review date                          |

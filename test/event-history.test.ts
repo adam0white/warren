@@ -10,9 +10,9 @@ it('projects an actual door close, pending reopening and a separate bell outcome
   g.s.hill.use[cell] = USE.door;
   g.s.hill.doorWork[cell] = 0;
   g.chapter = { version: 'warren-hf4-cast/1', inputs: [], claims: [], initial: stateJson(g.s) };
-  expect(act(g, { verb: 'try-door', who: 'yusuf', cell })).toBe(true);
-  for (let n = 0; n < 12 && !g.s.doorTrials![0]!.results.length; n++) advance(g, g.s.minute + 30);
-  const r = g.s.doorTrials![0]!;
+  expect(act(g, { verb: 'test-door', who: 'yusuf', cell })).toBe(true);
+  for (let n = 0; n < 12 && !g.s.next!.requests!.door!.results.length; n++) advance(g, g.s.minute + 30);
+  const r = g.s.next!.requests!.door!;
   expect(r.results.map((x) => x.shut)).toEqual([true]);
   expect(r.phase).toBe('open');
   expect(r.opened).toBeUndefined();

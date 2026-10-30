@@ -1,5 +1,6 @@
 /** Browser controls with real local storage and HF, and a synthetic six-person shelf transport. */
 import { readFileSync } from 'node:fs';
+import { gunzipSync } from 'node:zlib';
 import { canonicalCast, castForGame, createPersona } from '@adam0white/lab-client';
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
@@ -59,8 +60,12 @@ it('keeps an old hill downloadable, starts with shared records present, and open
     await page.clock.install();
     await page.goto('https://warren.adamwhite.work/');
     await page.locator('#new').waitFor();
-    // Deliberately incompatible source version; its complete bytes must survive download.
-    const old = { ...save(newGame(7)), framework: '3.0.0', savedAt: 12345 };
+    // Genuine served rest/1 data must survive the native and file refusals.
+    const old = JSON.parse(
+      gunzipSync(
+        readFileSync(new URL('./fixtures/f4-rest1/marked-native.json.gz', import.meta.url)),
+      ).toString(),
+    );
     const written = await page.evaluate(`(async () => {
       const store = await import('/src/ui/store.ts');
       return store.put('hill', ${JSON.stringify(old)});
@@ -98,7 +103,7 @@ it('keeps an old hill downloadable, starts with shared records present, and open
       .toBe('This file cannot be opened in this version. Keep it and start fresh with a new game.');
     expect(await filePage.locator('#file-debug').getAttribute('open')).toBeNull();
     expect(await filePage.locator('#file-debug').getAttribute('hidden')).toBeNull();
-    expect(await filePage.locator('#file-detail').textContent()).toContain('older version');
+    expect(await filePage.locator('#file-detail').textContent()).toContain('configuration');
     await filePage.locator('#hill-file').setInputFiles({
       name: 'hill.json',
       mimeType: 'application/json',

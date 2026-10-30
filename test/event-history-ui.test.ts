@@ -48,13 +48,13 @@ it('actual App synthetic phone/wide route shows real request and alarm records w
     await page.mouse.click(point.x, point.y);
     await page.locator('#door-tester').selectOption('yusuf');
     await page.locator('#test-door').click();
-    expect(await page.evaluate(() => window.__warren.game!.inputs.at(-1)?.verb)).toBe('try-door');
+    expect(await page.evaluate(() => window.__warren.game!.inputs.at(-1)?.verb)).toBe('test-door');
     await page.evaluate(`(async () => {
       const { advance } = await import('/src/sim/game.ts');
       const g = window.__warren.game;
-      for (let n=0; n<12 && !g.s.doorTrials?.[0]?.endedAt; n++) advance(g, g.s.minute+30);
+      for (let n=0; n<12 && !g.s.next?.requests?.door?.endedAt; n++) advance(g, g.s.minute+30);
     })()`);
-    expect(await page.evaluate(() => !!window.__warren.game!.s.doorTrials?.[0]?.opened)).toBe(true);
+    expect(await page.evaluate(() => !!window.__warren.game!.s.next?.requests?.door?.opened)).toBe(true);
     await page.clock.runFor(300);
     await page.locator('#cellx').click();
     // The existing public Bell button records a real call, not a synthetic history row.
@@ -135,7 +135,7 @@ it('actual App synthetic phone/wide route shows real request and alarm records w
 }, 60000);
 
 it('actual App separates the Yusuf invitation note from each selected chalk at phone/wide sizes and keeps missing history unknown', async () => {
-  const g = authoredGame(7, 360, 'warren-rest/1');
+  const g = authoredGame(7, 360, 'warren-rest/2');
   expect(act(g, { verb: 'visit', who: 'yusuf' })).toBe(true);
   expect(g.s.flags['visit:yusuf']).toBeTruthy();
   const cells = [idx(15, SURF + 3), idx(20, SURF + 3)];

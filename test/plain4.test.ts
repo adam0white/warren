@@ -17,9 +17,11 @@ it('projects a labeled grouped bell reply without changing it, and retains exact
   expect(JSON.stringify(g.s)).toBe(before);
   const exported = save(g);
   expect(fingerprint(load(exported).s)).toBe(exported.fingerprint);
-  expect(fingerprint(replay(7, exported.inputs, exported.minute, exported.game, exported.chapter).s)).toBe(
-    exported.fingerprint,
-  );
+  expect(
+    fingerprint(
+      replay(7, exported.inputs, exported.minute, exported.game, exported.chapter, exported.config).s,
+    ),
+  ).toBe(exported.fingerprint);
 });
 
 it('projects only matching grouped promises and keeps distinct answers and unfinished phrases intact', () => {

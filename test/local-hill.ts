@@ -9,4 +9,6 @@ export async function localHill(page: Page) {
   })()`);
   await page.reload();
   await page.locator('#cont').click();
+  if ((await page.locator('#cell-title').textContent()) === 'While you were away')
+    await page.locator('#cellx').click();
 }

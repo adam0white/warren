@@ -104,7 +104,7 @@ it('Begin uses existing latest public rules at phone and wide sizes, with exact 
   }
 }, 60000);
 
-it('retains saved configurations on Resume and preserves an unsupported saved hill until replacement is confirmed', async () => {
+it('resumes current hills and preserves an unsupported hill until replacement is confirmed', async () => {
   const server = await createServer({ server: { host: '127.0.0.1', port: 0, hmr: false, watch: null } });
   const browser = await chromium.launch({ headless: true });
   try {
@@ -114,7 +114,7 @@ it('retains saved configurations on Resume and preserves an unsupported saved hi
     await page.route('**/*', (r) => (r.request().url().startsWith(url) ? r.continue() : r.abort()));
     await page.clock.install();
     await page.goto(url);
-    for (const config of [undefined, 'warren-next/1'] as const) {
+    for (const config of ['warren-rest/2'] as const) {
       await page.goto(url);
       const original = newGame(7, '0.7.0', undefined, config);
       const raw = JSON.stringify(save(original));
@@ -141,7 +141,6 @@ it('retains saved configurations on Resume and preserves an unsupported saved hi
         config: expectedSave.config,
         inputs: expectedSave.inputs,
       });
-      expect(await page.locator('#talk-rest').count()).toBe(0);
     }
     await page.goto(url);
     const unsupported = { ...save(newGame(7)), framework: 'unsupported-test-version' };

@@ -23,7 +23,7 @@ it('authors four distinct alternatives with exactly HF’s required slots for ev
 });
 
 it('uses actual HF suggestion narration and preserves complete save and playtest replay', () => {
-  const game = newGame(7, '0.7.0', undefined, 'warren-rest/1');
+  const game = newGame(7, '0.7.0', undefined, 'warren-rest/2');
   act(game, { verb: 'bell' });
   advance(game, 360);
   expect(game.s.answers.length).toBeGreaterThan(0);

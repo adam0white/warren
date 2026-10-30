@@ -40,6 +40,8 @@ async function enter(width = 360, height = 690) {
   })()`);
   await page.reload();
   await page.locator('#cont').click();
+  if ((await page.locator('#cell-title').textContent()) === 'While you were away')
+    await page.locator('#cellx').click();
   for (let i = 0; i < 40 && !(await page.locator('#raid-warning').innerText()).includes('Smoke'); i++)
     await page.clock.runFor(1000);
   return page;
@@ -108,8 +110,9 @@ describe('F-233 raid playback', () => {
       expect(await page.locator('[data-speed="2"]').getAttribute('aria-pressed')).toBe('true');
       const run = await exported(page);
       expect(run.minute).toBeGreaterThanOrEqual(saved.state.raids[0]!.smoke);
-      expect(run.inputs.at(-1)?.verb).toBe('bell');
-      expect(run.inputs.at(-1)?.at).toBeLessThan(run.state.raids[0]?.riders ?? 0);
+      const bell = run.inputs.findLast((input) => input.verb === 'bell');
+      expect(bell).toBeDefined();
+      expect(bell!.at).toBeLessThan(run.state.raids[0]?.riders ?? 0);
       expect(
         fingerprint(replay(run.seed, run.inputs, run.minute, run.game, run.chapter, run.config, run.phase).s),
       ).toBe(run.fingerprint);
@@ -136,7 +139,8 @@ describe('F-233 raid playback', () => {
       expect(await page.locator('[data-speed="1"]').getAttribute('aria-pressed')).toBe('true');
       expect(await page.locator('#clock-rate').innerText()).toBe('Time slows for new text.');
       const run = await exported(page);
-      expect(run.inputs).toEqual(saved.inputs);
+      expect(run.inputs.slice(0, saved.inputs.length)).toEqual(saved.inputs);
+      expect(run.inputs.slice(saved.inputs.length).every((input) => input.verb === 'away')).toBe(true);
     } finally {
       await page.close();
     }

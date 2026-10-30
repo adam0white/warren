@@ -1,3 +1,7 @@
+# Current-only policy candidate — 2026-10-29
+
+Remaining: root review, exact CI, integration, deployment and live verification; Adam accepts feel separately. Only rest/2 is admitted. Older, missing and unknown configurations are kept as original evidence and refused with a start-fresh choice. The historical entries below describe their time and are superseded where they claim legacy playability.
+
 # SDK adoption candidate — 2026-10-29
 
 Remaining: root verifies this candidate, reviews and qualifies its exact source and CI, then owns integration and normal deployment. Live delivery and Adam's acceptance remain separate. This is partial shared-people readiness, not a completed shared journey.
