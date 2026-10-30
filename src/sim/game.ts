@@ -108,13 +108,16 @@ export function newGame(
   edition: string = DEFAULT_EDITION,
   chapter?: Chapter,
   config: NextConfig = 'warren-rest/2',
-  incoming?: (opening: PersonAuthoring) => PersonAuthoring,
+  incoming?: ((opening: PersonAuthoring) => PersonAuthoring) & {
+    adaVisit?: import('./ada-care.ts').AdaVisit;
+  },
 ): Game {
   if (config !== 'warren-rest/2')
     throw new Error('This hill cannot be opened. Keep the original and start fresh.');
   resetCaches();
   const rules = editionOf(edition);
   const s = chapter ? restoreState(chapter.initial) : newWarren(seed, true, incoming);
+  if (!chapter && incoming?.adaVisit) s.adaVisit = structuredClone(incoming.adaVisit);
   if (
     chapter &&
     (chapter.version !== 'warren-hf4-cast/1' ||
