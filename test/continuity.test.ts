@@ -17,6 +17,7 @@ import { advanceFrame } from '../src/sim/warren.ts';
 
 const mock = vi.hoisted(() => ({
   eligible: '',
+  actualGate: false,
   enabled: false,
   ready: Promise.resolve(true),
   requests: [] as PersonaRequest[],
@@ -30,7 +31,11 @@ vi.mock('@adam0white/lab-client', async (original) => {
   return {
     ...sdk,
     portableWriteBlockers: (castId: string, game: string) =>
-      castId === mock.eligible || mock.eligible === '*' ? [] : sdk.portableWriteBlockers(castId, game),
+      mock.actualGate
+        ? sdk.portableWriteBlockers(castId, game)
+        : castId === mock.eligible || mock.eligible === '*'
+          ? []
+          : ['fixture-blocked'],
     // Certification is a transport fixture here. Actual admission and shelf CAS
     // run below; this control does not certify any deployed peer.
     claimPortablePerson: (parent: import('@adam0white/lab-client').PersonaEnvelope, game: string) =>
@@ -72,6 +77,7 @@ beforeEach(() => {
   state = { heads: {}, revisions: [] };
   current = null;
   mock.eligible = '';
+  mock.actualGate = false;
   mock.enabled = false;
   mock.ready = Promise.resolve(true);
   mock.requests = [];
@@ -87,14 +93,15 @@ beforeEach(() => {
 });
 const file = (value: unknown) => ({ size: 100, text: async () => JSON.stringify(value) }) as File;
 describe('HF4 shelf ownership', () => {
-  it('keeps every existing head untouched under the published six-person peer gate', async () => {
+  it('keeps unreadable heads untouched under the published peer gate', async () => {
+    mock.actualGate = true;
     const expected: Record<string, string[]> = {
       'hf.cast.maryam.well': ['valley'],
       'hf.cast.tariq.well': ['lefthand'],
       'hf.cast.yusuf.warren': ['valley'],
-      'hf.cast.meryem.warren': ['valley', 'watch'],
-      'hf.cast.tamar.watch': ['watch'],
-      'hf.cast.kian.watch': ['watch'],
+      'hf.cast.meryem.warren': ['valley'],
+      'hf.cast.tamar.watch': [],
+      'hf.cast.kian.watch': [],
     };
     for (const cast of castForGame('warren')) {
       expect(portableWriteBlockers(cast.castId, 'warren').slice().sort()).toEqual(expected[cast.castId]);
@@ -117,6 +124,15 @@ describe('HF4 shelf ownership', () => {
     expect(current.ownedHeads ?? {}).toEqual({});
     expect(state.heads).toEqual(heads);
     expect(mock.requests.some((request) => request.action === 'putBatch')).toBe(false);
+  });
+  it('claims the newly qualified Watch roles on an empty shelf', async () => {
+    mock.actualGate = true;
+    current = await fresh(7);
+    expect(Object.keys(current.ownedHeads ?? {}).sort()).toEqual([
+      'hf.cast.kian.watch',
+      'hf.cast.tamar.watch',
+    ]);
+    expect(Object.keys(state.heads).sort()).toEqual(['hf.cast.kian.watch', 'hf.cast.tamar.watch']);
   });
   it('admits a retained person while another eligible record is refused individually', async () => {
     const source = newGame(7);
