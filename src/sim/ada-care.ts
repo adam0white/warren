@@ -120,7 +120,7 @@ export function validateWatchCare(raw: unknown, captured: number, commitments: C
     !v.violatedBy?.length;
   if (
     !exact(c.commitment, a.commitmentId, 'care-ada', 'kept') ||
-    !integer(c.completedAt) ||
+    !Number.isFinite(c.completedAt) ||
     c.completedAt !== a.careCompletedAt ||
     c.completedAt < a.sourceMinute ||
     c.completedAt > captured

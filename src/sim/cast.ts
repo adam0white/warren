@@ -140,7 +140,6 @@ export function authoringFor(envelopes: PersonaEnvelope[], startMs: number) {
       envelope.castId !== CAST_IDS.kian ||
       envelope.source.game !== 'watch' ||
       portable.version !== 2 ||
-      !Number.isSafeInteger(portable.retained.at / 60000) ||
       !Number.isSafeInteger(startMs / 60000)
     )
       throw Error('This care record cannot be admitted here.');
@@ -152,14 +151,12 @@ export function authoringFor(envelopes: PersonaEnvelope[], startMs: number) {
         from: c.from / 60000,
         until: c.until / 60000,
       }));
-    // Watch's HF4 passport leaves agreement and completion times in minutes,
-    // but copies the HF commitment and dependent's clock in milliseconds.
+    // Watch's HF4 agreement, completion and dependent clocks use minutes.
+    // Only the copied HF commitment keeps millisecond timestamps.
     const raw = structuredClone(envelope.transfer.watchCare) as WatchCare;
     if (raw?.care?.commitment && raw?.dependent) {
       raw.care.commitment.from /= 60000;
       raw.care.commitment.until /= 60000;
-      raw.dependent.sourceMinute /= 60000;
-      raw.dependent.ageMinutes /= 60000;
     }
     const care = validateWatchCare(raw, captured, commitments);
     adaVisit = shiftWatchCare(care, startMs / 60000 - captured);

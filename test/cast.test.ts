@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import {
   createPerson,
   createRun,
@@ -7,10 +8,11 @@ import {
   step,
   validatePortablePerson,
 } from '@adam0white/human-framework';
-import { canonicalCast, createPersona } from '@adam0white/lab-client';
+import { canonicalCast, createPersona, type PersonaEnvelope } from '@adam0white/lab-client';
 import { chromium } from 'playwright-core';
 import { createServer } from 'vite';
 import { describe, expect, it } from 'vitest';
+import type { WatchCare } from '../src/sim/ada-care.ts';
 import { authoringFor, portableOf, project } from '../src/sim/cast.ts';
 import { act, advance, fingerprint, load, newGame, replay, save, stateJson } from '../src/sim/game.ts';
 import { archiveOf, FRAMEWORK_VERSION, need } from '../src/sim/hf4.ts';
@@ -306,77 +308,26 @@ it('retains an unfamiliar duty without making it a local action', async () => {
 });
 
 it('admits Watch care with the retained return duty and replays the visit', async () => {
-  const { envelope } = await source();
-  const portable = structuredClone(portableOf(envelope));
+  // Public HF4.15 projection from an authored Watch fixture, not a player journey.
+  // The fixture retains exact millisecond capture/completion times as fractional minutes.
+  const fixture = JSON.parse(
+    readFileSync(new URL('./fixtures/watch-hf415-care.json', import.meta.url), 'utf8'),
+  );
+  const incoming = fixture.envelope as PersonaEnvelope;
+  const portable = portableOf(incoming);
   if (portable.version !== 2) throw Error('Expected retained source');
-  const castId = 'hf.cast.kian.watch';
-  portable.castId = castId;
-  portable.castRevision = canonicalCast(castId).revision;
-  portable.source = { ...portable.source, game: 'watch', personId: 'kian' };
   const captured = portable.retained.at / 60000;
-  const from = captured - 60;
-  const until = from + 1440;
-  const duty = {
-    id: 'return',
-    kind: 'duty' as const,
-    toId: 'ada',
-    targetId: 'ada',
-    actions: ['return-with-ada'],
-    from: from * 60000,
-    until: until * 60000,
-    importance: 0.9,
-    label: 'Return with Ada',
-    status: 'pending' as const,
-  };
-  portable.retained.agenda.commitments = [
-    duty,
-    { ...duty, id: 'care', actions: ['care-ada'], importance: 0.8, status: 'kept' },
-  ];
-  const care = {
-    agreement: {
-      version: 'watch-warren-ada/1',
-      guardian: 'kian',
-      dependent: 'ada',
-      sourceMinute: from,
-      returnBy: until,
-      kianAssented: true,
-      adaAssented: true,
-      commitmentId: 'care',
-      returnCommitmentId: 'return',
-      careCompletedAt: captured,
-      status: 'agreed',
-    },
-    care: {
-      commitment: { ...duty, id: 'care', actions: ['care-ada'], from, until, status: 'kept' },
-      completedAt: captured,
-    },
-    dependent: {
-      id: 'ada',
-      guardian: 'kian',
-      sourceMinute: captured,
-      ageMinutes: 8 * 525600,
-      alive: true,
-      satiety: 1,
-      hydration: 1,
-      sleepPressure: 0.2,
-    },
-  };
-  const hf4Care = structuredClone(care);
-  hf4Care.care.commitment.from *= 60000;
-  hf4Care.care.commitment.until *= 60000;
-  hf4Care.dependent.sourceMinute *= 60000;
-  hf4Care.dependent.ageMinutes *= 60000;
-  const incoming = {
-    ...envelope,
-    castId,
-    castRevision: portable.castRevision,
-    source: { ...envelope.source, game: 'watch' },
-    transfer: { ...envelope.transfer, portable, watchCare: hf4Care },
-  };
+  const hf4Care = structuredClone(incoming.transfer.watchCare) as WatchCare;
+  const care = structuredClone(hf4Care);
+  care.care.commitment.from /= 60000;
+  care.care.commitment.until /= 60000;
+  const until = care.agreement.returnBy;
   const target = newGame(8, '0.7.0', undefined, 'warren-rest/2', authoringFor([incoming], 300 * 60000));
   expect(target.s.adaVisit?.returnBy).toBe(300 + until - captured);
   expect(target.s.adaVisit?.source).toEqual(care);
-  const retained = archiveOf(target.s).current.people.kian!.agenda.commitments.find((c) => c.id === 'return');
+  const retained = archiveOf(target.s).current.people.kian!.agenda.commitments.find(
+    (c) => c.id === care.agreement.returnCommitmentId,
+  );
   expect(retained?.status).toBe('pending');
   expect(retained?.actions).toEqual(['history:watch:return-with-ada']);
   const chapter = {
